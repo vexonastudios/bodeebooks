@@ -6,7 +6,7 @@ import { games } from "@/data/site-content";
 export const metadata: Metadata = {
   title: "Games",
   description:
-    "A future-ready games area for learning to read, typing practice, Roman numerals, and other kid-friendly projects."
+    "Kid-friendly Bodee Books games for reading, typing, number play, and family learning."
 };
 
 export default function GamesPage() {
@@ -16,10 +16,10 @@ export default function GamesPage() {
         <header className="page-header">
           <div>
             <p className="section-heading__eyebrow">Games area</p>
-            <h1 className="page-header__title">Reading games deserve their own destination.</h1>
+            <h1 className="page-header__title">Playful practice for growing readers.</h1>
             <p className="page-header__copy">
-              Rather than hiding game ideas across the site, this lane gives them a
-              visible home so new educational projects can ship one by one.
+              Explore quick games for reading, typing, memory, and number
+              confidence, with more family-friendly challenges on the way.
             </p>
           </div>
         </header>

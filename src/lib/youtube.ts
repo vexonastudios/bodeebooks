@@ -71,6 +71,29 @@ function formatPublished(dateString?: string) {
   }).format(date);
 }
 
+function summarizeDescription(description?: string) {
+  if (!description) {
+    return "Free audiobook release from the Bodee Books YouTube channel.";
+  }
+
+  const firstParagraph = description
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .find(Boolean);
+
+  if (!firstParagraph) {
+    return "Free audiobook release from the Bodee Books YouTube channel.";
+  }
+
+  const collapsed = firstParagraph.replace(/\s+/g, " ").trim();
+
+  if (collapsed.length <= 260) {
+    return collapsed;
+  }
+
+  return `${collapsed.slice(0, 257).trimEnd()}...`;
+}
+
 async function fetchText(url: string, revalidate: number) {
   const response = await fetch(url, {
     next: {
@@ -122,9 +145,7 @@ function parseYoutubeFeed(xml: string, limit: number) {
         return [];
       }
 
-      const summary =
-        readTag(entry, "media:description") ||
-        "Free audiobook release from the Bodee Books YouTube channel.";
+      const summary = summarizeDescription(readTag(entry, "media:description"));
 
       return [
         {

@@ -269,9 +269,7 @@ iframe {
 .section-heading__description,
 .card__copy,
 .site-footer__copy,
-.inline-note,
-.hero__feed-note,
-.page-note {
+.inline-note {
   color: var(--muted);
   line-height: 1.7;
 }
@@ -354,11 +352,6 @@ iframe {
   padding: 4rem 0 2rem;
 }
 
-.page-note,
-.hero__feed-note {
-  margin: 1rem 0 0;
-}
-
 .grid {
   display: grid;
   gap: 1rem;
@@ -412,6 +405,7 @@ iframe {
 }
 
 .video-frame,
+.video-preview,
 .media-placeholder {
   aspect-ratio: 16 / 9;
 }
@@ -423,6 +417,92 @@ iframe {
 .video-frame iframe {
   width: 100%;
   height: 100%;
+  display: block;
+}
+
+.video-preview {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(54, 157, 111, 0.24), rgba(20, 56, 40, 0.85)),
+    #1d3428;
+}
+
+.video-preview__button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.video-preview__button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10, 16, 13, 0.08), rgba(10, 16, 13, 0.68));
+}
+
+.video-preview__image {
+  object-fit: cover;
+  transition:
+    transform 220ms ease,
+    filter 220ms ease;
+}
+
+.video-preview__button:hover .video-preview__image {
+  transform: scale(1.03);
+  filter: saturate(1.05);
+}
+
+.video-preview__content {
+  position: absolute;
+  inset: auto 1rem 1rem 1rem;
+  z-index: 1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.video-preview__badge,
+.video-preview__play {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  color: #effaf4;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.video-preview__badge {
+  background: rgba(14, 25, 20, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.video-preview__play {
+  background: rgba(54, 157, 111, 0.88);
+  box-shadow: 0 10px 24px rgba(20, 56, 40, 0.22);
+}
+
+.video-preview__icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 0.42rem solid transparent;
+  border-bottom: 0.42rem solid transparent;
+  border-left: 0.68rem solid currentColor;
 }
 
 .media-placeholder {

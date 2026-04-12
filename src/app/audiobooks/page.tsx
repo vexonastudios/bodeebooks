@@ -6,7 +6,7 @@ import { getLatestAudiobooks } from "@/lib/youtube";
 export const metadata: Metadata = {
   title: "Audiobooks",
   description:
-    "Latest audiobook releases from the Bodee Books YouTube channel, surfaced automatically in the Next.js site."
+    "Browse the latest Bodee Books audiobooks, from classic adventures to family-friendly listens."
 };
 
 export default async function AudiobooksPage() {
@@ -17,26 +17,14 @@ export default async function AudiobooksPage() {
       <div className="container">
         <header className="page-header">
           <div>
-            <p className="section-heading__eyebrow">Audiobook lane</p>
-            <h1 className="page-header__title">New YouTube uploads belong here immediately.</h1>
+            <p className="section-heading__eyebrow">Featured audiobooks</p>
+            <h1 className="page-header__title">Press play on your next favorite story.</h1>
             <p className="page-header__copy">
-              This page is designed to become the always-current library shelf for
-              audiobook launches. The cards below are fed from the public YouTube
-              channel, then gracefully fall back if that upstream feed is temporarily
-              unavailable.
+              Browse the latest Bodee Books listens, from adventurous classics to
+              long-form family stories ready for quiet time, bedtime, or a road trip.
             </p>
           </div>
         </header>
-
-        <p className="page-note">
-          Current source:{" "}
-          <strong>
-            {audiobookFeed.source === "youtube"
-              ? "Live YouTube feed"
-              : "Fallback content while feed access recovers"}
-          </strong>
-          .
-        </p>
 
         <div className="grid grid--3">
           {audiobookFeed.items.map((item) => (

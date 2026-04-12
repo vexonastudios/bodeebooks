@@ -25,16 +25,16 @@ export type FallbackAudiobook = {
 
 export const featureStats = [
   {
-    value: "Auto-updated",
-    label: "New audiobook uploads can surface from YouTube without manual page edits."
+    value: "Free audiobooks",
+    label: "Settle in with full-length listens pulled from the latest Bodee Books releases."
   },
   {
-    value: "3 core lanes",
-    label: "Audiobooks, printed books, and games each get their own expandable section."
+    value: "Books to explore",
+    label: "Browse featured print titles and a growing shelf of stories for young readers."
   },
   {
-    value: "Vercel-ready",
-    label: "Built for GitHub-connected deployments instead of a shared hosting server."
+    value: "Games for kids",
+    label: "Jump between reading, typing, and number games built for playful practice."
   }
 ] as const;
 
@@ -49,20 +49,20 @@ export const printedBooks: PrintedBook[] = [
     href: "https://bodeebooks.com/at-aboukir-and-acre-a-story-of-napoleons-invasion-of-egypt/"
   },
   {
-    title: "Next Collector Edition",
+    title: "Collector Editions",
     author: "Bodee Books",
-    format: "Print release slot",
-    availability: "Ready for the next launch",
+    format: "Paperback and hardcover",
+    availability: "Coming soon",
     blurb:
-      "This card is intentionally structured so future print books can be added quickly without reworking the page layout."
+      "Beautiful print editions and keepsake releases will join the shelf as the Bodee Books catalog grows."
   },
   {
-    title: "Young Reader Shelf",
+    title: "Young Reader Favorites",
     author: "Curated classics",
-    format: "Series lane",
-    availability: "Growing catalog",
+    format: "Family reading shelf",
+    availability: "Coming soon",
     blurb:
-      "A flexible shelf for early-reader or family-friendly print editions when that side of the catalog expands."
+      "More family-friendly print titles are on the way, with room for classics, adventures, and beginner-friendly reads."
   }
 ];
 
@@ -70,7 +70,7 @@ export const games: GameCardData[] = [
   {
     title: "Learning to Read Lab",
     audience: "Ages 4-8",
-    status: "Migration queue",
+    status: "Early reading",
     focus: "Phonics and word recognition",
     description:
       "A playful reading area for sound-first practice, simple matching, and confidence-building early literacy activities."
@@ -78,7 +78,7 @@ export const games: GameCardData[] = [
   {
     title: "Typing Test WPM",
     audience: "Kids and adults",
-    status: "Ready to rebuild",
+    status: "Typing practice",
     focus: "Speed, rhythm, and accuracy",
     description:
       "A cleaner version of the current typing trainer with stronger visuals, progress feedback, and room for custom passages."
@@ -86,7 +86,7 @@ export const games: GameCardData[] = [
   {
     title: "Roman Numeral Quest",
     audience: "Elementary and middle school",
-    status: "Planned",
+    status: "Number puzzle",
     focus: "Number fluency",
     description:
       "A fast-recall practice game where players decode, build, and race through Roman numeral challenges."
@@ -94,7 +94,7 @@ export const games: GameCardData[] = [
   {
     title: "Story Memory Match",
     audience: "Family play",
-    status: "Future addition",
+    status: "Memory game",
     focus: "Pattern recall",
     description:
       "A lightweight matching game lane that fits naturally beside the reading and audiobook side of the brand."

@@ -1,25 +1,19 @@
 import type { GameCardData, PrintedBook } from "@/data/site-content";
 import type { AudiobookEntry } from "@/lib/youtube";
 
-function EmbeddedPlayer({ title, videoId }: { title: string; videoId: string }) {
-  return (
-    <div className="video-frame">
-      <iframe
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        loading="lazy"
-        src={`https://www.youtube.com/embed/${videoId}`}
-        title={title}
-      />
-    </div>
-  );
-}
+import { VideoPreview } from "@/components/video-preview";
 
 export function AudiobookCard({ item }: { item: AudiobookEntry }) {
   return (
     <article className="card card--media">
       {item.videoId ? (
-        <EmbeddedPlayer title={item.title} videoId={item.videoId} />
+        <VideoPreview
+          thumbnailUrl={
+            item.thumbnailUrl || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`
+          }
+          title={item.title}
+          videoId={item.videoId}
+        />
       ) : (
         <div className="media-placeholder">
           <p className="media-placeholder__badge">Fallback</p>
@@ -55,7 +49,7 @@ export function BookCard({ book }: { book: PrintedBook }) {
             View current listing
           </a>
         ) : (
-          <span className="inline-note">Placeholder ready for the next print launch.</span>
+          <span className="inline-note">More print titles are on the way.</span>
         )}
       </div>
     </article>
@@ -78,7 +72,7 @@ export function GameCard({ game }: { game: GameCardData }) {
             Open game
           </a>
         ) : (
-          <span className="inline-note">Structured as a landing spot for the rebuild.</span>
+          <span className="inline-note">More playful challenges are coming soon.</span>
         )}
       </div>
     </article>
