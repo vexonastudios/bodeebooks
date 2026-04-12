@@ -56,7 +56,7 @@ export default async function HomePage() {
         <div className="container">
           <SectionHeading
             action={{ href: "/audiobooks", label: "See the full lane" }}
-            description="Fresh listens for quiet afternoons, family road trips, bedtime routines, and every in-between story break."
+            description="Open a story page for each latest release, with a clear summary and a player that stays out of the way until listeners are ready."
             eyebrow="Latest from YouTube"
             title="Audiobook premieres"
           />

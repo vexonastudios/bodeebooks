@@ -1,18 +1,22 @@
-import type { GameCardData, PrintedBook } from "@/data/site-content";
-import type { AudiobookEntry } from "@/lib/youtube";
+import Link from "next/link";
 
-import { VideoPreview } from "@/components/video-preview";
+import type { GameCardData, PrintedBook } from "@/data/site-content";
+import { type AudiobookEntry, getAudiobookPath } from "@/lib/youtube";
+
+import { AudiobookPosterLink } from "@/components/audiobook-poster-link";
 
 export function AudiobookCard({ item }: { item: AudiobookEntry }) {
+  const detailHref = item.videoId ? getAudiobookPath(item) : null;
+
   return (
     <article className="card card--media">
-      {item.videoId ? (
-        <VideoPreview
+      {detailHref ? (
+        <AudiobookPosterLink
+          href={detailHref}
           thumbnailUrl={
             item.thumbnailUrl || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`
           }
           title={item.title}
-          videoId={item.videoId}
         />
       ) : (
         <div className="media-placeholder">
@@ -24,11 +28,23 @@ export function AudiobookCard({ item }: { item: AudiobookEntry }) {
 
       <div className="card__body">
         <p className="card__meta">{item.publishedLabel}</p>
-        <h3 className="card__title">{item.title}</h3>
+        {detailHref ? (
+          <Link className="card__title-link" href={detailHref}>
+            <h3 className="card__title">{item.title}</h3>
+          </Link>
+        ) : (
+          <h3 className="card__title">{item.title}</h3>
+        )}
         <p className="card__copy">{item.summary}</p>
-        <a className="text-link" href={item.href} rel="noreferrer" target="_blank">
-          Watch on YouTube
-        </a>
+        {detailHref ? (
+          <Link className="text-link" href={detailHref}>
+            Open audiobook page
+          </Link>
+        ) : (
+          <a className="text-link" href={item.href} rel="noreferrer" target="_blank">
+            Visit the YouTube channel
+          </a>
+        )}
       </div>
     </article>
   );

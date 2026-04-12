@@ -7,12 +7,18 @@ type VideoPreviewProps = {
   title: string;
   videoId: string;
   thumbnailUrl: string;
+  badgeLabel?: string;
+  playLabel?: string;
+  sizes?: string;
 };
 
 export function VideoPreview({
   title,
   videoId,
-  thumbnailUrl
+  thumbnailUrl,
+  badgeLabel = "Story player",
+  playLabel = "Start listening",
+  sizes = "(max-width: 960px) 100vw, 66vw"
 }: VideoPreviewProps) {
   const [isActive, setIsActive] = useState(false);
 
@@ -43,14 +49,14 @@ export function VideoPreview({
           aria-hidden="true"
           className="video-preview__image"
           fill
-          sizes="(max-width: 960px) 100vw, 33vw"
+          sizes={sizes}
           src={thumbnailUrl}
         />
         <span className="video-preview__content">
-          <span className="video-preview__badge">Watch now</span>
+          <span className="video-preview__badge">{badgeLabel}</span>
           <span className="video-preview__play">
             <span aria-hidden="true" className="video-preview__icon" />
-            Play audiobook
+            {playLabel}
           </span>
         </span>
       </button>

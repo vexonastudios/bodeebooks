@@ -18,6 +18,11 @@ type AudiobookFeedResult = {
   syncedAt: string;
 };
 
+type YoutubeOEmbedResponse = {
+  title?: string;
+  thumbnail_url?: string;
+};
+
 function escapeTag(tagName: string) {
   return tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -71,6 +76,39 @@ function formatPublished(dateString?: string) {
   }).format(date);
 }
 
+function isYoutubeVideoId(value: string) {
+  return /^[A-Za-z0-9_-]{11}$/.test(value);
+}
+
+export function slugifyTitle(title: string) {
+  const normalized = title
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return (
+    normalized
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-{2,}/g, "-") || "audiobook"
+  );
+}
+
+export function getYoutubeWatchUrl(videoId: string) {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+export function getAudiobookPath({
+  title,
+  videoId
+}: Pick<AudiobookEntry, "title" | "videoId">) {
+  if (!videoId) {
+    return "/audiobooks";
+  }
+
+  return `/audiobooks/${videoId}/${slugifyTitle(title)}`;
+}
+
 function summarizeDescription(description?: string) {
   if (!description) {
     return "Free audiobook release from the Bodee Books YouTube channel.";
@@ -110,6 +148,24 @@ async function fetchText(url: string, revalidate: number) {
   }
 
   return response.text();
+}
+
+async function fetchJson<T>(url: string, revalidate: number) {
+  const response = await fetch(url, {
+    next: {
+      revalidate
+    },
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; BodeeBooksBot/1.0; +https://bodeebooks.com)"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch failed for ${url} with ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
 }
 
 async function resolveChannelId() {
@@ -195,5 +251,42 @@ export async function getLatestAudiobooks(limit = 6): Promise<AudiobookFeedResul
       source: "fallback",
       syncedAt: new Date().toISOString()
     };
+  }
+}
+
+export async function getAudiobookByVideoId(videoId: string) {
+  if (!isYoutubeVideoId(videoId)) {
+    return null;
+  }
+
+  const latestAudiobooks = await getLatestAudiobooks(15);
+  const feedMatch = latestAudiobooks.items.find((item) => item.videoId === videoId);
+
+  if (feedMatch) {
+    return feedMatch;
+  }
+
+  try {
+    const youtubeUrl = getYoutubeWatchUrl(videoId);
+    const oembed = await fetchJson<YoutubeOEmbedResponse>(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(youtubeUrl)}&format=json`,
+      3600
+    );
+
+    if (!oembed.title) {
+      return null;
+    }
+
+    return {
+      title: oembed.title,
+      summary: "Free audiobook release from the Bodee Books YouTube library.",
+      href: youtubeUrl,
+      videoId,
+      publishedLabel: "Featured audiobook",
+      thumbnailUrl: oembed.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      source: "youtube"
+    } satisfies AudiobookEntry;
+  } catch {
+    return null;
   }
 }

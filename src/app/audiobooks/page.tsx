@@ -20,8 +20,8 @@ export default async function AudiobooksPage() {
             <p className="section-heading__eyebrow">Featured audiobooks</p>
             <h1 className="page-header__title">Press play on your next favorite story.</h1>
             <p className="page-header__copy">
-              Browse the latest Bodee Books listens, from adventurous classics to
-              long-form family stories ready for quiet time, bedtime, or a road trip.
+              Browse the latest Bodee Books listens, then open any story page for a
+              cleaner listening view, a quick summary, and a player ready when you are.
             </p>
           </div>
         </header>
