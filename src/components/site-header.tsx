@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { siteConfig } from "@/lib/site-config";
@@ -13,8 +14,16 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container site-header__inner">
         <Link className="brand" href="/">
+          <Image
+            alt="Bodee Books logo"
+            className="brand__logo"
+            height={260}
+            priority
+            src="/bodeebooks-logo.png"
+            width={866}
+          />
           <span className="brand__eyebrow">Stories to hear, read, and play</span>
-          <span className="brand__name">{siteConfig.name}</span>
+          <span className="sr-only">{siteConfig.name}</span>
         </Link>
 
         <nav aria-label="Primary" className="site-nav">
