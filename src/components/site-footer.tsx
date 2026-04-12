@@ -9,8 +9,8 @@ export function SiteFooter() {
         <div>
           <p className="site-footer__title">{siteConfig.name}</p>
           <p className="site-footer__copy">
-            Built for a GitHub to Vercel publishing flow with room for audiobooks,
-            books, and game releases to grow side by side.
+            A growing home for classic stories, family listening, featured books,
+            and playful learning for curious kids.
           </p>
         </div>
 
