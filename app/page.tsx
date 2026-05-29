@@ -6,9 +6,30 @@ import booksData from "@/data/books.json";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Bodee Books – Free Classic Audiobooks",
+  title: "Free Multi-voice Classic Audiobooks – Hardy Boys, Ted Scott, Penny Parker & More",
   description:
-    "Listen to free classic audiobooks — Hardy Boys, Ted Scott Flying Stories, Penny Parker, Mercer Boys, and more. All embedded right here, no app needed.",
+    "Listen free to dramatized, multi-voice classic audiobooks. Hardy Boys mysteries, Ted Scott flying adventures, Penny Parker detective stories, Mercer Boys, and more — all free, no app needed, stream right in your browser.",
+  keywords: [
+    "free multi-voice audiobooks",
+    "Hardy Boys audiobook free",
+    "Ted Scott Flying Stories audiobook",
+    "Penny Parker audiobook free",
+    "Mercer Boys audiobook",
+    "classic children's audiobooks",
+    "dramatized audiobooks free",
+    "listen to audiobooks online free",
+    "full cast audiobooks",
+  ],
+  alternates: {
+    canonical: "https://bodeebooks.com",
+  },
+  openGraph: {
+    title: "Bodee Books – Free Multi-voice Classic Audiobooks",
+    description:
+      "Hardy Boys, Ted Scott, Penny Parker, and more — dramatized multi-voice audiobooks, free to stream.",
+    url: "https://bodeebooks.com",
+    type: "website",
+  },
 };
 
 type Book = (typeof booksData)[number];

@@ -23,6 +23,7 @@ export default function Navbar() {
           <BookOpen size={22} strokeWidth={2} className={styles.logoIcon} />
           <span className={styles.logoText}>
             Bodee<span className={styles.logoAccent}>Books</span>
+            <span className={styles.logoTagline}>Free Multi-voice Audiobooks</span>
           </span>
         </Link>
 

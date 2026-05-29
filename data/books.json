@@ -21,7 +21,108 @@
     "youtubeVideoId": "Rc-_i7mjt9A",
     "description": "Frank and Joe Hardy investigate a mysterious house on the cliff that is rumored to be haunted — but something far more dangerous is hiding inside.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - The Haunted House",
+        "timestamp": 34
+      },
+      {
+        "title": "2 - The Storm",
+        "timestamp": 659
+      },
+      {
+        "title": "3 - Empty Tool Boxes",
+        "timestamp": 1210
+      },
+      {
+        "title": "4 - The Chase in the Bay",
+        "timestamp": 1746
+      },
+      {
+        "title": "5 - The Rescue",
+        "timestamp": 2222
+      },
+      {
+        "title": "6 - Snackley",
+        "timestamp": 2782
+      },
+      {
+        "title": "7 - Bound and Gagged",
+        "timestamp": 3417
+      },
+      {
+        "title": "8 - The Stolen Witness",
+        "timestamp": 3841
+      },
+      {
+        "title": "9 - The Strange Message",
+        "timestamp": 4483
+      },
+      {
+        "title": "10 - The Vain Search",
+        "timestamp": 4966
+      },
+      {
+        "title": "11 - The Cap on the Peg",
+        "timestamp": 5782
+      },
+      {
+        "title": "12 - Pointed Questions",
+        "timestamp": 6276
+      },
+      {
+        "title": "13 - A Plan of Attack",
+        "timestamp": 6741
+      },
+      {
+        "title": "14 - Private Property",
+        "timestamp": 7234
+      },
+      {
+        "title": "15 - Smugglers",
+        "timestamp": 7738
+      },
+      {
+        "title": "16 - The Secret Passage",
+        "timestamp": 8322
+      },
+      {
+        "title": "17 - The Chamber in the Cliff",
+        "timestamp": 8785
+      },
+      {
+        "title": "18 - A Startling Discovery",
+        "timestamp": 9311
+      },
+      {
+        "title": "19 - Captured",
+        "timestamp": 9728
+      },
+      {
+        "title": "20 - Dire Threats",
+        "timestamp": 10340
+      },
+      {
+        "title": "21 - Quick Work",
+        "timestamp": 11250
+      },
+      {
+        "title": "22 - Into the Haunted House",
+        "timestamp": 11781
+      },
+      {
+        "title": "23 - Rescue",
+        "timestamp": 12267
+      },
+      {
+        "title": "24 - The Round-Up",
+        "timestamp": 12622
+      }
+    ]
   },
   {
     "slug": "hardy-boys-secret-old-mill",
@@ -117,7 +218,112 @@
     "youtubeVideoId": "THhmwhmE4bQ",
     "description": "Young aviator Ted Scott makes an audacious solo flight across the Atlantic in this exciting series opener, inspired by the era of daring pioneer pilots.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "- 1 - In Terrible Danger",
+        "timestamp": 35
+      },
+      {
+        "title": "- 2 - Trouble Brewing",
+        "timestamp": 824
+      },
+      {
+        "title": "- 3 - Two Against One",
+        "timestamp": 1500
+      },
+      {
+        "title": "- 4 - A Growing Hope",
+        "timestamp": 2024
+      },
+      {
+        "title": "- 5 - Flying High",
+        "timestamp": 2647
+      },
+      {
+        "title": "- 6 - A New Friend",
+        "timestamp": 3353
+      },
+      {
+        "title": "- 7 - Discomfited Bullies",
+        "timestamp": 4059
+      },
+      {
+        "title": "- 8 - The Aviation School",
+        "timestamp": 4719
+      },
+      {
+        "title": "- 9 - A Crooked Deal",
+        "timestamp": 5330
+      },
+      {
+        "title": "- 10 - Starting In",
+        "timestamp": 5933
+      },
+      {
+        "title": "- 11 - The Blinding Fog",
+        "timestamp": 6535
+      },
+      {
+        "title": "- 12 - A Jump for Life",
+        "timestamp": 7180
+      },
+      {
+        "title": "- 13 - On the Climb",
+        "timestamp": 7883
+      },
+      {
+        "title": "- 14 - A Daring Exploit",
+        "timestamp": 8953
+      },
+      {
+        "title": "- 15 - Challenging Feats",
+        "timestamp": 9456
+      },
+      {
+        "title": "- 16 - Nipped In The Bud",
+        "timestamp": 9953
+      },
+      {
+        "title": "- 17 - The Air Mail",
+        "timestamp": 10447
+      },
+      {
+        "title": "- 18 - Winning Hapworth",
+        "timestamp": 10957
+      },
+      {
+        "title": "- 19 - From Coast to Coast",
+        "timestamp": 11723
+      },
+      {
+        "title": "- 20 - Off for Paris",
+        "timestamp": 12242
+      },
+      {
+        "title": "- 21 - Sea and Sky",
+        "timestamp": 12643
+      },
+      {
+        "title": "- 22 - The Grip of the Storm",
+        "timestamp": 13003
+      },
+      {
+        "title": "- 23 - Land Ho!",
+        "timestamp": 13414
+      },
+      {
+        "title": "- 24 - Swooping Down upon Paris",
+        "timestamp": 13796
+      },
+      {
+        "title": "- 25 - The Triumphal Journey",
+        "timestamp": 14227
+      }
+    ]
   },
   {
     "slug": "ted-scott-rescued-in-the-clouds",
@@ -129,7 +335,112 @@
     "youtubeVideoId": "EIKGf20Rmsg",
     "description": "Ted Scott takes to the skies again in a thrilling rescue mission, battling storms and danger high above the clouds.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - A Terrific Explosion",
+        "timestamp": 35
+      },
+      {
+        "title": "2 - A Race for Life",
+        "timestamp": 360
+      },
+      {
+        "title": "3 - By a Hair’s Breadth",
+        "timestamp": 780
+      },
+      {
+        "title": "4 - The Net Draws Closer",
+        "timestamp": 1200
+      },
+      {
+        "title": "5 - The Showdown",
+        "timestamp": 1680
+      },
+      {
+        "title": "6 - The Cornered Rat",
+        "timestamp": 2040
+      },
+      {
+        "title": "7 - A Puzzling Problem",
+        "timestamp": 2520
+      },
+      {
+        "title": "8 - The Furtive Circus",
+        "timestamp": 2820
+      },
+      {
+        "title": "9 - A Close Call",
+        "timestamp": 3360
+      },
+      {
+        "title": "10 - A Villainous Plot",
+        "timestamp": 3720
+      },
+      {
+        "title": "11 - A Word of Warning",
+        "timestamp": 4560
+      },
+      {
+        "title": "12 - On the Trail",
+        "timestamp": 5040
+      },
+      {
+        "title": "13 - Winging Through the Night",
+        "timestamp": 5400
+      },
+      {
+        "title": "14 - The Tumbling Waters",
+        "timestamp": 5820
+      },
+      {
+        "title": "15 - On the Edge of Peril",
+        "timestamp": 6300
+      },
+      {
+        "title": "16 - Scary Enemies",
+        "timestamp": 6660
+      },
+      {
+        "title": "17 - Treed",
+        "timestamp": 7320
+      },
+      {
+        "title": "18 - From the Jaws of Death",
+        "timestamp": 7620
+      },
+      {
+        "title": "19 - The Burning Plane",
+        "timestamp": 7920
+      },
+      {
+        "title": "20 - A Sinister Shape",
+        "timestamp": 8160
+      },
+      {
+        "title": "21 - The Sound of Rattles",
+        "timestamp": 8520
+      },
+      {
+        "title": "22 - Writhing Coils",
+        "timestamp": 8760
+      },
+      {
+        "title": "23 - A Startling Discovery",
+        "timestamp": 9120
+      },
+      {
+        "title": "24 - Rascality Unmasked",
+        "timestamp": 9360
+      },
+      {
+        "title": "25 - The Sweets of Victory",
+        "timestamp": 9660
+      }
+    ]
   },
   {
     "slug": "ted-scott-lost-in-the-wilderness",
@@ -213,7 +524,108 @@
     "youtubeVideoId": "XsSjkYqG7mk",
     "description": "The Mercer Boys set off on a summer cruise aboard their boat the Lassie — only to find themselves entangled in a mystery that threatens their lives.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "- Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - The Finishing Touches",
+        "timestamp": 13
+      },
+      {
+        "title": "2 - The Marine Bandits",
+        "timestamp": 749
+      },
+      {
+        "title": "3 - The Start of the Cruise",
+        "timestamp": 1277
+      },
+      {
+        "title": "4 - Stormy Weather",
+        "timestamp": 1935
+      },
+      {
+        "title": "5 - Mystery Island",
+        "timestamp": 2609
+      },
+      {
+        "title": "6 - The Inner Room",
+        "timestamp": 3178
+      },
+      {
+        "title": "7 - Jim Starts Out",
+        "timestamp": 3755
+      },
+      {
+        "title": "8 - The Old Captain",
+        "timestamp": 4447
+      },
+      {
+        "title": "9 - Alone on the Sloop",
+        "timestamp": 5229
+      },
+      {
+        "title": "10 - Blown Out to Sea",
+        "timestamp": 5688
+      },
+      {
+        "title": "11 - The Storage Room",
+        "timestamp": 6406
+      },
+      {
+        "title": "12 - The Beach Party",
+        "timestamp": 6993
+      },
+      {
+        "title": "13 - The Red Lamp",
+        "timestamp": 7699
+      },
+      {
+        "title": "14 - Terry’s Adventure",
+        "timestamp": 8392
+      },
+      {
+        "title": "15 - The River Barge",
+        "timestamp": 9383
+      },
+      {
+        "title": "16 - An Important Clue",
+        "timestamp": 10186
+      },
+      {
+        "title": "17 - Aboard the Wreck",
+        "timestamp": 11073
+      },
+      {
+        "title": "18 - The Ghost of the “Alaskan”",
+        "timestamp": 12101
+      },
+      {
+        "title": "19 - The Escape",
+        "timestamp": 12935
+      },
+      {
+        "title": "20 - The Voyage Resumed",
+        "timestamp": 13833
+      },
+      {
+        "title": "21 - The “Black Mummy”",
+        "timestamp": 14355
+      },
+      {
+        "title": "22 - The Secret of the Freighter",
+        "timestamp": 14679
+      },
+      {
+        "title": "23 - The Chandler’s Shop",
+        "timestamp": 15297
+      },
+      {
+        "title": "24 - The End of the Cruise",
+        "timestamp": 15849
+      }
+    ]
   },
   {
     "slug": "the-prince-and-the-pauper",

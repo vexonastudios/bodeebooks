@@ -20,8 +20,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const series = seriesData.find((s) => s.slug === slug);
   if (!series) return {};
   return {
-    title: `${series.title} Audiobooks – Bodee Books`,
-    description: series.description,
+    title: `${series.title} – Free Multi-voice Audiobooks`,
+    description: `Listen free to multi-voice, dramatized audiobooks of ${series.title} by ${series.author}. ${series.description} Stream instantly — no app, no account needed.`,
+    keywords: [
+      `${series.title} audiobook`,
+      `${series.title} free audiobook`,
+      `${series.author} audiobook`,
+      "multi-voice audiobook",
+      "free classic audiobook",
+      "dramatized audiobook",
+    ],
+    alternates: {
+      canonical: `https://bodeebooks.com/series/${series.slug}`,
+    },
+    openGraph: {
+      title: `${series.title} – Free Multi-voice Audiobooks | Bodee Books`,
+      description: series.description,
+      url: `https://bodeebooks.com/series/${series.slug}`,
+      type: "website",
+    },
   };
 }
 
