@@ -3,54 +3,28 @@
     "slug": "hardy-boys",
     "title": "Hardy Boys",
     "author": "Franklin W. Dixon",
-    "description": "America's most beloved boy detectives — Frank and Joe Hardy solve mysteries in Bayport and beyond. These classic adventure stories have thrilled readers since the 1920s.",
-    "coverVideoId": "dQw4w9WgXcQ",
-    "bookCount": 12,
+    "description": "America's most beloved boy detectives — Frank and Joe Hardy solve mysteries that leave adults baffled. Multi-voice dramatized audiobooks from Bodee Books.",
     "featured": true
   },
   {
     "slug": "ted-scott-flying-stories",
     "title": "Ted Scott Flying Stories",
     "author": "Franklin W. Dixon",
-    "description": "Follow the daring aviator Ted Scott on record-breaking flights across oceans and continents. Classic aviation adventure for the golden age of flight.",
-    "coverVideoId": "dQw4w9WgXcQ",
-    "bookCount": 8,
+    "description": "Daring young aviator Ted Scott takes on the sky in thrilling adventures inspired by the golden age of aviation.",
     "featured": true
   },
   {
     "slug": "penny-parker",
-    "title": "Penny Parker",
-    "author": "Mildred A. Wirt Benson",
-    "description": "A sharp-witted girl reporter who solves mysteries wherever her investigations lead. Penny Parker is clever, brave, and always on the story.",
-    "coverVideoId": "dQw4w9WgXcQ",
-    "bookCount": 6,
+    "title": "Penny Parker Mystery Stories",
+    "author": "Mildred A. Wirt",
+    "description": "Penny Parker is a sharp-witted young reporter who can't resist a mystery — no matter how dangerous it turns out to be.",
     "featured": true
   },
   {
     "slug": "mercer-boys",
     "title": "Mercer Boys",
     "author": "Capwell Wyckoff",
-    "description": "The Mercer boys — Don and Cliff — tackle mystery and adventure at school, at sea, and in the wild outdoors.",
-    "coverVideoId": "dQw4w9WgXcQ",
-    "bookCount": 5,
-    "featured": true
-  },
-  {
-    "slug": "boy-spies",
-    "title": "Boy Spies",
-    "author": "James Otis",
-    "description": "Thrilling tales of young patriots who spied for the American cause during the Revolutionary War.",
-    "coverVideoId": "dQw4w9WgXcQ",
-    "bookCount": 4,
-    "featured": false
-  },
-  {
-    "slug": "outdoor-chums",
-    "title": "Outdoor Chums",
-    "author": "Captain Quincy Allen",
-    "description": "Four friends explore the wilderness, hunt, fish, and face adventure in the great outdoors of early America.",
-    "coverVideoId": "dQw4w9WgXcQ",
-    "bookCount": 4,
+    "description": "The Mercer Boys set off on adventures by sea and land in this classic boys' series from the early 20th century.",
     "featured": false
   }
 ]
