@@ -22,7 +22,7 @@ export default function BookCard({ book }: { book: Book }) {
       <div className={styles.thumb}>
         <Image
           src={thumbUrl}
-          alt={book.title}
+          alt={`${book.title} – Free multi-voice audiobook`}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className={styles.thumbImg}
@@ -40,7 +40,7 @@ export default function BookCard({ book }: { book: Book }) {
 
       <div className={styles.info}>
         {book.seriesTitle && (
-          <span className={styles.series}>{book.seriesTitle}</span>
+          <h2 className={styles.series}>{book.seriesTitle}</h2>
         )}
         <h3 className={styles.title}>{book.title}</h3>
         <p className={styles.author}>{book.author}</p>

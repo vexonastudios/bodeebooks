@@ -60,6 +60,34 @@ export default function ListenClient({ book, prevBook, nextBook }: ListenClientP
           <span className={styles.breadCurrent}>{book.title}</span>
         </nav>
 
+        {/* Structured Data (JSON-LD) for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "AudioObject",
+              name: book.title,
+              description: book.description,
+              creator: {
+                "@type": "Person",
+                name: book.author,
+              },
+              url: `https://bodeebooks.com/listen/${book.slug}/`,
+              embedUrl: `https://www.youtube.com/embed/${book.youtubeVideoId}`,
+              thumbnailUrl: `https://img.youtube.com/vi/${book.youtubeVideoId}/maxresdefault.jpg`,
+              inLanguage: "en",
+              isAccessibleForFree: true,
+              partOfSeries: book.seriesTitle
+                ? {
+                    "@type": "CreativeWorkSeries",
+                    name: book.seriesTitle,
+                  }
+                : undefined,
+            }),
+          }}
+        />
+
         {/* Main layout */}
         <div className={styles.layout}>
 

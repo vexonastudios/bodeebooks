@@ -6,7 +6,7 @@ import booksData from "@/data/books.json";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Free Multi-voice Classic Audiobooks – Hardy Boys, Ted Scott, Penny Parker & More",
+  title: "Bodee Books – Free Multi-voice Classic Audiobooks",
   description:
     "Listen free to dramatized, multi-voice classic audiobooks. Hardy Boys mysteries, Ted Scott flying adventures, Penny Parker detective stories, Mercer Boys, and more — all free, no app needed, stream right in your browser.",
   keywords: [
