@@ -242,7 +242,7 @@ export default function GrepToolsClient() {
           <p className={styles.desc}>
             A toolbox for editing books in Adobe InDesign. Copy any expression directly into InDesign&apos;s
             Find/Change dialog. When using a replacement value of <code>$1</code>, the expression removes
-            formatting markers so you can then apply styles with a hotkey (e.g., <kbd>N + H + F1</kbd> for italics).
+            formatting markers so you can then apply styles with a hotkey (e.g., <kbd className={styles.kbd}>N + H + F1</kbd> for italics).
           </p>
         </header>
 

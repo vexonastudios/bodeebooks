@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Wrench, Youtube, Menu, X } from "lucide-react";
+import { BookOpen, Wrench, YoutubeIcon, Menu, X } from "lucide-react";
 import { useState } from "react";
 import styles from "./Navbar.module.css";
 
@@ -46,7 +46,7 @@ export default function Navbar() {
               rel="noopener noreferrer"
               className={styles.ytLink}
             >
-              <Youtube size={15} strokeWidth={2} />
+            <YoutubeIcon size={15} strokeWidth={2} />
               YouTube
             </a>
           </li>
@@ -83,7 +83,7 @@ export default function Navbar() {
             className={styles.mobileLink}
             onClick={() => setMobileOpen(false)}
           >
-            <Youtube size={16} />
+            <YoutubeIcon size={16} />
             YouTube Channel
           </a>
         </div>
