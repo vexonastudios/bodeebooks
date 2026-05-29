@@ -1,0 +1,200 @@
+.page {
+  padding: 40px 0 80px;
+}
+
+.inner {}
+
+/* Header */
+.header {
+  max-width: 720px;
+  margin-bottom: 56px;
+}
+
+.badge {
+  margin-bottom: 16px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
+.desc {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.desc code {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.875em;
+  color: var(--green-dark);
+}
+
+/* Sections */
+.section {
+  margin-bottom: 64px;
+}
+
+/* Tool grid */
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 20px;
+}
+
+/* Tool card */
+.tool {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.tool:hover {
+  border-color: var(--green-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+.toolHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.toolIcon {
+  color: var(--green);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.toolTitle {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.toolDesc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 16px;
+  margin-left: 30px;
+}
+
+.toolDesc code {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.85em;
+  color: var(--green-dark);
+}
+
+.toolDesc p {
+  margin-bottom: 8px;
+}
+
+.toolDesc p:last-child {
+  margin-bottom: 0;
+}
+
+/* Code block */
+.codeBlock {
+  margin-top: 12px;
+  margin-left: 30px;
+}
+
+.codeLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.codeInner {
+  position: relative;
+}
+
+.codeInner pre {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.codeInner pre code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.copyBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.copyBtn:hover {
+  border-color: var(--green-mid);
+  color: var(--green-dark);
+  background: var(--green-light);
+}
+
+.copyBtn.copied {
+  background: var(--green-light);
+  border-color: var(--green-mid);
+  color: var(--green-dark);
+}
+
+/* kbd */
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125em;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1024px) {
+  .toolGrid {
+    grid-template-columns: 1fr;
+  }
+}
