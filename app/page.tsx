@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BookOpen, Headphones, YoutubeIcon } from "lucide-react";
+import { BookOpen, Headphones, ExternalLink } from "lucide-react";
 import SeriesShelf from "@/components/SeriesShelf";
 import seriesData from "@/data/series.json";
 import booksData from "@/data/books.json";
@@ -55,7 +55,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className={styles.heroYt}
               >
-                <YoutubeIcon size={16} />
+                <ExternalLink size={16} />
                 YouTube Channel
               </a>
             </div>

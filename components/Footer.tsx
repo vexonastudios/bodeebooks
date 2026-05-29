@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, YoutubeIcon, Wrench } from "lucide-react";
+import { BookOpen, ExternalLink, Wrench } from "lucide-react";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
@@ -37,7 +37,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className={styles.link}
             >
-              <YoutubeIcon size={13} />
+              <ExternalLink size={13} />
               YouTube Channel
             </a>
           </div>
