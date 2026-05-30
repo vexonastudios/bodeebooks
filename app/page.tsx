@@ -63,7 +63,7 @@ export default function HomePage() {
             </h1>
             <p className={styles.heroDesc}>
               Explore beloved series — Hardy Boys, Ted Scott, Penny Parker, and more.
-              Stream every audiobook directly in your browser, powered by YouTube.
+              Experience these classic stories brought to life as fully dramatized, multi-voice audiobooks.
             </p>
             <div className={styles.heroActions}>
               <a href="#audiobooks" className={styles.heroCta}>
