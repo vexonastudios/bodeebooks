@@ -52,52 +52,78 @@ export default function HomePage() {
       {/* Hero */}
       <section className={styles.hero}>
         <div className={`container ${styles.heroInner}`}>
-          <div className={styles.heroContent}>
-            <div className={styles.heroLabel}>
-              <Headphones size={14} />
-              Free Audiobooks
+          
+          {/* Left Column: Text & Stats */}
+          <div className={styles.heroLeft}>
+            <div className={styles.heroContent}>
+              <div className={styles.heroLabel}>
+                <Headphones size={14} />
+                Free Audiobooks
+              </div>
+              <h1 className={styles.heroTitle}>
+                Classic Stories,<br />
+                <span className={styles.heroAccent}>Free to Listen</span>
+              </h1>
+              <p className={styles.heroDesc}>
+                Explore beloved series — Hardy Boys, Ted Scott, Penny Parker, and more.
+                Experience these classic stories brought to life as fully dramatized, multi-voice audiobooks.
+              </p>
+              <div className={styles.heroActions}>
+                <a href="#audiobooks" className={styles.heroCta}>
+                  <BookOpen size={16} />
+                  Browse Audiobooks
+                </a>
+                <a
+                  href="https://www.youtube.com/@bodeebooks"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.heroYt}
+                >
+                  <ExternalLink size={16} />
+                  YouTube Channel
+                </a>
+              </div>
             </div>
-            <h1 className={styles.heroTitle}>
-              Classic Stories,<br />
-              <span className={styles.heroAccent}>Free to Listen</span>
-            </h1>
-            <p className={styles.heroDesc}>
-              Explore beloved series — Hardy Boys, Ted Scott, Penny Parker, and more.
-              Experience these classic stories brought to life as fully dramatized, multi-voice audiobooks.
-            </p>
-            <div className={styles.heroActions}>
-              <a href="#audiobooks" className={styles.heroCta}>
-                <BookOpen size={16} />
-                Browse Audiobooks
-              </a>
-              <a
-                href="https://www.youtube.com/@bodeebooks"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.heroYt}
-              >
-                <ExternalLink size={16} />
-                YouTube Channel
-              </a>
+
+            <div className={styles.heroStats}>
+              <div className={styles.stat}>
+                <span className={styles.statNum}>{seriesData.length}</span>
+                <span className={styles.statLabel}>Series</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.stat}>
+                <span className={styles.statNum}>{booksData.length}+</span>
+                <span className={styles.statLabel}>Audiobooks</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.stat}>
+                <span className={styles.statNum}>Free</span>
+                <span className={styles.statLabel}>Always</span>
+              </div>
             </div>
           </div>
 
-          <div className={styles.heroStats}>
-            <div className={styles.stat}>
-              <span className={styles.statNum}>{seriesData.length}</span>
-              <span className={styles.statLabel}>Series</span>
-            </div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}>
-              <span className={styles.statNum}>{booksData.length}+</span>
-              <span className={styles.statLabel}>Audiobooks</span>
-            </div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}>
-              <span className={styles.statNum}>Free</span>
-              <span className={styles.statLabel}>Always</span>
+          {/* Right Column: Visual Collage */}
+          <div className={styles.heroRight}>
+            <div className={styles.collage}>
+              <img 
+                src="https://img.youtube.com/vi/xA60LcdimSg/maxresdefault.jpg" 
+                alt="Hardy Boys - The Tower Treasure" 
+                className={`${styles.collageImg} ${styles.img1}`} 
+              />
+              <img 
+                src="https://img.youtube.com/vi/THhmwhmE4bQ/maxresdefault.jpg" 
+                alt="Ted Scott - Daring Long-Distance Flight" 
+                className={`${styles.collageImg} ${styles.img2}`} 
+              />
+              <img 
+                src="https://img.youtube.com/vi/CS5DShYwHVI/maxresdefault.jpg" 
+                alt="Penny Parker - Danger at the Drawbridge" 
+                className={`${styles.collageImg} ${styles.img3}`} 
+              />
             </div>
           </div>
+
         </div>
       </section>
 
