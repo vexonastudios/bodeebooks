@@ -73,9 +73,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://bodeebooks.com",
   },
-  icons: {
-    icon: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({
