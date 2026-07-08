@@ -1,0 +1,19 @@
+{
+  "redirects": [
+    {
+      "source": "/category/:path*",
+      "destination": "/series/",
+      "permanent": true
+    },
+    {
+      "source": "/tag/:path*",
+      "destination": "/series/",
+      "permanent": true
+    },
+    {
+      "source": "/author/:path*",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
+}
