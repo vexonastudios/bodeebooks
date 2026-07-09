@@ -12,7 +12,7 @@ export default function Navbar() {
 
   const links = [
     { href: "/", label: "Audiobooks", icon: BookOpen },
-    { href: "https://typingflyinggame.vercel.app/", label: "Games Hub", icon: Gamepad2, external: true },
+    { href: "https://games.bodeebooks.com/", label: "Games Hub", icon: Gamepad2, external: true },
     { href: "/tools/grep-indesign", label: "Tools", icon: Wrench },
   ];
 

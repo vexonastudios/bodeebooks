@@ -12,7 +12,7 @@ export default function GamesBanner() {
       color: "#e6601b",
       bg: "linear-gradient(180deg, #4ea3f2 0%, #2b7bc4 100%)",
       Icon: Tractor,
-      gameUrl: "https://typingflyinggame.vercel.app/runner.html",
+      gameUrl: "https://games.bodeebooks.com/runner",
     },
     {
       title: "Duck Hunt Duel",
@@ -22,7 +22,7 @@ export default function GamesBanner() {
       color: "#369d6f",
       bg: "linear-gradient(180deg, #1b3d2b 0%, #0d2116 100%)",
       Icon: Target,
-      gameUrl: "https://typingflyinggame.vercel.app/duel.html",
+      gameUrl: "https://games.bodeebooks.com/duel",
     },
     {
       title: "Spelling Bee",
@@ -32,7 +32,7 @@ export default function GamesBanner() {
       color: "#e6601b",
       bg: "linear-gradient(180deg, #452187 0%, #2a0b5c 100%)",
       Icon: Mic,
-      gameUrl: "https://typingflyinggame.vercel.app/spelling.html",
+      gameUrl: "https://games.bodeebooks.com/spelling",
     },
     {
       title: "Connect 4 Duel",
@@ -42,7 +42,7 @@ export default function GamesBanner() {
       color: "#3a56e4",
       bg: "linear-gradient(180deg, #0f3d99 0%, #061e4f 100%)",
       Icon: Grid3X3,
-      gameUrl: "https://typingflyinggame.vercel.app/connect4.html",
+      gameUrl: "https://games.bodeebooks.com/connect4",
     }
   ];
 
@@ -53,7 +53,7 @@ export default function GamesBanner() {
           <h2 className={styles.title}>Play Educational Games</h2>
           <p className={styles.subtitle}>Test your typing and knowledge against AI or friends.</p>
         </div>
-        <a href="https://typingflyinggame.vercel.app/" target="_blank" rel="noopener noreferrer" className={styles.viewAll}>
+        <a href="https://games.bodeebooks.com/" target="_blank" rel="noopener noreferrer" className={styles.viewAll}>
           View Games Hub <Gamepad2 size={16} />
         </a>
       </div>
