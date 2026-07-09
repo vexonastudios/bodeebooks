@@ -130,8 +130,11 @@ export default function HomePage() {
       </section>
 
       {/* Audiobook Shelves */}
-      <div id="audiobooks" className={`container ${styles.content}`}>
+      <div className={`container ${styles.content}`}>
         <GamesBanner />
+
+        {/* Anchor for browse audiobooks button to skip the games banner */}
+        <div id="audiobooks" style={{ scrollMarginTop: "80px" }}></div>
 
         {/* Featured series */}
         {featuredSeries.map((series) => {
