@@ -28,7 +28,7 @@ export default function GamesBanner() {
       title: "Spelling Bee",
       category: "SPELLING",
       players: "2-6 PLAYERS",
-      desc: "Step up to the mic! Listen to the AI narrator dictate words and race to type them correctly for the highest score.",
+      desc: "Step up to the mic! Listen to the narrator dictate words and race to type them correctly for the highest score.",
       color: "#e6601b",
       bg: "linear-gradient(180deg, #452187 0%, #2a0b5c 100%)",
       Icon: Mic,
