@@ -1,6 +1,8 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import { BookOpen, Headphones, ExternalLink } from "lucide-react";
 import SeriesShelf from "@/components/SeriesShelf";
+import GamesBanner from "@/components/GamesBanner";
 import seriesData from "@/data/series.json";
 import booksData from "@/data/books.json";
 import styles from "./page.module.css";
@@ -135,12 +137,14 @@ export default function HomePage() {
           const books = getBooksForSeries(series.slug);
           if (books.length === 0) return null;
           return (
-            <SeriesShelf
-              key={series.slug}
-              title={series.title}
-              seriesSlug={series.slug}
-              books={books}
-            />
+            <Fragment key={series.slug}>
+              {series.slug === "ted-scott-flying-stories" && <GamesBanner />}
+              <SeriesShelf
+                title={series.title}
+                seriesSlug={series.slug}
+                books={books}
+              />
+            </Fragment>
           );
         })}
 

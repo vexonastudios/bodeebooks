@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Wrench, ExternalLink, Menu, X } from "lucide-react";
+import { BookOpen, Wrench, ExternalLink, Menu, X, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 import styles from "./Navbar.module.css";
 
@@ -12,6 +12,7 @@ export default function Navbar() {
 
   const links = [
     { href: "/", label: "Audiobooks", icon: BookOpen },
+    { href: "https://typingflyinggame.vercel.app/", label: "Games Hub", icon: Gamepad2, external: true },
     { href: "/tools/grep-indesign", label: "Tools", icon: Wrench },
   ];
 
@@ -29,15 +30,27 @@ export default function Navbar() {
 
         {/* Desktop nav links */}
         <ul className={styles.links}>
-          {links.map(({ href, label, icon: Icon }) => (
+          {links.map(({ href, label, icon: Icon, external }) => (
             <li key={href}>
-              <Link
-                href={href}
-                className={`${styles.link} ${pathname === href ? styles.active : ""}`}
-              >
-                <Icon size={15} strokeWidth={2} />
-                {label}
-              </Link>
+              {external ? (
+                <a
+                  href={href}
+                  className={`${styles.link} ${pathname === href ? styles.active : ""}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icon size={15} strokeWidth={2} />
+                  {label}
+                </a>
+              ) : (
+                <Link
+                  href={href}
+                  className={`${styles.link} ${pathname === href ? styles.active : ""}`}
+                >
+                  <Icon size={15} strokeWidth={2} />
+                  {label}
+                </Link>
+              )}
             </li>
           ))}
           <li>
@@ -66,16 +79,30 @@ export default function Navbar() {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className={styles.mobileMenu}>
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`${styles.mobileLink} ${pathname === href ? styles.mobileActive : ""}`}
-              onClick={() => setMobileOpen(false)}
-            >
-              <Icon size={16} />
-              {label}
-            </Link>
+          {links.map(({ href, label, icon: Icon, external }) => (
+            external ? (
+              <a
+                key={href}
+                href={href}
+                className={`${styles.mobileLink} ${pathname === href ? styles.mobileActive : ""}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Icon size={16} />
+                {label}
+              </a>
+            ) : (
+              <Link
+                key={href}
+                href={href}
+                className={`${styles.mobileLink} ${pathname === href ? styles.mobileActive : ""}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <Icon size={16} />
+                {label}
+              </Link>
+            )
           ))}
           <a
             href="https://www.youtube.com/@bodeebooks"
