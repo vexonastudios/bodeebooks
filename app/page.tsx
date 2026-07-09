@@ -131,20 +131,19 @@ export default function HomePage() {
 
       {/* Audiobook Shelves */}
       <div id="audiobooks" className={`container ${styles.content}`}>
+        <GamesBanner />
 
         {/* Featured series */}
         {featuredSeries.map((series) => {
           const books = getBooksForSeries(series.slug);
           if (books.length === 0) return null;
           return (
-            <Fragment key={series.slug}>
-              {series.slug === "ted-scott-flying-stories" && <GamesBanner />}
-              <SeriesShelf
-                title={series.title}
-                seriesSlug={series.slug}
-                books={books}
-              />
-            </Fragment>
+            <SeriesShelf
+              key={series.slug}
+              title={series.title}
+              seriesSlug={series.slug}
+              books={books}
+            />
           );
         })}
 
