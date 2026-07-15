@@ -73,6 +73,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://bodeebooks.com",
   },
+  verification: {
+    google: "cw2s97FQxvgwndAKlWH0XMN8GZxmTA_VgcmYHvv9q2Q",
+  },
 };
 
 export default function RootLayout({
