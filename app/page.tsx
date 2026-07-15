@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import type { Metadata } from "next";
-import { BookOpen, Headphones, ExternalLink } from "lucide-react";
+import { BookOpen, Headphones, ExternalLink, ArrowRight } from "lucide-react";
 import SeriesShelf from "@/components/SeriesShelf";
 import GamesBanner from "@/components/GamesBanner";
 import seriesData from "@/data/series.json";
@@ -131,6 +131,16 @@ export default function HomePage() {
 
       {/* Audiobook Shelves */}
       <div className={`container ${styles.content}`}>
+        <div className={styles.notificationBox}>
+          <div className={styles.notificationContent}>
+            <span className={styles.notificationBadge}>New</span>
+            <span>Check out <strong>BodeeFit</strong> — our new fitness and P.E. platform for kids!</span>
+          </div>
+          <a href="https://fit.bodeebooks.com/" target="_blank" rel="noopener noreferrer" className={styles.notificationLink}>
+            Visit BodeeFit <ArrowRight size={16} />
+          </a>
+        </div>
+
         <GamesBanner />
 
         {/* Anchor for browse audiobooks button to skip the games banner */}
