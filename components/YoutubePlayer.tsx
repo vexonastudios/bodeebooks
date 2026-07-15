@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useState } from "react";
+import { Play } from "lucide-react";
 import styles from "./YoutubePlayer.module.css";
 
 interface YoutubePlayerProps {
@@ -43,6 +44,7 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
   function YoutubePlayer({ videoId, onReady }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const playerRef = useRef<YTPlayer | null>(null);
+    const [activated, setActivated] = useState(false);
 
     const initPlayer = useCallback(() => {
       if (!containerRef.current) return;
@@ -51,6 +53,7 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
         playerVars: {
           rel: 0,
           modestbranding: 1,
+          autoplay: 1,
           origin: typeof window !== "undefined" ? window.location.origin : "",
         },
         events: {
@@ -60,12 +63,12 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
     }, [videoId, onReady]);
 
     useEffect(() => {
+      if (!activated) return;
       if (typeof window === "undefined") return;
 
       if (window.YT && window.YT.Player) {
         initPlayer();
       } else {
-        // Load the YouTube IFrame API
         const existing = document.getElementById("yt-iframe-api");
         if (!existing) {
           const tag = document.createElement("script");
@@ -79,17 +82,48 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
       return () => {
         // cleanup
       };
-    }, [initPlayer]);
+    }, [activated, initPlayer]);
 
     useImperativeHandle(ref, () => ({
       seekTo(seconds: number) {
-        playerRef.current?.seekTo(seconds, true);
-        playerRef.current?.playVideo();
+        if (!activated) setActivated(true);
+        // Small delay if player isn't ready yet
+        setTimeout(() => {
+          playerRef.current?.seekTo(seconds, true);
+          playerRef.current?.playVideo();
+        }, activated ? 0 : 2000);
       },
       getCurrentTime() {
         return playerRef.current?.getCurrentTime() ?? 0;
       },
     }));
+
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+    if (!activated) {
+      return (
+        <div className={styles.wrapper}>
+          <button
+            className={styles.facade}
+            onClick={() => setActivated(true)}
+            aria-label="Play video"
+            type="button"
+          >
+            <img
+              src={thumbnailUrl}
+              alt="Video thumbnail"
+              className={styles.thumbnail}
+              loading="eager"
+            />
+            <div className={styles.playOverlay}>
+              <div className={styles.playBtn}>
+                <Play size={32} fill="white" color="white" />
+              </div>
+            </div>
+          </button>
+        </div>
+      );
+    }
 
     return (
       <div className={styles.wrapper}>

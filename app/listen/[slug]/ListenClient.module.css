@@ -1,6 +1,7 @@
 .page {
   padding-top: 32px;
   padding-bottom: 64px;
+  overflow-x: hidden;
 }
 
 .inner {}
@@ -181,6 +182,11 @@
   .sidebar {
     position: static;
   }
+
+  /* Remove max-height so all chapters show on mobile */
+  .sidebar :global(.list) {
+    max-height: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -191,5 +197,26 @@
 
   .breadCurrent {
     max-width: 160px;
+  }
+
+  /* Fix episode nav overflow */
+  .episodeNav {
+    gap: 10px;
+  }
+
+  .navBtn {
+    padding: 10px 12px;
+    gap: 8px;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .navBtnTitle {
+    font-size: 0.8125rem;
+  }
+
+  /* Description padding on mobile */
+  .description {
+    padding: 16px 18px;
   }
 }
