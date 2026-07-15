@@ -138,10 +138,61 @@
   filter: brightness(1.1);
 }
 
+/* Mobile compact link — hidden on desktop */
+.mobileLink {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    display: none;
+  }
+
+  .grid {
+    display: none;
+  }
+
+  .mobileLink {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #12141d;
+    border: 1px solid #1f2333;
+    border-radius: 14px;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: white;
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+
+  .mobileLink:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobileLinkInner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .mobileLinkInner strong {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .mobileLinkSub {
+    display: block;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.3;
+  }
+
+  .wrapper {
+    margin: 32px 0;
+    padding-top: 24px;
   }
 }

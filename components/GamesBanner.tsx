@@ -58,6 +58,7 @@ export default function GamesBanner() {
         </a>
       </div>
 
+      {/* Full card grid — desktop only */}
       <div className={styles.grid}>
         {games.map((game) => {
           const GameIcon = game.Icon;
@@ -85,6 +86,23 @@ export default function GamesBanner() {
           );
         })}
       </div>
+
+      {/* Compact link — mobile only */}
+      <a
+        href="https://games.bodeebooks.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.mobileLink}
+      >
+        <div className={styles.mobileLinkInner}>
+          <Gamepad2 size={22} />
+          <div>
+            <strong>Play Educational Games</strong>
+            <span className={styles.mobileLinkSub}>Harvest Dash, Duck Hunt Duel, Spelling Bee &amp; more</span>
+          </div>
+        </div>
+        <Play size={16} />
+      </a>
     </div>
   );
 }
