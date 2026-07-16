@@ -146,6 +146,18 @@ export default function HomePage() {
         {/* Anchor for browse audiobooks button to skip the games banner */}
         <div id="audiobooks" style={{ scrollMarginTop: "80px" }}></div>
 
+        {/* Newest Audiobooks */}
+        <SeriesShelf
+          title="Newest Audiobooks"
+          books={[
+            "alone-in-london",
+            "toby-tyler",
+            "penny-parker-the-wishing-well",
+            "george-washington-making-of-americas-first-president",
+            "penny-parker-the-clock-strikes-thirteen"
+          ].map(slug => booksData.find(b => b.slug === slug)).filter(Boolean) as Book[]}
+        />
+
         {/* Featured series */}
         {featuredSeries.map((series) => {
           const books = getBooksForSeries(series.slug);
