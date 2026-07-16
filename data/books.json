@@ -9,7 +9,108 @@
     "youtubeVideoId": "xA60LcdimSg",
     "description": "The Hardy Boys' first mystery begins when the town of Bayport is rocked by a series of daring robberies. Frank and Joe Hardy follow the clues to a startling discovery hidden in an old tower.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - The Speed Demon",
+        "timestamp": 34
+      },
+      {
+        "title": "2 - The Stolen Roadster",
+        "timestamp": 432
+      },
+      {
+        "title": "3 - Traces of The Thief",
+        "timestamp": 944
+      },
+      {
+        "title": "4 - The Hold-Up",
+        "timestamp": 1395
+      },
+      {
+        "title": "5 - Chet's Auto Horn",
+        "timestamp": 1888
+      },
+      {
+        "title": "6 - Tire Tracks",
+        "timestamp": 2720
+      },
+      {
+        "title": "7 - The Mansion Robbery",
+        "timestamp": 3222
+      },
+      {
+        "title": "8 - The Arrest",
+        "timestamp": 3796
+      },
+      {
+        "title": "9 - Red Hair",
+        "timestamp": 4240
+      },
+      {
+        "title": "10 - An Important Discovery",
+        "timestamp": 4734
+      },
+      {
+        "title": "11 - Mr. Hardy Investigates",
+        "timestamp": 5383
+      },
+      {
+        "title": "12 - Days of Waiting",
+        "timestamp": 5990
+      },
+      {
+        "title": "13 - In Poor Quarters",
+        "timestamp": 6604
+      },
+      {
+        "title": "14 - Red Jackley",
+        "timestamp": 7184
+      },
+      {
+        "title": "15 - The Chief Gets A Bomb",
+        "timestamp": 8057
+      },
+      {
+        "title": "16 - A Confession",
+        "timestamp": 8685
+      },
+      {
+        "title": "17 - The Search of the Tower",
+        "timestamp": 9110
+      },
+      {
+        "title": "18 - The New Tower",
+        "timestamp": 9703
+      },
+      {
+        "title": "19 - The Mystery Deepens",
+        "timestamp": 10224
+      },
+      {
+        "title": "20 - The Flash In The Tower",
+        "timestamp": 10870
+      },
+      {
+        "title": "21 - A New Idea",
+        "timestamp": 11471
+      },
+      {
+        "title": "22 - The Search",
+        "timestamp": 11986
+      },
+      {
+        "title": "23 - Adelia Applegate's Compliment",
+        "timestamp": 12475
+      },
+      {
+        "title": "24 - The Last of the Tower Case",
+        "timestamp": 12989
+      }
+    ]
   },
   {
     "slug": "hardy-boys-house-on-the-cliff",
@@ -134,7 +235,112 @@
     "youtubeVideoId": "jeYrYIVzcPU",
     "description": "Counterfeit bills are flooding Bayport, and the trail leads Frank and Joe Hardy to a creepy old mill on the outskirts of town.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - A Five Dollar Bill",
+        "timestamp": 29
+      },
+      {
+        "title": "2 - Counterfeit Money",
+        "timestamp": 517
+      },
+      {
+        "title": "3 - The Hardy Boys at School",
+        "timestamp": 1088
+      },
+      {
+        "title": "4 - Another Victim",
+        "timestamp": 1521
+      },
+      {
+        "title": "5 - Curing the Joker",
+        "timestamp": 2059
+      },
+      {
+        "title": "6 - The Old Mill",
+        "timestamp": 2634
+      },
+      {
+        "title": "7 - In the Mill Race",
+        "timestamp": 3071
+      },
+      {
+        "title": "8 - Joe's Courage",
+        "timestamp": 3469
+      },
+      {
+        "title": "9 - The Rescue",
+        "timestamp": 3999
+      },
+      {
+        "title": "10 - The New Boat",
+        "timestamp": 4495
+      },
+      {
+        "title": "11 - A Man in a Hurry",
+        "timestamp": 5041
+      },
+      {
+        "title": "12 - Seasick",
+        "timestamp": 5644
+      },
+      {
+        "title": "13 - Paul Blum",
+        "timestamp": 6167
+      },
+      {
+        "title": "14 - Con Riley Guards a Package",
+        "timestamp": 6674
+      },
+      {
+        "title": "15 - The Chase",
+        "timestamp": 7409
+      },
+      {
+        "title": "16 - A Plan of Action",
+        "timestamp": 8025
+      },
+      {
+        "title": "17 - What Lester Said",
+        "timestamp": 8589
+      },
+      {
+        "title": "18 - Suspicions",
+        "timestamp": 9129
+      },
+      {
+        "title": "19 - The Rug Buyer",
+        "timestamp": 9631
+      },
+      {
+        "title": "20 - A Note of Warning",
+        "timestamp": 10244
+      },
+      {
+        "title": "21 - At the Mill",
+        "timestamp": 10846
+      },
+      {
+        "title": "22 - Through the Roof",
+        "timestamp": 11401
+      },
+      {
+        "title": "23 - The Alarm",
+        "timestamp": 11909
+      },
+      {
+        "title": "24 - Trapped",
+        "timestamp": 12416
+      },
+      {
+        "title": "25 - The Reckoning",
+        "timestamp": 13028
+      }
+    ]
   },
   {
     "slug": "hardy-boys-missing-chums",
@@ -158,7 +364,108 @@
     "youtubeVideoId": "nI-3MBmKwMs",
     "description": "The Hardy Boys head to the Montana wilderness chasing a legendary cache of stolen gold — and find themselves in the crosshairs of ruthless criminals.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Intro",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - In The Storm",
+        "timestamp": 15
+      },
+      {
+        "title": "2 - A Call For Help",
+        "timestamp": 686
+      },
+      {
+        "title": "3 - Jadbury Wilson",
+        "timestamp": 1200
+      },
+      {
+        "title": "4 - A Tale Of The West",
+        "timestamp": 1798
+      },
+      {
+        "title": "5 - Con Riley Under Fire",
+        "timestamp": 2618
+      },
+      {
+        "title": "6 - A Message From Montana",
+        "timestamp": 3245
+      },
+      {
+        "title": "7 - In The Windy City",
+        "timestamp": 3877
+      },
+      {
+        "title": "8 - The Second Stranger",
+        "timestamp": 4463
+      },
+      {
+        "title": "9 - The Escape",
+        "timestamp": 5112
+      },
+      {
+        "title": "10 - On Guard",
+        "timestamp": 5569
+      },
+      {
+        "title": "11 - Fenton Hardy's Story",
+        "timestamp": 6105
+      },
+      {
+        "title": "12 - The Cave-In",
+        "timestamp": 6837
+      },
+      {
+        "title": "13 - In The Depths Of The Earth",
+        "timestamp": 7504
+      },
+      {
+        "title": "14 - Attacked By The Outlaws",
+        "timestamp": 8114
+      },
+      {
+        "title": "15 - The Trap",
+        "timestamp": 8818
+      },
+      {
+        "title": "16 - Information",
+        "timestamp": 9483
+      },
+      {
+        "title": "17 - The Outlaw's Notebook",
+        "timestamp": 9991
+      },
+      {
+        "title": "18 - The Blizzard",
+        "timestamp": 10644
+      },
+      {
+        "title": "19 - The Lone Tree",
+        "timestamp": 11189
+      },
+      {
+        "title": "20 - Down The Shaft",
+        "timestamp": 11715
+      },
+      {
+        "title": "21 - Underground",
+        "timestamp": 12229
+      },
+      {
+        "title": "22 - Black Pepper",
+        "timestamp": 12818
+      },
+      {
+        "title": "23 - The Capture",
+        "timestamp": 13237
+      },
+      {
+        "title": "24 - Bart Dawson Explains",
+        "timestamp": 13894
+      }
+    ]
   },
   {
     "slug": "hardy-boys-shore-road-mystery",
@@ -170,7 +477,96 @@
     "youtubeVideoId": "um2Ijc7yVoY",
     "description": "Cars are vanishing along Shore Road, and Frank and Joe Hardy go undercover to crack the car theft ring operating right in their backyard.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Stolen Cars",
+        "timestamp": 14
+      },
+      {
+        "title": "2 - Circumstantial Evidence",
+        "timestamp": 511
+      },
+      {
+        "title": "3 - Under Suspicion",
+        "timestamp": 1142
+      },
+      {
+        "title": "4 - Out on Bail",
+        "timestamp": 1628
+      },
+      {
+        "title": "5 - More Thieving",
+        "timestamp": 2197
+      },
+      {
+        "title": "6 - On the Shore Road",
+        "timestamp": 2762
+      },
+      {
+        "title": "7 - Gus Montrose",
+        "timestamp": 3446
+      },
+      {
+        "title": "8 - The Missing Truck",
+        "timestamp": 4068
+      },
+      {
+        "title": "9 - Following Clues",
+        "timestamp": 4690
+      },
+      {
+        "title": "10 - The Great Discovery",
+        "timestamp": 5654
+      },
+      {
+        "title": "11 - Fish",
+        "timestamp": 6144
+      },
+      {
+        "title": "12 - The New Car",
+        "timestamp": 6665
+      },
+      {
+        "title": "13 - In the Locker",
+        "timestamp": 7130
+      },
+      {
+        "title": "14 - Montrose Again",
+        "timestamp": 7693
+      },
+      {
+        "title": "15 - The Suspect",
+        "timestamp": 8334
+      },
+      {
+        "title": "16 - Kidnaped",
+        "timestamp": 9621
+      },
+      {
+        "title": "17 - The Cave",
+        "timestamp": 10174
+      },
+      {
+        "title": "18 - The Auto Thieves",
+        "timestamp": 10846
+      },
+      {
+        "title": "19 - Captured",
+        "timestamp": 11587
+      },
+      {
+        "title": "20 - Tables Turned",
+        "timestamp": 12223
+      },
+      {
+        "title": "21 - At the Farmhouse",
+        "timestamp": 12805
+      }
+    ]
   },
   {
     "slug": "hardy-boys-secret-of-the-caves",
@@ -182,7 +578,72 @@
     "youtubeVideoId": "kurXAm1pHcU",
     "description": "A mysterious recluse, a series of strange signals, and a network of sea caves all point to a dangerous secret Frank and Joe must uncover.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "1 – Overboard",
+        "timestamp": 0
+      },
+      {
+        "title": "2 – The Rescue",
+        "timestamp": 518
+      },
+      {
+        "title": "3 – Miss Todd",
+        "timestamp": 1015
+      },
+      {
+        "title": "4 – Concerning Todham Todd",
+        "timestamp": 1625
+      },
+      {
+        "title": "5 – Plans for a Trip",
+        "timestamp": 2154
+      },
+      {
+        "title": "6 – The Missing Motorcycle",
+        "timestamp": 2722
+      },
+      {
+        "title": "7 – Carl Schaum",
+        "timestamp": 3208
+      },
+      {
+        "title": "8 – Strange Doings",
+        "timestamp": 3759
+      },
+      {
+        "title": "9 – The Storm",
+        "timestamp": 4361
+      },
+      {
+        "title": "10 – The Cave",
+        "timestamp": 4879
+      },
+      {
+        "title": "11 – Footsteps in the Night",
+        "timestamp": 5328
+      },
+      {
+        "title": "12 – A Disappearance",
+        "timestamp": 5834
+      },
+      {
+        "title": "13 – Stolen Supplies",
+        "timestamp": 6297
+      },
+      {
+        "title": "14 – Captain Royal",
+        "timestamp": 6704
+      },
+      {
+        "title": "15 – The Old Sailor",
+        "timestamp": 7242
+      },
+      {
+        "title": "16 – \\",
+        "timestamp": 7862
+      }
+    ]
   },
   {
     "slug": "hardy-boys-mystery-of-cabin-island",
@@ -194,7 +655,112 @@
     "youtubeVideoId": "dtT3sXd0aJM",
     "description": "Stranded on a snow-covered island in winter, the Hardy Boys discover the island holds a secret that someone will kill to protect.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Ice-Boating on the Bay",
+        "timestamp": 11
+      },
+      {
+        "title": "2 - Heading for Trouble",
+        "timestamp": 579
+      },
+      {
+        "title": "3 - A Strange Note",
+        "timestamp": 1039
+      },
+      {
+        "title": "4 - Holiday Plans",
+        "timestamp": 1515
+      },
+      {
+        "title": "5 - Mr. Hanleigh",
+        "timestamp": 2156
+      },
+      {
+        "title": "6 - Preparations",
+        "timestamp": 2551
+      },
+      {
+        "title": "7 - The Other Ice-Boat",
+        "timestamp": 3071
+      },
+      {
+        "title": "8 - Suspicious Actions",
+        "timestamp": 3607
+      },
+      {
+        "title": "9 - Night on Cabin Island",
+        "timestamp": 4151
+      },
+      {
+        "title": "10 - Stolen Supplies",
+        "timestamp": 4710
+      },
+      {
+        "title": "11 - Postage Stamps",
+        "timestamp": 5260
+      },
+      {
+        "title": "12 - The Notebook",
+        "timestamp": 5873
+      },
+      {
+        "title": "13 - The Cipher",
+        "timestamp": 6336
+      },
+      {
+        "title": "14 - Christmas Day",
+        "timestamp": 6907
+      },
+      {
+        "title": "15 - Chicken Thieves",
+        "timestamp": 7463
+      },
+      {
+        "title": "16 - The Chimney",
+        "timestamp": 8478
+      },
+      {
+        "title": "17 - The Escape",
+        "timestamp": 9017
+      },
+      {
+        "title": "18 - The Cipher Solved",
+        "timestamp": 9516
+      },
+      {
+        "title": "19 - Disappointment",
+        "timestamp": 10050
+      },
+      {
+        "title": "20 - When Rogues Fall Out",
+        "timestamp": 10479
+      },
+      {
+        "title": "21 - A Cry for Help",
+        "timestamp": 11093
+      },
+      {
+        "title": "22 - The Letter",
+        "timestamp": 11624
+      },
+      {
+        "title": "23 - The Chimney Collapses",
+        "timestamp": 12042
+      },
+      {
+        "title": "24 - The Discovery",
+        "timestamp": 12473
+      },
+      {
+        "title": "25 - Elroy Jefferson Is Pleased",
+        "timestamp": 13223
+      }
+    ]
   },
   {
     "slug": "hardy-boys-great-airport-mystery",
@@ -206,7 +772,108 @@
     "youtubeVideoId": "RHEX-nbf6ZU",
     "description": "A series of thefts at the Bayport Airport puts Frank and Joe Hardy on the trail of a smuggling ring using small planes for their criminal operations.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Peril from the Sky",
+        "timestamp": 17
+      },
+      {
+        "title": "2 - The Crash",
+        "timestamp": 431
+      },
+      {
+        "title": "3 - A Promise of Trouble",
+        "timestamp": 1025
+      },
+      {
+        "title": "4 - An Attack",
+        "timestamp": 1552
+      },
+      {
+        "title": "5 - Anxious Days",
+        "timestamp": 2122
+      },
+      {
+        "title": "6 - The Cabin in the Woods",
+        "timestamp": 2643
+      },
+      {
+        "title": "7 - A Mysterious Conversation",
+        "timestamp": 3227
+      },
+      {
+        "title": "8 - Puzzled",
+        "timestamp": 3707
+      },
+      {
+        "title": "9 - Missing Mail",
+        "timestamp": 4182
+      },
+      {
+        "title": "10 - Looking for Clues",
+        "timestamp": 4853
+      },
+      {
+        "title": "11 - News from the City",
+        "timestamp": 5496
+      },
+      {
+        "title": "12 - Under Arrest",
+        "timestamp": 6073
+      },
+      {
+        "title": "13 - Circumstantial Evidence",
+        "timestamp": 6690
+      },
+      {
+        "title": "14 - Held for Trial",
+        "timestamp": 7410
+      },
+      {
+        "title": "15 - On the Trail of Ollie Jacobs",
+        "timestamp": 8138
+      },
+      {
+        "title": "16 - Mysterious Plans",
+        "timestamp": 8846
+      },
+      {
+        "title": "17 - Dangerous Business",
+        "timestamp": 9343
+      },
+      {
+        "title": "18 - The Warning Message",
+        "timestamp": 9921
+      },
+      {
+        "title": "19 - The Twenty-Eighth",
+        "timestamp": 10494
+      },
+      {
+        "title": "20 - That Night",
+        "timestamp": 11117
+      },
+      {
+        "title": "21 - West of Bacon Hill",
+        "timestamp": 11676
+      },
+      {
+        "title": "22 - Captured",
+        "timestamp": 12145
+      },
+      {
+        "title": "23 - Back in Bayport",
+        "timestamp": 12657
+      },
+      {
+        "title": "24 - Vindicated",
+        "timestamp": 13311
+      }
+    ]
   },
   {
     "slug": "ted-scott-daring-long-distance-flight",
@@ -452,7 +1119,112 @@
     "youtubeVideoId": "FP8ocG_S5lA",
     "description": "Ted Scott crashes in a remote wilderness and must fight for survival while enemies close in around him.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 – A Daring Venture",
+        "timestamp": 23
+      },
+      {
+        "title": "2 – Fighting the Gale",
+        "timestamp": 559
+      },
+      {
+        "title": "3 – A Forced Landing",
+        "timestamp": 1481
+      },
+      {
+        "title": "4 – Snowbound",
+        "timestamp": 1947
+      },
+      {
+        "title": "5 – A Kindred Spirit",
+        "timestamp": 2519
+      },
+      {
+        "title": "6 – The Grip of the Tempest",
+        "timestamp": 3463
+      },
+      {
+        "title": "7 – Flying Fists",
+        "timestamp": 4179
+      },
+      {
+        "title": "8 – The Pursuing Car",
+        "timestamp": 4596
+      },
+      {
+        "title": "9 – Startling News",
+        "timestamp": 5075
+      },
+      {
+        "title": "10 – The Red Demon",
+        "timestamp": 5643
+      },
+      {
+        "title": "11 – A Surly Rival",
+        "timestamp": 6028
+      },
+      {
+        "title": "12 – The Mysterious Ticking",
+        "timestamp": 6496
+      },
+      {
+        "title": "13 – A Close Call",
+        "timestamp": 6942
+      },
+      {
+        "title": "14 – On the Alert",
+        "timestamp": 7422
+      },
+      {
+        "title": "15 – The Revelation",
+        "timestamp": 8068
+      },
+      {
+        "title": "16 – Falling from the Skies",
+        "timestamp": 8554
+      },
+      {
+        "title": "17 – At Grips with Death",
+        "timestamp": 8912
+      },
+      {
+        "title": "18 – Lost in the Rockies",
+        "timestamp": 9408
+      },
+      {
+        "title": "19 – The Midnight Prowler",
+        "timestamp": 10046
+      },
+      {
+        "title": "20 – Over the Cliff",
+        "timestamp": 10388
+      },
+      {
+        "title": "21 – The Rattler",
+        "timestamp": 10960
+      },
+      {
+        "title": "22 – In the Torrent",
+        "timestamp": 11412
+      },
+      {
+        "title": "23 – In Dire Plight",
+        "timestamp": 11794
+      },
+      {
+        "title": "24 – Rescue",
+        "timestamp": 12190
+      },
+      {
+        "title": "25 – A Scoundrel Punished",
+        "timestamp": 12658
+      }
+    ]
   },
   {
     "slug": "penny-parker-danger-at-the-drawbridge",
@@ -476,7 +1248,112 @@
     "youtubeVideoId": "mor142vVVfc",
     "description": "Penny Parker follows a trail of clues that leads to a secret society, a stolen jewel, and a silken ladder left at the scene of a crime.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Double Trouble",
+        "timestamp": 38
+      },
+      {
+        "title": "2 - A Rope of Silk",
+        "timestamp": 877
+      },
+      {
+        "title": "3 - Society Routine",
+        "timestamp": 1711
+      },
+      {
+        "title": "4 - A Turn of Fortune",
+        "timestamp": 2334
+      },
+      {
+        "title": "5 - The Man in Gray",
+        "timestamp": 3090
+      },
+      {
+        "title": "6 - An Apartment Burglary",
+        "timestamp": 3621
+      },
+      {
+        "title": "7 - Mark of the Iron Hook",
+        "timestamp": 4314
+      },
+      {
+        "title": "8 - Psychic Signs",
+        "timestamp": 4933
+      },
+      {
+        "title": "9 - Mrs. Weems’ Inheritance",
+        "timestamp": 5483
+      },
+      {
+        "title": "10 - Ouija Board Wisdom",
+        "timestamp": 6209
+      },
+      {
+        "title": "11 - The Celestial Temple",
+        "timestamp": 6900
+      },
+      {
+        "title": "12 - A Message for Mrs. Weems",
+        "timestamp": 7496
+      },
+      {
+        "title": "13 - Cousin David’s Ghost",
+        "timestamp": 8170
+      },
+      {
+        "title": "14 - Wet Paint",
+        "timestamp": 8654
+      },
+      {
+        "title": "15 - Hidden Money",
+        "timestamp": 9215
+      },
+      {
+        "title": "16 - Over the Window Ledge",
+        "timestamp": 9931
+      },
+      {
+        "title": "17 - Kano’s Curio Shop",
+        "timestamp": 10423
+      },
+      {
+        "title": "18 - The Bell Tower",
+        "timestamp": 11072
+      },
+      {
+        "title": "19 - Penny Investigates",
+        "timestamp": 11506
+      },
+      {
+        "title": "20 - Inside the Cabinet",
+        "timestamp": 11895
+      },
+      {
+        "title": "21 - Startling Information",
+        "timestamp": 12299
+      },
+      {
+        "title": "22 - Scaling the Wall",
+        "timestamp": 12794
+      },
+      {
+        "title": "23 - A Prisoner in the Belfry",
+        "timestamp": 13324
+      },
+      {
+        "title": "24 - The Wooden Box",
+        "timestamp": 13907
+      },
+      {
+        "title": "25 - Extra!",
+        "timestamp": 14839
+      }
+    ]
   },
   {
     "slug": "penny-parker-secret-pact",
@@ -488,7 +1365,112 @@
     "youtubeVideoId": "6MgjHL4ASFs",
     "description": "Penny Parker uncovers a secret underground network and a pact that endangers everyone she loves.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Aboard the Goodtime",
+        "timestamp": 36
+      },
+      {
+        "title": "2 - The River’s Victim",
+        "timestamp": 769
+      },
+      {
+        "title": "3 - The Octopus Tattoo",
+        "timestamp": 1381
+      },
+      {
+        "title": "4 - A Prospective Tenant",
+        "timestamp": 1965
+      },
+      {
+        "title": "5 - Cobwebs and Rust",
+        "timestamp": 2661
+      },
+      {
+        "title": "6 - Headlines and Headaches",
+        "timestamp": 3327
+      },
+      {
+        "title": "7 - Peter Fenestra",
+        "timestamp": 4007
+      },
+      {
+        "title": "8 - The Storm Cave",
+        "timestamp": 4610
+      },
+      {
+        "title": "9 - A Fallen Tree",
+        "timestamp": 5192
+      },
+      {
+        "title": "10 - A Word to the Wise",
+        "timestamp": 5762
+      },
+      {
+        "title": "11 - Mr. Judson’s Daughter",
+        "timestamp": 6358
+      },
+      {
+        "title": "12 - Old Horney",
+        "timestamp": 6852
+      },
+      {
+        "title": "13 - Paper Problems",
+        "timestamp": 7594
+      },
+      {
+        "title": "14 - An Empty Bedroom",
+        "timestamp": 8143
+      },
+      {
+        "title": "15 - Information from Tillie",
+        "timestamp": 8602
+      },
+      {
+        "title": "16 - Behind the Lilacs",
+        "timestamp": 9106
+      },
+      {
+        "title": "17 - The Art of Tattoo",
+        "timestamp": 9717
+      },
+      {
+        "title": "18 - Pauletta’s Explanation",
+        "timestamp": 10285
+      },
+      {
+        "title": "19 - Mrs. Weems’ Report",
+        "timestamp": 11170
+      },
+      {
+        "title": "20 - Picnic by Moonlight",
+        "timestamp": 11778
+      },
+      {
+        "title": "21 - Ellis Saal’s Customer",
+        "timestamp": 12357
+      },
+      {
+        "title": "22 - Ghosts of the Past",
+        "timestamp": 13038
+      },
+      {
+        "title": "23 - Penny’s Plight",
+        "timestamp": 13713
+      },
+      {
+        "title": "24 - A Barrier of Flames",
+        "timestamp": 14271
+      },
+      {
+        "title": "25 - Sailors’ Revenge",
+        "timestamp": 14898
+      }
+    ]
   },
   {
     "slug": "penny-parker-the-clock-strikes-thirteen",
@@ -500,7 +1482,112 @@
     "youtubeVideoId": "SnNrACpQ8Ns",
     "description": "When a mysterious clock strikes thirteen, Penny Parker is plunged into a puzzling mystery involving a cursed manor and its strange inhabitants.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Sandwiches for Two",
+        "timestamp": 13
+      },
+      {
+        "title": "2 - Night Riders",
+        "timestamp": 856
+      },
+      {
+        "title": "3 - A Black Hood",
+        "timestamp": 1572
+      },
+      {
+        "title": "4 - A New Caretaker",
+        "timestamp": 2156
+      },
+      {
+        "title": "5 - Old Seth",
+        "timestamp": 2961
+      },
+      {
+        "title": "6 - Tall Corn",
+        "timestamp": 3806
+      },
+      {
+        "title": "7 - Mr. Blake's Donation",
+        "timestamp": 4343
+      },
+      {
+        "title": "8 - Publicity by Penny",
+        "timestamp": 4932
+      },
+      {
+        "title": "9 - Jerry's Party",
+        "timestamp": 5601
+      },
+      {
+        "title": "10 - In the Melon Patch",
+        "timestamp": 6142
+      },
+      {
+        "title": "11 - Penny's Clue",
+        "timestamp": 7016
+      },
+      {
+        "title": "12 - Adelle's Disappearance",
+        "timestamp": 7612
+      },
+      {
+        "title": "13 - An Extra Stroke",
+        "timestamp": 8305
+      },
+      {
+        "title": "14 - Through the Window",
+        "timestamp": 9026
+      },
+      {
+        "title": "15 - Tracing Ben Bowman",
+        "timestamp": 9593
+      },
+      {
+        "title": "16 - A Familiar Name",
+        "timestamp": 10177
+      },
+      {
+        "title": "17 - False Records",
+        "timestamp": 10670
+      },
+      {
+        "title": "18 - Adelle's Accusation",
+        "timestamp": 11450
+      },
+      {
+        "title": "19 - Trailing a Fugitive",
+        "timestamp": 12072
+      },
+      {
+        "title": "20 - Clem Davis' Disclosure",
+        "timestamp": 12691
+      },
+      {
+        "title": "21 - A Broken Promise",
+        "timestamp": 13235
+      },
+      {
+        "title": "22 - The Man in Gray",
+        "timestamp": 13816
+      },
+      {
+        "title": "23 - A Trap Set",
+        "timestamp": 14377
+      },
+      {
+        "title": "24 - Timely Help",
+        "timestamp": 14962
+      },
+      {
+        "title": "25 - Special Edition",
+        "timestamp": 15778
+      }
+    ]
   },
   {
     "slug": "penny-parker-the-wishing-well",
@@ -512,7 +1599,112 @@
     "youtubeVideoId": "lrBB0UzLPd8",
     "description": "Penny Parker investigates a wishing well with a dark history — and discovers that someone is using old legends to cover up very modern crimes.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - An Old House",
+        "timestamp": 13
+      },
+      {
+        "title": "2 - By the Covered Well",
+        "timestamp": 729
+      },
+      {
+        "title": "3 - Chicken Dinner",
+        "timestamp": 1637
+      },
+      {
+        "title": "4 - A Record on Rock",
+        "timestamp": 2085
+      },
+      {
+        "title": "5 - Strangers From Texas",
+        "timestamp": 3012
+      },
+      {
+        "title": "6 - A Wish Fulfilled",
+        "timestamp": 3517
+      },
+      {
+        "title": "7 - Penny's Discovery",
+        "timestamp": 4118
+      },
+      {
+        "title": "8 - A Moving Light",
+        "timestamp": 4694
+      },
+      {
+        "title": "9 - Mysterious Prowlers",
+        "timestamp": 5295
+      },
+      {
+        "title": "10 - Beneath the Flagstones",
+        "timestamp": 5990
+      },
+      {
+        "title": "11 - Jay Franklin's Trickery",
+        "timestamp": 6502
+      },
+      {
+        "title": "12 - No Admittance",
+        "timestamp": 7129
+      },
+      {
+        "title": "13 - A Silken Ladder",
+        "timestamp": 7710
+      },
+      {
+        "title": "14 - Night Adventure",
+        "timestamp": 8391
+      },
+      {
+        "title": "15 - Old Bottles",
+        "timestamp": 9001
+      },
+      {
+        "title": "16 - Inside the Mansion",
+        "timestamp": 9553
+      },
+      {
+        "title": "17 - The Marborough Pearls",
+        "timestamp": 10295
+      },
+      {
+        "title": "18 - Signboard Indians",
+        "timestamp": 10878
+      },
+      {
+        "title": "19 - Publicity Plus",
+        "timestamp": 11603
+      },
+      {
+        "title": "20 - Rhoda's Problem",
+        "timestamp": 12278
+      },
+      {
+        "title": "21 - Mrs. Marborough's Loss",
+        "timestamp": 13072
+      },
+      {
+        "title": "22 - The Missing Necklace",
+        "timestamp": 13686
+      },
+      {
+        "title": "23 - Grand Ball",
+        "timestamp": 14492
+      },
+      {
+        "title": "24 - River Rising",
+        "timestamp": 15267
+      },
+      {
+        "title": "25 - Precious Cargo",
+        "timestamp": 15793
+      }
+    ]
   },
   {
     "slug": "mercer-boys-cruise-in-the-lassie",
@@ -638,27 +1830,90 @@
     "description": "A touching and moving story of a young girl navigating life alone in the bustling streets of London.",
     "duration": "",
     "chapters": [
-      { "title": "Introduction", "timestamp": 0 },
-      { "title": "1 - Not Alone", "timestamp": 12 },
-      { "title": "2 - Waifs and Strays", "timestamp": 736 },
-      { "title": "3 - A Little Peacemaker", "timestamp": 1285 },
-      { "title": "4 - Old Oliver's Master", "timestamp": 1571 },
-      { "title": "6 - The Grasshopper a Burden", "timestamp": 2191 },
-      { "title": "7 - The Prince of Life", "timestamp": 2549 },
-      { "title": "8 - No Pipe for Old Oliver", "timestamp": 3094 },
-      { "title": "9 - A New Broom and a Crossing", "timestamp": 3466 },
-      { "title": "10 - Highly Respectable", "timestamp": 3770 },
-      { "title": "11 - Among Thieves", "timestamp": 4251 },
-      { "title": "12 - Tony's Welcome", "timestamp": 4641 },
-      { "title": "13 - New Boots", "timestamp": 4935 },
-      { "title": "14 - In Hospital", "timestamp": 5383 },
-      { "title": "15 - Tony's Future Prospects", "timestamp": 5827 },
-      { "title": "16 - A Bud Fading", "timestamp": 6362 },
-      { "title": "17 - A Very Dark Shadow", "timestamp": 6795 },
-      { "title": "18 - No Room for Dolly", "timestamp": 7186 },
-      { "title": "19 - The Golden City", "timestamp": 7773 },
-      { "title": "20 - A Fresh Day Dawns", "timestamp": 8301 },
-      { "title": "21 - Polly", "timestamp": 8941 }
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Not Alone",
+        "timestamp": 12
+      },
+      {
+        "title": "2 - Waifs and Strays",
+        "timestamp": 736
+      },
+      {
+        "title": "3 - A Little Peacemaker",
+        "timestamp": 1285
+      },
+      {
+        "title": "4 - Old Oliver's Master",
+        "timestamp": 1571
+      },
+      {
+        "title": "6 - The Grasshopper a Burden",
+        "timestamp": 2191
+      },
+      {
+        "title": "7 - The Prince of Life",
+        "timestamp": 2549
+      },
+      {
+        "title": "8 - No Pipe for Old Oliver",
+        "timestamp": 3094
+      },
+      {
+        "title": "9 - A New Broom and a Crossing",
+        "timestamp": 3466
+      },
+      {
+        "title": "10 - Highly Respectable",
+        "timestamp": 3770
+      },
+      {
+        "title": "11 - Among Thieves",
+        "timestamp": 4251
+      },
+      {
+        "title": "12 - Tony's Welcome",
+        "timestamp": 4641
+      },
+      {
+        "title": "13 - New Boots",
+        "timestamp": 4935
+      },
+      {
+        "title": "14 - In Hospital",
+        "timestamp": 5383
+      },
+      {
+        "title": "15 - Tony's Future Prospects",
+        "timestamp": 5827
+      },
+      {
+        "title": "16 - A Bud Fading",
+        "timestamp": 6362
+      },
+      {
+        "title": "17 - A Very Dark Shadow",
+        "timestamp": 6795
+      },
+      {
+        "title": "18 - No Room for Dolly",
+        "timestamp": 7186
+      },
+      {
+        "title": "19 - The Golden City",
+        "timestamp": 7773
+      },
+      {
+        "title": "20 - A Fresh Day Dawns",
+        "timestamp": 8301
+      },
+      {
+        "title": "21 - Polly",
+        "timestamp": 8941
+      }
     ]
   },
   {
@@ -672,27 +1927,90 @@
     "description": "Toby Tyler runs away from home to join the circus, where he meets new friends, faces hardships, and learns the true meaning of home.",
     "duration": "",
     "chapters": [
-      { "title": "Introduction", "timestamp": 0 },
-      { "title": "1 - Toby's Introduction to the Circus", "timestamp": 20 },
-      { "title": "2 - Toby Runs Away from Home", "timestamp": 663 },
-      { "title": "3 - The Night Ride", "timestamp": 1318 },
-      { "title": "4 - The First Day With the Circus", "timestamp": 2025 },
-      { "title": "5 - The Counterfeit Ten-Cent Piece", "timestamp": 2781 },
-      { "title": "6 - A Tenderhearted Skeleton", "timestamp": 3513 },
-      { "title": "7 - An Accident and Its Consequences", "timestamp": 4478 },
-      { "title": "8 - Capture of the Monkeys", "timestamp": 5159 },
-      { "title": "9 - The Dinner Party", "timestamp": 5670 },
-      { "title": "10 - Mr. Stubbs at a Party", "timestamp": 6696 },
-      { "title": "11 - A Stormy Night", "timestamp": 7542 },
-      { "title": "12 - Toby's Great Misfortune", "timestamp": 8230 },
-      { "title": "13 - Toby Attempts to Resign His Situation", "timestamp": 9101 },
-      { "title": "14 - Mr. Castle Teaches Toby to Ride", "timestamp": 9880 },
-      { "title": "15 - Toby's Friends Present Him with a Costume", "timestamp": 10836 },
-      { "title": "16 - Toby's First Appearance in the Ring", "timestamp": 11733 },
-      { "title": "17 - Off for Home!", "timestamp": 12554 },
-      { "title": "18 - A Day of Freedom", "timestamp": 13751 },
-      { "title": "19 - Mr. Stubbs's Mischief, and His Sad Fate", "timestamp": 14502 },
-      { "title": "20 - Home and Uncle Daniel", "timestamp": 15323 }
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Toby's Introduction to the Circus",
+        "timestamp": 20
+      },
+      {
+        "title": "2 - Toby Runs Away from Home",
+        "timestamp": 663
+      },
+      {
+        "title": "3 - The Night Ride",
+        "timestamp": 1318
+      },
+      {
+        "title": "4 - The First Day With the Circus",
+        "timestamp": 2025
+      },
+      {
+        "title": "5 - The Counterfeit Ten-Cent Piece",
+        "timestamp": 2781
+      },
+      {
+        "title": "6 - A Tenderhearted Skeleton",
+        "timestamp": 3513
+      },
+      {
+        "title": "7 - An Accident and Its Consequences",
+        "timestamp": 4478
+      },
+      {
+        "title": "8 - Capture of the Monkeys",
+        "timestamp": 5159
+      },
+      {
+        "title": "9 - The Dinner Party",
+        "timestamp": 5670
+      },
+      {
+        "title": "10 - Mr. Stubbs at a Party",
+        "timestamp": 6696
+      },
+      {
+        "title": "11 - A Stormy Night",
+        "timestamp": 7542
+      },
+      {
+        "title": "12 - Toby's Great Misfortune",
+        "timestamp": 8230
+      },
+      {
+        "title": "13 - Toby Attempts to Resign His Situation",
+        "timestamp": 9101
+      },
+      {
+        "title": "14 - Mr. Castle Teaches Toby to Ride",
+        "timestamp": 9880
+      },
+      {
+        "title": "15 - Toby's Friends Present Him with a Costume",
+        "timestamp": 10836
+      },
+      {
+        "title": "16 - Toby's First Appearance in the Ring",
+        "timestamp": 11733
+      },
+      {
+        "title": "17 - Off for Home!",
+        "timestamp": 12554
+      },
+      {
+        "title": "18 - A Day of Freedom",
+        "timestamp": 13751
+      },
+      {
+        "title": "19 - Mr. Stubbs's Mischief, and His Sad Fate",
+        "timestamp": 14502
+      },
+      {
+        "title": "20 - Home and Uncle Daniel",
+        "timestamp": 15323
+      }
     ]
   },
   {
@@ -705,7 +2023,144 @@
     "youtubeVideoId": "U5CVbF3LHF4",
     "description": "Mark Twain's beloved tale of two boys who look identical — one a prince, one a pauper — who switch places and discover the truth about wealth, power, and justice.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - The Birth of the Prince and the Pauper",
+        "timestamp": 14
+      },
+      {
+        "title": "2 - Tom’s Early Life",
+        "timestamp": 99
+      },
+      {
+        "title": "3 - Tom’s Meeting with the Prince",
+        "timestamp": 631
+      },
+      {
+        "title": "4 - The Prince’s Troubles Begin",
+        "timestamp": 1336
+      },
+      {
+        "title": "5 - Tom as a Patrician",
+        "timestamp": 1747
+      },
+      {
+        "title": "6 - Tom Receives Instructions",
+        "timestamp": 2562
+      },
+      {
+        "title": "7 - Tom’s First Royal Dinner",
+        "timestamp": 3397
+      },
+      {
+        "title": "8 - The Question of the Seal",
+        "timestamp": 3802
+      },
+      {
+        "title": "9 - The River Pageant",
+        "timestamp": 4073
+      },
+      {
+        "title": "10 - The Prince in the Toils",
+        "timestamp": 4409
+      },
+      {
+        "title": "11 - At Guildhall",
+        "timestamp": 5325
+      },
+      {
+        "title": "12 - The Prince and His Deliverer",
+        "timestamp": 5830
+      },
+      {
+        "title": "13 - The Disappearance of the Prince",
+        "timestamp": 6953
+      },
+      {
+        "title": "14 - ‘Le Roi Est Mort’—Vive le Roi",
+        "timestamp": 7383
+      },
+      {
+        "title": "15 - Tom as King",
+        "timestamp": 8567
+      },
+      {
+        "title": "16 - The State Dinner",
+        "timestamp": 9764
+      },
+      {
+        "title": "17 - Foo-Foo the First",
+        "timestamp": 10095
+      },
+      {
+        "title": "18 - The Prince with the Tramps",
+        "timestamp": 11205
+      },
+      {
+        "title": "19 - The Prince with the Peasants",
+        "timestamp": 11981
+      },
+      {
+        "title": "20 - The Prince and the Hermit",
+        "timestamp": 12564
+      },
+      {
+        "title": "21 - Hendon to the Rescue",
+        "timestamp": 13244
+      },
+      {
+        "title": "22 - A Victim of Treachery",
+        "timestamp": 13681
+      },
+      {
+        "title": "23 - The Prince a Prisoner",
+        "timestamp": 14263
+      },
+      {
+        "title": "24 - The Escape",
+        "timestamp": 14612
+      },
+      {
+        "title": "25 - Hendon Hall",
+        "timestamp": 14874
+      },
+      {
+        "title": "26 - Disowned",
+        "timestamp": 15635
+      },
+      {
+        "title": "27 - In Prison",
+        "timestamp": 16103
+      },
+      {
+        "title": "28 - The Sacrifice",
+        "timestamp": 17185
+      },
+      {
+        "title": "29 - To London",
+        "timestamp": 17599
+      },
+      {
+        "title": "30 - Tom’s Progress",
+        "timestamp": 17829
+      },
+      {
+        "title": "31 - The Recognition Procession",
+        "timestamp": 18145
+      },
+      {
+        "title": "32 - Coronation Day",
+        "timestamp": 18884
+      },
+      {
+        "title": "33 - Edward as King",
+        "timestamp": 20329
+      }
+    ]
   },
   {
     "slug": "george-washington-making-of-americas-first-president",
@@ -717,7 +2172,60 @@
     "youtubeVideoId": "eMLfNxalEqQ",
     "description": "A compelling audiobook biography of George Washington tracing his extraordinary journey from Virginia planter to the first President of the United States.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - The Youth of George Washington",
+        "timestamp": 114
+      },
+      {
+        "title": "2 - The First Military Expedition",
+        "timestamp": 2926
+      },
+      {
+        "title": "3 - The French War",
+        "timestamp": 5608
+      },
+      {
+        "title": "4 - The Warrior, the Statesman, and the Planter",
+        "timestamp": 8047
+      },
+      {
+        "title": "5 - The Gathering Storm of War",
+        "timestamp": 10545
+      },
+      {
+        "title": "6 - The Conflict Commenced",
+        "timestamp": 13181
+      },
+      {
+        "title": "7 - Progress of the War",
+        "timestamp": 15751
+      },
+      {
+        "title": "8 - The Siege of Boston",
+        "timestamp": 18158
+      },
+      {
+        "title": "9 - The War in New York",
+        "timestamp": 20606
+      },
+      {
+        "title": "10 - The Vicissitudes of War",
+        "timestamp": 23030
+      },
+      {
+        "title": "11 - The Loss of Philadelphia, and the Capture of Burgoyne",
+        "timestamp": 25347
+      },
+      {
+        "title": "12 - Concluding Scenes",
+        "timestamp": 26569
+      }
+    ]
   },
   {
     "slug": "in-freedoms-cause",
@@ -729,7 +2237,124 @@
     "youtubeVideoId": "Oqqux92QKT8",
     "description": "G.A. Henty's thrilling historical adventure following a young Scotsman who fights alongside William Wallace and Robert the Bruce for Scottish independence.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "Preface",
+        "timestamp": 12
+      },
+      {
+        "title": "1 - Glen Cairn",
+        "timestamp": 137
+      },
+      {
+        "title": "2 - Leaving Home",
+        "timestamp": 1608
+      },
+      {
+        "title": "3 - Sir William Wallace",
+        "timestamp": 3408
+      },
+      {
+        "title": "4 - The Capture of Lanark",
+        "timestamp": 5088
+      },
+      {
+        "title": "5 - A Treacherous Plot",
+        "timestamp": 6807
+      },
+      {
+        "title": "6 - The Barns of Ayr",
+        "timestamp": 8332
+      },
+      {
+        "title": "7 - The Cave in the Pentlands",
+        "timestamp": 10121
+      },
+      {
+        "title": "8 - The Council at Stirling",
+        "timestamp": 12086
+      },
+      {
+        "title": "9 - The Battle of Stirling Bridge",
+        "timestamp": 13573
+      },
+      {
+        "title": "10 - The Battle of Falkirk",
+        "timestamp": 15167
+      },
+      {
+        "title": "11 - Robert the Bruce",
+        "timestamp": 16726
+      },
+      {
+        "title": "12 - The Battle of Methven",
+        "timestamp": 18388
+      },
+      {
+        "title": "13 - The Castle of Dunstaffnage",
+        "timestamp": 19982
+      },
+      {
+        "title": "14 - Colonsay",
+        "timestamp": 21511
+      },
+      {
+        "title": "15 - A Mission to Ireland",
+        "timestamp": 23386
+      },
+      {
+        "title": "16 - An Irish Rising",
+        "timestamp": 25062
+      },
+      {
+        "title": "17 - The King's Blood Hound",
+        "timestamp": 27030
+      },
+      {
+        "title": "18 - The Hound Restored",
+        "timestamp": 28802
+      },
+      {
+        "title": "19 - The Convent of St. Kenneth",
+        "timestamp": 30205
+      },
+      {
+        "title": "20 - The Heiress of the Kerrs",
+        "timestamp": 31646
+      },
+      {
+        "title": "21 - The Siege of Aberfilly",
+        "timestamp": 33091
+      },
+      {
+        "title": "22 - A Prisoner",
+        "timestamp": 35460
+      },
+      {
+        "title": "23 - The Escape from Berwick",
+        "timestamp": 36540
+      },
+      {
+        "title": "24 - The Progress of the War",
+        "timestamp": 38053
+      },
+      {
+        "title": "25 - The Capture of a Stronghold",
+        "timestamp": 39583
+      },
+      {
+        "title": "26 - Edinburgh",
+        "timestamp": 41190
+      },
+      {
+        "title": "27 - Bannockburn",
+        "timestamp": 42926
+      }
+    ]
   },
   {
     "slug": "the-great-fire-of-london",
@@ -741,7 +2366,104 @@
     "youtubeVideoId": "v_WORdPP9b4",
     "description": "G.A. Henty's gripping historical adventure set against the backdrop of one of the most devastating fires in London's history.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "Preface",
+        "timestamp": 14
+      },
+      {
+        "title": "1 - Fatherless",
+        "timestamp": 118
+      },
+      {
+        "title": "2 - A Change for the Better",
+        "timestamp": 3134
+      },
+      {
+        "title": "3 - A Thief Somewhere",
+        "timestamp": 5346
+      },
+      {
+        "title": "4 - Captured",
+        "timestamp": 7686
+      },
+      {
+        "title": "5 - Kidnapped",
+        "timestamp": 10031
+      },
+      {
+        "title": "6 - A Narrow Escape",
+        "timestamp": 12506
+      },
+      {
+        "title": "7 - Saved from a Villain",
+        "timestamp": 14778
+      },
+      {
+        "title": "8 - The Captain's Yarn",
+        "timestamp": 17038
+      },
+      {
+        "title": "9 - The Fire in the Savoy",
+        "timestamp": 19670
+      },
+      {
+        "title": "10 - How John Wilkes Fought the Dutch",
+        "timestamp": 20747
+      },
+      {
+        "title": "11 - Prince Rupert",
+        "timestamp": 21945
+      },
+      {
+        "title": "12 - New Friends",
+        "timestamp": 24204
+      },
+      {
+        "title": "13 - The Battle of Lowestoft",
+        "timestamp": 26484
+      },
+      {
+        "title": "14 - Honourable Scars",
+        "timestamp": 28770
+      },
+      {
+        "title": "15 - The Plague",
+        "timestamp": 31099
+      },
+      {
+        "title": "16 - Father and Son",
+        "timestamp": 33606
+      },
+      {
+        "title": "17 - Smitten Down",
+        "timestamp": 36034
+      },
+      {
+        "title": "18 - A Stroke of Good Fortune",
+        "timestamp": 38358
+      },
+      {
+        "title": "19 - Taking Possession",
+        "timestamp": 40708
+      },
+      {
+        "title": "20 - The Fight Off Dunkirk",
+        "timestamp": 42863
+      },
+      {
+        "title": "21 - London in Flames",
+        "timestamp": 44985
+      },
+      {
+        "title": "22 - After the Fire",
+        "timestamp": 47274
+      }
+    ]
   },
   {
     "slug": "a-millionaire-at-sixteen",
@@ -753,7 +2475,160 @@
     "youtubeVideoId": "VxaR5dgYoWg",
     "description": "A young man's fortunes are upended when he is kidnapped at sea in this rousing multi-voice adventure audiobook.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Introducing Sir Louis Belgrave",
+        "timestamp": 173
+      },
+      {
+        "title": "2 - Something about the Belgrave Family",
+        "timestamp": 980
+      },
+      {
+        "title": "3 - Introducing another Millionaire",
+        "timestamp": 1608
+      },
+      {
+        "title": "4 - The Party that went to Southfield",
+        "timestamp": 2316
+      },
+      {
+        "title": "5 - The Victim of a Conspiracy",
+        "timestamp": 3007
+      },
+      {
+        "title": "6 - A Disagreeable Revelation",
+        "timestamp": 3714
+      },
+      {
+        "title": "7 - The Conference in the Stateroom",
+        "timestamp": 4398
+      },
+      {
+        "title": "8 - Bound to England",
+        "timestamp": 5085
+      },
+      {
+        "title": "9 - A Dinner in the Second Cabin",
+        "timestamp": 5765
+      },
+      {
+        "title": "10 - A Skirmish with Light Words",
+        "timestamp": 6459
+      },
+      {
+        "title": "11 - A Battle in Politeness",
+        "timestamp": 7115
+      },
+      {
+        "title": "12 - The Possessor of a Mighty Secret",
+        "timestamp": 7811
+      },
+      {
+        "title": "13 - Closing with the Enemy",
+        "timestamp": 8498
+      },
+      {
+        "title": "14 - The Victory in the Cabin",
+        "timestamp": 9230
+      },
+      {
+        "title": "15 - An Obdurate Prisoner",
+        "timestamp": 9870
+      },
+      {
+        "title": "16 - Allegiance to the Powers that be",
+        "timestamp": 10586
+      },
+      {
+        "title": "17 - The Maud’s New Commander",
+        "timestamp": 11338
+      },
+      {
+        "title": "18 - Some Signs of Treachery",
+        "timestamp": 12071
+      },
+      {
+        "title": "19 - Euchred on the Shore",
+        "timestamp": 12810
+      },
+      {
+        "title": "20 - In Pursuit of the Maud",
+        "timestamp": 13514
+      },
+      {
+        "title": "21 - Felix McGavonty on Watch",
+        "timestamp": 14223
+      },
+      {
+        "title": "22 - Mrs. Belgrave’s Protector",
+        "timestamp": 14959
+      },
+      {
+        "title": "23 - The Search for the Maud",
+        "timestamp": 15614
+      },
+      {
+        "title": "24 - The Guardian-Mother",
+        "timestamp": 16355
+      },
+      {
+        "title": "25 - On Board of the Phantom",
+        "timestamp": 17127
+      },
+      {
+        "title": "26 - Among the Pines",
+        "timestamp": 17889
+      },
+      {
+        "title": "27 - An Agent of the Enemy",
+        "timestamp": 18575
+      },
+      {
+        "title": "28 - The Last of the Phantom",
+        "timestamp": 19256
+      },
+      {
+        "title": "29 - Left on a Sandbank",
+        "timestamp": 19943
+      },
+      {
+        "title": "30 - A Hungry Millionaire",
+        "timestamp": 20621
+      },
+      {
+        "title": "31 - The Magnificent Steamer",
+        "timestamp": 21318
+      },
+      {
+        "title": "32 - A Formal Presentation",
+        "timestamp": 22072
+      },
+      {
+        "title": "33 - On Board the Guardian-Mother",
+        "timestamp": 22823
+      },
+      {
+        "title": "34 - A Wreck on the Bermuda Reef",
+        "timestamp": 23578
+      },
+      {
+        "title": "35 - The Return to the Guardian-Mother",
+        "timestamp": 24320
+      },
+      {
+        "title": "36 - A Happy Reunion",
+        "timestamp": 25019
+      },
+      {
+        "title": "37 - John Scoble’s Antecedents",
+        "timestamp": 25848
+      }
+    ]
   },
   {
     "slug": "worlds-greatest-military-spies",
@@ -765,7 +2640,92 @@
     "youtubeVideoId": "TOSlwDEmCFs",
     "description": "Dramatic true accounts of history's most daring spies and secret agents, brought to life in this compelling audiobook by George Barton.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Opening",
+        "timestamp": 0
+      },
+      {
+        "title": "Introduction",
+        "timestamp": 32
+      },
+      {
+        "title": "1 - The Alsatian Smuggler Who Helped Napoleon Capture the Austrian Army",
+        "timestamp": 423
+      },
+      {
+        "title": "2 - Belle Boyd, the Confederate Girl Who Saved Stonewall Jackson",
+        "timestamp": 1719
+      },
+      {
+        "title": "3 - The Indian Scout Who Was the Hero of King Philip’s War",
+        "timestamp": 2728
+      },
+      {
+        "title": "4 - How the Suicide of a Staff Officer Averted War Between Austria and Russia",
+        "timestamp": 4026
+      },
+      {
+        "title": "5 - The Romantic Side of Major André’s Unsuccessful Exploit",
+        "timestamp": 4889
+      },
+      {
+        "title": "6 - The Strange Adventures of the Chevalier D’Eon at the Russian Court",
+        "timestamp": 6045
+      },
+      {
+        "title": "7 - How Napoleon’s Chief Spy Hoodwinked the Emperor of Austria",
+        "timestamp": 7387
+      },
+      {
+        "title": "8 - Lydia Darrah, the Brave Quakeress Who Saved Washington’s Army",
+        "timestamp": 8625
+      },
+      {
+        "title": "9 - Doctor Steiber and the Mystery of the Franco-Prussian War",
+        "timestamp": 9995
+      },
+      {
+        "title": "10 - The Adventure of Private Morgan in the Camp of Cornwallis",
+        "timestamp": 11354
+      },
+      {
+        "title": "11 - The Mysterious and Romantic Case of General Napper Tandy",
+        "timestamp": 12446
+      },
+      {
+        "title": "12 - How Monsieur de Meinau Helped Make Jerome Bonaparte King of Westphalia",
+        "timestamp": 13766
+      },
+      {
+        "title": "13 - The Strange Mystery Surrounding the Betrayal of Captain Nathan Hale",
+        "timestamp": 14912
+      },
+      {
+        "title": "14 - Major Le Caron and the Fenian Invasion of Canada",
+        "timestamp": 16130
+      },
+      {
+        "title": "15 - How Emma Edmonds Penetrated the Confederate Lines",
+        "timestamp": 17568
+      },
+      {
+        "title": "16 - The Amazing Adventure of Brigadier-General Lafayette C. Baker",
+        "timestamp": 19270
+      },
+      {
+        "title": "17 - The Mysterious “F” and the Captured Troopers",
+        "timestamp": 21648
+      },
+      {
+        "title": "18 - The Mysterious Man Who Asked for a Light",
+        "timestamp": 23176
+      },
+      {
+        "title": "19 - Carl Lody and Spies of the World’s Greatest War",
+        "timestamp": 24451
+      }
+    ]
   },
   {
     "slug": "antoine-of-oregon",
@@ -789,7 +2749,52 @@
     "youtubeVideoId": "lGyT4QBNpbA",
     "description": "The story of General Isaac Brock, the British commander who became a legendary hero during the War of 1812 defending Upper Canada.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Early Life",
+        "timestamp": 16
+      },
+      {
+        "title": "2 - First Experience in Battle",
+        "timestamp": 686
+      },
+      {
+        "title": "3 - First Years in Canada",
+        "timestamp": 1429
+      },
+      {
+        "title": "4 - In Command in Canada",
+        "timestamp": 2373
+      },
+      {
+        "title": "5 - In Upper Canada",
+        "timestamp": 3203
+      },
+      {
+        "title": "6 - Hostilities Commence",
+        "timestamp": 4033
+      },
+      {
+        "title": "7 - The Capture of Detroit",
+        "timestamp": 4860
+      },
+      {
+        "title": "8 - A Disastrous Armistice",
+        "timestamp": 5680
+      },
+      {
+        "title": "9 - The Battle of Queenston Heights",
+        "timestamp": 6773
+      },
+      {
+        "title": "10 - Tributes to a Hero’s Memory",
+        "timestamp": 7821
+      }
+    ]
   },
   {
     "slug": "in-ship-and-prison",
