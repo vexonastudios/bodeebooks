@@ -671,7 +671,29 @@
     "youtubeVideoId": "RAYHgVyXp7k",
     "description": "Toby Tyler runs away from home to join the circus, where he meets new friends, faces hardships, and learns the true meaning of home.",
     "duration": "",
-    "chapters": []
+    "chapters": [
+      { "title": "Introduction", "timestamp": 0 },
+      { "title": "1 - Toby's Introduction to the Circus", "timestamp": 20 },
+      { "title": "2 - Toby Runs Away from Home", "timestamp": 663 },
+      { "title": "3 - The Night Ride", "timestamp": 1318 },
+      { "title": "4 - The First Day With the Circus", "timestamp": 2025 },
+      { "title": "5 - The Counterfeit Ten-Cent Piece", "timestamp": 2781 },
+      { "title": "6 - A Tenderhearted Skeleton", "timestamp": 3513 },
+      { "title": "7 - An Accident and Its Consequences", "timestamp": 4478 },
+      { "title": "8 - Capture of the Monkeys", "timestamp": 5159 },
+      { "title": "9 - The Dinner Party", "timestamp": 5670 },
+      { "title": "10 - Mr. Stubbs at a Party", "timestamp": 6696 },
+      { "title": "11 - A Stormy Night", "timestamp": 7542 },
+      { "title": "12 - Toby's Great Misfortune", "timestamp": 8230 },
+      { "title": "13 - Toby Attempts to Resign His Situation", "timestamp": 9101 },
+      { "title": "14 - Mr. Castle Teaches Toby to Ride", "timestamp": 9880 },
+      { "title": "15 - Toby's Friends Present Him with a Costume", "timestamp": 10836 },
+      { "title": "16 - Toby's First Appearance in the Ring", "timestamp": 11733 },
+      { "title": "17 - Off for Home!", "timestamp": 12554 },
+      { "title": "18 - A Day of Freedom", "timestamp": 13751 },
+      { "title": "19 - Mr. Stubbs's Mischief, and His Sad Fate", "timestamp": 14502 },
+      { "title": "20 - Home and Uncle Daniel", "timestamp": 15323 }
+    ]
   },
   {
     "slug": "the-prince-and-the-pauper",
