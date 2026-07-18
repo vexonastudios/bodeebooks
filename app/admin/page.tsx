@@ -386,7 +386,7 @@ export default function AdminPage() {
                   style={filterBtnStyle(filter === s)}
                   onClick={() => setFilter(s)}
                 >
-                  {s} {s !== "All" ? \`(\${items.filter((i) => i.source === s).length})\` : \`(\${items.length})\`}
+                  {s} {s !== "All" ? `(${items.filter((i) => i.source === s).length})` : `(${items.length})`}
                 </button>
               ))}
             </div>
@@ -416,12 +416,12 @@ export default function AdminPage() {
                 </div>
               ) : (
                 filtered.map((item, idx) => {
-                  const mailtoSubject = encodeURIComponent(\`Re: Your feedback on \${item.source}\`);
+                  const mailtoSubject = encodeURIComponent(`Re: Your feedback on ${item.source}`);
                   const mailtoBody = encodeURIComponent(
-                    \`Hi \${item.name},\\n\\nThank you for your feedback!\\n\\n---\\nYour original message:\\n"\${item.message}"\\n\\n---\\n\\n\`
+                    `Hi ${item.name},\n\nThank you for your feedback!\n\n---\nYour original message:\n"${item.message}"\n\n---\n\n`
                   );
                   const mailtoHref = item.email
-                    ? \`mailto:\${item.email}?subject=\${mailtoSubject}&body=\${mailtoBody}\`
+                    ? `mailto:${item.email}?subject=${mailtoSubject}&body=${mailtoBody}`
                     : null;
 
                   return (
