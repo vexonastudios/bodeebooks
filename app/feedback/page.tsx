@@ -51,7 +51,7 @@ export default function FeedbackPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <MessageSquarePlus size={48} color="var(--primary)" style={{ marginBottom: "1rem" }} />
+        <MessageSquarePlus size={48} color="var(--green)" style={{ marginBottom: "1rem" }} />
         <h1 className={styles.title}>Send Feedback</h1>
         <p className={styles.subtitle}>Spotted a bug? Have a suggestion? We want to hear from you!</p>
       </div>
