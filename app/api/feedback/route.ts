@@ -1,4 +1,4 @@
-import { put, list } from "@vercel/blob";
+import { put, list, copy, del } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
 const ALLOWED_ORIGINS = [
@@ -112,6 +112,54 @@ export async function GET(req: NextRequest) {
     console.error("[feedback GET]", err);
     return NextResponse.json(
       { error: "Failed to load feedback." },
+      { status: 500, headers }
+    );
+  }
+}
+
+// ── PATCH — Archive feedback ─────────────────────────────────────────────
+export async function PATCH(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  const headers = corsHeaders(origin);
+
+  // Check admin token
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace("Bearer ", "").trim();
+  const adminPassword = process.env.ADMIN_PASSWORD || "";
+
+  if (!adminPassword || token !== adminPassword) {
+    return NextResponse.json(
+      { error: "Unauthorized." },
+      { status: 401, headers }
+    );
+  }
+
+  try {
+    const body = await req.json();
+    const { blobUrl, blobName, action } = body;
+
+    if (!blobUrl || !blobName || action !== "archive") {
+      return NextResponse.json(
+        { error: "Invalid request. Missing blobUrl, blobName, or action." },
+        { status: 400, headers }
+      );
+    }
+
+    // Example blobName: "feedback/172348123-abcde.json"
+    // Move to: "archived-feedback/172348123-abcde.json"
+    const newPath = blobName.replace("feedback/", "archived-feedback/");
+
+    // 1. Copy to new path
+    await copy(blobUrl, newPath, { access: "public" });
+
+    // 2. Delete original
+    await del(blobUrl);
+
+    return NextResponse.json({ ok: true }, { status: 200, headers });
+  } catch (err) {
+    console.error("[feedback PATCH]", err);
+    return NextResponse.json(
+      { error: "Internal server error during archive." },
       { status: 500, headers }
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Shield, RefreshCw, LogOut, Mail, Inbox, AlertCircle } from "lucide-react";
+import { Shield, RefreshCw, LogOut, Mail, Inbox, AlertCircle, CheckCircle, Download, Monitor, Smartphone, Globe, ChevronDown } from "lucide-react";
 
 type FeedbackItem = {
   source: string;
@@ -11,6 +11,7 @@ type FeedbackItem = {
   message: string;
   submittedAt: string;
   appVersion: string;
+  userAgent?: string;
   receivedAt: string;
   _blobUrl: string;
   _blobName: string;
@@ -33,12 +34,31 @@ function formatDate(iso: string) {
   }
 }
 
+function parseUA(ua?: string) {
+  if (!ua) return { os: "Unknown", browser: "Unknown", type: "desktop" };
+  const str = ua.toLowerCase();
+  let os = "Unknown";
+  let type = "desktop";
+  if (str.includes("windows")) os = "Windows";
+  else if (str.includes("mac os")) os = "Mac";
+  else if (str.includes("android")) { os = "Android"; type = "mobile"; }
+  else if (str.includes("iphone") || str.includes("ipad")) { os = "iOS"; type = "mobile"; }
+  
+  let browser = "Unknown";
+  if (str.includes("firefox")) browser = "Firefox";
+  else if (str.includes("edg/")) browser = "Edge";
+  else if (str.includes("chrome")) browser = "Chrome";
+  else if (str.includes("safari")) browser = "Safari";
+  
+  return { os, browser, type };
+}
+
 function typeColor(type: string) {
   const t = type.toLowerCase();
-  if (t.includes("bug")) return "#dc2626"; // red
-  if (t.includes("feature")) return "#4f46e5"; // indigo
-  if (t.includes("content")) return "#d97706"; // amber
-  if (t.includes("general")) return "var(--green)"; // bodee green
+  if (t.includes("bug")) return "#dc2626";
+  if (t.includes("feature")) return "#4f46e5";
+  if (t.includes("content")) return "#d97706";
+  if (t.includes("general")) return "var(--green)";
   return "#64748b";
 }
 
@@ -132,7 +152,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   topbarLogo: { fontSize: "16px", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" },
   topbarSub: { fontSize: "13px", color: "var(--text-muted)", marginLeft: "8px", fontWeight: 400 },
-  logoutBtn: {
+  actionBtn: {
     padding: "8px 16px",
     background: "var(--bg)",
     border: "1px solid var(--border)",
@@ -159,7 +179,18 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statNum: { fontSize: "32px", fontWeight: 800, color: "var(--text-primary)" },
   statLabel: { fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginTop: "4px" },
-  filterRow: { display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" as const },
+  filterRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap" as const, gap: "16px" },
+  filterGroup: { display: "flex", gap: "10px", flexWrap: "wrap" as const },
+  selectInput: {
+    padding: "7px 12px",
+    background: "var(--bg-card)",
+    border: "1px solid var(--border)",
+    borderRadius: "8px",
+    color: "var(--text-primary)",
+    fontSize: "13px",
+    outline: "none",
+    cursor: "pointer",
+  },
   cardList: { display: "flex", flexDirection: "column" as const, gap: "16px" },
   card: {
     background: "var(--bg-card)",
@@ -178,18 +209,22 @@ const styles: Record<string, React.CSSProperties> = {
     background: "var(--bg-subtle)",
     color: "var(--text-secondary)",
     border: "1px solid var(--border)",
-    fontWeight: 500
+    fontWeight: 500,
+    display: "flex",
+    alignItems: "center",
+    gap: "4px"
   },
   cardDate: { fontSize: "12px", color: "var(--text-muted)", whiteSpace: "nowrap" as const },
   cardPerson: { fontSize: "14px", color: "var(--text-secondary)", marginBottom: "12px", fontWeight: 500 },
   cardMsg: { fontSize: "15px", color: "var(--text-primary)", lineHeight: 1.6, whiteSpace: "pre-wrap" as const },
+  actionsRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "16px", flexWrap: "wrap" as const, gap: "12px" },
+  replyWrapper: { display: "flex", alignItems: "center", gap: "8px" },
   replyBtn: {
-    marginTop: "16px",
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
     padding: "8px 16px",
-    background: "var(--bg)",
+    background: "var(--bg-subtle)",
     border: "1px solid var(--border)",
     borderRadius: "8px",
     color: "var(--green)",
@@ -199,10 +234,30 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     transition: "all 0.15s"
   },
+  archiveBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "8px 16px",
+    background: "transparent",
+    border: "1px solid transparent",
+    borderRadius: "8px",
+    color: "var(--text-muted)",
+    fontSize: "13px",
+    cursor: "pointer",
+    fontWeight: 500,
+    transition: "all 0.15s"
+  },
   emptyState: { textAlign: "center" as const, color: "var(--text-muted)", padding: "80px 0", fontSize: "15px", display: "flex", flexDirection: "column", alignItems: "center" },
   loadingWrap: { display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0" },
   spinner: { width: "36px", height: "36px", border: "3px solid var(--border)", borderTopColor: "var(--green)", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
 };
+
+const QUICK_REPLIES = [
+  { label: "General Reply", body: "Hi {name},\n\nThank you for your feedback!\n\n---\nYour original message:\n\"{message}\"\n\n---\n\n" },
+  { label: "Bug Fixed", body: "Hi {name},\n\nThank you for reporting this issue. We've just pushed a fix and it should be working correctly now!\n\n---\nYour original message:\n\"{message}\"\n\n---\n\n" },
+  { label: "Feature Noted", body: "Hi {name},\n\nThank you for the great suggestion! We've noted this feature request and will keep it in mind for future updates.\n\n---\nYour original message:\n\"{message}\"\n\n---\n\n" }
+];
 
 export default function AdminPage() {
   const [token, setToken] = useState<string>("");
@@ -213,6 +268,9 @@ export default function AdminPage() {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("All");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "type">("newest");
+  const [archiving, setArchiving] = useState<string | null>(null);
+  const [replyTemplates, setReplyTemplates] = useState<Record<string, number>>({});
 
   // On mount, check localStorage for saved token
   useEffect(() => {
@@ -281,8 +339,64 @@ export default function AdminPage() {
     setInputPw("");
   };
 
+  const handleArchive = async (item: FeedbackItem) => {
+    if (!confirm("Mark this feedback as resolved and archive it?")) return;
+    setArchiving(item._blobUrl);
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ blobUrl: item._blobUrl, blobName: item._blobName, action: "archive" }),
+      });
+      if (!res.ok) throw new Error("Failed to archive");
+      setItems(prev => prev.filter(i => i._blobUrl !== item._blobUrl));
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setArchiving(null);
+    }
+  };
+
+  const exportCSV = () => {
+    const headers = ["Date", "Type", "Source", "App Version", "Name", "Email", "Message", "Device OS", "Browser"];
+    const rows = sortedFiltered.map(item => {
+      const ua = parseUA(item.userAgent);
+      return [
+        formatDate(item.submittedAt || item.receivedAt),
+        item.type,
+        item.source,
+        item.appVersion || "unknown",
+        item.name,
+        item.email,
+        `"${item.message.replace(/"/g, '""')}"`,
+        ua.os,
+        ua.browser
+      ].join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `bodee-feedback-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const sources = ["All", ...Array.from(new Set(items.map((i) => i.source)))];
   const filtered = filter === "All" ? items : items.filter((i) => i.source === filter);
+
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    const timeA = new Date(a.submittedAt || a.receivedAt).getTime();
+    const timeB = new Date(b.submittedAt || b.receivedAt).getTime();
+    if (sortOrder === "newest") return timeB - timeA;
+    if (sortOrder === "oldest") return timeA - timeB;
+    if (sortOrder === "type") return a.type.localeCompare(b.type);
+    return 0;
+  });
 
   const typeCount = (type: string) =>
     items.filter((i) => i.type?.toLowerCase().includes(type)).length;
@@ -333,7 +447,8 @@ export default function AdminPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .feedback-card:hover { border-color: var(--green) !important; box-shadow: var(--shadow-md) !important; }
         .reply-btn:hover { background: var(--green-light) !important; border-color: var(--green) !important; }
-        .logout-btn:hover { background: var(--bg-subtle) !important; color: var(--text-primary) !important; }
+        .archive-btn:hover { color: var(--text-primary) !important; }
+        .action-btn:hover { background: var(--bg-subtle) !important; color: var(--text-primary) !important; }
       `}</style>
       <div style={styles.page}>
         {/* Top bar */}
@@ -344,13 +459,20 @@ export default function AdminPage() {
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <button
+              onClick={exportCSV}
+              style={{ ...styles.actionBtn, color: "var(--text-secondary)" }}
+              className="action-btn"
+            >
+              <Download size={14} /> Export CSV
+            </button>
+            <button
               onClick={() => fetchFeedback(token)}
-              style={{ ...styles.logoutBtn, color: "var(--green)", borderColor: "var(--green)", background: "transparent" }}
+              style={{ ...styles.actionBtn, color: "var(--green)", borderColor: "var(--green)", background: "transparent" }}
               className="reply-btn"
             >
               <RefreshCw size={14} /> Refresh
             </button>
-            <button onClick={handleLogout} style={styles.logoutBtn} className="logout-btn">
+            <button onClick={handleLogout} style={styles.actionBtn} className="action-btn">
               <LogOut size={14} /> Sign Out
             </button>
           </div>
@@ -377,9 +499,9 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Source filter */}
-          {sources.length > 1 && (
-            <div style={styles.filterRow}>
+          {/* Filter & Sort Row */}
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
               {sources.map((s) => (
                 <button
                   key={s}
@@ -390,7 +512,19 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-          )}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: 500 }}>Sort by:</span>
+              <select 
+                value={sortOrder} 
+                onChange={(e) => setSortOrder(e.target.value as any)}
+                style={styles.selectInput}
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="type">Type</option>
+              </select>
+            </div>
+          </div>
 
           {/* Error */}
           {error && (
@@ -409,29 +543,42 @@ export default function AdminPage() {
           {/* Feedback cards */}
           {!loading && (
             <div style={styles.cardList}>
-              {filtered.length === 0 ? (
+              {sortedFiltered.length === 0 ? (
                 <div style={styles.emptyState}>
                   <Inbox size={48} strokeWidth={1.5} style={{ marginBottom: "16px", color: "var(--border)" }} />
                   No feedback yet. When users submit feedback it will appear here.
                 </div>
               ) : (
-                filtered.map((item, idx) => {
+                sortedFiltered.map((item, idx) => {
+                  const ua = parseUA(item.userAgent);
+                  
+                  const tplIdx = replyTemplates[item._blobUrl] || 0;
+                  const tpl = QUICK_REPLIES[tplIdx];
                   const mailtoSubject = encodeURIComponent(`Re: Your feedback on ${item.source}`);
                   const mailtoBody = encodeURIComponent(
-                    `Hi ${item.name},\n\nThank you for your feedback!\n\n---\nYour original message:\n"${item.message}"\n\n---\n\n`
+                    tpl.body.replace("{name}", item.name).replace("{message}", item.message)
                   );
                   const mailtoHref = item.email
                     ? `mailto:${item.email}?subject=${mailtoSubject}&body=${mailtoBody}`
                     : null;
+                  
+                  const isArchiving = archiving === item._blobUrl;
 
                   return (
-                    <div key={idx} style={styles.card} className="feedback-card">
+                    <div key={item._blobUrl} style={styles.card} className="feedback-card">
                       <div style={styles.cardHeader}>
                         <div style={styles.cardMeta}>
                           <span style={typePillStyle(item.type)}>{item.type}</span>
-                          <span style={styles.sourceBadge}>{item.source}</span>
-                          {item.appVersion && item.appVersion !== "unknown" && (
-                            <span style={{ ...styles.sourceBadge, color: "var(--text-muted)" }}>v{item.appVersion}</span>
+                          <span style={styles.sourceBadge}>
+                            {item.source}
+                          </span>
+                          {(item.appVersion && item.appVersion !== "unknown" || ua.os !== "Unknown") && (
+                            <span style={{ ...styles.sourceBadge, color: "var(--text-muted)" }}>
+                              {ua.type === "mobile" ? <Smartphone size={12} /> : <Monitor size={12} />}
+                              {ua.os !== "Unknown" ? `${ua.os} ` : ""}
+                              {ua.browser !== "Unknown" ? `(${ua.browser}) ` : ""}
+                              {item.appVersion && item.appVersion !== "unknown" ? `v${item.appVersion}` : ""}
+                            </span>
                           )}
                         </div>
                         <span style={styles.cardDate}>
@@ -448,11 +595,42 @@ export default function AdminPage() {
 
                       <div style={styles.cardMsg}>{item.message}</div>
 
-                      {mailtoHref && (
-                        <a href={mailtoHref} style={styles.replyBtn} className="reply-btn">
-                          <Mail size={14} /> Reply via Email
-                        </a>
-                      )}
+                      <div style={styles.actionsRow}>
+                        <div style={styles.replyWrapper}>
+                          {mailtoHref ? (
+                            <>
+                              <a href={mailtoHref} style={styles.replyBtn} className="reply-btn">
+                                <Mail size={14} /> Reply via Email
+                              </a>
+                              <select 
+                                style={{ ...styles.selectInput, padding: "8px", border: "1px solid var(--border)", background: "transparent" }}
+                                value={tplIdx}
+                                onChange={(e) => setReplyTemplates(prev => ({ ...prev, [item._blobUrl]: Number(e.target.value) }))}
+                              >
+                                {QUICK_REPLIES.map((r, i) => (
+                                  <option key={i} value={i}>{r.label}</option>
+                                ))}
+                              </select>
+                            </>
+                          ) : (
+                            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>No email provided</span>
+                          )}
+                        </div>
+                        
+                        <button 
+                          style={styles.archiveBtn} 
+                          className="archive-btn"
+                          onClick={() => handleArchive(item)}
+                          disabled={isArchiving}
+                        >
+                          {isArchiving ? (
+                            <div style={{ ...styles.spinner, width: "14px", height: "14px", borderWidth: "2px" }} />
+                          ) : (
+                            <CheckCircle size={16} />
+                          )}
+                          {isArchiving ? "Archiving..." : "Mark as Resolved"}
+                        </button>
+                      </div>
                     </div>
                   );
                 })
