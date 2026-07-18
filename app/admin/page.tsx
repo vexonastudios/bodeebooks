@@ -69,13 +69,18 @@ function typePillStyle(type: string): React.CSSProperties {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#0f1117", padding: "0" },
+  page: { 
+    position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 99999,
+    minHeight: "100vh", background: "#0f1117", padding: "0", color: "#e2e8f0", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
   loginWrap: {
+    position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 99999,
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     background: "linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%)",
+    color: "#e2e8f0", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   },
   loginCard: {
     background: "#1e2535",
