@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Wrench, ExternalLink, Menu, X, Gamepad2, Activity } from "lucide-react";
+import { BookOpen, Wrench, ExternalLink, Menu, X, Gamepad2, Activity, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
 import styles from "./Navbar.module.css";
 
@@ -14,6 +14,7 @@ export default function Navbar() {
     { href: "/", label: "Audiobooks", icon: BookOpen },
     { href: "https://games.bodeebooks.com/", label: "Games Hub", icon: Gamepad2, external: true },
     { href: "https://fit.bodeebooks.com/", label: "Fitness", icon: Activity, external: true },
+    { href: "/feedback", label: "Feedback", icon: MessageSquarePlus, external: false },
   ];
 
   return (
