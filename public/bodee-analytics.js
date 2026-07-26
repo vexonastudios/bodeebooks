@@ -12,7 +12,7 @@
   if (window.__bodeeAnalytics) return;
   window.__bodeeAnalytics = true;
 
-  var ENDPOINT = "https://www.bodeebooks.com/api/analytics";
+  var ENDPOINT = "https://www.bodeebooks.com/api/analytics/";
   var HEARTBEAT_MS = 180000; // 3 minutes
   var BATCH_INTERVAL_MS = 30000; // Flush batch every 30 seconds
 
