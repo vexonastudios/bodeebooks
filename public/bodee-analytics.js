@@ -13,8 +13,8 @@
   window.__bodeeAnalytics = true;
 
   var ENDPOINT = "https://www.bodeebooks.com/api/analytics";
-  var HEARTBEAT_MS = 60000; // 60 seconds
-  var BATCH_INTERVAL_MS = 10000; // Flush batch every 10 seconds
+  var HEARTBEAT_MS = 180000; // 3 minutes
+  var BATCH_INTERVAL_MS = 30000; // Flush batch every 30 seconds
 
   // ── Detect site and game ──────────────────────────────────────────────
   var hostname = window.location.hostname;
