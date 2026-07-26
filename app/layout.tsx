@@ -101,6 +101,7 @@ export default function RootLayout({
             gtag('config', 'G-JLFF3WR5NW');
           `}
         </Script>
+        <Script src="/bodee-analytics.js" strategy="afterInteractive" />
       </head>
       <body>
         <Navbar />
