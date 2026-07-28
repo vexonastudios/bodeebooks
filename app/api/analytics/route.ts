@@ -106,6 +106,7 @@ async function saveDailyBlob(date: string, data: DailyAggregate) {
     access: "public",
     contentType: "application/json",
     addRandomSuffix: false,
+    allowOverwrite: true,
   });
 }
 
