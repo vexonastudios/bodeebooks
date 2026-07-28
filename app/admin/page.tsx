@@ -707,11 +707,15 @@ function AnalyticsTab({ token }: { token: string }) {
               </thead>
               <tbody>
                 {recentEvents.map((evt, idx) => {
-                  const eventLabel = evt.event.replace(/_/g, " ");
+                  const eventLabel = evt.event
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                  const isStart = evt.event.endsWith("_start") || evt.event === "game_start";
+                  const isEnd = evt.event.endsWith("_end") || evt.event === "game_end";
                   const eventColor =
                     evt.event === "page_view" ? "var(--green)" :
-                    evt.event === "game_start" ? "#4f46e5" :
-                    evt.event === "game_end" ? "#dc2626" :
+                    isStart ? "#4f46e5" :
+                    isEnd ? "#dc2626" :
                     evt.event === "heartbeat" ? "#d97706" : "#64748b";
                   return (
                     <tr key={idx} style={{ borderBottom: "1px solid var(--border-light)" }}>
@@ -722,8 +726,8 @@ function AnalyticsTab({ token }: { token: string }) {
                           background: eventColor + "14", color: eventColor, textTransform: "capitalize",
                         }}>
                           {evt.event === "page_view" && <TrendingUp size={11} />}
-                          {evt.event === "game_start" && <Zap size={11} />}
-                          {evt.event === "game_end" && <Activity size={11} />}
+                          {(evt.event === "game_start" || evt.event === "listen_start" || evt.event === "workout_start") && <Zap size={11} />}
+                          {(evt.event === "game_end" || evt.event === "listen_end" || evt.event === "workout_end") && <Activity size={11} />}
                           {evt.event === "heartbeat" && <Clock size={11} />}
                           {eventLabel}
                         </span>

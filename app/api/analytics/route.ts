@@ -173,14 +173,14 @@ export async function POST(req: NextRequest) {
         if (eventType === "page_view") {
           data.totalPageViews++;
           data.sites[site].pageViews++;
-        } else if (eventType === "game_start") {
+        } else if (eventType === "game_start" || eventType === "listen_start" || eventType === "workout_start") {
           data.totalGameSessions++;
           data.sites[site].sessions++;
           if (!data.games[game]) {
             data.games[game] = { sessions: 0, totalMs: 0, avgMs: 0 };
           }
           data.games[game].sessions++;
-        } else if (eventType === "game_end" || eventType === "heartbeat") {
+        } else if (eventType === "game_end" || eventType === "listen_end" || eventType === "workout_end" || eventType === "heartbeat") {
           const duration = evt.duration || 0;
           if (duration > 0) {
             data.totalPlayTimeMs += duration;

@@ -19,6 +19,26 @@
   // ── Detect site and game ──────────────────────────────────────────────
   var hostname = window.location.hostname;
   var site = hostname; // e.g., "games.bodeebooks.com"
+
+  // Determine site type for context-aware event naming
+  var siteType = "games"; // default
+  if (hostname === "www.bodeebooks.com" || hostname === "bodeebooks.com") {
+    siteType = "audiobooks";
+  } else if (hostname.includes("fit")) {
+    siteType = "fit";
+  }
+
+  function startEventName() {
+    if (siteType === "audiobooks") return "listen_start";
+    if (siteType === "fit") return "workout_start";
+    return "game_start";
+  }
+
+  function endEventName() {
+    if (siteType === "audiobooks") return "listen_end";
+    if (siteType === "fit") return "workout_end";
+    return "game_end";
+  }
   var pathname = window.location.pathname.replace(/^\//, "").replace(/\.html$/, "");
 
   // Game name detection from page title or pathname
@@ -188,8 +208,8 @@
     // Page view
     queueEvent("page_view");
 
-    // Game start (immediate — user navigated to this page)
-    queueEvent("game_start");
+    // Session start (event name depends on site type)
+    queueEvent(startEventName());
 
     // Start heartbeat and batch sending
     startHeartbeat();
@@ -198,17 +218,17 @@
     // Track visibility changes
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // On page unload, send final game_end with total duration
+    // On page unload, send final end event with total duration
     window.addEventListener("beforeunload", function () {
       var totalDuration = Date.now() - sessionStartTime;
-      queueEvent("game_end", { duration: totalDuration });
+      queueEvent(endEventName(), { duration: totalDuration });
       flushQueue();
     });
 
     // Also send on pagehide (for mobile browsers)
     window.addEventListener("pagehide", function () {
       var totalDuration = Date.now() - sessionStartTime;
-      queueEvent("game_end", { duration: totalDuration });
+      queueEvent(endEventName(), { duration: totalDuration });
       flushQueue();
     });
 
