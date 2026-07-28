@@ -230,8 +230,10 @@
     hasEnded = true;
 
     if (isSessionPage) {
-      var totalDuration = Date.now() - sessionStartTime;
-      queueEvent(endEventName(), { duration: totalDuration });
+      // Only send the remaining duration since the last heartbeat
+      // to avoid double-counting (heartbeats already sent their chunks)
+      var remainingDuration = Date.now() - sessionStartTime - lastHeartbeatMs;
+      queueEvent(endEventName(), { duration: remainingDuration });
     }
     stopHeartbeat();
     flushQueue();
