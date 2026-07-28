@@ -463,7 +463,7 @@ function AnalyticsTab({ token }: { token: string }) {
             </div>
           </div>
           <div style={{ ...styles.statNum, color: "#7c3aed" }}>{summary.totalGameSessions.toLocaleString()}</div>
-          <div style={styles.statLabel}>Game Sessions</div>
+          <div style={styles.statLabel}>Active Sessions</div>
         </div>
         <div style={styles.statCard}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
@@ -472,7 +472,7 @@ function AnalyticsTab({ token }: { token: string }) {
             </div>
           </div>
           <div style={{ ...styles.statNum, color: "#d97706" }}>{formatDuration(summary.totalPlayTimeMs)}</div>
-          <div style={styles.statLabel}>Total Play Time</div>
+          <div style={styles.statLabel}>Total Active Time</div>
         </div>
         <div style={styles.statCard}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
@@ -567,12 +567,12 @@ function AnalyticsTab({ token }: { token: string }) {
         <div style={styles.card}>
           <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "4px" }}>
             <Gamepad2 size={16} style={{ verticalAlign: "-3px", marginRight: "6px" }} />
-            Game Popularity
+            Most Popular
           </h3>
           <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>Ranked by session count</p>
           
           {games.length === 0 ? (
-            <p style={{ color: "var(--text-muted)", fontSize: "14px", textAlign: "center", padding: "20px 0" }}>No game data yet.</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "14px", textAlign: "center", padding: "20px 0" }}>No data yet.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {games.map((game, idx) => {
@@ -698,7 +698,7 @@ function AnalyticsTab({ token }: { token: string }) {
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
                   <th style={{ textAlign: "left", padding: "8px 12px", color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Event</th>
-                  <th style={{ textAlign: "left", padding: "8px 12px", color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Game</th>
+                  <th style={{ textAlign: "left", padding: "8px 12px", color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Content</th>
                   <th style={{ textAlign: "left", padding: "8px 12px", color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Site</th>
                   <th style={{ textAlign: "left", padding: "8px 12px", color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Device</th>
                   <th style={{ textAlign: "left", padding: "8px 12px", color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Duration</th>

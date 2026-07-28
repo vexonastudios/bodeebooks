@@ -157,13 +157,10 @@ export async function POST(req: NextRequest) {
         const visitorId = evt.visitorId || "anon";
         const timestamp = evt.timestamp || new Date().toISOString();
 
-        // Track unique visitors
-        if (visitorId && !data.uniqueVisitors.includes(visitorId)) {
+        // Track unique visitors (capped at 5000 per day)
+        if (visitorId && data.uniqueVisitors.length < 5000 && !data.uniqueVisitors.includes(visitorId)) {
           data.uniqueVisitors.push(visitorId);
         }
-
-        // Track devices
-        data.devices[device] = (data.devices[device] || 0) + 1;
 
         // Track by site
         if (!data.sites[site]) {
@@ -174,6 +171,8 @@ export async function POST(req: NextRequest) {
         if (eventType === "page_view") {
           data.totalPageViews++;
           data.sites[site].pageViews++;
+          // Only count device type on page_view to avoid inflation from heartbeats
+          data.devices[device] = (data.devices[device] || 0) + 1;
         } else if (eventType === "game_start" || eventType === "listen_start" || eventType === "workout_start") {
           data.totalGameSessions++;
           data.sites[site].sessions++;
@@ -216,10 +215,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true }, { status: 200, headers });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[analytics POST]", msg);
+    console.error("[analytics POST]", err instanceof Error ? err.message : err);
     return NextResponse.json(
-      { error: "Internal server error.", detail: msg },
+      { error: "Internal server error." },
       { status: 500, headers }
     );
   }

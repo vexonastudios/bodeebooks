@@ -1,8 +1,9 @@
 /* ============================================================
    BODEE ANALYTICS — Lightweight Usage Tracker
-   Include on games.bodeebooks.com and fit.bodeebooks.com
+   Include on games.bodeebooks.com, fit.bodeebooks.com,
+   and www.bodeebooks.com.
    
-   Tracks: page views, game starts/ends, session duration, 
+   Tracks: page views, session starts/ends, session duration, 
    device type, anonymous visitor IDs.
    
    ~2KB minified. Zero dependencies. Uses sendBeacon for reliability.
@@ -16,9 +17,21 @@
   var HEARTBEAT_MS = 180000; // 3 minutes
   var BATCH_INTERVAL_MS = 30000; // Flush batch every 30 seconds
 
-  // ── Detect site and game ──────────────────────────────────────────────
+  // ── Bot/crawler detection ───────────────────────────────────────────
+  var ua = navigator.userAgent || "";
+  if (/bot|crawl|spider|slurp|bingbot|googlebot|yandex|baidu|duckduck|ia_archiver|facebookexternalhit|twitterbot|linkedinbot|semrush|ahref|mj12bot|dotbot|petalbot|bytespider/i.test(ua)) {
+    return; // Don't track bots
+  }
+
+  // ── Detect site and page context ──────────────────────────────────
   var hostname = window.location.hostname;
-  var site = hostname; // e.g., "games.bodeebooks.com"
+  var site = hostname;
+  var pathname = window.location.pathname.replace(/\/$/, ""); // strip trailing slash
+
+  // Skip tracking on admin and API pages
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api")) {
+    return;
+  }
 
   // Determine site type for context-aware event naming
   var siteType = "games"; // default
@@ -26,6 +39,17 @@
     siteType = "audiobooks";
   } else if (hostname.includes("fit")) {
     siteType = "fit";
+  }
+
+  // Determine if this page warrants a session-start event
+  // (not just a page_view)
+  function shouldFireSessionStart() {
+    if (siteType === "audiobooks") {
+      // Only fire listen_start on actual audiobook pages
+      return pathname.startsWith("/listen/");
+    }
+    // Games and fit pages always get a session start
+    return true;
   }
 
   function startEventName() {
@@ -39,11 +63,11 @@
     if (siteType === "fit") return "workout_end";
     return "game_end";
   }
-  var pathname = window.location.pathname.replace(/^\//, "").replace(/\.html$/, "");
 
-  // Game name detection from page title or pathname
-  function detectGame() {
-    // Try getting it from the page title (most game pages set descriptive titles)
+  var rawPath = pathname.replace(/^\//, "").replace(/\.html$/, "");
+
+  // Content name detection from page title or pathname
+  function detectContentName() {
     var title = document.title || "";
     // Strip common suffixes
     title = title
@@ -55,8 +79,8 @@
     if (title && title.length < 60) return title;
 
     // Fallback: use pathname
-    if (pathname) {
-      return pathname
+    if (rawPath) {
+      return rawPath
         .split("/")
         .pop()
         .replace(/-/g, " ")
@@ -79,7 +103,6 @@
     }
     if (vid) return vid;
 
-    // Generate a simple hash from available entropy
     var raw =
       navigator.userAgent +
       screen.width +
@@ -104,13 +127,11 @@
 
   // ── Device detection ──────────────────────────────────────────────────
   function detectDevice() {
-    var ua = navigator.userAgent.toLowerCase();
-    if (
-      /mobile|android|iphone|ipad|ipod|blackberry|opera mini|iemobile/.test(ua)
-    ) {
+    var uaLower = ua.toLowerCase();
+    if (/mobile|android|iphone|ipad|ipod|blackberry|opera mini|iemobile/.test(uaLower)) {
       return "mobile";
     }
-    if (/tablet|ipad/.test(ua)) return "tablet";
+    if (/tablet|ipad/.test(uaLower)) return "tablet";
     return "desktop";
   }
 
@@ -118,19 +139,21 @@
   var visitorId = getVisitorId();
   var device = detectDevice();
   var sessionStartTime = Date.now();
-  var gameName = "";
+  var contentName = "";
   var eventQueue = [];
   var heartbeatTimer = null;
   var batchTimer = null;
   var isActive = true;
   var lastHeartbeatMs = 0;
+  var hasEnded = false; // Prevent double end-event firing
+  var isSessionPage = false; // Whether this page fires session events
 
   // ── Queue and send events ─────────────────────────────────────────────
   function queueEvent(event, extra) {
     var evt = {
       event: event,
       site: site,
-      game: gameName || detectGame(),
+      game: contentName || detectContentName(),
       device: device,
       visitorId: visitorId,
       timestamp: new Date().toISOString(),
@@ -201,38 +224,44 @@
     }
   }
 
+  // ── End session (called once) ─────────────────────────────────────────
+  function endSession() {
+    if (hasEnded) return;
+    hasEnded = true;
+
+    if (isSessionPage) {
+      var totalDuration = Date.now() - sessionStartTime;
+      queueEvent(endEventName(), { duration: totalDuration });
+    }
+    stopHeartbeat();
+    flushQueue();
+  }
+
   // ── Initialize ────────────────────────────────────────────────────────
   function init() {
-    gameName = detectGame();
+    contentName = detectContentName();
+    isSessionPage = shouldFireSessionStart();
 
-    // Page view
+    // Always track page view
     queueEvent("page_view");
 
-    // Session start (event name depends on site type)
-    queueEvent(startEventName());
+    // Only fire session start on content pages
+    if (isSessionPage) {
+      queueEvent(startEventName());
+      startHeartbeat();
+    }
 
-    // Start heartbeat and batch sending
-    startHeartbeat();
+    // Start batch sending
     startBatchTimer();
 
     // Track visibility changes
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // On page unload, send final end event with total duration
-    window.addEventListener("beforeunload", function () {
-      var totalDuration = Date.now() - sessionStartTime;
-      queueEvent(endEventName(), { duration: totalDuration });
-      flushQueue();
-    });
+    // On page unload, send final end event with total duration (once only)
+    window.addEventListener("beforeunload", endSession);
+    window.addEventListener("pagehide", endSession);
 
-    // Also send on pagehide (for mobile browsers)
-    window.addEventListener("pagehide", function () {
-      var totalDuration = Date.now() - sessionStartTime;
-      queueEvent(endEventName(), { duration: totalDuration });
-      flushQueue();
-    });
-
-    // Flush initial page_view + game_start
+    // Flush initial events
     setTimeout(flushQueue, 1000);
   }
 
