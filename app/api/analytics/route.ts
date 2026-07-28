@@ -80,6 +80,17 @@ async function loadDailyBlob(date: string): Promise<{ data: DailyAggregate; exis
     try {
       const res = await fetch(blobs[0].url);
       const data = await res.json();
+      
+      // Fallback for older schemas or missing properties
+      data.uniqueVisitors = data.uniqueVisitors || [];
+      data.games = data.games || {};
+      data.sites = data.sites || {};
+      data.devices = data.devices || {};
+      data.recentEvents = data.recentEvents || [];
+      data.totalPageViews = data.totalPageViews || 0;
+      data.totalGameSessions = data.totalGameSessions || 0;
+      data.totalPlayTimeMs = data.totalPlayTimeMs || 0;
+
       return { data, exists: true };
     } catch {
       return { data: emptyAggregate(date), exists: false };
