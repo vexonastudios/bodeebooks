@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   
   return [
     { url: `${base}/`, priority: 1.0, changeFrequency: "weekly" as const },
+    { url: `${base}/free-games-for-kids/`, priority: 0.9, changeFrequency: "weekly" as const },
     { url: `${base}/tools/grep-indesign/`, priority: 0.5, changeFrequency: "yearly" as const },
     ...series,
     ...books,
