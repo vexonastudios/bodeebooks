@@ -48,12 +48,19 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
 
     const initPlayer = useCallback(() => {
       if (!containerRef.current) return;
+      
+      const savedTime = localStorage.getItem(`bodee_progress_${videoId}`);
+      const startSeconds = savedTime ? Math.floor(parseFloat(savedTime)) : 0;
+      // Start 2 seconds earlier for context, but not before 0
+      const start = startSeconds > 2 ? startSeconds - 2 : 0;
+
       playerRef.current = new window.YT.Player(containerRef.current, {
         videoId,
         playerVars: {
           rel: 0,
           modestbranding: 1,
           autoplay: 1,
+          start,
           origin: typeof window !== "undefined" ? window.location.origin : "",
         },
         events: {
@@ -61,6 +68,20 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
         },
       });
     }, [videoId, onReady]);
+
+    useEffect(() => {
+      if (!activated) return;
+      const interval = setInterval(() => {
+        if (playerRef.current && typeof playerRef.current.getCurrentTime === "function") {
+          const time = playerRef.current.getCurrentTime();
+          // Only save if we actually have some progress
+          if (time > 0) {
+            localStorage.setItem(`bodee_progress_${videoId}`, time.toString());
+          }
+        }
+      }, 5000);
+      return () => clearInterval(interval);
+    }, [activated, videoId]);
 
     useEffect(() => {
       if (!activated) return;
