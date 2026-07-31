@@ -72,3 +72,24 @@
   background: var(--green);
   border-color: var(--green);
 }
+
+.continueBtn {
+  background: rgba(0, 0, 0, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  color: white;
+  border-radius: 999px;
+  padding: 12px 24px 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: transform 200ms ease, background 200ms ease, border-color 200ms ease;
+  backdrop-filter: blur(4px);
+}
+
+.facade:hover .continueBtn {
+  transform: scale(1.05);
+  background: var(--green);
+  border-color: var(--green);
+}

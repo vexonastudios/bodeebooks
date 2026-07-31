@@ -4,6 +4,17 @@ import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useSta
 import { Play } from "lucide-react";
 import styles from "./YoutubePlayer.module.css";
 
+function formatTime(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 interface YoutubePlayerProps {
   videoId: string;
   onReady?: () => void;
@@ -45,6 +56,14 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const playerRef = useRef<YTPlayer | null>(null);
     const [activated, setActivated] = useState(false);
+    const [savedTime, setSavedTime] = useState<number>(0);
+
+    useEffect(() => {
+      const timeStr = localStorage.getItem(`bodee_progress_${videoId}`);
+      if (timeStr) {
+        setSavedTime(Math.floor(parseFloat(timeStr)));
+      }
+    }, [videoId]);
 
     const initPlayer = useCallback(() => {
       if (!containerRef.current) return;
@@ -137,9 +156,16 @@ const YoutubePlayer = forwardRef<YoutubePlayerHandle, YoutubePlayerProps>(
               loading="eager"
             />
             <div className={styles.playOverlay}>
-              <div className={styles.playBtn}>
-                <Play size={32} fill="white" color="white" />
-              </div>
+              {savedTime > 2 ? (
+                <div className={styles.continueBtn}>
+                  <Play size={20} fill="white" color="white" />
+                  Continue Listening {formatTime(savedTime)}
+                </div>
+              ) : (
+                <div className={styles.playBtn}>
+                  <Play size={32} fill="white" color="white" />
+                </div>
+              )}
             </div>
           </button>
         </div>
