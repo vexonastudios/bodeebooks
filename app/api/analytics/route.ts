@@ -57,6 +57,7 @@ type DailyAggregate = {
     timestamp: string;
     device: string;
     duration?: number;
+    visitorId?: string;
   }>;
 };
 
@@ -206,6 +207,7 @@ export async function POST(req: NextRequest) {
           timestamp,
           device,
           duration: evt.duration,
+          visitorId,
         });
         if (data.recentEvents.length > 50) {
           data.recentEvents = data.recentEvents.slice(0, 50);
@@ -335,6 +337,45 @@ export async function GET(req: NextRequest) {
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
 
+    const consolidatedEvents: (DailyAggregate["recentEvents"][number] & {
+      _lastMergedTimestamp?: string;
+    })[] = [];
+
+    for (const evt of allRecentEvents) {
+      let merged = false;
+      if (evt.event === "heartbeat") {
+        const mergeTarget = consolidatedEvents.find((c) => {
+          if (c.event !== "heartbeat") return false;
+          const sameSession = c.visitorId && evt.visitorId
+            ? c.visitorId === evt.visitorId && c.game === evt.game
+            : c.game === evt.game && c.site === evt.site && c.device === evt.device;
+          if (!sameSession) return false;
+
+          const targetTime = c._lastMergedTimestamp || c.timestamp;
+          const timeDiffMs = new Date(targetTime).getTime() - new Date(evt.timestamp).getTime();
+          return timeDiffMs >= 0 && timeDiffMs < 30 * 60 * 1000;
+        });
+
+        if (mergeTarget) {
+          mergeTarget.duration = (mergeTarget.duration || 0) + (evt.duration || 0);
+          mergeTarget._lastMergedTimestamp = evt.timestamp;
+          merged = true;
+        }
+      }
+      if (!merged) {
+        consolidatedEvents.push({ ...evt, _lastMergedTimestamp: evt.timestamp });
+      }
+    }
+
+    const recentEvents = consolidatedEvents.slice(0, 30).map((evt) => ({
+      event: evt.event,
+      site: evt.site,
+      game: evt.game,
+      timestamp: evt.timestamp,
+      device: evt.device,
+      duration: evt.duration,
+    }));
+
     return NextResponse.json(
       {
         range: daysBack,
@@ -356,7 +397,7 @@ export async function GET(req: NextRequest) {
           .sort((a, b) => b.sessions - a.sessions),
         sites: allSites,
         devices: allDevices,
-        recentEvents: allRecentEvents.slice(0, 30),
+        recentEvents,
       },
       { status: 200, headers }
     );
