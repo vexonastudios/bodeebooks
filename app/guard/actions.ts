@@ -39,6 +39,9 @@ function accountNotice(message: string) {
 }
 
 export async function startBodeeGuardTrial() {
+  if (process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN !== "true") {
+    redirect(accountNotice("BodeeGuard paid trials are not open yet. Your parent account remains free, and no payment information has been collected."));
+  }
   const result = await callAccountApi("/v1/account/checkout", { method: "POST", body: "{}" });
   if ("error" in result) redirect(accountNotice(result.error));
   if (!result.payload.url) redirect(accountNotice("Stripe did not return a secure checkout page."));

@@ -58,14 +58,16 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const token = await session.getToken();
   const account = token ? await loadBodeeGuardAccount(token) : null;
   const params = await searchParams;
+  const customerLaunchOpen = process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN === "true";
   const isComplimentary = account?.billingMode === "complimentary";
   const isSubscribed = account && account.entitlementStatus !== "inactive";
+  const canConnectComputers = Boolean(isComplimentary || isSubscribed);
   const activeDevices = account?.devices.filter(device => !device.revokedAt) || [];
   const statusLabel = isComplimentary ? "Complimentary Home Beta"
     : account?.entitlementStatus === "trial" ? "Free trial active"
     : account?.entitlementStatus === "active" ? "Subscription active"
       : account?.entitlementStatus === "grace" ? "Payment needs attention"
-        : "Ready for your free trial";
+        : customerLaunchOpen ? "Ready for your free trial" : "Parent account ready · No billing";
   const statusDate = account?.entitlementStatus === "trial" ? readableDate(account.trialEndsAt)
     : account?.entitlementStatus === "grace" ? readableDate(account.graceEndsAt)
       : readableDate(account?.currentPeriodEndsAt || null);
@@ -92,20 +94,32 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 <div className={styles.complimentaryNote}><ShieldCheck size={16} /> Full access · Beta updates · No billing required</div>
               </>
             ) : (
-              <p><strong>$19.99 per month</strong> after a 14-day free trial. Protect up to 2 parent/admin computers and 10 child computers.</p>
+              customerLaunchOpen || isSubscribed || account?.hasBillingAccount ? (
+                <p><strong>$19.99 per month</strong> after a 14-day free trial. Protect up to 2 parent/admin computers and 10 child computers.</p>
+              ) : (
+                <p><strong>Your parent account is ready and free.</strong> Paid trials will open when the signed Windows installer is ready for families. We will show the exact price and first billing date before asking for payment information.</p>
+              )
             )}
             {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {account?.cancelAtPeriodEnd ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}</p>}
             {!isComplimentary && (isSubscribed || account?.hasBillingAccount) ? (
               <form action={openBodeeGuardBilling}><button className={styles.portalButton} type="submit">Manage billing <ArrowRight size={16} /></button></form>
-            ) : !isComplimentary ? (
+            ) : !isComplimentary && customerLaunchOpen ? (
               <form action={startBodeeGuardTrial}><button className={styles.portalButton} type="submit">Start 14-day free trial <ArrowRight size={16} /></button></form>
+            ) : !isComplimentary ? (
+              <div className={styles.launchHold}><ShieldCheck size={16} /><span><strong>No payment is needed yet.</strong> Your account will show the trial button here when family enrollment opens.</span></div>
             ) : null}
           </section>
           <section className={styles.portalCard}>
             <div className={styles.cardIcon}><Laptop size={22} /></div>
-            <h2>Connect a computer</h2>
-            <p>Open BodeeGuard on the computer, choose <strong>Settings → BodeeGuard Account</strong>, and enter the short code it displays.</p>
-            <Link className={styles.portalButton} href="/guard/activate">Enter pairing code <ArrowRight size={16} /></Link>
+            <h2>{canConnectComputers ? "Connect a computer" : "Your next setup step"}</h2>
+            {canConnectComputers ? (
+              <>
+                <p>Open BodeeGuard on the computer, choose <strong>Settings → BodeeGuard Account</strong>, and enter the short code it displays.</p>
+                <Link className={styles.portalButton} href="/guard/activate">Enter pairing code <ArrowRight size={16} /></Link>
+              </>
+            ) : (
+              <p>{customerLaunchOpen ? "Start the full trial first. Then this page will guide you through installing and approving each family computer." : "When family enrollment opens, you will review the trial first, install BodeeGuard, and approve each computer with a short pairing code."}</p>
+            )}
           </section>
           <section className={styles.portalCard}>
             <div className={styles.cardIcon}><UserRound size={22} /></div>
@@ -117,7 +131,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <section className={styles.computersSection}>
           <div className={styles.computersHeading}>
             <div><span className={styles.kicker}><Monitor size={15} /> Household computers</span><h2>{activeDevices.length ? `${activeDevices.length} connected` : "No computers connected yet"}</h2></div>
-            <Link className={styles.secondaryPortalButton} href="/guard/activate">Connect a computer</Link>
+            {canConnectComputers && <Link className={styles.secondaryPortalButton} href="/guard/activate">Connect a computer</Link>}
           </div>
           {activeDevices.length ? (
             <div className={styles.computerList}>
@@ -133,7 +147,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               ))}
             </div>
           ) : (
-            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>Install BodeeGuard on a Windows computer, then approve its short pairing code here. Parent passwords are never copied to child computers.</span></div>
+            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? "Install BodeeGuard on a Windows computer, then approve its short pairing code here. Parent passwords are never copied to child computers." : "Connected-computer controls will appear here after your BodeeGuard access is active. No parent password is ever copied to a child computer."}</span></div>
           )}
         </section>
         {!account && <aside className={styles.notice}><strong>Your secure parent account is ready.</strong><span>The live subscription service is temporarily unavailable. You can still sign in; billing and computer status will appear automatically when it reconnects.</span></aside>}
