@@ -24,6 +24,8 @@
 .hero h1 { max-width: 680px; margin-top: 22px; font-family: var(--font-serif); font-size: clamp(2.75rem, 5.6vw, 5.35rem); line-height: .99; letter-spacing: -.045em; }
 .hero h1 span { color: var(--guard-blue); }
 .lead { max-width: 650px; margin-top: 24px; color: #40526b; font-size: clamp(1.05rem, 1.7vw, 1.24rem); line-height: 1.75; }
+.platformPills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.platformPills span { padding: 7px 11px; border: 1px solid #ccdfdf; border-radius: 999px; color: #31536a; background: rgba(255,255,255,.72); font-size: .76rem; font-weight: 750; }
 .authActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .primaryButton, .secondaryButton { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 20px; border-radius: 10px; font-size: .94rem; font-weight: 750; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; }
 .primaryButton { color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); box-shadow: 0 8px 24px rgba(9,116,170,.22); }
@@ -68,7 +70,14 @@
 .parentCard { left: -10px; top: 36px; }
 .rewardCard { right: -12px; bottom: 27px; }
 
-.featureSection { padding-top: 96px; padding-bottom: 104px; }
+.definitionSection { padding-top: 72px; }
+.definitionCard { display: grid; grid-template-columns: 64px 1fr; gap: 24px; padding: 34px 38px; border: 1px solid #cce4e2; border-radius: 22px; background: linear-gradient(135deg, #f0faf8, #edf6fb); box-shadow: 0 14px 38px rgba(24,73,86,.07); }
+.definitionIcon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 16px; color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); box-shadow: 0 10px 26px rgba(9,116,170,.2); }
+.definitionCard > div:last-child > span { color: #087b71; font-size: .74rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.definitionCard h2 { max-width: 880px; margin-top: 7px; font-family: var(--font-serif); font-size: clamp(1.7rem, 3vw, 2.65rem); line-height: 1.15; letter-spacing: -.03em; }
+.definitionCard p { max-width: 950px; margin-top: 14px; color: #53687b; line-height: 1.75; }
+
+.featureSection { padding-top: 84px; padding-bottom: 104px; }
 .sectionHeading { max-width: 760px; margin: 0 auto 48px; text-align: center; }
 .sectionHeading > span, .finalCta > div > span { color: #087b71; font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .sectionHeading h2, .setupSection h2, .finalCta h2 { font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 3.35rem); line-height: 1.12; letter-spacing: -.035em; }
@@ -80,6 +89,15 @@
 .featureIcon { width: 42px; height: 42px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 12px; color: #087aa0; background: #e8f7f7; }
 .featureCard h3 { font-size: 1.02rem; }
 .featureCard p { margin-top: 9px; color: #677488; font-size: .89rem; line-height: 1.68; }
+
+.daySection { padding: 92px 0 100px; border-top: 1px solid #e0e9e9; background: #f7fafb; }
+.dayInner .sectionHeading { margin-bottom: 38px; }
+.dayGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.dayGrid article { position: relative; overflow: hidden; min-height: 235px; padding: 30px; border: 1px solid #dce7e8; border-radius: 18px; background: white; box-shadow: 0 8px 25px rgba(20,51,64,.05); }
+.dayGrid article > span { display: block; color: #1e99a7; font-size: .75rem; font-weight: 900; letter-spacing: .12em; }
+.dayGrid article > span::after { content: ""; display: block; width: 34px; height: 3px; margin-top: 12px; border-radius: 99px; background: linear-gradient(90deg, var(--guard-cyan), var(--guard-mint)); }
+.dayGrid h3 { margin-top: 22px; color: #142a45; font-size: 1.08rem; line-height: 1.35; }
+.dayGrid p { margin-top: 10px; color: #657487; font-size: .9rem; line-height: 1.68; }
 
 .setupSection { padding: 92px 0; color: white; background: radial-gradient(circle at 10% 10%, rgba(31,194,202,.18), transparent 26rem), #0c1930; }
 .setupGrid { display: grid; grid-template-columns: .92fr 1.08fr; gap: 80px; align-items: center; }
@@ -101,6 +119,8 @@
   .heroCopy { max-width: 760px; }
   .heroVisual { width: min(100%, 660px); margin: 0 auto; }
   .featureGrid { grid-template-columns: repeat(2, 1fr); }
+  .dayGrid { grid-template-columns: 1fr; }
+  .dayGrid article { min-height: auto; }
   .setupGrid { gap: 42px; }
   .finalCta { align-items: flex-start; flex-direction: column; }
 }
@@ -120,9 +140,14 @@
   .mockCards { gap: 7px; }
   .mockCards div { min-height: 83px; padding: 10px; }
   .floatingCard { display: none; }
-  .featureSection { padding-top: 70px; padding-bottom: 76px; }
+  .definitionSection { padding-top: 46px; }
+  .definitionCard { grid-template-columns: 1fr; padding: 27px 24px; }
+  .definitionIcon { width: 50px; height: 50px; }
+  .featureSection { padding-top: 62px; padding-bottom: 76px; }
   .featureGrid, .setupGrid { grid-template-columns: 1fr; }
   .featureCard { padding: 23px; }
+  .daySection { padding: 68px 0 74px; }
+  .dayGrid article { padding: 24px; }
   .setupSection { padding: 70px 0; }
   .finalCta { margin-top: 64px; padding: 31px 24px; }
   .primaryButton, .secondaryButton { width: 100%; }

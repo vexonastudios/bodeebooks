@@ -153,6 +153,7 @@
 }
 
 @media (max-width: 640px) {
+  .logoTagline { display: none; }
   .links { display: none; }
   .mobileToggle { display: flex; align-items: center; }
   .mobileMenu { display: flex; }

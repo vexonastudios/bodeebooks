@@ -16,42 +16,57 @@ import GuardAuthActions from "@/components/GuardAuthActions";
 import styles from "./guard.module.css";
 
 export const metadata: Metadata = {
-  title: "BodeeGuard – A Better Family Computer",
+  title: "BodeeGuard – The Windows Learning Environment for Families",
   description:
-    "BodeeGuard turns a Windows computer into a parent-managed space for school, learning, family games, and safe communication.",
+    "BodeeGuard turns a Windows computer into a focused homeschool environment for Abeka, BJU Press, learning tools, accountability, and parent-controlled recreation.",
   alternates: { canonical: "https://www.bodeebooks.com/guard/" },
 };
 
 const features = [
   {
     icon: GraduationCap,
-    title: "School stays first",
-    copy: "Keep school tools available, track real learning time, and make room for breaks without losing the day’s progress.",
+    title: "Video homeschool, without wandering",
+    copy: "Children can use Abeka, BJU Press, and other approved online-school platforms inside a focused workspace instead of an unrestricted browser or desktop.",
   },
   {
     icon: TimerReset,
-    title: "Time that makes sense",
-    copy: "Set limits, let earned time carry forward until it is used, and offer a fair warning before a game or video ends.",
-  },
-  {
-    icon: Gamepad2,
-    title: "Family games, your rules",
-    copy: "Choose which games are available on which days, reward completed work, and manage every child from one place.",
-  },
-  {
-    icon: MessageCircleMore,
-    title: "Stay connected",
-    copy: "Send messages, lock or close a computer remotely, and see clear explanations when an activity is unavailable.",
+    title: "Real school-day accountability",
+    copy: "See which child is working, what module is active, how long it has been used, and whether the day’s required schoolwork is actually complete.",
   },
   {
     icon: BookOpenCheck,
-    title: "Built for learning",
-    copy: "Learning videos, spelling practice, worksheets, quizzes, and online school portals live together in one calm interface.",
+    title: "Learning tools are built in",
+    copy: "Use Science Spelling Lab, Geography Mastery, quizzes, worksheets, learning videos, audiobooks, and parent-reviewed grading without sending children elsewhere.",
+  },
+  {
+    icon: MessageCircleMore,
+    title: "One parent command center",
+    copy: "Manage every child, send messages, review progress, adjust access, lock a computer, or close BodeeGuard remotely from the parent dashboard.",
+  },
+  {
+    icon: Gamepad2,
+    title: "Fun is earned and bounded",
+    copy: "Family games, music, and recreational videos follow the rules you choose. School can unlock rewards, while timers and schedules prevent endless play.",
   },
   {
     icon: Wifi,
-    title: "Works through real life",
-    copy: "Local safeguards keep working through internet interruptions, with secure reconnection and device recovery tools for parents.",
+    title: "Designed for real family computers",
+    copy: "Local safeguards keep working through internet interruptions, with protected sign-out, Wi-Fi recovery, LAN coordination, printing, and secure automatic updates.",
+  },
+];
+
+const schoolDay = [
+  {
+    title: "The child sees a learning computer",
+    copy: "A clear, full-screen home for school, assignments, learning tools, messages, and the activities you have approved—not the whole Windows desktop.",
+  },
+  {
+    title: "BodeeGuard keeps the day on track",
+    copy: "It organizes school portals and lessons, records meaningful activity, protects required work, and explains why something is locked instead of simply failing.",
+  },
+  {
+    title: "The parent remains in control",
+    copy: "You set schedules and limits, review school progress and quiz results, approve exceptions, and decide when games or entertainment become available.",
   },
 ];
 
@@ -67,13 +82,18 @@ export default function GuardPage() {
       <section className={styles.hero}>
         <div className={`container ${styles.heroGrid}`}>
           <div className={styles.heroCopy}>
-            <span className={styles.eyebrow}><ShieldCheck size={15} /> BodeeGuard for Windows</span>
-            <h1>A family computer should help children <span>grow.</span></h1>
+            <span className={styles.eyebrow}><ShieldCheck size={15} /> A homeschool environment for Windows</span>
+            <h1>Turn a Windows PC into a computer built for <span>learning.</span></h1>
             <p className={styles.lead}>
-              BodeeGuard brings school, learning, communication, and carefully managed fun into one parent-controlled Windows experience.
+              BodeeGuard feels like a child-focused operating system built on top of Windows. It gives children one protected place for video homeschool, lessons, quizzes, learning games, and family-approved fun—without the usual computer distractions.
             </p>
+            <div className={styles.platformPills} aria-label="Supported online school platforms">
+              <span>Abeka</span>
+              <span>BJU Press</span>
+              <span>Other online curricula</span>
+            </div>
             <GuardAuthActions />
-            <p className={styles.reassurance}><CheckCircle2 size={15} /> Parent controls remain yours. Children never need your account password.</p>
+            <p className={styles.reassurance}><CheckCircle2 size={15} /> BodeeGuard does not replace Windows. It turns it into a focused, parent-managed learning computer.</p>
           </div>
 
           <div className={styles.heroVisual} aria-label="BodeeGuard family computer overview">
@@ -90,31 +110,44 @@ export default function GuardPage() {
                   <span /><span /><span /><span /><span />
                 </div>
                 <div className={styles.dashboardMock}>
-                  <div className={styles.welcomeLine}>Good morning</div>
-                  <div className={styles.mockTitle}>Today’s learning plan</div>
+                  <div className={styles.welcomeLine}>Good morning, student</div>
+                  <div className={styles.mockTitle}>Your homeschool day</div>
                   <div className={styles.progressCard}>
-                    <div><GraduationCap size={22} /><strong>School progress</strong></div>
-                    <span>3 of 5 complete</span>
+                    <div><GraduationCap size={22} /><strong>Video school progress</strong></div>
+                    <span>3 of 5 lessons complete</span>
                     <div className={styles.progressTrack}><i /></div>
                   </div>
                   <div className={styles.mockCards}>
-                    <div><BookOpenCheck size={21} /><strong>Learning</strong><small>Always available</small></div>
-                    <div><Gamepad2 size={21} /><strong>Family Games</strong><small>After school</small></div>
+                    <div><BookOpenCheck size={21} /><strong>School &amp; practice</strong><small>Ready now</small></div>
+                    <div><Gamepad2 size={21} /><strong>Family games</strong><small>After schoolwork</small></div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className={`${styles.floatingCard} ${styles.parentCard}`}><LockKeyhole size={18} /><span><strong>Parent controlled</strong><small>Rules update securely</small></span></div>
-            <div className={`${styles.floatingCard} ${styles.rewardCard}`}><Sparkles size={18} /><span><strong>Time earned</strong><small>Ready when they are</small></span></div>
+            <div className={`${styles.floatingCard} ${styles.parentCard}`}><LockKeyhole size={18} /><span><strong>Distractions blocked</strong><small>School tools stay available</small></span></div>
+            <div className={`${styles.floatingCard} ${styles.rewardCard}`}><Sparkles size={18} /><span><strong>Progress rewarded</strong><small>Fun follows your rules</small></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section className={`container ${styles.definitionSection}`}>
+        <div className={styles.definitionCard}>
+          <div className={styles.definitionIcon}><Laptop size={28} /></div>
+          <div>
+            <span>What is BodeeGuard?</span>
+            <h2>A complete learning layer for the family’s Windows computers.</h2>
+            <p>
+              Instead of handing a child a normal PC and hoping they stay focused, BodeeGuard provides the environment they work inside. Approved homeschool websites, built-in practice, parent messages, progress, rewards, and recreation all live under one consistent set of family rules.
+            </p>
           </div>
         </div>
       </section>
 
       <section className={`container ${styles.featureSection}`}>
         <div className={styles.sectionHeading}>
-          <span>One protected place</span>
-          <h2>Everything a family computer needs, without handing over the keys.</h2>
-          <p>Designed around real homeschool days: flexible enough for parents, clear enough for children, and resilient when the network is not perfect.</p>
+          <span>School, accountability, and rewards</span>
+          <h2>More than a blocker. It runs the homeschool computer.</h2>
+          <p>BodeeGuard is designed around the whole school day—from opening a video lesson to checking progress, practicing difficult material, and earning controlled recreation afterward.</p>
         </div>
         <div className={styles.featureGrid}>
           {features.map(({ icon: Icon, title, copy }) => (
@@ -124,6 +157,24 @@ export default function GuardPage() {
               <p>{copy}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className={styles.daySection}>
+        <div className={`container ${styles.dayInner}`}>
+          <div className={styles.sectionHeading}>
+            <span>A clearer school day</span>
+            <h2>Children know what to do. Parents know what happened.</h2>
+          </div>
+          <div className={styles.dayGrid}>
+            {schoolDay.map((item, index) => (
+              <article key={item.title}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <h3>{item.title}</h3>
+                <p>{item.copy}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -142,9 +193,9 @@ export default function GuardPage() {
 
       <section className={`container ${styles.finalCta}`}>
         <div>
-          <span>Built for families—not surveillance dashboards.</span>
-          <h2>Make the computer serve the home.</h2>
-          <p>Create your BodeeGuard parent account now. Subscription checkout and the public Windows installer are the next production steps.</p>
+          <span>A Windows computer with a purpose</span>
+          <h2>Give children freedom inside a space built for school.</h2>
+          <p>Create the parent account that will manage your family’s BodeeGuard computers. Subscription checkout and the public Windows installer are coming next.</p>
         </div>
         <GuardAuthActions />
       </section>
