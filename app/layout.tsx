@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Lora, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -104,9 +105,11 @@ export default function RootLayout({
         <Script src="/bodee-analytics.js" strategy="afterInteractive" />
       </head>
       <body>
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
+        <ClerkProvider>
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, ExternalLink, Wrench } from "lucide-react";
+import { BookOpen, ExternalLink, ShieldCheck, Wrench } from "lucide-react";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
@@ -27,6 +27,10 @@ export default function Footer() {
 
           <div className={styles.linkGroup}>
             <h4 className={styles.linkHeading}>Tools</h4>
+            <Link href="/guard" className={styles.link}>
+              <ShieldCheck size={13} />
+              BodeeGuard
+            </Link>
             <Link href="/tools/grep-indesign" className={styles.link}>
               <Wrench size={13} />
               GREP &amp; InDesign

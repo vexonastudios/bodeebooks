@@ -1,0 +1,7 @@
+.authPage {
+  min-height: calc(100vh - var(--nav-height) - 180px);
+  display: grid;
+  place-items: center;
+  padding: 64px 20px;
+  background: radial-gradient(circle at 50% 0%, #dff6f2, transparent 30rem), #f6faf9;
+}
