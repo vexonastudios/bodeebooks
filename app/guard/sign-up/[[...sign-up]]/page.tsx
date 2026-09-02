@@ -1,6 +1,11 @@
-import { SignUp } from "@clerk/nextjs";
-import styles from "../../auth.module.css";
+import type { Metadata } from "next";
+import GuardAccountEntry from "@/components/GuardAccountEntry";
+
+export const metadata: Metadata = {
+  title: "Create a BodeeGuard Parent Account",
+  description: "Create the secure parent account used to manage your family’s BodeeGuard subscription and approve learning computers.",
+};
 
 export default function GuardSignUpPage() {
-  return <div className={styles.authPage}><SignUp /></div>;
+  return <GuardAccountEntry mode="sign-up" />;
 }

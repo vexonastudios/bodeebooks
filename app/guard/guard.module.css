@@ -27,6 +27,7 @@
 .platformPills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .platformPills span { padding: 7px 11px; border: 1px solid #ccdfdf; border-radius: 999px; color: #31536a; background: rgba(255,255,255,.72); font-size: .76rem; font-weight: 750; }
 .authActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.accountNote { flex-basis: 100%; max-width: 540px; color: #557084; font-size: .78rem; line-height: 1.5; }
 .primaryButton, .secondaryButton { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 20px; border-radius: 10px; font-size: .94rem; font-weight: 750; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; }
 .primaryButton { color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); box-shadow: 0 8px 24px rgba(9,116,170,.22); }
 .secondaryButton { color: #17304d; background: white; border: 1px solid #cddcde; }
