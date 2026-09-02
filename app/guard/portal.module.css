@@ -33,6 +33,53 @@
 .successNotice { color: #126348; background: #eaf9f2; border: 1px solid #bee8d5; }
 .errorNotice { color: #8b3e35; background: #fff1ee; border: 1px solid #f3d0c9; }
 .secondaryPortalButton { min-height: 41px; display: inline-flex; align-items: center; justify-content: center; padding: 0 15px; border: 1px solid #cbdcdf; border-radius: 9px; color: #244c65; background: white; font-size: .82rem; font-weight: 750; }
+.secondaryPortalButton svg { flex-shrink: 0; }
+.billingSection { margin-top: 20px; padding: 30px; border: 1px solid #dce7e7; border-radius: 20px; background: rgba(255,255,255,.96); box-shadow: 0 16px 36px rgba(19,55,69,.06); }
+.sectionHeadingRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.sectionHeadingRow h2 { margin-top: 8px; color: #12304a; font-size: 1.42rem; }
+.sectionHeadingRow p { max-width: 720px; margin-top: 8px; color: #617487; font-size: .84rem; line-height: 1.6; }
+.sectionHeadingRow form { flex-shrink: 0; }
+.billingWarning, .cancellationBanner, .billingHelp { display: grid; align-items: start; gap: 10px; margin-top: 20px; padding: 14px 16px; border-radius: 12px; font-size: .79rem; line-height: 1.55; }
+.billingWarning { grid-template-columns: 20px 1fr; color: #7d5521; border: 1px solid #ead6ab; background: #fff9eb; }
+.billingWarning svg { color: #bf7618; }
+.billingWarning strong { color: #6a471d; }
+.billingSummaryGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; margin-top: 24px; }
+.billingMetric { min-width: 0; padding: 16px; border: 1px solid #dce9e9; border-radius: 13px; background: #f7fbfb; }
+.billingMetric > span { display: block; color: #718192; font-size: .65rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+.billingMetric > strong { display: block; overflow-wrap: anywhere; margin-top: 7px; color: #173652; font-size: .88rem; line-height: 1.35; }
+.billingMetric > small { display: block; margin-top: 5px; color: #6c7d8e; font-size: .69rem; line-height: 1.45; }
+.cancellationBanner { grid-template-columns: 24px 1fr auto; color: #735222; border: 1px solid #e9d4a8; background: #fff9e9; }
+.cancellationBanner > svg { color: #bd7417; }
+.cancellationBanner strong { color: #664515; }
+.cancellationBanner p { margin-top: 3px; }
+.resumeButton, .cancelButton { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border-radius: 8px; font-size: .75rem; font-weight: 800; }
+.resumeButton { color: white; background: #16845f; }
+.cancelPanel { margin-top: 18px; border: 1px solid #eadbd7; border-radius: 12px; background: #fffafa; }
+.cancelPanel summary { padding: 13px 15px; cursor: pointer; color: #825049; font-size: .77rem; font-weight: 800; }
+.cancelPanel > div { padding: 0 15px 15px; color: #765f5b; font-size: .75rem; line-height: 1.55; }
+.cancelPanel form { margin-top: 11px; }
+.cancelButton { border: 1px solid #e5c4bd; color: #92483f; background: #fff3f0; }
+.paymentHistory { margin-top: 24px; border-top: 1px solid #e3ecec; padding-top: 22px; }
+.paymentHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.paymentHeading > div { display: flex; align-items: center; gap: 10px; color: #177b8d; }
+.paymentHeading span { display: grid; }
+.paymentHeading strong { color: #173652; font-size: .88rem; }
+.paymentHeading small { margin-top: 2px; color: #748393; font-size: .68rem; }
+.paymentHeading button { display: inline-flex; align-items: center; gap: 5px; color: #087a8f; font-size: .72rem; font-weight: 800; }
+.invoiceList { display: grid; gap: 8px; margin-top: 14px; }
+.invoiceRow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 18px; align-items: center; padding: 12px 14px; border: 1px solid #e1ebeb; border-radius: 10px; background: #f9fcfc; }
+.invoiceRow > div:first-child { min-width: 0; display: grid; }
+.invoiceRow > div:first-child strong { color: #24445e; font-size: .78rem; }
+.invoiceRow > div:first-child span { margin-top: 2px; color: #718192; font-size: .68rem; text-transform: capitalize; }
+.invoiceRow > strong { color: #173652; font-size: .8rem; }
+.invoiceActions { display: flex; gap: 7px; }
+.invoiceActions a { display: inline-flex; align-items: center; gap: 4px; padding: 6px 8px; border: 1px solid #cbdcdf; border-radius: 7px; color: #266079; background: white; font-size: .68rem; font-weight: 800; }
+.emptyPayments { display: flex; align-items: center; gap: 9px; margin-top: 14px; padding: 13px 14px; border: 1px dashed #c9dddd; border-radius: 10px; color: #637788; background: #f7fbfb; font-size: .75rem; line-height: 1.5; }
+.emptyPayments svg { flex-shrink: 0; color: #17966f; }
+.billingHelp { grid-template-columns: 20px 1fr; color: #526f80; border: 1px solid #cfe2e3; background: #f1f8f8; }
+.billingHelp svg { color: #168d8d; }
+.billingHelp strong { color: #245569; }
+.billingHelp a { color: #0878c9; font-weight: 800; }
 .setupSection { margin-top: 20px; padding: 30px; border: 1px solid #cfe2e3; border-radius: 20px; background: linear-gradient(145deg, #ffffff, #eff9f8); box-shadow: 0 16px 36px rgba(19,55,69,.06); }
 .setupHeading { max-width: 760px; }
 .setupHeading h2 { margin-top: 8px; color: #12304a; font-size: 1.42rem; }
@@ -73,5 +120,5 @@
 .successMessage svg { flex-shrink: 0; margin-top: 2px; }
 .spin { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 900px) { .portalGrid { grid-template-columns: 1fr 1fr; } .billingCard { grid-column: 1 / -1; } .setupSteps { grid-template-columns: 1fr; } }
-@media (max-width: 700px) { .portalPage { padding: 48px 0 66px; } .portalGrid { grid-template-columns: 1fr; } .billingCard { grid-column: auto; } .notice { flex-direction: column; } .activationForm .portalButton { width: 100%; } .setupSection { padding: 22px 18px; } .computersSection { padding: 22px 18px; } .computersHeading { align-items: stretch; flex-direction: column; } .computerRow { grid-template-columns: 42px 1fr; } .computerRow form { grid-column: 1 / -1; } .removeButton { width: 100%; justify-content: center; } }
+@media (max-width: 900px) { .portalGrid { grid-template-columns: 1fr 1fr; } .billingCard { grid-column: 1 / -1; } .billingSummaryGrid { grid-template-columns: 1fr 1fr; } .setupSteps { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .portalPage { padding: 48px 0 66px; } .portalGrid { grid-template-columns: 1fr; } .billingCard { grid-column: auto; } .notice { flex-direction: column; } .activationForm .portalButton { width: 100%; } .billingSection, .setupSection, .computersSection { padding: 22px 18px; } .sectionHeadingRow, .paymentHeading { align-items: stretch; flex-direction: column; } .sectionHeadingRow .secondaryPortalButton { width: 100%; } .billingSummaryGrid { grid-template-columns: 1fr; } .cancellationBanner { grid-template-columns: 24px 1fr; } .cancellationBanner form { grid-column: 1 / -1; } .resumeButton { width: 100%; } .invoiceRow { grid-template-columns: 1fr auto; gap: 9px 14px; } .invoiceActions { grid-column: 1 / -1; } .computersHeading { align-items: stretch; flex-direction: column; } .computerRow { grid-template-columns: 42px 1fr; } .computerRow form { grid-column: 1 / -1; } .removeButton { width: 100%; justify-content: center; } }

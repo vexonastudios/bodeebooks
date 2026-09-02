@@ -55,6 +55,18 @@ export async function openBodeeGuardBilling() {
   redirect(result.payload.url);
 }
 
+export async function scheduleBodeeGuardCancellation() {
+  const result = await callAccountApi("/v1/account/subscription/cancel", { method: "POST", body: "{}" });
+  if ("error" in result) redirect(accountNotice(result.error));
+  redirect("/guard/account?subscription=canceled");
+}
+
+export async function resumeBodeeGuardSubscription() {
+  const result = await callAccountApi("/v1/account/subscription/resume", { method: "POST", body: "{}" });
+  if ("error" in result) redirect(accountNotice(result.error));
+  redirect("/guard/account?subscription=resumed");
+}
+
 export async function removeBodeeGuardComputer(formData: FormData) {
   const deviceId = String(formData.get("deviceId") || "").trim();
   if (!deviceId) redirect(accountNotice("That computer could not be identified."));
