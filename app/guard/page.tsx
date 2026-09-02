@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import {
   BookOpenCheck,
   CheckCircle2,
@@ -18,7 +19,7 @@ import styles from "./guard.module.css";
 export const metadata: Metadata = {
   title: "BodeeGuard – The Windows Learning Environment for Families",
   description:
-    "BodeeGuard turns a Windows computer into a focused homeschool environment for Abeka, BJU Press, learning tools, accountability, and parent-controlled recreation.",
+    "BodeeGuard is the digital bodyguard for a child’s school day, turning Windows into a focused homeschool environment for lessons, accountability, learning tools, and parent-controlled recreation.",
   alternates: { canonical: "https://www.bodeebooks.com/guard/" },
 };
 
@@ -82,10 +83,14 @@ export default function GuardPage() {
       <section className={styles.hero}>
         <div className={`container ${styles.heroGrid}`}>
           <div className={styles.heroCopy}>
-            <span className={styles.eyebrow}><ShieldCheck size={15} /> A homeschool environment for Windows</span>
-            <h1>Turn a Windows PC into a computer built for <span>learning.</span></h1>
+            <div className={styles.brandLockup}>
+              <Image className={styles.brandLogo} src="/bodeeguard-logo.png" alt="BodeeGuard shield logo" width={74} height={74} priority />
+              <div><strong>BodeeGuard</strong><span>A bodyguard for the school day</span></div>
+            </div>
+            <span className={styles.eyebrow}><ShieldCheck size={15} /> Focus protected · Learning stays open</span>
+            <h1>Put a bodyguard between school time and <span>digital distractions.</span></h1>
             <p className={styles.lead}>
-              BodeeGuard feels like a child-focused operating system built on top of Windows. It gives children one protected place for video homeschool, lessons, quizzes, learning games, and family-approved fun—without the usual computer distractions.
+              BodeeGuard is a child-focused learning environment built on top of Windows. Like a digital bodyguard for school, it keeps children inside the lessons, tools, and activities their parents chose—away from unrelated apps, wandering websites, and easy shortcuts that replace real work.
             </p>
             <div className={styles.platformPills} aria-label="Supported online school platforms">
               <span>Abeka</span>
@@ -93,7 +98,7 @@ export default function GuardPage() {
               <span>Other online curricula</span>
             </div>
             <GuardAuthActions />
-            <p className={styles.reassurance}><CheckCircle2 size={15} /> BodeeGuard does not replace Windows. It turns it into a focused, parent-managed learning computer.</p>
+            <p className={styles.reassurance}><CheckCircle2 size={15} /> It guards the learning environment—not the child. Parents set the boundaries, and children always see what is available and why.</p>
           </div>
 
           <div className={styles.heroVisual} aria-label="BodeeGuard family computer overview">
@@ -101,7 +106,7 @@ export default function GuardPage() {
             <div className={styles.glowTwo} />
             <div className={styles.deviceFrame}>
               <div className={styles.deviceTop}>
-                <span className={styles.brandMark}><ShieldCheck size={18} /> BodeeGuard</span>
+                <span className={styles.brandMark}><Image className={styles.miniLogo} src="/bodeeguard-logo.png" alt="" width={24} height={24} /> BodeeGuard</span>
                 <span className={styles.safeStatus}><span /> Family online</span>
               </div>
               <div className={styles.deviceBody}>
@@ -124,7 +129,7 @@ export default function GuardPage() {
                 </div>
               </div>
             </div>
-            <div className={`${styles.floatingCard} ${styles.parentCard}`}><LockKeyhole size={18} /><span><strong>Distractions blocked</strong><small>School tools stay available</small></span></div>
+            <div className={`${styles.floatingCard} ${styles.parentCard}`}><LockKeyhole size={18} /><span><strong>Attention protected</strong><small>School tools stay available</small></span></div>
             <div className={`${styles.floatingCard} ${styles.rewardCard}`}><Sparkles size={18} /><span><strong>Progress rewarded</strong><small>Fun follows your rules</small></span></div>
           </div>
         </div>
@@ -132,12 +137,12 @@ export default function GuardPage() {
 
       <section className={`container ${styles.definitionSection}`}>
         <div className={styles.definitionCard}>
-          <div className={styles.definitionIcon}><Laptop size={28} /></div>
+          <div className={styles.definitionIcon}><Image src="/bodeeguard-logo.png" alt="" width={50} height={50} /></div>
           <div>
             <span>What is BodeeGuard?</span>
-            <h2>A complete learning layer for the family’s Windows computers.</h2>
+            <h2>A bodyguard for focus, accountability, and the school day.</h2>
             <p>
-              Instead of handing a child a normal PC and hoping they stay focused, BodeeGuard provides the environment they work inside. Approved homeschool websites, built-in practice, parent messages, progress, rewards, and recreation all live under one consistent set of family rules.
+              BodeeGuard does not treat children as the problem. It guards the boundaries around their school computer: lessons stay accessible, unrelated apps and websites stay out, and answer-site shortcuts cannot quietly replace real work. Approved homeschool portals, practice, parent messages, progress, rewards, and recreation all live under one clear set of family rules.
             </p>
           </div>
         </div>
