@@ -11,6 +11,8 @@
 .cardIcon { width: 45px; height: 45px; border-radius: 13px; }
 .portalCard h2 { margin-top: 20px; font-size: 1.18rem; }
 .portalCard p { margin-top: 10px; color: #667589; font-size: .9rem; line-height: 1.68; }
+.stepPill { display: inline-flex; margin-top: 17px; padding: 4px 8px; border-radius: 999px; color: #086f7d; background: #e7f7f8; font-size: .67rem; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.stepPill + h2 { margin-top: 9px; }
 .billingCard { position: relative; overflow: hidden; }
 .billingCard::after { content: ""; position: absolute; width: 150px; height: 150px; right: -72px; top: -72px; border-radius: 50%; background: rgba(34,190,197,.1); }
 .statusPill { display: inline-flex; margin-top: 18px; padding: 5px 9px; border-radius: 999px; color: #08705d; background: #e4f8f1; font-size: .69rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
@@ -22,12 +24,26 @@
 .identity { overflow-wrap: anywhere; color: #173652 !important; font-weight: 750; }
 .portalButton { min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; padding: 0 17px; border-radius: 9px; color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); font-size: .88rem; font-weight: 750; box-shadow: 0 7px 18px rgba(9,116,170,.17); }
 .portalButton:disabled { cursor: wait; opacity: .65; }
+.downloadHint { display: flex; align-items: center; gap: 6px; color: #237264 !important; font-size: .73rem !important; font-weight: 700; }
+.downloadHint svg { flex-shrink: 0; }
 .notice { display: flex; gap: 8px; margin-top: 19px; padding: 16px 18px; border: 1px solid #d4e4e4; border-radius: 13px; color: #617386; background: #edf5f5; font-size: .82rem; line-height: 1.55; }
 .notice strong { flex-shrink: 0; color: #1f5f67; }
 .successNotice, .errorNotice { margin-top: 22px; padding: 14px 17px; border-radius: 12px; font-size: .86rem; line-height: 1.55; }
 .successNotice { color: #126348; background: #eaf9f2; border: 1px solid #bee8d5; }
 .errorNotice { color: #8b3e35; background: #fff1ee; border: 1px solid #f3d0c9; }
 .secondaryPortalButton { min-height: 41px; display: inline-flex; align-items: center; justify-content: center; padding: 0 15px; border: 1px solid #cbdcdf; border-radius: 9px; color: #244c65; background: white; font-size: .82rem; font-weight: 750; }
+.setupSection { margin-top: 20px; padding: 30px; border: 1px solid #cfe2e3; border-radius: 20px; background: linear-gradient(145deg, #ffffff, #eff9f8); box-shadow: 0 16px 36px rgba(19,55,69,.06); }
+.setupHeading { max-width: 760px; }
+.setupHeading h2 { margin-top: 8px; color: #12304a; font-size: 1.42rem; }
+.setupHeading > p { margin-top: 9px; color: #5d7183; font-size: .86rem; line-height: 1.65; }
+.setupSteps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; padding: 0; list-style: none; counter-reset: none; }
+.setupStep { display: grid; grid-template-columns: 32px 1fr; gap: 11px; align-items: start; padding: 18px; border: 1px solid #d8e8e8; border-radius: 14px; background: rgba(255,255,255,.88); }
+.stepNumber { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); font-size: .78rem; font-weight: 850; box-shadow: 0 5px 12px rgba(9,116,170,.18); }
+.setupStep strong { display: block; color: #173652; font-size: .88rem; }
+.setupStep p { margin-top: 7px; color: #66798a; font-size: .77rem; line-height: 1.55; }
+.setupStep b { color: #37586e; }
+.stepAction { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; color: #087a8f; font-size: .76rem; font-weight: 800; }
+.lanAddress { display: block; overflow-wrap: anywhere; margin-top: 10px; padding: 9px 10px; border: 1px solid #b9dcda; border-radius: 8px; color: #075d65; background: #e7f8f4; font: 750 .72rem/1.45 var(--font-sans); user-select: all; }
 .computersSection { margin-top: 20px; padding: 28px 30px; border: 1px solid #dce7e7; border-radius: 20px; background: rgba(255,255,255,.94); box-shadow: 0 16px 36px rgba(19,55,69,.06); }
 .computersHeading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
 .computersHeading h2 { margin-top: 7px; font-size: 1.34rem; }
@@ -55,5 +71,5 @@
 .successMessage svg { flex-shrink: 0; margin-top: 2px; }
 .spin { animation: spin 900ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 900px) { .portalGrid { grid-template-columns: 1fr 1fr; } .billingCard { grid-column: 1 / -1; } }
-@media (max-width: 700px) { .portalPage { padding: 48px 0 66px; } .portalGrid { grid-template-columns: 1fr; } .billingCard { grid-column: auto; } .notice { flex-direction: column; } .activationForm .portalButton { width: 100%; } .computersSection { padding: 22px 18px; } .computersHeading { align-items: stretch; flex-direction: column; } .computerRow { grid-template-columns: 42px 1fr; } .computerRow form { grid-column: 1 / -1; } .removeButton { width: 100%; justify-content: center; } }
+@media (max-width: 900px) { .portalGrid { grid-template-columns: 1fr 1fr; } .billingCard { grid-column: 1 / -1; } .setupSteps { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .portalPage { padding: 48px 0 66px; } .portalGrid { grid-template-columns: 1fr; } .billingCard { grid-column: auto; } .notice { flex-direction: column; } .activationForm .portalButton { width: 100%; } .setupSection { padding: 22px 18px; } .computersSection { padding: 22px 18px; } .computersHeading { align-items: stretch; flex-direction: column; } .computerRow { grid-template-columns: 42px 1fr; } .computerRow form { grid-column: 1 / -1; } .removeButton { width: 100%; justify-content: center; } }
