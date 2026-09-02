@@ -153,6 +153,24 @@
 .formHeading h2 { margin-top: 5px; font-size: 1.55rem; line-height: 1.25; letter-spacing: -.025em; }
 .formHeading p { margin-top: 8px; color: #66798a; font-size: .83rem; line-height: 1.55; }
 
+.firstWebAccountNote {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #b9ded6;
+  border-radius: 13px;
+  color: #31596a;
+  background: #effaf7;
+}
+
+.firstWebAccountNote > svg { color: #158c74; }
+.firstWebAccountNote strong { color: #174a43; font-size: .82rem; }
+.firstWebAccountNote p { margin-top: 4px; font-size: .75rem; line-height: 1.5; }
+.firstWebAccountNote a { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; color: #0878c9; font-size: .76rem; font-weight: 800; }
+.firstWebAccountNote a:hover { color: #075f9d; }
+
 .clerkRoot,
 .clerkCardBox { width: 100%; }
 .clerkCardBox { margin-top: 22px; box-shadow: none !important; }

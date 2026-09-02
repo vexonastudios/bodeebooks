@@ -55,7 +55,7 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
             <ArrowLeft size={16} /> Back to BodeeGuard
           </Link>
           <Link href={isSignUp ? "/guard/sign-in" : "/guard/sign-up"} className={styles.switchLink}>
-            {isSignUp ? "Already have an account? Sign in" : "New to BodeeGuard? Create an account"}
+            {isSignUp ? "Already created your web account? Sign in" : "First visit to the parent website? Create your account"}
             <ArrowRight size={15} />
           </Link>
         </header>
@@ -107,8 +107,19 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
             <div className={styles.formHeading}>
               <span>{isSignUp ? "Step 1 of 3" : "Secure parent access"}</span>
               <h2>{isSignUp ? "Create your secure login" : "Sign in to BodeeGuard"}</h2>
-              <p>{isSignUp ? "Use the email address the parent or guardian will keep access to." : "Use the parent email connected to your BodeeGuard household."}</p>
+              <p>{isSignUp ? "Use the email address the parent or guardian will keep access to." : "Sign in only if you have already created and verified an account on this parent website."}</p>
             </div>
+
+            {!isSignUp && (
+              <aside className={styles.firstWebAccountNote}>
+                <ShieldCheck size={18} />
+                <div>
+                  <strong>Already use BodeeGuard on your family computers?</strong>
+                  <p>The Windows app did not automatically create a web login. On your first visit here, create the parent account once—even if your family has used BodeeGuard for a long time.</p>
+                  <Link href="/guard/sign-up">Create my parent web account <ArrowRight size={14} /></Link>
+                </div>
+              </aside>
+            )}
 
             {isSignUp ? (
               <SignUp
