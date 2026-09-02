@@ -17,6 +17,7 @@ type BodeeGuardDevice = {
 };
 
 type BodeeGuardAccount = {
+  billingMode: "stripe" | "complimentary";
   entitlementStatus: "inactive" | "trial" | "active" | "grace";
   trialEndsAt: string | null;
   graceEndsAt: string | null;
@@ -57,9 +58,11 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const token = await session.getToken();
   const account = token ? await loadBodeeGuardAccount(token) : null;
   const params = await searchParams;
+  const isComplimentary = account?.billingMode === "complimentary";
   const isSubscribed = account && account.entitlementStatus !== "inactive";
   const activeDevices = account?.devices.filter(device => !device.revokedAt) || [];
-  const statusLabel = account?.entitlementStatus === "trial" ? "Free trial active"
+  const statusLabel = isComplimentary ? "Complimentary Home Beta"
+    : account?.entitlementStatus === "trial" ? "Free trial active"
     : account?.entitlementStatus === "active" ? "Subscription active"
       : account?.entitlementStatus === "grace" ? "Payment needs attention"
         : "Ready for your free trial";
@@ -83,13 +86,20 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <div className={styles.cardIcon}><CreditCard size={22} /></div>
             <span className={styles.statusPill}>{statusLabel}</span>
             <h2>BodeeGuard Family</h2>
-            <p><strong>$19.99 per month</strong> after a 14-day free trial. Protect up to 2 parent/admin computers and 10 child computers.</p>
-            {statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {account?.cancelAtPeriodEnd ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}</p>}
-            {isSubscribed || account?.hasBillingAccount ? (
-              <form action={openBodeeGuardBilling}><button className={styles.portalButton} type="submit">Manage billing <ArrowRight size={16} /></button></form>
+            {isComplimentary ? (
+              <>
+                <p><strong>No subscription charge.</strong> Your family uses the complete system on the Home Beta channel so new releases can be tested during real school days before customer promotion.</p>
+                <div className={styles.complimentaryNote}><ShieldCheck size={16} /> Full access · Beta updates · No billing required</div>
+              </>
             ) : (
-              <form action={startBodeeGuardTrial}><button className={styles.portalButton} type="submit">Start 14-day free trial <ArrowRight size={16} /></button></form>
+              <p><strong>$19.99 per month</strong> after a 14-day free trial. Protect up to 2 parent/admin computers and 10 child computers.</p>
             )}
+            {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {account?.cancelAtPeriodEnd ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}</p>}
+            {!isComplimentary && (isSubscribed || account?.hasBillingAccount) ? (
+              <form action={openBodeeGuardBilling}><button className={styles.portalButton} type="submit">Manage billing <ArrowRight size={16} /></button></form>
+            ) : !isComplimentary ? (
+              <form action={startBodeeGuardTrial}><button className={styles.portalButton} type="submit">Start 14-day free trial <ArrowRight size={16} /></button></form>
+            ) : null}
           </section>
           <section className={styles.portalCard}>
             <div className={styles.cardIcon}><Laptop size={22} /></div>
