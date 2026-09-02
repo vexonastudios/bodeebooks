@@ -37,6 +37,31 @@ function readableLastSeen(value: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
+function nonEmptyText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function parentDisplayName(user: Awaited<ReturnType<typeof currentUser>>) {
+  if (!user) return "Parent";
+
+  const publicMetadata = user.publicMetadata as Record<string, unknown>;
+  const unsafeMetadata = user.unsafeMetadata as Record<string, unknown>;
+  const externalAccountName = user.externalAccounts
+    .map(account => [account.firstName, account.lastName].map(nonEmptyText).filter(Boolean).join(" "))
+    .find(Boolean);
+
+  return [
+    user.fullName,
+    user.firstName,
+    publicMetadata.displayName,
+    publicMetadata.name,
+    unsafeMetadata.displayName,
+    unsafeMetadata.name,
+    externalAccountName,
+    user.username,
+  ].map(nonEmptyText).find(Boolean) || "Parent";
+}
+
 async function loadBodeeGuardAccount(token: string): Promise<BodeeGuardAccount | null> {
   const apiBase = process.env.BODEEGUARD_COMMERCIAL_API_URL?.replace(/\/$/, "");
   if (!apiBase) return null;
@@ -55,7 +80,7 @@ async function loadBodeeGuardAccount(token: string): Promise<BodeeGuardAccount |
 export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; download?: string }> }) {
   const session = await auth.protect();
   const user = await currentUser();
-  const name = user?.firstName || user?.fullName || "Parent";
+  const name = parentDisplayName(user);
   const token = await session.getToken();
   const account = token ? await loadBodeeGuardAccount(token) : null;
   const params = await searchParams;
