@@ -91,11 +91,11 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
               <aside className={styles.planCard} aria-label="BodeeGuard trial details">
                 <div>
                   <span className={styles.planLabel}>What happens after signup</span>
-                  <strong>14 days of full BodeeGuard access</strong>
+                  <strong>30 days of full BodeeGuard access</strong>
                   <p>Then $19.99 per month if you choose to start the trial and do not cancel.</p>
                 </div>
                 <ul>
-                  <li><Check size={15} /> No charge for creating this account</li>
+                  <li><Check size={15} /> No charge—or trial code—for creating this account</li>
                   <li><Check size={15} /> Price and first billing date shown before checkout</li>
                   <li><Check size={15} /> Cancel through the parent account</li>
                 </ul>

@@ -35,8 +35,10 @@ type BodeeGuardAccount = {
   currentPeriodEndsAt: string | null;
   cancelAtPeriodEnd: boolean;
   hasBillingAccount: boolean;
+  trialEligible: boolean | null;
   billing: {
     available: boolean;
+    trialEligible: boolean;
     plan: {
       name: string;
       amount: number;
@@ -186,6 +188,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const parentDevices = activeDevices.filter(device => device.deviceRole !== "child");
   const childDevices = activeDevices.filter(device => device.deviceRole === "child");
   const billing = account?.billing || null;
+  const trialEligible = account?.trialEligible ?? !account?.hasBillingAccount;
   const paidSubscription = billing?.subscription || null;
   const paymentMethod = billing?.paymentMethod || null;
   const invoices = billing?.invoices || [];
@@ -199,7 +202,9 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
     : account?.entitlementStatus === "trial" ? "Free trial active"
     : account?.entitlementStatus === "active" ? "Subscription active"
       : account?.entitlementStatus === "grace" ? "Payment needs attention"
-        : customerLaunchOpen ? "Ready for your free trial" : "Parent account ready · No billing";
+        : customerLaunchOpen
+          ? trialEligible ? "Ready for your 30-day trial" : "Ready to subscribe"
+          : "Parent account ready · No billing";
   const statusDate = account?.entitlementStatus === "trial" ? readableDate(trialEnd)
     : account?.entitlementStatus === "grace" ? readableDate(account.graceEndsAt)
       : readableDate(billingPeriodEnd);
@@ -238,16 +243,23 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               </>
             ) : (
               customerLaunchOpen || isSubscribed || account?.hasBillingAccount ? (
-                <p><strong>$19.99 per month</strong> after a 14-day free trial. Protect up to 2 parent/admin computers and 10 child computers.</p>
+                trialEligible ? (
+                  <p><strong>30 days free, then $19.99 per month.</strong> Protect up to 2 parent/admin computers and 10 child computers. Stripe shows the exact first-charge date before you confirm.</p>
+                ) : (
+                  <p><strong>$19.99 per month.</strong> This family has already used its free trial, but it can subscribe again at any time. Protect up to 2 parent/admin computers and 10 child computers.</p>
+                )
               ) : (
                 <p><strong>Your parent account is ready and free.</strong> Paid trials will open when the signed Windows installer is ready for families. We will show the exact price and first billing date before asking for payment information.</p>
               )
             )}
             {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}</p>}
-            {!isComplimentary && (isSubscribed || account?.hasBillingAccount) ? (
+            {!isComplimentary && (isSubscribed || paidSubscription) ? (
               <form action={openBodeeGuardBilling}><button className={styles.portalButton} type="submit">Manage billing <ArrowRight size={16} /></button></form>
             ) : !isComplimentary && customerLaunchOpen ? (
-              <form action={startBodeeGuardTrial}><button className={styles.portalButton} type="submit">Start 14-day free trial <ArrowRight size={16} /></button></form>
+              <>
+                <form action={startBodeeGuardTrial}><button className={styles.portalButton} type="submit">{trialEligible ? "Start 30-day free trial" : "Subscribe for $19.99/month"} <ArrowRight size={16} /></button></form>
+                {trialEligible && <p className={styles.downloadHint}><ShieldCheck size={14} /> No trial code is needed. Payment information is collected securely by Stripe; cancel before the displayed first-charge date and you will not be billed.</p>}
+              </>
             ) : !isComplimentary ? (
               <div className={styles.launchHold}><ShieldCheck size={16} /><span><strong>No payment is needed yet.</strong> Your account will show the trial button here when family enrollment opens.</span></div>
             ) : null}
@@ -304,7 +316,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <div className={styles.billingMetric}>
               <span>Status</span>
               <strong>{isComplimentary ? "Full access" : paidSubscription ? readableBillingStatus(paidSubscription.status) : isSubscribed ? statusLabel : "Not subscribed"}</strong>
-              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : account?.entitlementStatus === "trial" ? "Trial access is active" : "Renews automatically unless canceled"}</small>
+              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : account?.entitlementStatus === "trial" ? "Trial access is active" : isSubscribed ? "Renews automatically unless canceled" : trialEligible ? "One 30-day trial is available for this family" : "Free trial already used; subscription available"}</small>
             </div>
             <div className={styles.billingMetric}>
               <span>{cancellationScheduled ? "Access through" : account?.entitlementStatus === "trial" ? "First billing date" : "Next billing date"}</span>
