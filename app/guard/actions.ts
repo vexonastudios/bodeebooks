@@ -1,8 +1,64 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 export type ActivationState = { status: "idle" | "error" | "success"; message: string };
+
+type ApiErrorPayload = { error?: string };
+type AccountApiResult = { error: string } | { payload: ApiErrorPayload & { url?: string } };
+
+async function callAccountApi(path: string, init: RequestInit = {}): Promise<AccountApiResult> {
+  const session = await auth();
+  if (!session.isAuthenticated) return { error: "Please sign in to continue." } as const;
+  const apiBase = process.env.BODEEGUARD_COMMERCIAL_API_URL?.replace(/\/$/, "");
+  if (!apiBase) return { error: "The BodeeGuard account service is not online yet." } as const;
+
+  try {
+    const token = await session.getToken();
+    if (!token) return { error: "Your secure session could not be verified. Please sign in again." } as const;
+    const response = await fetch(`${apiBase}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...init.headers,
+      },
+      cache: "no-store",
+    });
+    const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload & { url?: string };
+    if (!response.ok) return { error: payload.error || "BodeeGuard could not complete that request." } as const;
+    return { payload } as const;
+  } catch {
+    return { error: "The BodeeGuard account service could not be reached. Please try again." } as const;
+  }
+}
+
+function accountNotice(message: string) {
+  return `/guard/account?billingError=${encodeURIComponent(message)}`;
+}
+
+export async function startBodeeGuardTrial() {
+  const result = await callAccountApi("/v1/account/checkout", { method: "POST", body: "{}" });
+  if ("error" in result) redirect(accountNotice(result.error));
+  if (!result.payload.url) redirect(accountNotice("Stripe did not return a secure checkout page."));
+  redirect(result.payload.url);
+}
+
+export async function openBodeeGuardBilling() {
+  const result = await callAccountApi("/v1/account/billing-portal", { method: "POST", body: "{}" });
+  if ("error" in result) redirect(accountNotice(result.error));
+  if (!result.payload.url) redirect(accountNotice("Stripe did not return a billing-management page."));
+  redirect(result.payload.url);
+}
+
+export async function removeBodeeGuardComputer(formData: FormData) {
+  const deviceId = String(formData.get("deviceId") || "").trim();
+  if (!deviceId) redirect(accountNotice("That computer could not be identified."));
+  const result = await callAccountApi(`/v1/account/devices/${encodeURIComponent(deviceId)}`, { method: "DELETE" });
+  if ("error" in result) redirect(accountNotice(result.error));
+  redirect("/guard/account?computerRemoved=1");
+}
 
 export async function approveComputer(_state: ActivationState, formData: FormData): Promise<ActivationState> {
   const session = await auth();
@@ -13,24 +69,10 @@ export async function approveComputer(_state: ActivationState, formData: FormDat
     return { status: "error", message: "Enter the pairing code exactly as BodeeGuard displays it." };
   }
 
-  const apiBase = process.env.BODEEGUARD_COMMERCIAL_API_URL?.replace(/\/$/, "");
-  if (!apiBase) {
-    return { status: "error", message: "Computer activation is not online yet. Your account is ready; the secure activation service is the next deployment step." };
-  }
-
-  try {
-    const token = await session.getToken();
-    if (!token) return { status: "error", message: "Your secure session could not be verified. Please sign in again." };
-    const response = await fetch(`${apiBase}/v1/account/device-activations/${encodeURIComponent(userCode)}/approve`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: "{}",
-      cache: "no-store",
-    });
-    const payload = (await response.json().catch(() => ({}))) as { error?: string };
-    if (!response.ok) return { status: "error", message: payload.error || "BodeeGuard could not approve that computer." };
-    return { status: "success", message: "Computer approved. BodeeGuard will finish connecting it automatically." };
-  } catch {
-    return { status: "error", message: "The BodeeGuard activation service could not be reached. Please try again." };
-  }
+  const result = await callAccountApi(`/v1/account/device-activations/${encodeURIComponent(userCode)}/approve`, {
+    method: "POST",
+    body: "{}",
+  });
+  if ("error" in result) return { status: "error", message: result.error };
+  return { status: "success", message: "Computer approved. BodeeGuard will finish connecting it automatically." };
 }

@@ -195,7 +195,7 @@ export default function GuardPage() {
         <div>
           <span>A Windows computer with a purpose</span>
           <h2>Give children freedom inside a space built for school.</h2>
-          <p>Create the parent account that will manage your family’s BodeeGuard computers. Subscription checkout and the public Windows installer are coming next.</p>
+          <p>Create the parent account that will manage your family’s BodeeGuard computers, then start a 14-day free trial. The public Windows installer is the next release step.</p>
         </div>
         <GuardAuthActions />
       </section>
