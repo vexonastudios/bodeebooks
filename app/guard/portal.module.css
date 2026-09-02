@@ -24,6 +24,7 @@
 .identity { overflow-wrap: anywhere; color: #173652 !important; font-weight: 750; }
 .portalButton { min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; padding: 0 17px; border-radius: 9px; color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); font-size: .88rem; font-weight: 750; box-shadow: 0 7px 18px rgba(9,116,170,.17); }
 .portalButton:disabled { cursor: wait; opacity: .65; }
+.portalButtonUnavailable { min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; padding: 0 17px; border: 1px solid #c9dfe3; border-radius: 9px; color: #526f80; background: #f1f8f8; font-size: .82rem; font-weight: 750; }
 .downloadHint { display: flex; align-items: center; gap: 6px; color: #237264 !important; font-size: .73rem !important; font-weight: 700; }
 .downloadHint svg { flex-shrink: 0; }
 .notice { display: flex; gap: 8px; margin-top: 19px; padding: 16px 18px; border: 1px solid #d4e4e4; border-radius: 13px; color: #617386; background: #edf5f5; font-size: .82rem; line-height: 1.55; }
@@ -51,7 +52,8 @@
 .computerRow { display: grid; grid-template-columns: 42px 1fr auto; gap: 14px; align-items: center; padding: 14px; border: 1px solid #e1ebeb; border-radius: 13px; background: #f9fcfc; }
 .computerIcon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px; color: #087ca1; background: #e5f6f5; }
 .computerRow > div:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
-.computerRow strong { color: #173652; font-size: .9rem; }
+.computerRow strong { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: #173652; font-size: .9rem; }
+.deviceRole { padding: 2px 7px; border-radius: 999px; color: #08705d; background: #e4f8f1; font-size: .6rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
 .computerRow span { overflow-wrap: anywhere; color: #6b7a8b; font-size: .74rem; line-height: 1.45; }
 .removeButton { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid #efd4d0; border-radius: 8px; color: #984a42; background: #fff8f6; font-size: .75rem; font-weight: 750; }
 .emptyComputers { display: flex; align-items: center; gap: 11px; margin-top: 22px; padding: 16px; border: 1px dashed #c8dcdd; border-radius: 13px; color: #607688; background: #f7fbfb; font-size: .83rem; line-height: 1.55; }

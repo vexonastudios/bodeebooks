@@ -9,12 +9,22 @@ export const metadata: Metadata = { title: "BodeeGuard Parent Account" };
 
 type BodeeGuardDevice = {
   id: string;
+  deviceRole?: "parent" | "child";
   computerName: string;
   platform: string;
   appVersion: string;
   lastSeenAt: string;
   revokedAt: string | null;
 };
+
+type GitHubRelease = {
+  assets?: Array<{ name?: string }>;
+};
+
+const DEFAULT_RELEASE_REPOSITORIES = {
+  beta: "vexonastudios/bodeeguard-beta-releases",
+  stable: "vexonastudios/bodeeguard-stable-releases",
+} as const;
 
 type BodeeGuardAccount = {
   billingMode: "stripe" | "complimentary";
@@ -77,6 +87,29 @@ async function loadBodeeGuardAccount(token: string): Promise<BodeeGuardAccount |
   }
 }
 
+async function hasWindowsInstaller(channel: "beta" | "stable") {
+  const configured = channel === "beta"
+    ? process.env.BODEEGUARD_BETA_RELEASE_REPOSITORY
+    : process.env.BODEEGUARD_STABLE_RELEASE_REPOSITORY;
+  const repository = configured?.trim() || DEFAULT_RELEASE_REPOSITORIES[channel];
+  if (!/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(repository)) return false;
+  try {
+    const response = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "BodeeGuard-Account-Portal",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      next: { revalidate: 60 },
+    });
+    if (!response.ok) return false;
+    const release = await response.json() as GitHubRelease;
+    return Boolean(release.assets?.some(asset => /^BodeeGuard-Setup-[0-9A-Za-z.+-]+\.exe$/.test(asset.name || "")));
+  } catch {
+    return false;
+  }
+}
+
 export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; download?: string }> }) {
   const session = await auth.protect();
   const user = await currentUser();
@@ -89,6 +122,11 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const isSubscribed = account && account.entitlementStatus !== "inactive";
   const canConnectComputers = Boolean(isComplimentary || isSubscribed);
   const activeDevices = account?.devices.filter(device => !device.revokedAt) || [];
+  const parentDevices = activeDevices.filter(device => device.deviceRole !== "child");
+  const childDevices = activeDevices.filter(device => device.deviceRole === "child");
+  const installerAvailable = canConnectComputers && account
+    ? await hasWindowsInstaller(account.releaseChannel === "beta" ? "beta" : "stable")
+    : false;
   const statusLabel = isComplimentary ? "Complimentary Home Beta"
     : account?.entitlementStatus === "trial" ? "Free trial active"
     : account?.entitlementStatus === "active" ? "Subscription active"
@@ -149,8 +187,12 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             {canConnectComputers ? (
               <>
                 <p>Download BodeeGuard here once and install it on the Windows computer that will manage your family.</p>
-                <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download for Windows</a>
-                <p className={styles.downloadHint}><ShieldCheck size={14} /> Only the parent computer needs this website sign-in.</p>
+                {installerAvailable ? (
+                  <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download for Windows</a>
+                ) : (
+                  <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Family Beta build being prepared</span>
+                )}
+                <p className={styles.downloadHint}><ShieldCheck size={14} /> {installerAvailable ? "Only the parent computer needs this website sign-in." : "This download will turn on automatically when the verified installer is published."}</p>
               </>
             ) : (
               <p>{customerLaunchOpen ? "Start the full trial first. Then this page will guide you through installing and approving each family computer." : "When family enrollment opens, you will review the trial first, install BodeeGuard, and approve each computer with a short pairing code."}</p>
@@ -188,15 +230,15 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         )}
         <section className={styles.computersSection}>
           <div className={styles.computersHeading}>
-            <div><span className={styles.kicker}><Monitor size={15} /> Household computers</span><h2>{activeDevices.length ? `${activeDevices.length} connected` : "No computers connected yet"}</h2></div>
+            <div><span className={styles.kicker}><Monitor size={15} /> Household computers</span><h2>{activeDevices.length ? `${parentDevices.length} parent · ${childDevices.length} child` : "No computers connected yet"}</h2></div>
             {canConnectComputers && <Link className={styles.secondaryPortalButton} href="/guard/activate">Approve pairing code</Link>}
           </div>
           {activeDevices.length ? (
             <div className={styles.computerList}>
               {activeDevices.map(device => (
                 <article className={styles.computerRow} key={device.id}>
-                  <div className={styles.computerIcon}><Monitor size={20} /></div>
-                  <div><strong>{device.computerName || "BodeeGuard computer"}</strong><span>{device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · Last seen {readableLastSeen(device.lastSeenAt)}</span></div>
+                  <div className={styles.computerIcon}>{device.deviceRole === "child" ? <Laptop size={20} /> : <Monitor size={20} />}</div>
+                  <div><strong>{device.computerName || "BodeeGuard computer"}<small className={styles.deviceRole}>{device.deviceRole === "child" ? "Child" : "Parent / admin"}</small></strong><span>{device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · Last seen {readableLastSeen(device.lastSeenAt)}</span></div>
                   <form action={removeBodeeGuardComputer}>
                     <input type="hidden" name="deviceId" value={device.id} />
                     <button className={styles.removeButton} type="submit" aria-label={`Remove ${device.computerName || "computer"}`}><Trash2 size={15} /> Remove</button>
@@ -205,7 +247,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               ))}
             </div>
           ) : (
-            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? "Begin with the Windows download and the three setup steps above. Connected family computers will appear here after their pairing codes are approved." : "Connected-computer controls will appear here after your BodeeGuard access is active. No parent password is ever copied to a child computer."}</span></div>
+            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? installerAvailable ? "Begin with the Windows download and the three setup steps above. The parent computer appears after its code is approved; child computers then enroll through it over your home network." : "Your account is ready. The first parent computer will appear here after the verified Family Beta installer is published, installed, and paired." : "Connected-computer controls will appear here after your BodeeGuard access is active. No parent password is ever copied to a child computer."}</span></div>
           )}
         </section>
         {!account && <aside className={styles.notice}><strong>Your secure parent account is ready.</strong><span>The live subscription service is temporarily unavailable. You can still sign in; billing and computer status will appear automatically when it reconnects.</span></aside>}
