@@ -85,6 +85,19 @@ export async function removeBodeeGuardComputer(formData: FormData) {
   redirect("/guard/account?computerRemoved=1");
 }
 
+export async function renameBodeeGuardComputer(formData: FormData) {
+  const deviceId = String(formData.get("deviceId") || "").trim();
+  const computerName = String(formData.get("computerName") || "").trim().replace(/\s+/g, " ");
+  if (!deviceId) redirect(accountNotice("That computer could not be identified."));
+  if (!computerName || computerName.length > 80) redirect(accountNotice("Computer names must be between 1 and 80 characters."));
+  const result = await callAccountApi(`/v1/account/devices/${encodeURIComponent(deviceId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ computerName }),
+  });
+  if ("error" in result) redirect(accountNotice(result.error));
+  redirect("/guard/account?computerRenamed=1");
+}
+
 export async function approveComputer(_state: ActivationState, formData: FormData): Promise<ActivationState> {
   const session = await auth();
   if (!session.isAuthenticated) return { status: "error", message: "Please sign in before approving a computer." };

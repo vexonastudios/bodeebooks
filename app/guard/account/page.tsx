@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards, Wifi } from "lucide-react";
-import { openBodeeGuardBilling, removeBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
+import { openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
 import styles from "../portal.module.css";
 
 export const metadata: Metadata = { title: "BodeeGuard Parent Account" };
@@ -75,6 +75,13 @@ type BodeeGuardAccount = {
 function readableDate(value: string | null) {
   if (!value) return null;
   return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function trialDaysRemaining(value: string | null) {
+  if (!value) return null;
+  const milliseconds = new Date(value).getTime() - Date.now();
+  if (!Number.isFinite(milliseconds)) return null;
+  return Math.max(0, Math.ceil(milliseconds / (24 * 60 * 60 * 1000)));
 }
 
 function readableLastSeen(value: string) {
@@ -173,7 +180,7 @@ async function hasWindowsInstaller(channel: "beta" | "stable") {
   }
 }
 
-export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; download?: string; subscription?: string; trial?: string }> }) {
+export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; computerRenamed?: string; download?: string; subscription?: string; trial?: string }> }) {
   const session = await auth.protect();
   const user = await currentUser();
   const name = parentDisplayName(user);
@@ -196,10 +203,11 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const cancellationScheduled = paidSubscription?.cancelAtPeriodEnd ?? account?.cancelAtPeriodEnd ?? false;
   const billingPeriodEnd = paidSubscription?.currentPeriodEndsAt || account?.currentPeriodEndsAt || null;
   const trialEnd = paidSubscription?.trialEndsAt || account?.trialEndsAt || null;
+  const remainingTrialDays = isTrial ? trialDaysRemaining(trialEnd) : null;
   const installerAvailable = canConnectComputers && account
     ? await hasWindowsInstaller(account.releaseChannel === "beta" ? "beta" : "stable")
     : false;
-  const statusLabel = isComplimentary ? "Complimentary Home Beta"
+  const statusLabel = isComplimentary ? "Complimentary Family Beta"
     : account?.entitlementStatus === "trial" ? "Free trial active"
     : account?.entitlementStatus === "active" ? "Subscription active"
       : account?.entitlementStatus === "grace" ? "Payment needs attention"
@@ -216,14 +224,15 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <header className={styles.portalHeader}>
           <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Sign in once here to manage your family. Child computers install from your home network and do not need a Bodee Books or Clerk sign-in.</p></div>
         </header>
-        {(params.billingError || params.checkout === "success" || params.computerRemoved === "1" || params.subscription || params.trial === "started") && (
+        {(params.billingError || params.checkout === "success" || params.computerRemoved === "1" || params.computerRenamed === "1" || params.subscription || params.trial === "started") && (
           <aside className={params.billingError ? styles.errorNotice : styles.successNotice} role="status">
             {params.billingError
               || (params.trial === "started" ? "Your 30-day BodeeGuard trial has started. No card was requested or stored, and the trial will end without a charge."
                 : params.checkout === "success" ? "Your paid BodeeGuard subscription is connected. Stripe may take a few seconds to update the status below."
                 : params.subscription === "canceled" ? `Cancellation scheduled. Your family keeps full access${billingPeriodEnd ? ` through ${readableDate(billingPeriodEnd)}` : " through the paid period"}.`
                   : params.subscription === "resumed" ? "Your BodeeGuard subscription will continue normally."
-                    : "That computer has been removed from your family account.")}
+                    : params.computerRenamed === "1" ? "That computer now has its new family-friendly name."
+                      : "That computer has been removed from your family account.")}
           </aside>
         )}
         {params.download && (
@@ -240,11 +249,11 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <h2>BodeeGuard Family</h2>
             {isComplimentary ? (
               <>
-                <p><strong>No subscription charge.</strong> Your family uses the complete system on the Home Beta channel so new releases can be tested during real school days before customer promotion.</p>
+                <p><strong>No subscription charge.</strong> Your family uses the complete licensed system on the Family Beta channel so activation, device controls, and new releases can be tested during real school days before customer promotion.</p>
                 <div className={styles.complimentaryNote}><ShieldCheck size={16} /> Full access · Beta updates · No billing required</div>
               </>
             ) : isTrial ? (
-              <p><strong>Your complete trial is active with no card on file.</strong> Use BodeeGuard through {readableDate(trialEnd) || "the trial end date"}. It ends without a charge; subscribe afterward only if your family chooses to continue.</p>
+              <p><strong>Your complete trial is active with no card on file.</strong> {remainingTrialDays === null ? "Your trial remains active" : remainingTrialDays === 0 ? "The trial ends today" : `${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} left`}; use BodeeGuard through {readableDate(trialEnd) || "the trial end date"}. It ends without a charge; subscribe afterward only if your family chooses to continue.</p>
             ) : (
               customerLaunchOpen || isSubscribed || account?.hasBillingAccount ? (
                 trialEligible ? (
@@ -256,7 +265,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 <p><strong>Your parent account is ready and free.</strong> Paid trials will open when the signed Windows installer is ready for families. We will show the exact price and first billing date before asking for payment information.</p>
               )
             )}
-            {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}</p>}
+            {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}{isTrial && remainingTrialDays !== null ? ` · ${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} left` : ""}</p>}
             {!isComplimentary && isTrial ? (
               <div className={styles.complimentaryNote}><ShieldCheck size={16} /> No payment method · No automatic charge · Trial ends {readableDate(trialEnd) || "after 30 days"}</div>
             ) : !isComplimentary && (isSubscribed || paidSubscription) ? (
@@ -300,7 +309,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <div>
               <span className={styles.kicker}><ReceiptText size={15} /> Subscription & billing</span>
               <h2>{isComplimentary ? "Your complimentary family access" : "Your BodeeGuard plan"}</h2>
-              <p>{isComplimentary ? "This household is an internal Home Beta family and will never be sent to Stripe." : "Review your plan, next billing date, payment method, receipts, and cancellation status in one place."}</p>
+              <p>{isComplimentary ? "This household is an internal, activation-enabled Family Beta account and will never be sent to Stripe." : "Review your plan, next billing date, payment method, receipts, and cancellation status in one place."}</p>
             </div>
             {!isComplimentary && account?.hasBillingAccount && !isTrial && (
               <form action={openBodeeGuardBilling}>
@@ -322,7 +331,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <div className={styles.billingMetric}>
               <span>Status</span>
               <strong>{isComplimentary ? "Full access" : paidSubscription ? readableBillingStatus(paidSubscription.status) : isSubscribed ? statusLabel : "Not subscribed"}</strong>
-              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : isTrial ? "30-day access with no card and no automatic renewal" : isSubscribed ? "Renews automatically unless canceled" : trialEligible ? "One 30-day card-free trial is available" : "Free trial already used; subscription available"}</small>
+              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : isTrial ? remainingTrialDays === null ? "Trial active · no card or automatic renewal" : `${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} remaining · no card or automatic renewal` : isSubscribed ? "Renews automatically unless canceled" : trialEligible ? "One 30-day card-free trial is available" : "Free trial already used; subscription available"}</small>
             </div>
             <div className={styles.billingMetric}>
               <span>{cancellationScheduled ? "Access through" : isTrial ? "Trial access ends" : "Next billing date"}</span>
@@ -354,7 +363,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           <div className={styles.paymentHistory}>
             <div className={styles.paymentHeading}><div><FileText size={18} /><span><strong>Payment history</strong><small>Stripe receipts and downloadable invoices</small></span></div>{!isComplimentary && account?.hasBillingAccount && <form action={openBodeeGuardBilling}><button type="submit">View all in Stripe <ExternalLink size={13} /></button></form>}</div>
             {isComplimentary ? (
-              <div className={styles.emptyPayments}><ShieldCheck size={18} /><span>No payments will appear here because this is a permanently complimentary Home Beta account.</span></div>
+              <div className={styles.emptyPayments}><ShieldCheck size={18} /><span>No payments will appear here because this is a permanently complimentary Family Beta account.</span></div>
             ) : invoices.length ? (
               <div className={styles.invoiceList}>
                 {invoices.map((invoice, index) => (
@@ -409,10 +418,18 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 <article className={styles.computerRow} key={device.id}>
                   <div className={styles.computerIcon}>{device.deviceRole === "child" ? <Laptop size={20} /> : <Monitor size={20} />}</div>
                   <div><strong>{device.computerName || "BodeeGuard computer"}<small className={styles.deviceRole}>{device.deviceRole === "child" ? "Child" : "Parent / admin"}</small></strong><span>{device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · Last seen {readableLastSeen(device.lastSeenAt)}</span></div>
-                  <form action={removeBodeeGuardComputer}>
-                    <input type="hidden" name="deviceId" value={device.id} />
-                    <button className={styles.removeButton} type="submit" aria-label={`Remove ${device.computerName || "computer"}`}><Trash2 size={15} /> Remove</button>
-                  </form>
+                  <div className={styles.computerActions}>
+                    <form className={styles.renameComputer} action={renameBodeeGuardComputer}>
+                      <input type="hidden" name="deviceId" value={device.id} />
+                      <label className={styles.visuallyHidden} htmlFor={`computer-name-${device.id}`}>Family name for {device.computerName || "this computer"}</label>
+                      <input id={`computer-name-${device.id}`} name="computerName" defaultValue={device.computerName || ""} maxLength={80} required />
+                      <button type="submit">Save name</button>
+                    </form>
+                    <details className={styles.removeComputer}>
+                      <summary><Trash2 size={14} /> Remove…</summary>
+                      <div><p>This computer will lose BodeeGuard access and must be deliberately paired again.</p><form action={removeBodeeGuardComputer}><input type="hidden" name="deviceId" value={device.id} /><button className={styles.removeButton} type="submit">Yes, remove computer</button></form></div>
+                    </details>
+                  </div>
                 </article>
               ))}
             </div>
