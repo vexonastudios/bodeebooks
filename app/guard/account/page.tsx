@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards, Wifi } from "lucide-react";
-import { openBodeeGuardBilling, removeBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial } from "../actions";
+import { openBodeeGuardBilling, removeBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
 import styles from "../portal.module.css";
 
 export const metadata: Metadata = { title: "BodeeGuard Parent Account" };
@@ -173,7 +173,7 @@ async function hasWindowsInstaller(channel: "beta" | "stable") {
   }
 }
 
-export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; download?: string; subscription?: string }> }) {
+export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; download?: string; subscription?: string; trial?: string }> }) {
   const session = await auth.protect();
   const user = await currentUser();
   const name = parentDisplayName(user);
@@ -182,6 +182,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const params = await searchParams;
   const customerLaunchOpen = process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN === "true";
   const isComplimentary = account?.billingMode === "complimentary";
+  const isTrial = account?.entitlementStatus === "trial";
   const isSubscribed = account && account.entitlementStatus !== "inactive";
   const canConnectComputers = Boolean(isComplimentary || isSubscribed);
   const activeDevices = account?.devices.filter(device => !device.revokedAt) || [];
@@ -215,10 +216,11 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <header className={styles.portalHeader}>
           <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Sign in once here to manage your family. Child computers install from your home network and do not need a Bodee Books or Clerk sign-in.</p></div>
         </header>
-        {(params.billingError || params.checkout === "success" || params.computerRemoved === "1" || params.subscription) && (
+        {(params.billingError || params.checkout === "success" || params.computerRemoved === "1" || params.subscription || params.trial === "started") && (
           <aside className={params.billingError ? styles.errorNotice : styles.successNotice} role="status">
             {params.billingError
-              || (params.checkout === "success" ? "Your BodeeGuard subscription is connected. Stripe may take a few seconds to update the status below."
+              || (params.trial === "started" ? "Your 30-day BodeeGuard trial has started. No card was requested or stored, and the trial will end without a charge."
+                : params.checkout === "success" ? "Your paid BodeeGuard subscription is connected. Stripe may take a few seconds to update the status below."
                 : params.subscription === "canceled" ? `Cancellation scheduled. Your family keeps full access${billingPeriodEnd ? ` through ${readableDate(billingPeriodEnd)}` : " through the paid period"}.`
                   : params.subscription === "resumed" ? "Your BodeeGuard subscription will continue normally."
                     : "That computer has been removed from your family account.")}
@@ -241,10 +243,12 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 <p><strong>No subscription charge.</strong> Your family uses the complete system on the Home Beta channel so new releases can be tested during real school days before customer promotion.</p>
                 <div className={styles.complimentaryNote}><ShieldCheck size={16} /> Full access · Beta updates · No billing required</div>
               </>
+            ) : isTrial ? (
+              <p><strong>Your complete trial is active with no card on file.</strong> Use BodeeGuard through {readableDate(trialEnd) || "the trial end date"}. It ends without a charge; subscribe afterward only if your family chooses to continue.</p>
             ) : (
               customerLaunchOpen || isSubscribed || account?.hasBillingAccount ? (
                 trialEligible ? (
-                  <p><strong>30 days free, then $19.99 per month.</strong> Protect up to 2 parent/admin computers and 10 child computers. Stripe shows the exact first-charge date before you confirm.</p>
+                  <p><strong>30 days completely free with no card required.</strong> Protect up to 2 parent/admin computers and 10 child computers. When the trial ends, you decide whether to subscribe for $19.99 per month.</p>
                 ) : (
                   <p><strong>$19.99 per month.</strong> This family has already used its free trial, but it can subscribe again at any time. Protect up to 2 parent/admin computers and 10 child computers.</p>
                 )
@@ -253,12 +257,14 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               )
             )}
             {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}</p>}
-            {!isComplimentary && (isSubscribed || paidSubscription) ? (
+            {!isComplimentary && isTrial ? (
+              <div className={styles.complimentaryNote}><ShieldCheck size={16} /> No payment method · No automatic charge · Trial ends {readableDate(trialEnd) || "after 30 days"}</div>
+            ) : !isComplimentary && (isSubscribed || paidSubscription) ? (
               <form action={openBodeeGuardBilling}><button className={styles.portalButton} type="submit">Manage billing <ArrowRight size={16} /></button></form>
             ) : !isComplimentary && customerLaunchOpen ? (
               <>
-                <form action={startBodeeGuardTrial}><button className={styles.portalButton} type="submit">{trialEligible ? "Start 30-day free trial" : "Subscribe for $19.99/month"} <ArrowRight size={16} /></button></form>
-                {trialEligible && <p className={styles.downloadHint}><ShieldCheck size={14} /> No trial code is needed. Payment information is collected securely by Stripe; cancel before the displayed first-charge date and you will not be billed.</p>}
+                <form action={trialEligible ? startBodeeGuardTrial : subscribeToBodeeGuard}><button className={styles.portalButton} type="submit">{trialEligible ? "Start 30-day trial — no card" : "Subscribe for $19.99/month"} <ArrowRight size={16} /></button></form>
+                {trialEligible && <p className={styles.downloadHint}><ShieldCheck size={14} /> No trial code, checkout, or payment information is needed. The trial simply ends after 30 days unless you later choose to subscribe.</p>}
               </>
             ) : !isComplimentary ? (
               <div className={styles.launchHold}><ShieldCheck size={16} /><span><strong>No payment is needed yet.</strong> Your account will show the trial button here when family enrollment opens.</span></div>
@@ -296,7 +302,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               <h2>{isComplimentary ? "Your complimentary family access" : "Your BodeeGuard plan"}</h2>
               <p>{isComplimentary ? "This household is an internal Home Beta family and will never be sent to Stripe." : "Review your plan, next billing date, payment method, receipts, and cancellation status in one place."}</p>
             </div>
-            {!isComplimentary && account?.hasBillingAccount && (
+            {!isComplimentary && account?.hasBillingAccount && !isTrial && (
               <form action={openBodeeGuardBilling}>
                 <button className={styles.secondaryPortalButton} type="submit"><WalletCards size={16} /> Secure billing portal</button>
               </form>
@@ -316,17 +322,17 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <div className={styles.billingMetric}>
               <span>Status</span>
               <strong>{isComplimentary ? "Full access" : paidSubscription ? readableBillingStatus(paidSubscription.status) : isSubscribed ? statusLabel : "Not subscribed"}</strong>
-              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : account?.entitlementStatus === "trial" ? "Trial access is active" : isSubscribed ? "Renews automatically unless canceled" : trialEligible ? "One 30-day trial is available for this family" : "Free trial already used; subscription available"}</small>
+              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : isTrial ? "30-day access with no card and no automatic renewal" : isSubscribed ? "Renews automatically unless canceled" : trialEligible ? "One 30-day card-free trial is available" : "Free trial already used; subscription available"}</small>
             </div>
             <div className={styles.billingMetric}>
-              <span>{cancellationScheduled ? "Access through" : account?.entitlementStatus === "trial" ? "First billing date" : "Next billing date"}</span>
-              <strong>{isComplimentary ? "No billing date" : readableDate(account?.entitlementStatus === "trial" ? trialEnd : billingPeriodEnd) || "Not scheduled"}</strong>
-              <small>{isComplimentary ? "This account is never charged" : cancellationScheduled ? "No additional renewal charge" : "Billing is processed securely by Stripe"}</small>
+              <span>{cancellationScheduled ? "Access through" : isTrial ? "Trial access ends" : "Next billing date"}</span>
+              <strong>{isComplimentary ? "No billing date" : readableDate(isTrial ? trialEnd : billingPeriodEnd) || "Not scheduled"}</strong>
+              <small>{isComplimentary ? "This account is never charged" : isTrial ? "Nothing is charged on this date" : cancellationScheduled ? "No additional renewal charge" : "Billing is processed securely by Stripe"}</small>
             </div>
             <div className={styles.billingMetric}>
               <span>Payment method</span>
-              <strong>{isComplimentary ? "None required" : paymentMethod ? `${readableCardBrand(paymentMethod.brand)} •••• ${paymentMethod.last4}` : account?.hasBillingAccount ? "Not available" : "Not collected"}</strong>
-              <small>{paymentMethod?.expMonth && paymentMethod?.expYear ? `Expires ${String(paymentMethod.expMonth).padStart(2, "0")}/${paymentMethod.expYear}` : isComplimentary ? "No Stripe customer exists" : "Add or update securely through Stripe"}</small>
+              <strong>{isComplimentary || isTrial ? "None required" : paymentMethod ? `${readableCardBrand(paymentMethod.brand)} •••• ${paymentMethod.last4}` : account?.hasBillingAccount ? "Not available" : "Not collected"}</strong>
+              <small>{paymentMethod?.expMonth && paymentMethod?.expYear ? `Expires ${String(paymentMethod.expMonth).padStart(2, "0")}/${paymentMethod.expYear}` : isComplimentary ? "No Stripe customer exists" : isTrial ? "No card is stored for this trial" : "Add or update securely through Stripe"}</small>
             </div>
           </div>
 
@@ -338,7 +344,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             </div>
           )}
 
-          {!isComplimentary && isSubscribed && !cancellationScheduled && (
+          {!isComplimentary && isSubscribed && !isTrial && !cancellationScheduled && (
             <details className={styles.cancelPanel}>
               <summary>Need to cancel BodeeGuard?</summary>
               <div><p>Cancellation stops the next renewal. Your children keep full access through {readableDate(billingPeriodEnd) || "the end of the current billing period"}; BodeeGuard will not shut off immediately.</p><form action={scheduleBodeeGuardCancellation}><button className={styles.cancelButton} type="submit">Cancel at the end of my billing period</button></form></div>
@@ -363,11 +369,11 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 ))}
               </div>
             ) : (
-              <div className={styles.emptyPayments}><CheckCircle2 size={18} /><span>{account?.entitlementStatus === "trial" ? "No payments yet. Your first charge will occur only after the trial date shown above." : "No completed BodeeGuard payments are on this account yet."}</span></div>
+              <div className={styles.emptyPayments}><CheckCircle2 size={18} /><span>{isTrial ? "No payment is due. The trial ends without a charge; subscribe afterward only if you choose to continue." : "No completed BodeeGuard payments are on this account yet."}</span></div>
             )}
           </div>
 
-          <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Payment details are handled by Stripe; BodeeGuard never stores your full card number. For account help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
+          <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Trial families provide no card. If you later subscribe, payment details are handled by Stripe and BodeeGuard never stores your full card number. For account help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
         </section>
         {canConnectComputers && (
           <section className={styles.setupSection}>

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 export type ActivationState = { status: "idle" | "error" | "success"; message: string };
 
 type ApiErrorPayload = { error?: string };
-type AccountApiResult = { error: string } | { payload: ApiErrorPayload & { url?: string } };
+type AccountApiResult = { error: string } | { payload: ApiErrorPayload & { started?: boolean; trialEndsAt?: string; url?: string } };
 
 async function callAccountApi(path: string, init: RequestInit = {}): Promise<AccountApiResult> {
   const session = await auth();
@@ -40,7 +40,17 @@ function accountNotice(message: string) {
 
 export async function startBodeeGuardTrial() {
   if (process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN !== "true") {
-    redirect(accountNotice("BodeeGuard paid trials are not open yet. Your parent account remains free, and no payment information has been collected."));
+    redirect(accountNotice("BodeeGuard trials are not open yet. Your parent account remains free, and no payment information has been collected."));
+  }
+  const result = await callAccountApi("/v1/account/trial", { method: "POST", body: "{}" });
+  if ("error" in result) redirect(accountNotice(result.error));
+  if (!result.payload.started) redirect(accountNotice("BodeeGuard did not confirm that the free trial started."));
+  redirect("/guard/account?trial=started");
+}
+
+export async function subscribeToBodeeGuard() {
+  if (process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN !== "true") {
+    redirect(accountNotice("BodeeGuard subscriptions are not open yet. No payment information has been collected."));
   }
   const result = await callAccountApi("/v1/account/checkout", { method: "POST", body: "{}" });
   if ("error" in result) redirect(accountNotice(result.error));

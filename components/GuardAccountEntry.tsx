@@ -92,12 +92,12 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
                 <div>
                   <span className={styles.planLabel}>What happens after signup</span>
                   <strong>30 days of full BodeeGuard access</strong>
-                  <p>Then $19.99 per month if you choose to start the trial and do not cancel.</p>
+                  <p>No card is required. When day 30 arrives, choose whether to subscribe for $19.99 per month; otherwise the trial simply ends.</p>
                 </div>
                 <ul>
                   <li><Check size={15} /> No charge—or trial code—for creating this account</li>
-                  <li><Check size={15} /> Price and first billing date shown before checkout</li>
-                  <li><Check size={15} /> Cancel through the parent account</li>
+                  <li><Check size={15} /> No card and no automatic trial-end charge</li>
+                  <li><Check size={15} /> Subscribe only after making a deliberate choice</li>
                 </ul>
               </aside>
             )}
@@ -146,7 +146,7 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
             {isSignUp && (
               <div className={styles.nextNote}>
                 <CreditCard size={17} />
-                <p><strong>Next:</strong> After email verification, your account page explains the trial and asks before sending you to secure Stripe checkout.</p>
+                <p><strong>Next:</strong> After email verification, your account page starts the card-free trial. No card is sent to Stripe; secure payment checkout appears only if you deliberately subscribe later.</p>
               </div>
             )}
           </section>

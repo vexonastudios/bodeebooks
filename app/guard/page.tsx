@@ -200,7 +200,7 @@ export default function GuardPage() {
         <div>
           <span>A Windows computer with a purpose</span>
           <h2>Give children freedom inside a space built for school.</h2>
-          <p>Create the parent account that will manage your family’s BodeeGuard computers, then try the complete system free for 30 days—no trial code is needed. Stripe shows the exact first billing date before you confirm, and you can cancel before then without being charged. The public Windows installer is the next release step.</p>
+          <p>Create the parent account that will manage your family’s BodeeGuard computers, then try the complete system free for 30 days—no trial code or card is needed. The trial ends without a charge. Afterward, subscribe for $19.99 per month only if BodeeGuard is right for your family. The public Windows installer is the next release step.</p>
         </div>
         <GuardAuthActions />
       </section>
