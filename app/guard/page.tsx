@@ -72,9 +72,9 @@ const schoolDay = [
 ];
 
 const steps = [
-  "Create the parent account that owns your family’s subscription.",
-  "Install BodeeGuard on the parent computer and each child computer.",
-  "Approve each computer with a short pairing code—no account password is stored on the child’s device.",
+  "Create and verify your parent account. Start the 30-day trial when your Windows download is ready—no card required.",
+  "Download once, install on the parent computer, and approve its pairing code from your account.",
+  "Use the parent’s local install link on each child computer. Children connect through your home network and need no website sign-in.",
 ];
 
 export default function GuardPage() {

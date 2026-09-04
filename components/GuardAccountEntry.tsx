@@ -38,8 +38,8 @@ const clerkAppearance = {
 
 const setupSteps = [
   { number: "1", title: "Parent account", detail: "Create and verify your secure login" },
-  { number: "2", title: "Review your trial", detail: "See the price and first billing date" },
-  { number: "3", title: "Connect computers", detail: "Install and approve each family PC" },
+  { number: "2", title: "Start when ready", detail: "30 days free · no card · no automatic charge" },
+  { number: "3", title: "Set up your home", detail: "Parent first, then children over home Wi-Fi" },
 ];
 
 export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
@@ -83,7 +83,7 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
 
             <div className={styles.benefitList}>
               <div><span><LockKeyhole size={18} /></span><p><strong>Your password stays with Clerk</strong><small>It is never copied to a child computer or stored inside BodeeGuard.</small></p></div>
-              <div><span><Laptop size={18} /></span><p><strong>Approve computers safely</strong><small>Each installation connects with a short-lived pairing code and its own revocable credential.</small></p></div>
+              <div><span><Laptop size={18} /></span><p><strong>Set up the parent computer once</strong><small>Approve its pairing code here. Child computers then install and connect through the parent over your home network.</small></p></div>
               <div><span><Users size={18} /></span><p><strong>Built for a whole household</strong><small>The standard plan supports 2 parent/admin computers and up to 10 child computers.</small></p></div>
             </div>
 
@@ -92,7 +92,7 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
                 <div>
                   <span className={styles.planLabel}>What happens after signup</span>
                   <strong>30 days of full BodeeGuard access</strong>
-                  <p>No card is required. When day 30 arrives, choose whether to subscribe for $19.99 per month; otherwise the trial simply ends.</p>
+                  <p>Start the trial from your account when enrollment and the Windows download are available. Creating an account does not start the clock. After 30 days, choose whether to subscribe for $19.99 per month; otherwise access ends without a charge.</p>
                 </div>
                 <ul>
                   <li><Check size={15} /> No charge—or trial code—for creating this account</li>
@@ -146,7 +146,7 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
             {isSignUp && (
               <div className={styles.nextNote}>
                 <CreditCard size={17} />
-                <p><strong>Next:</strong> After email verification, your account page starts the card-free trial. No card is sent to Stripe; secure payment checkout appears only if you deliberately subscribe later.</p>
+                <p><strong>Next:</strong> After email verification, open your parent account. When enrollment opens, select Start 30-day trial to begin. Your trial does not start automatically and no card is required.</p>
               </div>
             )}
           </section>

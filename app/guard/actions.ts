@@ -39,9 +39,6 @@ function accountNotice(message: string) {
 }
 
 export async function startBodeeGuardTrial() {
-  if (process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN !== "true") {
-    redirect(accountNotice("BodeeGuard trials are not open yet. Your parent account remains free, and no payment information has been collected."));
-  }
   const result = await callAccountApi("/v1/account/trial", { method: "POST", body: "{}" });
   if ("error" in result) redirect(accountNotice(result.error));
   if (!result.payload.started) redirect(accountNotice("BodeeGuard did not confirm that the free trial started."));
@@ -49,13 +46,28 @@ export async function startBodeeGuardTrial() {
 }
 
 export async function subscribeToBodeeGuard() {
-  if (process.env.BODEEGUARD_CUSTOMER_LAUNCH_OPEN !== "true") {
-    redirect(accountNotice("BodeeGuard subscriptions are not open yet. No payment information has been collected."));
-  }
   const result = await callAccountApi("/v1/account/checkout", { method: "POST", body: "{}" });
   if ("error" in result) redirect(accountNotice(result.error));
   if (!result.payload.url) redirect(accountNotice("Stripe did not return a secure checkout page."));
   redirect(result.payload.url);
+}
+
+export async function changeBodeeGuardReleaseChannel(formData: FormData) {
+  const channel = String(formData.get("channel") || "");
+  const result = await callAccountApi("/v1/account/release-channel", {
+    method: "POST", body: JSON.stringify({ channel, betaConsent: formData.get("betaConsent") === "on" }),
+  });
+  if ("error" in result) redirect(accountNotice(result.error));
+  redirect(`/guard/account?channel=${encodeURIComponent(channel)}`);
+}
+
+export async function manageBodeeGuardBetaInvitation(formData: FormData) {
+  const operation = String(formData.get("operation") || "");
+  const result = await callAccountApi("/v1/operator/beta-invitations", {
+    method: "POST", body: JSON.stringify({ operation, email: String(formData.get("email") || "") }),
+  });
+  if ("error" in result) redirect(accountNotice(result.error));
+  redirect(`/guard/account?invitation=${operation === "invite" ? "saved" : "removed"}`);
 }
 
 export async function openBodeeGuardBilling() {
