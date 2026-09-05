@@ -95,3 +95,27 @@ test('external Beta requires deliberate consent; owner invite controls are restr
   assert.match(owner, /Save Beta invitation/);
   assert.doesNotMatch(owner, /Cancel at the end of my billing period/);
 });
+
+test('release notes expand inside the account page instead of linking parents to GitHub', async () => {
+  const html = await render(fixture({
+    release: {
+      version: '1.2.157',
+      downloadUrl: 'https://github.com/vexonastudios/bodeeguard-stable-releases/releases/download/v1.2.157/BodeeGuard-Setup-1.2.157.exe',
+      notesUrl: 'https://github.com/vexonastudios/bodeeguard-stable-releases/releases/tag/v1.2.157',
+      notes: {
+        title: 'Math help, safer assessments, and dependable time limits',
+        sections: [{
+          heading: 'For parents',
+          headline: 'A complete Math Coach and stronger family controls',
+          summary: 'This update adds parent-approved math tutoring.',
+          highlights: ['Completed school quizzes now have a safer way back.']
+        }]
+      }
+    }
+  }));
+  assert.match(html, /<details[^>]*><summary>What changed in 1\.2\.157<\/summary>/);
+  assert.match(html, /Math help, safer assessments, and dependable time limits/);
+  assert.match(html, /For parents/);
+  assert.match(html, /Completed school quizzes now have a safer way back/);
+  assert.doesNotMatch(html, /github\.com/);
+});

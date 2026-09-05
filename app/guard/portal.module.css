@@ -45,6 +45,21 @@
 .sectionHeadingRow h2 { margin-top: 8px; color: #12304a; font-size: 1.42rem; }
 .sectionHeadingRow p { max-width: 720px; margin-top: 8px; color: #617487; font-size: .84rem; line-height: 1.6; }
 .sectionHeadingRow form { flex-shrink: 0; }
+.releaseNotes { max-width: 760px; margin-top: 17px; overflow: hidden; border: 1px solid #c6dfdf; border-radius: 13px; background: rgba(255,255,255,.9); }
+.releaseNotes summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 15px; color: #087a8f; font-size: .79rem; font-weight: 850; cursor: pointer; list-style: none; }
+.releaseNotes summary::-webkit-details-marker { display: none; }
+.releaseNotes summary::after { content: "+"; display: grid; flex: 0 0 23px; width: 23px; height: 23px; place-items: center; border-radius: 50%; color: #087a8f; background: #e5f6f5; font-size: 1rem; line-height: 1; }
+.releaseNotes[open] summary { border-bottom: 1px solid #d9e8e8; color: #126674; }
+.releaseNotes[open] summary::after { content: "−"; }
+.releaseNotesBody { padding: 17px 18px 19px; }
+.releaseNotesBody .releaseNotesTitle { max-width: none; margin: 0; color: #173652; font-size: .91rem; font-weight: 800; }
+.releaseNotesSection { margin-top: 19px; }
+.releaseNotesSection:first-of-type { margin-top: 16px; }
+.releaseNotesSection h3 { color: #087b71; font-size: .72rem; font-weight: 850; letter-spacing: .075em; text-transform: uppercase; }
+.releaseNotesSection > strong { display: block; margin-top: 7px; color: #173652; font-size: .84rem; }
+.releaseNotesSection > p { max-width: none; margin-top: 6px; color: #5a7183; font-size: .79rem; line-height: 1.58; }
+.releaseNotesSection ul { display: grid; gap: 7px; margin: 11px 0 0; padding-left: 19px; color: #496477; font-size: .77rem; line-height: 1.55; }
+.releaseNotesSection li::marker { color: #0a9b8d; }
 .billingWarning, .cancellationBanner, .billingHelp { display: grid; align-items: start; gap: 10px; margin-top: 20px; padding: 14px 16px; border-radius: 12px; font-size: .79rem; line-height: 1.55; }
 .billingWarning { grid-template-columns: 20px 1fr; color: #7d5521; border: 1px solid #ead6ab; background: #fff9eb; }
 .billingWarning svg { color: #bf7618; }

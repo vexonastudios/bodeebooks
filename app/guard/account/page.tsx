@@ -25,7 +25,14 @@ type BodeeGuardAccount = {
   billingMode: "stripe" | "complimentary";
   entitlementStatus: "inactive" | "trial" | "active" | "grace";
   releaseChannel: "beta" | "stable";
-  release?: { version: string; notesUrl: string; downloadUrl: string } | null;
+  release?: {
+    version: string;
+    downloadUrl: string;
+    notes?: {
+      title: string;
+      sections: Array<{ heading: string; headline: string; summary: string; highlights: string[] }>;
+    } | null;
+  } | null;
   deviceLimits?: { parent: number; child: number };
   enrollment?: {
     customerLaunchOpen: boolean;
@@ -308,7 +315,22 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <p>{isComplimentary ? "Your family receives new versions first and tests the same account activation and device controls as other families. Your access remains complimentary."
               : account.releaseChannel === "beta" ? "Your family has chosen early updates. Beta versions may have issues that are still being tested; you can return to Stable below. Your trial dates and subscription price stay the same."
                 : "Stable is the recommended channel for school days. Your family receives updates after Beta testing and a separate release approval."}</p>
-            {account.release && <Link className={styles.stepAction} href={account.release.notesUrl} target="_blank" rel="noreferrer">What changed in {account.release.version} <ExternalLink size={14} /></Link>}
+            {account.release && (
+              <details className={styles.releaseNotes}>
+                <summary>What changed in {account.release.version}</summary>
+                <div className={styles.releaseNotesBody}>
+                  {account.release.notes?.title && <p className={styles.releaseNotesTitle}>{account.release.notes.title}</p>}
+                  {account.release.notes?.sections?.length ? account.release.notes.sections.map((section, index) => (
+                    <section className={styles.releaseNotesSection} key={`${section.heading}-${index}`}>
+                      <h3>{section.heading}</h3>
+                      {section.headline && <strong>{section.headline}</strong>}
+                      {section.summary && <p>{section.summary}</p>}
+                      {section.highlights.length > 0 && <ul>{section.highlights.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>}
+                    </section>
+                  )) : <p>Release details are being prepared. The installer is still verified before BodeeGuard offers it.</p>}
+                </div>
+              </details>
+            )}
           </div></div>
           {!isComplimentary && account.releaseChannel === "beta" && <form action={changeBodeeGuardReleaseChannel}>
             <input type="hidden" name="channel" value="stable" /><p className={styles.channelExplanation}>Returning to Stable stops future Beta updates. A newer installed Beta stays in place until Stable catches up; your data is preserved.</p>
