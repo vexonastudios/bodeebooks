@@ -31,6 +31,11 @@ export function setupCloudFiles({ endpoint, gradePaper }) {
     finally { loading = false; }
   }
   el('cloud-files-refresh').addEventListener('click', refresh);
+  el('cloud-paper-reset').addEventListener('click', () => {
+    if (uploading || (pending && !confirm('Stop retrying this upload? It may already be saved online. Check the file list before uploading another copy. Your original file is unchanged.'))) return;
+    pending = null; el('cloud-paper-file').value = ''; el('cloud-paper-file').disabled = false; el('cloud-paper-student').disabled = false; el('cloud-paper-upload').textContent = 'Upload paper';
+    el('cloud-files-status').textContent = 'Choose a new paper. Previous saved files and incomplete reservations remain in the file list.'; void refresh();
+  });
   el('cloud-paper-form').addEventListener('submit', async event => {
     event.preventDefault(); if (uploading) return; uploading = true;
     const submit = el('cloud-paper-upload'); submit.disabled = true;

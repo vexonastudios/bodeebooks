@@ -32,6 +32,7 @@ export function setupCloudMessages({ endpoint }) {
     el('messages-reply-input').disabled = !selected || sending || pending.has(selected);
     el('messages-reply-btn').disabled = !selected || sending;
     el('messages-attachment').disabled = !selected || sending || pending.has(selected) || Boolean(attachments.get(selected));
+    el('messages-attachment-clear').disabled = !selected || sending || pending.has(selected);
     el('messages-attachment-status').textContent = attachments.get(selected)?.name || '';
     el('messages-reply-btn').textContent = pending.has(selected) ? 'Retry same message' : 'Send';
     el('messages-older').disabled = !selected || loading || !(cursor === undefined ? page?.nextBefore : cursor);
@@ -94,6 +95,10 @@ export function setupCloudMessages({ endpoint }) {
       button.setAttribute('aria-pressed', String(student.id === selected)); button.addEventListener('click', () => choose(student.id)); return button;
     }));
   }
+  el('messages-attachment-clear').addEventListener('click', () => {
+    if (!selected || sending || pending.has(selected)) return;
+    attachments.delete(selected); el('messages-attachment').value = ''; controls(); note('Attachment selection cleared. Any file already saved online remains in Gradebook → Private files.');
+  });
   el('messages-reply-box').addEventListener('submit', async event => {
     event.preventDefault(); if (!selected || sending) return;
     const child = selected;
