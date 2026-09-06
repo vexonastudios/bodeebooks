@@ -59,3 +59,48 @@ test('a cloud outage shows the error rather than an apparently empty family', as
   assert.match(html, /Back to parent account/);
   assert.doesNotMatch(html, /Add child|Live computers/);
 });
+
+function loadDashboardModule(relative, overrides = {}) {
+  const sourcePath = path.resolve('app/guard/dashboard', relative);
+  const scopedRequire = createRequire(sourcePath);
+  const component = new Module(sourcePath);
+  component.filename = sourcePath;
+  component.require = name => {
+    if (Object.hasOwn(overrides, name)) return overrides[name];
+    if (name === './actions') return { createCloudRecoveryCode: async () => ({ error: 'Not invoked in render tests' }) };
+    if (name === './RecoveryCode') return { __esModule: true, default: loadDashboardModule('RecoveryCode.tsx').default };
+    if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { type: 'submit' }, props.children) };
+    if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
+    return scopedRequire(name);
+  };
+  component._compile(ts.transpileModule(fs.readFileSync(sourcePath, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+  }).outputText, sourcePath);
+  return component.exports;
+}
+
+test('live computer cards clearly distinguish pilot school pause, recovery, and received minutes', () => {
+  const View = loadDashboardModule('LiveComputers.tsx').default;
+  const html = renderToStaticMarkup(React.createElement(View, { initial: {
+    serverTime: '2026-09-05T12:00:30Z', students: [{ id: 'student', name: 'Test child' }],
+    devices: [{ id: 'device', computer_name: 'Pilot', student_id: 'student', last_seen_at: '2026-09-05T12:00:00Z', revision: 2, acknowledged_revision: 2, app_version: 'test', current_subject: 'subject' }],
+    rules: { subjects: [{ id: 'subject', title: 'School lesson' }] },
+    activity: [{ student_id: 'student', subject_id: 'subject', date_utc: '2026-09-05', seconds: 90 }],
+  } }));
+  assert.match(html, /Pause cloud school/);
+  assert.match(html, /Offline parent recovery/);
+  assert.match(html, /1m 30s/);
+  assert.match(html, /not verified lesson completion/);
+  assert.doesNotMatch(html, /Lock computer/);
+});
+
+test('anonymous status polling is 401 and never calls the household API', async () => {
+  let called = false;
+  const route = loadDashboardModule('status/route.ts', {
+    '@clerk/nextjs/server': { auth: async () => ({ isAuthenticated: false }) },
+    '../cloud-api': { cloudApi: async () => { called = true; } },
+  });
+  const response = await route.GET();
+  assert.equal(response.status, 401);
+  assert.equal(called, false);
+});

@@ -30,7 +30,7 @@ export default async function FamilyDashboard({ searchParams }: { searchParams: 
     <main className={styles.main} id="overview">
       <header className={styles.header}><div><p className={styles.eyebrow}>YOUR FAMILY, CONNECTED</p><h1>{user?.firstName ? `${user.firstName}’s family dashboard` : "Your family dashboard"}</h1></div><Link className={styles.secondary} href="/guard/activate">Approve a computer</Link></header>
       <p className={styles.intro}>Manage your children’s cloud-connected computers from here. The parent dashboard does not need to stay open.</p>
-      <div className={styles.warning}>Private migration preview. Existing LAN computers and their records are unchanged. Messages, uploaded media, grading, games, printing, and history import are not connected to this dashboard yet.</div>
+      <div className={styles.warning}>Private migration preview. Existing LAN computers and their records are unchanged. The isolated Electron test app is not yet the protected child installer. Messages, uploaded media, grading, games, printing, and history import are not connected to this dashboard yet.</div>
       {(error || params.error) && <p className={styles.warning} role="alert">{error || params.error}</p>}
       {params.saved && <p className={styles.notice} role="status">Saved. Computer changes take effect when the child’s app connects and confirms them.</p>}
       {snapshot ? <>

@@ -7,10 +7,12 @@ export type CloudDevice = {
   id: string; computer_name: string; app_version: string; student_id: string | null;
   locked: boolean; revision: number; acknowledged_revision: number;
   last_seen_at: string | null; current_subject: string;
+  recovery_configured?: boolean;
 };
 export type CloudDashboard = {
   students: CloudStudent[]; devices: CloudDevice[];
   rules: { revision: number; subjects: CloudSubject[] }; serverTime: string;
+  activity?: { student_id: string; subject_id: string; date_utc: string; seconds: number }[];
 };
 
 export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T> {
