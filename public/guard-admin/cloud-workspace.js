@@ -4,6 +4,7 @@ import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
+import { setupCloudGames } from './cloud-games-ui.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -45,6 +46,7 @@ function selectTab(id) {
   messaging.setActive(id === 'messages');
   records.setActive(id);
   files.setActive(id === 'grades');
+  games.setActive(id === 'family-games');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
 }
@@ -402,6 +404,14 @@ setupSidebarGroups();
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
+const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, request: async (kind, input = {}) => {
+  const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
+    : { ...input, action: kind === 'settings' ? 'game-settings' : 'game-room' };
+  const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const value = await response.json();
+  if (!response.ok) { const error = new Error(value.error || 'Family games could not connect.'); error.status = response.status; throw error; }
+  return value;
+} });
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();
   item.addEventListener('click', () => selectTab(item.dataset.tab));

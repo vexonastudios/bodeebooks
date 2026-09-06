@@ -28,6 +28,16 @@ function request(input, { requestOrigin = origin, contentType = 'application/jso
     headers: { ...(requestOrigin ? { origin: requestOrigin } : {}), 'content-type': contentType }, body: typeof input === 'string' ? input : JSON.stringify(input) });
 }
 
+test('game bridge forwards only parent game controls, not client-chosen family or player authority', async () => {
+  const calls=[]; const route=load('bridge/route.ts',{api:async (path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
+  const settings={enabled:true,dailyMinutes:60,requireSchool:true,start:'08:00',end:'20:00',days:[1,2,3],unlockDate:null};
+  assert.equal((await route.POST(request({action:'game-settings',studentId:deviceId,revision:1,settings,householdId:'forged'}))).status,200);
+  assert.deepEqual(calls[0],{path:'/games/settings',body:{studentId:deviceId,revision:1,settings}});
+  await route.POST(request({action:'game-action',gameAction:'cancel',id:deviceId,matchId:deviceId,revision:2,studentId:'forged',opponentId:'forged',deviceCredential:'forged'}));
+  assert.deepEqual(calls[1],{path:'/games/action',body:{action:'cancel',id:deviceId,matchId:deviceId,revision:2}});
+  await route.POST(request({action:'game-room',householdId:'forged'})); assert.deepEqual(calls[2],{path:'/games/room',body:{}});
+});
+
 test('workspace checks sign-in and household eligibility before serving shared controls', async () => {
   let calls = 0;
   const anonymous = load('workspace/route.ts', { authenticated: false, api: async () => { calls++; } });
