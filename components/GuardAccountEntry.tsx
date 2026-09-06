@@ -1,5 +1,7 @@
 import { SignIn, SignUp } from "@clerk/nextjs";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { BOOKS_ORIGIN, isGuardHost } from "@/shared/guard-domain";
 import {
   ArrowLeft,
   ArrowRight,
@@ -42,8 +44,11 @@ const setupSteps = [
   { number: "3", title: "Set up your home", detail: "Parent first, then children over home Wi-Fi" },
 ];
 
-export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
+export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
   const isSignUp = mode === "sign-up";
+  const onGuard = isGuardHost((await headers()).get("host"));
+  const base = onGuard ? "" : "/guard";
+  const signIn = `${base}/sign-in`, signUp = `${base}/sign-up`;
 
   return (
     <div className={styles.authPage}>
@@ -51,10 +56,10 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
       <div className={styles.glowTwo} aria-hidden="true" />
       <div className={`container ${styles.authShell}`}>
         <header className={styles.authTopbar}>
-          <Link href="/guard" className={styles.backLink}>
+          <Link href={onGuard ? `${BOOKS_ORIGIN}/guard/` : "/guard"} className={styles.backLink}>
             <ArrowLeft size={16} /> Back to BodeeGuard
           </Link>
-          <Link href={isSignUp ? "/guard/sign-in" : "/guard/sign-up"} className={styles.switchLink}>
+          <Link href={isSignUp ? signIn : signUp} className={styles.switchLink}>
             {isSignUp ? "Already created your web account? Sign in" : "First visit to the parent website? Create your account"}
             <ArrowRight size={15} />
           </Link>
@@ -116,7 +121,7 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
                 <div>
                   <strong>Already use BodeeGuard on your family computers?</strong>
                   <p>The Windows app did not automatically create a web login. On your first visit here, create the parent account once—even if your family has used BodeeGuard for a long time.</p>
-                  <Link href="/guard/sign-up">Create my parent web account <ArrowRight size={14} /></Link>
+                  <Link href={signUp}>Create my parent web account <ArrowRight size={14} /></Link>
                 </div>
               </aside>
             )}
@@ -124,18 +129,18 @@ export default function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
             {isSignUp ? (
               <SignUp
                 appearance={clerkAppearance}
-                fallbackRedirectUrl="/guard/account"
-                path="/guard/sign-up"
+                fallbackRedirectUrl={`${base}/account/`}
+                path={signUp}
                 routing="path"
-                signInUrl="/guard/sign-in"
+                signInUrl={signIn}
               />
             ) : (
               <SignIn
                 appearance={clerkAppearance}
-                fallbackRedirectUrl="/guard/account"
-                path="/guard/sign-in"
+                fallbackRedirectUrl={`${base}/dashboard/`}
+                path={signIn}
                 routing="path"
-                signUpUrl="/guard/sign-up"
+                signUpUrl={signUp}
               />
             )}
 
