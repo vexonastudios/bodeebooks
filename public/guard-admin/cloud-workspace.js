@@ -2,6 +2,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
+import { setupCloudRecords } from './cloud-records.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -41,6 +42,7 @@ function selectTab(id) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${id}`));
   activateSidebarGroupForItem(item);
   messaging.setActive(id === 'messages');
+  records.setActive(id);
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
 }
@@ -55,7 +57,7 @@ function showSnapshot() {
   if (!byId('overview-grid').contains(document.activeElement)) renderComputers();
   renderStudents();
   renderSubjects();
-  renderActivity();
+  records.update();
   renderSchedule();
   renderSchoolCalendar();
   messaging.update(snapshot.students);
@@ -151,7 +153,7 @@ function renderComputers() {
     const assignment = node('select', 'admin-input');
     assignment.dataset.cloudMutation = 'true';
     assignment.setAttribute('aria-label', `Student for ${device.computer_name}`);
-    const options = [{ id: '', name: 'Assign a student…' }, ...snapshot.students];
+    const options = [{ id: '', name: 'Assign a student…' }, ...snapshot.students.filter(item => !item.archived_at)];
     for (const item of options) { const option = node('option', '', item.name); option.value = item.id; assignment.append(option); }
     assignment.value = device.student_id || '';
     assignment.addEventListener('change', async () => {
@@ -178,9 +180,14 @@ function renderStudents() {
     row.dataset.cloudMutation = 'true';
     row.setAttribute('aria-label', `Edit ${student.name}`);
     const info = node('div', 'student-row-info');
-    info.append(node('div', 'student-row-name', student.name), node('div', 'student-row-pin', student.grade ? `Grade ${student.grade}` : 'Grade not specified'));
+    info.append(node('div', 'student-row-name', `${student.name}${student.archived_at ? ' · Archived' : ''}`), node('div', 'student-row-pin', student.grade ? `Grade ${student.grade}` : 'Grade not specified'));
     row.append(node('span', 'student-row-avatar', '👤'), info);
-    list.append(row);
+    const wrapper = node('div', 'cloud-student-management');
+    const archive = button(student.archived_at ? 'Restore student' : 'Archive student', async () => {
+      const archived = !student.archived_at;
+      if (!confirm(archived ? `Archive ${student.name}? Their records and subject settings stay saved. Connected cloud computers will be unassigned when they reconnect. Offline computers may use their cached rules until reconnection or expiry.` : `Restore ${student.name}? Reassign their cloud computer in Overview when ready.`)) return;
+      try { await mutate('archive-student', { studentId: student.id, archived }); } catch (_) { /* Existing feedback retains the error. */ }
+    }); archive.dataset.cloudMutation = 'true'; wrapper.append(row, archive); list.append(wrapper);
   }
   if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'No cloud students added yet. Existing student records remain in your current Admin app.'));
 }
@@ -196,7 +203,7 @@ function renderSubjects() {
     card.dataset.cloudMutation = 'true';
     const heading = node('div', 'subject-card-admin-header');
     heading.append(node('span', 'subject-card-admin-icon', '📚'), node('span', 'subject-card-admin-name', subject.title));
-    const assignments = snapshot.students.map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment);
+    const assignments = snapshot.students.filter(student => !student.archived_at).map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment);
     const assignmentText = assignments.length
       ? assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
       : 'Not assigned to a child';
@@ -205,27 +212,6 @@ function renderSubjects() {
     grid.append(card);
   }
   if (!snapshot.rules.subjects.length) grid.append(node('p', 'cloud-panel', 'No school links added yet. Add the curriculum websites your children use.'));
-}
-function renderActivity() {
-  const container = byId('cloud-activity');
-  container.replaceChildren();
-  if (!snapshot.activity?.length) { container.append(node('p', 'cloud-panel', 'No cloud school time received yet. Offline checkpoints appear after the child reconnects.')); return; }
-  const wrap = node('div', 'cloud-table-wrap');
-  const table = node('table');
-  const head = node('thead'); const heading = node('tr');
-  for (const text of ['Date (UTC)', 'Student', 'Subject', 'Received time', 'Daily goal progress']) { const th = node('th', '', text); th.scope = 'col'; heading.append(th); }
-  head.append(heading); table.append(head);
-  const body = node('tbody');
-  for (const activity of snapshot.activity) {
-    const row = node('tr');
-    const student = snapshot.students.find(item => item.id === activity.student_id);
-    const subject = snapshot.rules.subjects.find(item => item.id === activity.subject_id);
-    const progress = subjectProgress(snapshot, activity.student_id, activity.subject_id, activity.date_utc);
-    for (const text of [activity.date_utc, student?.name || 'Previously assigned student', subject?.title || 'Previous school link', receivedTime(activity.seconds),
-      progress ? `${progress.percent}% of ${progress.goalMinutes}m` : 'No current assignment']) row.append(node('td', '', text));
-    body.append(row);
-  }
-  table.append(body); wrap.append(table); container.append(wrap);
 }
 function renderSchedule() {
   const output = byId('cloud-school-schedule-summary');
@@ -358,7 +344,7 @@ function editSubject(subject = null) {
     const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 };
     const row = node('label', 'cloud-assignment-row');
     const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current);
-    const name = node('span', '', student.name);
+    const name = node('span', '', `${student.name}${student.archived_at ? ' (archived; settings retained)' : ''}`);
     const goal = node('input', 'admin-input'); goal.type = 'number'; goal.name = `goal-${student.id}`; goal.min = '5'; goal.max = '480'; goal.required = enabled.checked; goal.disabled = !enabled.checked; goal.value = String(current?.dailyGoalMinutes || 30);
     const minutes = node('span', '', 'minutes each school day');
     enabled.addEventListener('change', () => { goal.disabled = !enabled.checked; goal.required = enabled.checked; });
@@ -411,6 +397,7 @@ function showRecovery(device) {
 
 setupSidebarGroups();
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
+const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();
   item.addEventListener('click', () => selectTab(item.dataset.tab));

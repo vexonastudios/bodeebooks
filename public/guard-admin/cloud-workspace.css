@@ -77,3 +77,13 @@
 #cloud-recovery button { margin: 12px 12px 0 0; }
 .cloud-no-script { position: fixed; inset: 20%; z-index: 10000; padding: 24px; background: var(--bg-secondary); }
 @media (max-width: 650px) { .cloud-workspace .tab-header { align-items: flex-start; gap: 14px; } .cloud-workspace .monitor-grid { grid-template-columns: minmax(0, 1fr); } #cloud-editor .cloud-assignment-row { grid-template-columns: auto 1fr 80px; } #cloud-editor .cloud-assignment-row span:last-child { grid-column: 2 / -1; } }
+.cloud-record-filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; margin: 16px 0; padding: 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+.cloud-record-filters label { display: grid; gap: 8px; min-width: 150px; flex: 1; color: var(--text-secondary); }
+.cloud-record-filters .admin-input { width: 100%; }
+.cloud-student-management { display: flex; align-items: center; gap: 16px; }
+.cloud-student-management > .student-row { flex: 1; }
+.cloud-student-management > .btn { flex-shrink: 0; }
+.cloud-record-text { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 400px; margin-top: 10px; }
+#cloud-grades-results summary { cursor: pointer; min-width: 130px; }
+#cloud-grades-older { margin-top: 16px; }
+@media (max-width: 600px) { .cloud-student-management { align-items: stretch; flex-direction: column; gap: 6px; padding-bottom: 18px; } }

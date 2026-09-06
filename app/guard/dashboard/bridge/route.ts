@@ -45,6 +45,25 @@ export async function POST(request: Request) {
   let method: string;
   let body: unknown;
   switch (input.action) {
+    case "list-grades":
+    case "school-report": {
+      path = input.action === "list-grades" ? "/grades/list" : "/reports/school-time";
+      method = "POST";
+      body = { studentId: input.studentId, subjectId: input.subjectId, start: input.start, end: input.end, before: input.before };
+      break;
+    }
+    case "save-grade": {
+      path = "/grades/save"; method = "POST";
+      body = { id: input.id, revision: input.revision, studentId: input.studentId, title: input.title, course: input.course,
+        date: input.date, category: input.category, scoreEarned: input.scoreEarned, scorePossible: input.scorePossible,
+        childFeedback: input.childFeedback, parentNotes: input.parentNotes };
+      break;
+    }
+    case "remove-grade": path = "/grades/remove"; method = "POST"; body = { id: input.id, revision: input.revision }; break;
+    case "archive-student": {
+      if (typeof input.studentId !== "string" || !uuid.test(input.studentId) || typeof input.archived !== "boolean") return response({ error: "Choose a child and archive or restore." }, 400);
+      path = `/students/${input.studentId}/archive`; method = "POST"; body = { archived: input.archived }; break;
+    }
     case "list-messages":
     case "send-message": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);

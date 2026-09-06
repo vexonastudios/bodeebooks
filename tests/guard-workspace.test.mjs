@@ -93,6 +93,26 @@ test('student edits use a fixed family-scoped API path and strip submitted autho
   assert.deepEqual(calls, [[`/students/${deviceId}`, { method: 'PATCH', body: JSON.stringify({ name: 'Updated', grade: '6' }) }]]);
   assert.equal((await route.POST(request({ action: 'edit-student', studentId: '../../other', name: 'Bad' }))).status, 400);
 });
+test('grades, report and archive bridge keep fixed routes and discard forged family authority', async () => {
+  const calls = [];
+  const route = load('bridge/route.ts', { api: async (...args) => { calls.push(args); return {}; } });
+  for (const input of [
+    { action: 'list-grades', studentId: deviceId, before: '30' },
+    { action: 'school-report', start: '2026-09-01', end: '2026-09-06', subjectId: deviceId },
+    { action: 'save-grade', id: deviceId, revision: 2, studentId: deviceId, title: 'Quiz', course: 'Math', date: '2026-09-06', category: 'Quiz', scoreEarned: 17, scorePossible: 20, childFeedback: 'Practice', parentNotes: 'Private' },
+    { action: 'remove-grade', id: deviceId, revision: 2 },
+    { action: 'archive-student', studentId: deviceId, archived: true },
+    { action: 'archive-student', studentId: deviceId, archived: false },
+  ]) {
+    const result = await route.POST(request({ ...input, householdId: 'forged', senderId: 'forged', path: 'https://other.example', token: 'secret' }));
+    assert.equal(result.status, 200); assert.match(result.headers.get('cache-control'), /no-store/);
+  }
+  assert.deepEqual(calls.map(call => call[0]), ['/grades/list', '/reports/school-time', '/grades/save', '/grades/remove', `/students/${deviceId}/archive`, `/students/${deviceId}/archive`]);
+  assert.equal(JSON.stringify(calls).includes('forged'), false); assert.equal(JSON.stringify(calls).includes('secret'), false);
+  assert.equal(JSON.parse(calls[2][1].body).revision, 2);
+  assert.equal((await route.POST(request({ action: 'archive-student', studentId: '../other', archived: true }))).status, 400);
+  assert.equal((await route.POST(request({ action: 'archive-student', studentId: deviceId, archived: 'true' }))).status, 400);
+});
 test('bridge preserves rules revision and returns conflicts without retrying mutations', async () => {
   let calls = 0;
   const schedule = { enabled: true, timeZone: 'America/Chicago', days: [1, 2, 3, 4, 5], start: '08:00', end: '15:00' };
