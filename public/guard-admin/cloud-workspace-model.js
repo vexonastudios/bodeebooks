@@ -17,7 +17,7 @@ export function todaySeconds(snapshot, studentId) {
   return (snapshot.activity || []).filter(item => item.student_id === studentId && item.date_utc === snapshot.serverTime.slice(0, 10))
     .reduce((total, item) => total + (Number(item.seconds) || 0), 0);
 }
-export function editSubjects(snapshot, subjectId, title, url, remove = false, assignments) {
+export function editSubjects(snapshot, subjectId, title, url, remove = false, assignments, subjectSchedule) {
   // Copy the revision captured when the editor opens. A later poll must not
   // silently replace it and overwrite another parent's intervening change.
   const subjects = snapshot.rules.subjects.map(subject => ({ ...subject }));
@@ -25,8 +25,10 @@ export function editSubjects(snapshot, subjectId, title, url, remove = false, as
   if (remove) {
     if (index < 0) throw new Error('That subject no longer exists. Refresh the dashboard.');
     subjects.splice(index, 1);
-  } else if (index >= 0) subjects[index] = { ...subjects[index], title, url, ...(assignments === undefined ? {} : { assignments }) };
-  else subjects.push({ id: subjectId, title, url, ...(assignments === undefined ? {} : { assignments }) });
+  } else if (index >= 0) subjects[index] = { ...subjects[index], title, url,
+    ...(assignments === undefined ? {} : { assignments }), ...(subjectSchedule === undefined ? {} : subjectSchedule) };
+  else subjects.push({ id: subjectId, title, url,
+    ...(assignments === undefined ? {} : { assignments }), ...(subjectSchedule === undefined ? {} : subjectSchedule) });
   return { revision: snapshot.rules.revision, subjects, schedule: snapshot.rules.schedule };
 }
 

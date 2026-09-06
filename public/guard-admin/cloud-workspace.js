@@ -199,7 +199,8 @@ function renderSubjects() {
     const assignmentText = assignments.length
       ? assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
       : 'Not assigned to a child';
-    card.append(heading, node('div', 'subject-card-admin-url', subject.url), node('div', 'cloud-note', assignmentText));
+    const hours = subject.scheduleStart ? `Available ${subject.scheduleStart}–${subject.scheduleEnd} in the family time zone` : 'Available throughout the family school window';
+    card.append(heading, node('div', 'subject-card-admin-url', subject.url), node('div', 'cloud-note', hours), node('div', 'cloud-note', assignmentText));
     grid.append(card);
   }
   if (!snapshot.rules.subjects.length) grid.append(node('p', 'cloud-panel', 'No school links added yet. Add the curriculum websites your children use.'));
@@ -331,7 +332,10 @@ function editor(title, fields, save) {
 function editSubject(subject = null) {
   const captured = structuredClone(snapshot);
   const subjectId = subject?.id || crypto.randomUUID();
-  const fields = [field('Name', 'title', subject?.title || ''), field('School website', 'url', subject?.url || '', { type: 'url', maxLength: 2048 })];
+  const fields = [field('Name', 'title', subject?.title || ''), field('School website', 'url', subject?.url || '', { type: 'url', maxLength: 2048 }),
+    field('Available from (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }),
+    field('Available until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false }),
+    node('p', 'cloud-note', 'Leave both times empty to use the whole family school window. Subject hours use the family time zone and are cached for offline enforcement.')];
   const assignmentFields = node('fieldset', 'cloud-assignment-fields');
   assignmentFields.append(node('legend', '', 'Children and daily goals'));
   for (const student of snapshot.students) {
@@ -355,7 +359,9 @@ function editSubject(subject = null) {
     const assignments = captured.students.filter(student => form.get(`assigned-${student.id}`) === 'on').map(student => ({
       studentId: student.id, dailyGoalMinutes: Number(form.get(`goal-${student.id}`))
     }));
-    return mutate('save-subjects', editSubjects(captured, subjectId, form.get('title'), form.get('url'), false, assignments));
+    return mutate('save-subjects', editSubjects(captured, subjectId, form.get('title'), form.get('url'), false, assignments, {
+      scheduleStart: form.get('scheduleStart') || null, scheduleEnd: form.get('scheduleEnd') || null
+    }));
   });
 }
 function clearRecovery() {
