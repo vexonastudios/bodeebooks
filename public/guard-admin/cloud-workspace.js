@@ -3,6 +3,7 @@ import { connectionState, receivedTime, deliveryState, todaySeconds, editSubject
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
+import { setupCloudFiles } from './cloud-files.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -43,6 +44,7 @@ function selectTab(id) {
   activateSidebarGroupForItem(item);
   messaging.setActive(id === 'messages');
   records.setActive(id);
+  files.setActive(id === 'grades');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
 }
@@ -58,6 +60,7 @@ function showSnapshot() {
   renderStudents();
   renderSubjects();
   records.update();
+  files.update(snapshot.students);
   renderSchedule();
   renderSchoolCalendar();
   messaging.update(snapshot.students);
@@ -398,6 +401,7 @@ function showRecovery(device) {
 setupSidebarGroups();
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
+const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();
   item.addEventListener('click', () => selectTab(item.dataset.tab));

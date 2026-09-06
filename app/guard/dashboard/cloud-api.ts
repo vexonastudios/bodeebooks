@@ -27,7 +27,7 @@ export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T>
   const token = await session.getToken();
   if (!token) throw new CloudApiError("Please sign in again to continue.", 401);
   const response = await fetch(`${apiBase}/v1/account/dashboard${path}`, {
-    ...init, cache: "no-store", signal: AbortSignal.timeout(10000),
+    ...init, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(path.startsWith("/files/") ? 24000 : 10000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
   });
   const payload = await response.json().catch(() => ({}));

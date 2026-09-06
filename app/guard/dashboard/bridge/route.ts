@@ -11,7 +11,7 @@ export async function GET() {
   if (!(await auth()).isAuthenticated) return response({ error: "Please sign in again." }, 401);
   try { return response(await cloudApi()); } catch (error) { return failure(error); }
 }
-async function readBoundedJson(request: Request): Promise<Record<string, unknown>> {
+async function readBoundedJson(request: Request, maximum = 96000): Promise<Record<string, unknown>> {
   const reader = request.body?.getReader();
   if (!reader) throw new Error("invalid_json");
   let total = 0;
@@ -21,7 +21,7 @@ async function readBoundedJson(request: Request): Promise<Record<string, unknown
       const next = await reader.read();
       if (next.done) break;
       total += next.value.length;
-      if (total > 96000) { await reader.cancel(); throw new Error("body_too_large"); }
+      if (total > maximum) { await reader.cancel(); throw new Error("body_too_large"); }
       chunks.push(next.value);
     }
   } finally { reader.releaseLock(); }
@@ -33,18 +33,27 @@ async function readBoundedJson(request: Request): Promise<Record<string, unknown
   return value;
 }
 export async function POST(request: Request) {
+  return handleDashboardPost(request);
+}
+async function handleDashboardPost(request: Request, uploadOnly = false) {
   // Cookie-authenticated mutations must originate from this website. Never
   // accept submitted paths, household IDs, tokens, or LAN keys as authority.
   if (request.headers.get("origin") !== new URL(request.url).origin || request.headers.get("sec-fetch-site") === "cross-site") return response({ error: "Open this dashboard on BodeeBooks to make changes." }, 403);
   if (!(await auth()).isAuthenticated) return response({ error: "Please sign in again." }, 401);
   if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") return response({ error: "Send a JSON dashboard request." }, 415);
   let input: Record<string, unknown>;
-  try { input = await readBoundedJson(request); }
+  try { input = await readBoundedJson(request, uploadOnly ? 3 * 1024 * 1024 : 96000); }
   catch (error) { return response({ error: "The dashboard request is invalid or too large." }, error instanceof Error && error.message === "body_too_large" ? 413 : 400); }
   let path: string;
   let method: string;
   let body: unknown;
+  if (uploadOnly !== (input.action === "upload-file")) return response({ error: "Use the designated file upload endpoint." }, 400);
   switch (input.action) {
+    case "upload-file": path = "/files/upload"; method = "POST"; body = { id: input.id, studentId: input.studentId, name: input.name, mime: input.mime, purpose: input.purpose, data: input.data }; break;
+    case "list-files": path = "/files/list"; method = "POST"; body = { studentId: input.studentId }; break;
+    case "read-file": path = "/files/read"; method = "POST"; body = { id: input.id }; break;
+    case "remove-file": path = "/files/remove"; method = "POST"; body = { id: input.id }; break;
+    case "review-file": path = "/files/review"; method = "POST"; body = { id: input.id, rotation: input.rotation, reviewed: input.reviewed, gradeId: input.gradeId }; break;
     case "list-grades":
     case "school-report": {
       path = input.action === "list-grades" ? "/grades/list" : "/reports/school-time";
@@ -69,7 +78,7 @@ export async function POST(request: Request) {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
       path = input.action === "send-message" ? "/messages/send" : "/messages/list";
       method = "POST";
-      body = input.action === "send-message" ? { studentId: input.studentId, id: input.id, body: input.body }
+      body = input.action === "send-message" ? { studentId: input.studentId, id: input.id, body: input.body, fileId: input.fileId }
         : { studentId: input.studentId, before: input.before, receivedIds: input.receivedIds, version: input.version };
       break;
     }

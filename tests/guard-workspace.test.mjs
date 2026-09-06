@@ -166,3 +166,19 @@ test('message bridge preserves retry IDs but strips household, sender and device
   assert.deepEqual(JSON.parse(calls[1][1].body), { studentId: deviceId, before: '123', receivedIds: [deviceId], version: 'same' });
   assert.equal((await route.POST(request({ action: 'list-messages', studentId: '../../other' }))).status, 400);
 });
+
+test('private file upload has bounded dedicated parsing, sign-in, origin checks and no submitted authority', async () => {
+  const calls = [], api = async (...args) => { calls.push(args); return { saved: true }; };
+  const upload = load('upload/route.ts', { api });
+  const input = { action: 'upload-file', id: deviceId, studentId: deviceId, purpose: 'paper', name: 'Work.pdf', mime: 'application/pdf', data: 'a'.repeat(100000), householdId: 'foreign', storage_path: '/other', token: 'secret' };
+  assert.equal((await load('upload/route.ts', { authenticated: false, api }).POST(request(input))).status, 401);
+  assert.equal((await upload.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+  assert.equal((await load('bridge/route.ts', { api }).POST(request(input))).status, 413);
+  const response = await upload.POST(request(input)); assert.equal(response.status, 200); assert.match(response.headers.get('cache-control'), /no-store/);
+  assert.equal(calls[0][0], '/files/upload'); assert.deepEqual(Object.keys(JSON.parse(calls[0][1].body)).sort(), ['data', 'id', 'mime', 'name', 'purpose', 'studentId']);
+  assert.equal((await upload.POST(request({ ...input, data: 'a'.repeat(3 * 1024 * 1024) }))).status, 413);
+  assert.equal((await upload.POST(request({ action: 'set-school-pause' }))).status, 400);
+  const bridge = load('bridge/route.ts', { api });
+  await bridge.POST(request({ action: 'read-file', id: deviceId, householdId: 'foreign', url: 'https://attacker.example' }));
+  assert.equal(calls[1][0], '/files/read'); assert.deepEqual(JSON.parse(calls[1][1].body), { id: deviceId });
+});

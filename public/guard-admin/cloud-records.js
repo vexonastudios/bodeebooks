@@ -61,27 +61,28 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
     status('grades', `${rows.length} grades on this page, newest entries first. Saved grades and child feedback are visible to the assigned child; private parent notes are never sent to child computers.`);
     setControls();
   }
-  function editGrade(existing = null) {
+  function editGrade(existing = null, paper = null) {
     const snapshot = getSnapshot();
     const students = snapshot.students.filter(student => !student.archived_at);
     if (!students.length) { status('grades', 'Add or restore a student before entering grades.'); return; }
     const id = existing?.id || crypto.randomUUID();
-    const studentField = selectField('Student', 'studentId', students.map(student => ({ value: student.id, label: student.name })), existing?.studentId || students[0].id);
+    const studentField = selectField('Student', 'studentId', students.map(student => ({ value: student.id, label: student.name })), existing?.studentId || paper?.studentId || students[0].id);
     // Grade ownership is immutable. Corrections for the wrong student are a new
     // record, not a reassignment of another child's history.
-    if (existing) studentField.querySelector('select').disabled = true;
+    if (existing || paper) studentField.querySelector('select').disabled = true;
     const earned = field('Points earned (or percentage)', 'scoreEarned', existing?.scoreEarned ?? '', { type: 'number' });
     const possible = field('Points possible (100 for percentage)', 'scorePossible', existing?.scorePossible ?? 100, { type: 'number' });
     for (const wrapper of [earned, possible]) { const input = wrapper.querySelector('input'); input.step = '0.1'; input.min = wrapper === possible ? '0.1' : '0'; input.max = wrapper === possible ? '10000' : '20000'; }
     const textArea = (label, name, value) => { const wrapper = node('label', '', label), input = node('textarea', 'admin-input'); input.name = name; input.maxLength = 2000; input.rows = 3; input.value = value || ''; wrapper.append(input); return wrapper; };
     editor(existing ? 'Edit Grade' : 'Add Grade', [studentField,
       field('Course name', 'course', existing?.course || '', { maxLength: 120 }),
-      field('Assignment title', 'title', existing?.title || '', { maxLength: 160 }),
+      field('Assignment title', 'title', existing?.title || paper?.name || '', { maxLength: 160 }),
       field('Date', 'date', existing?.date || localDate(snapshot.rules.schedule.timeZone), { type: 'date' }),
       selectField('Category', 'category', ['Test', 'Quiz', 'Homework', 'Project', 'Classwork', 'Other'].map(value => ({ value, label: value })), existing?.category || 'Test'),
       earned, possible, textArea('Feedback visible to the child', 'childFeedback', existing?.childFeedback), textArea('Private parent notes', 'parentNotes', existing?.parentNotes),
-      node('p', 'cloud-note', 'Saving publishes this manually reviewed grade to the child. Scanned papers, automated quiz capture, course weighting, and existing LAN grade history have not been transferred yet.')], async form => {
-      await mutate('save-grade', { ...Object.fromEntries(form), id, revision: existing?.revision || 0, studentId: existing?.studentId || form.get('studentId'), scoreEarned: Number(form.get('scoreEarned')), scorePossible: Number(form.get('scorePossible')) });
+      node('p', 'cloud-note', 'Saving publishes this manually reviewed grade to the child. Automated grading, quiz capture, course weighting, and existing LAN grade history have not been transferred yet.')], async form => {
+      await mutate('save-grade', { ...Object.fromEntries(form), id, revision: existing?.revision || 0, studentId: existing?.studentId || paper?.studentId || form.get('studentId'), scoreEarned: Number(form.get('scoreEarned')), scorePossible: Number(form.get('scorePossible')) });
+      if (paper) await mutate('review-file', { id: paper.id, rotation: paper.rotation || 0, reviewed: true, gradeId: id });
       await load('grades');
     });
   }
@@ -121,5 +122,5 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
     const url = URL.createObjectURL(new Blob(['\uFEFF' + schoolReportCsv(report)], { type: 'text/csv;charset=utf-8' }));
     const link = node('a'); link.href = url; link.download = `BodeeGuard-school-time-${report.start}-${report.end}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  return { update, setActive(value) { active = value; if (initialized && ['grades', 'reports'].includes(value)) load(value); else { ++generation; controller?.abort(); } } };
+  return { update, gradePaper: paper => editGrade(null, paper), setActive(value) { active = value; if (initialized && ['grades', 'reports'].includes(value)) load(value); else { ++generation; controller?.abort(); } } };
 }
