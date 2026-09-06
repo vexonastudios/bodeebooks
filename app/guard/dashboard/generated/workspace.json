@@ -4,7 +4,7 @@
     "renderer/css/admin/base.css": "ad2247c6ad708673da6ce44538ef289b89a9c3c199b049eb2d27bb0f83c77366",
     "renderer/css/admin/monitoring.css": "78210fd92cfddfcb634bb2baf43a30191dba760306170be6d37ec11f397194a1",
     "renderer/js/admin/navigation-groups.js": "6624ff555ff816b0e62ed143565658d9e8d62c4351aa752f2cf098ca06d83877",
-    "renderer/js/admin/cloud-workspace.js": "480c652943f92314c808080ca36855c4b31d22f98f615b9a08a0d9c061c8ac3e",
+    "renderer/js/admin/cloud-workspace.js": "ac2424b14aa22a8870f2770fc01ddcf0acc893ee988db47cafa4b72a168fa2b7",
     "renderer/css/admin/cloud-workspace.css": "c381126ed0add4c39d7944525207901aa94944d3784ca7890d50c63ebc0d033d",
     "renderer/js/admin/cloud-workspace-model.js": "b1fb5a07c838ef82d6a67d7ef9d3fe46319b2b734dfa93b57792321a0d750d5f",
     "renderer/js/admin/cloud-calendar.js": "ec85ba907e6219ac38b140b42e9293eaab33f7ef1e2abbcdb13a330f7908ba35",

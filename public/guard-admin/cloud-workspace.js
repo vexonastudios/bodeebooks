@@ -347,6 +347,11 @@ function editSubject(subject = null) {
     field('Available from (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }),
     field('Available until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false }),
     node('p', 'cloud-note', 'Leave both times empty to use the whole family school window. Subject hours use the family time zone and are cached for offline enforcement.')];
+  const domainsLabel = node('label', '', 'Additional allowed domains (optional)');
+  const domains = node('textarea', 'admin-input'); domains.name = 'allowedDomains'; domains.rows = 3; domains.maxLength = 5100;
+  domains.value = (subject?.allowedDomains || []).join('\n'); domains.placeholder = 'quizzes.example.com\nlogin.example.com';
+  domainsLabel.append(domains);
+  fields.push(domainsLabel, node('p', 'cloud-note', 'Approve only websites needed by this subject, separated by commas or new lines. Each domain includes its subdomains and uses HTTPS. The school website is already allowed; leave this empty if it needs no additional sites.'));
   const assignmentFields = node('fieldset', 'cloud-assignment-fields');
   assignmentFields.append(node('legend', '', 'Children and daily goals'));
   for (const student of snapshot.students) {
@@ -371,7 +376,8 @@ function editSubject(subject = null) {
       studentId: student.id, dailyGoalMinutes: Number(form.get(`goal-${student.id}`))
     }));
     return mutate('save-subjects', editSubjects(captured, subjectId, form.get('title'), form.get('url'), false, assignments, {
-      scheduleStart: form.get('scheduleStart') || null, scheduleEnd: form.get('scheduleEnd') || null
+      scheduleStart: form.get('scheduleStart') || null, scheduleEnd: form.get('scheduleEnd') || null,
+      allowedDomains: String(form.get('allowedDomains') || '').split(/[,\n\r]+/).map(value => value.trim()).filter(Boolean)
     }));
   });
 }
