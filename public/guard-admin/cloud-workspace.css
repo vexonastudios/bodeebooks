@@ -46,6 +46,10 @@
 .cloud-schedule-days legend { padding: 0 6px; font-weight: 700; }
 #cloud-editor .cloud-schedule-days label { display: flex; flex-direction: column; align-items: center; gap: 5px; margin: 0; padding: 6px 2px; border-radius: 6px; background: rgba(255,255,255,.03); font-size: 12px; }
 #cloud-editor .cloud-schedule-days input { width: 17px; height: 17px; }
+.cloud-calendar-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.cloud-calendar-row div { display: grid; gap: 4px; }
+.cloud-calendar-row span { color: var(--text-secondary); font-size: 14px; }
+.cloud-calendar-row + .cloud-actions, #cloud-school-calendar-items + .cloud-actions { margin-top: 16px; }
 #cloud-recovery p { line-height: 1.6; margin-bottom: 16px; }
 #cloud-recovery code { display: block; overflow-wrap: anywhere; font-size: 22px; padding: 20px 0; }
 #cloud-recovery button { margin: 12px 12px 0 0; }
