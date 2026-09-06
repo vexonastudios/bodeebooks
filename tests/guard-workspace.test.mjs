@@ -125,3 +125,15 @@ test('bridge GET has no cache or cross-origin access and does not mask errors wi
   assert.equal(result.headers.get('access-control-allow-origin'), null);
   assert.deepEqual(await result.json(), { error: 'Private Beta only' });
 });
+
+test('message bridge preserves retry IDs but strips household, sender and device authority', async () => {
+  const calls = [];
+  const route = load('bridge/route.ts', { api: async (...args) => { calls.push(args); return { saved: true }; } });
+  const input = { action: 'send-message', studentId: deviceId, id: deviceId, body: 'Hello', householdId: 'foreign', senderId: 'forged', deviceCredential: 'secret' };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(JSON.parse(calls[0][1].body), { studentId: deviceId, id: deviceId, body: 'Hello' });
+  assert.equal(calls[0][0], '/messages/send');
+  await route.POST(request({ action: 'list-messages', studentId: deviceId, before: '123', receivedIds: [deviceId], version: 'same' }));
+  assert.deepEqual(JSON.parse(calls[1][1].body), { studentId: deviceId, before: '123', receivedIds: [deviceId], version: 'same' });
+  assert.equal((await route.POST(request({ action: 'list-messages', studentId: '../../other' }))).status, 400);
+});

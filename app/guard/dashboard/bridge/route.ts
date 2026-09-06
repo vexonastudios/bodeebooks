@@ -45,6 +45,15 @@ export async function POST(request: Request) {
   let method: string;
   let body: unknown;
   switch (input.action) {
+    case "list-messages":
+    case "send-message": {
+      if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
+      path = input.action === "send-message" ? "/messages/send" : "/messages/list";
+      method = "POST";
+      body = input.action === "send-message" ? { studentId: input.studentId, id: input.id, body: input.body }
+        : { studentId: input.studentId, before: input.before, receivedIds: input.receivedIds, version: input.version };
+      break;
+    }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
     case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, revision: input.revision }; break;
     case "assign-student":

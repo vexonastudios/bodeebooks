@@ -1,7 +1,9 @@
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects } from './cloud-workspace-model.js';
+import { setupCloudMessages } from './cloud-messages.js';
 
 const endpoint = '/guard/dashboard/bridge/';
+const messaging = setupCloudMessages({ endpoint });
 const byId = id => document.getElementById(id);
 let snapshot = null;
 let inFlight = null;
@@ -37,6 +39,7 @@ function selectTab(id) {
   });
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${id}`));
   activateSidebarGroupForItem(item);
+  messaging.setActive(id === 'messages');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
 }
@@ -52,6 +55,7 @@ function showSnapshot() {
   renderStudents();
   renderSubjects();
   renderActivity();
+  messaging.update(snapshot.students);
   setControls();
 }
 async function refresh() {
