@@ -15,18 +15,23 @@ export type CloudDashboard = {
   activity?: { student_id: string; subject_id: string; date_utc: string; seconds: number }[];
 };
 
+export class CloudApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+
 export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T> {
   const session = await auth();
-  if (!session.isAuthenticated) throw new Error("Please sign in to your parent account.");
+  if (!session.isAuthenticated) throw new CloudApiError("Please sign in to your parent account.", 401);
   const apiBase = process.env.BODEEGUARD_COMMERCIAL_API_URL?.replace(/\/$/, "");
   if (!apiBase) throw new Error("The BodeeGuard account service is not configured.");
   const token = await session.getToken();
-  if (!token) throw new Error("Please sign in again to continue.");
+  if (!token) throw new CloudApiError("Please sign in again to continue.", 401);
   const response = await fetch(`${apiBase}/v1/account/dashboard${path}`, {
     ...init, cache: "no-store", signal: AbortSignal.timeout(10000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || "The cloud dashboard could not be reached. Your current installation is unchanged.");
+  if (!response.ok) throw new CloudApiError(response.status < 500 && typeof payload.error === "string"
+    ? payload.error.slice(0, 600) : "The cloud dashboard could not be reached. Your current installation is unchanged.", response.status);
   return payload as T;
 }

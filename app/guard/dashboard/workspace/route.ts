@@ -1,0 +1,35 @@
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { cloudApi, CloudApiError } from "../cloud-api";
+import workspace from "../generated/workspace.json";
+
+const headers = {
+  "Content-Type": "text/html; charset=utf-8",
+  "Cache-Control": "private, no-store",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "no-referrer",
+  "Content-Security-Policy": "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
+};
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
+}
+function notice(message: string, status: number) {
+  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BodeeGuard dashboard</title><body><h1>BodeeGuard Parent Dashboard</h1><p>${escapeHtml(message)}</p><a href="/guard/account/" target="_top">Back to parent account</a></body></html>`, { status, headers });
+}
+export async function GET(request: Request) {
+  if (!(await auth()).isAuthenticated) return notice("Please sign in to your parent account again.", 401);
+  if (request.headers.get("sec-fetch-dest") === "document") {
+    // The outer page maintains Clerk session renewal for long school days.
+    return Response.redirect(new URL("/guard/dashboard/", request.url), 307);
+  }
+  try {
+    // Server-side household/complimentary Beta gate before serving the shell.
+    await cloudApi();
+    const user = await currentUser();
+    const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
+    const html = workspace.html.replace(/(<div id="admin-badge-name"[^>]*>)[\s\S]*?(<\/div>)/, (_match, start, end) => `${start}${escapeHtml(name)}${end}`);
+    return new Response(html, { headers });
+  } catch (error) {
+    return notice(error instanceof CloudApiError ? error.message : "Cloud management could not be reached. Your current installation and family records are unchanged.", error instanceof CloudApiError ? error.status : 503);
+  }
+}

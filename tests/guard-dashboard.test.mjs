@@ -41,23 +41,16 @@ test('cloud dashboard requires parent sign-in before fetching or rendering famil
   await assert.rejects(render({ authenticated: false }), /redirect:.*sign-in/);
 });
 
-test('cloud dashboard exposes supported controls, existing branding, and its migration limits', async () => {
+test('cloud dashboard hosts the shared Admin workspace without rebuilding its sidebar', async () => {
   const html = await render();
-  assert.match(html, /bodeeguard-logo\.png/);
-  assert.match(html, /Jamie/);
-  assert.match(html, /Add child/);
-  assert.match(html, /Save school links/);
-  assert.match(html, /Account &amp; billing/);
-  assert.match(html, /not connected to this dashboard yet/);
-  assert.match(html, /&lt;script&gt;private&lt;\/script&gt;/);
-  assert.doesNotMatch(html, /<script>private/);
+  assert.match(html, /<iframe/);
+  assert.match(html, /\/guard\/dashboard\/workspace\//);
+  assert.match(html, /BodeeGuard Parent Dashboard/);
+  assert.doesNotMatch(html, /<aside|bodeeguard\.local|3737/);
 });
 
-test('a cloud outage shows the error rather than an apparently empty family', async () => {
-  const html = await render({ unavailable: true });
-  assert.match(html, /Cloud service unavailable/);
-  assert.match(html, /Back to parent account/);
-  assert.doesNotMatch(html, /Add child|Live computers/);
+test('the outer frame does not turn an API outage into an empty family snapshot', async () => {
+  assert.match(await render({ unavailable: true }), /\/guard\/dashboard\/workspace\//);
 });
 
 function loadDashboardModule(relative, overrides = {}) {
