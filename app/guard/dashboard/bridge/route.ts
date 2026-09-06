@@ -55,6 +55,11 @@ export async function POST(request: Request) {
       break;
     }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
+    case "edit-student": {
+      if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
+      path = `/students/${input.studentId}`; method = "PATCH"; body = { name: input.name, grade: input.grade };
+      break;
+    }
     case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, revision: input.revision }; break;
     case "assign-student":
     case "set-school-pause":

@@ -18,7 +18,8 @@
 .cloud-workspace .monitor-card .btn { font-size: 13px; padding: 9px 12px; }
 .cloud-workspace .monitor-card .admin-input { padding: 8px; font-size: 14px; }
 .cloud-workspace .monitor-timer-label { font-size: 12px; }
-.cloud-workspace .student-row { cursor: default; }
+.cloud-workspace .student-row { width: 100%; cursor: pointer; color: inherit; text-align: left; font: inherit; }
+.cloud-workspace .student-row:hover { border-color: var(--border-hover); }
 .cloud-workspace .subject-card-admin { text-align: left; font: inherit; color: inherit; }
 .cloud-workspace .subject-card-admin-url { overflow-wrap: anywhere; }
 .cloud-workspace .cloud-table-wrap { overflow-x: auto; }

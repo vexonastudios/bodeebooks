@@ -85,6 +85,14 @@ test('bridge allowlist strips submitted identity and refuses arbitrary API paths
   for (const input of [{ action: 'fetch', path: 'https://attacker.example' }, { action: 'create-recovery', deviceId: '../../billing' }, { action: 'set-school-pause', deviceId, locked: 'true' }]) assert.equal((await route.POST(request(input))).status, 400);
   assert.equal(calls.length, 1);
 });
+test('student edits use a fixed family-scoped API path and strip submitted authority', async () => {
+  const calls = [];
+  const route = load('bridge/route.ts', { api: async (...args) => { calls.push(args); return { id: deviceId, name: 'Updated', grade: '6' }; } });
+  const result = await route.POST(request({ action: 'edit-student', studentId: deviceId, name: 'Updated', grade: '6', householdId: 'foreign', role: 'owner' }));
+  assert.equal(result.status, 200);
+  assert.deepEqual(calls, [[`/students/${deviceId}`, { method: 'PATCH', body: JSON.stringify({ name: 'Updated', grade: '6' }) }]]);
+  assert.equal((await route.POST(request({ action: 'edit-student', studentId: '../../other', name: 'Bad' }))).status, 400);
+});
 test('bridge preserves rules revision and returns conflicts without retrying mutations', async () => {
   let calls = 0;
   const route = load('bridge/route.ts', { api: async (path, init) => {

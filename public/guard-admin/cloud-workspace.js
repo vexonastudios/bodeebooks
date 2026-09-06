@@ -171,13 +171,19 @@ function renderStudents() {
   const list = byId('students-list');
   list.replaceChildren();
   for (const student of snapshot.students) {
-    const row = node('div', 'student-row');
+    const row = button('', () => editStudent(student), 'student-row');
+    row.dataset.cloudMutation = 'true';
+    row.setAttribute('aria-label', `Edit ${student.name}`);
     const info = node('div', 'student-row-info');
     info.append(node('div', 'student-row-name', student.name), node('div', 'student-row-pin', student.grade ? `Grade ${student.grade}` : 'Grade not specified'));
     row.append(node('span', 'student-row-avatar', '👤'), info);
     list.append(row);
   }
   if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'No cloud students added yet. Existing student records remain in your current Admin app.'));
+}
+function editStudent(student) {
+  editor('Edit Student', [field('Name', 'name', student.name), field('Grade level (optional)', 'grade', student.grade || '', { required: false, maxLength: 30 })],
+    form => mutate('edit-student', { studentId: student.id, name: form.get('name'), grade: form.get('grade') }));
 }
 function renderSubjects() {
   const grid = byId('subjects-grid-admin');
