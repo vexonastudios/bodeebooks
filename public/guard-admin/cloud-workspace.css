@@ -47,9 +47,31 @@
 #cloud-editor .cloud-schedule-days label { display: flex; flex-direction: column; align-items: center; gap: 5px; margin: 0; padding: 6px 2px; border-radius: 6px; background: rgba(255,255,255,.03); font-size: 12px; }
 #cloud-editor .cloud-schedule-days input { width: 17px; height: 17px; }
 .cloud-calendar-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.cloud-calendar-row div { display: grid; gap: 4px; }
+.cloud-calendar-row > div:first-child { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
 .cloud-calendar-row span { color: var(--text-secondary); font-size: 14px; }
 .cloud-calendar-row + .cloud-actions, #cloud-school-calendar-items + .cloud-actions { margin-top: 16px; }
+.cloud-calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin: 20px 0 16px; }
+.cloud-calendar-toolbar h2 { margin: 0; min-width: 160px; text-align: center; }
+.cloud-calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .45fr); align-items: start; gap: 22px; }
+.cloud-workspace .cloud-month-table { table-layout: fixed; min-width: 490px; border-collapse: separate; border-spacing: 4px; }
+.cloud-workspace .cloud-month-table th { padding: 6px 2px; text-align: center; border: 0; font-size: 14px; }
+.cloud-workspace .cloud-month-table td { padding: 0; vertical-align: top; border: 0; }
+.cloud-calendar-day { display: flex; flex-direction: column; gap: 6px; width: 100%; min-height: 95px; padding: 10px 7px; border: 1px solid var(--border); border-radius: 8px; text-align: left; font: inherit; color: var(--text-secondary); background: var(--bg-secondary); cursor: pointer; overflow-wrap: anywhere; }
+.cloud-calendar-day strong { font-size: 16px; color: var(--text-primary); }
+.cloud-calendar-day span { font-size: 14px; line-height: 1.35; }
+.cloud-calendar-day[data-state="school"] { border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.08); color: #91e8c9; }
+.cloud-calendar-day[aria-current="date"] strong::after { content: ' ·'; color: var(--accent-cyan); }
+.cloud-calendar-day[aria-pressed="true"] { outline: 2px solid var(--accent-cyan); outline-offset: -2px; }
+.cloud-calendar-day:focus-visible { outline: 3px solid var(--accent-cyan); outline-offset: 1px; }
+.cloud-day-details { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); }
+.cloud-day-details h3 { font-size: 18px; margin-bottom: 12px; }
+.cloud-day-details .cloud-day-status { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.cloud-day-subject { display: grid; gap: 6px; margin: 14px 0; padding-bottom: 14px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.cloud-day-subject strong { font-size: 16px; }
+.cloud-day-subject span { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+.cloud-day-details .btn { white-space: normal; }
+.cloud-day-details .cloud-calendar-footnote { margin: 16px 0 0; }
+@media (max-width: 1150px) { .cloud-calendar-layout { grid-template-columns: minmax(0, 1fr); } }
 #cloud-recovery p { line-height: 1.6; margin-bottom: 16px; }
 #cloud-recovery code { display: block; overflow-wrap: anywhere; font-size: 22px; padding: 20px 0; }
 #cloud-recovery button { margin: 12px 12px 0 0; }

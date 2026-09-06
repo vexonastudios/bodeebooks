@@ -1,6 +1,7 @@
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
+import { setupCloudCalendar } from './cloud-calendar.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -246,23 +247,27 @@ function renderSchoolCalendar() {
   const schedule = scheduleValue(snapshot.rules.schedule);
   term.textContent = schedule.termStart ? `${schedule.termStart} through ${schedule.termEnd}` : 'School-year dates are not limited yet.';
   items.replaceChildren();
-  const addRow = (title, detail, remove) => {
+  const addRow = (title, detail, edit, remove) => {
     const row = node('div', 'cloud-calendar-row');
     const copy = node('div'); copy.append(node('strong', '', title), node('span', '', detail));
-    const action = button('Remove', remove, 'btn btn-secondary'); action.dataset.cloudMutation = 'true';
-    row.append(copy, action); items.append(row);
+    const actions = node('div', 'cloud-actions');
+    for (const [label, callback] of [['Edit', edit], ['Remove', remove]]) {
+      const action = button(label, callback); action.dataset.cloudMutation = 'true'; action.setAttribute('aria-label', `${label} ${title}, ${detail}`); actions.append(action);
+    }
+    row.append(copy, actions); items.append(row);
   };
-  for (const schoolBreak of schedule.breaks) addRow(schoolBreak.label, `${schoolBreak.start} through ${schoolBreak.end}`, async () => {
+  for (const schoolBreak of [...schedule.breaks].sort((a, b) => a.start.localeCompare(b.start))) addRow(schoolBreak.label, `${schoolBreak.start} through ${schoolBreak.end}`, () => addSchoolBreak(schoolBreak), async () => {
     if (!confirm(`Remove ${schoolBreak.label} from the school calendar?`)) return;
     const captured = structuredClone(snapshot); const current = scheduleValue(captured.rules.schedule);
     await mutate('save-subjects', editSchedule(captured, { ...current, breaks: current.breaks.filter(item => item.id !== schoolBreak.id) })).catch(() => {});
   });
-  for (const exception of schedule.exceptions) addRow(exception.school ? 'School open' : 'No school', exception.date, async () => {
+  for (const exception of schedule.exceptions) addRow(exception.school ? 'School open' : 'No school', exception.date, () => addDayException(exception.date, exception), async () => {
     if (!confirm(`Remove the one-day exception for ${exception.date}?`)) return;
     const captured = structuredClone(snapshot); const current = scheduleValue(captured.rules.schedule);
     await mutate('save-subjects', editSchedule(captured, { ...current, exceptions: current.exceptions.filter(item => item.date !== exception.date) })).catch(() => {});
   });
   if (!schedule.breaks.length && !schedule.exceptions.length) items.append(node('p', 'cloud-note', 'No vacations, holidays, or one-day exceptions added.'));
+  calendar.render();
 }
 function field(label, name, value = '', { type = 'text', required = true, maxLength = 80 } = {}) {
   const wrapper = node('label', '', label);
@@ -282,7 +287,7 @@ function editSchoolSchedule() {
   const fields = [];
   const enabledLabel = node('label', 'cloud-schedule-toggle');
   const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = 'enabled'; enabled.checked = Boolean(current.enabled);
-  enabledLabel.append(enabled, node('span', '', 'Enforce this weekly school window'));
+  enabledLabel.append(enabled, node('span', '', 'Enable the school calendar'));
   fields.push(enabledLabel);
   const zoneLabel = node('label', '', 'School time zone');
   const zone = node('select', 'admin-input'); zone.name = 'timeZone';
@@ -300,26 +305,32 @@ function editSchoolSchedule() {
     field('First school date (optional)', 'termStart', current.termStart || '', { type: 'date', required: false }),
     field('Last school date (optional)', 'termEnd', current.termEnd || '', { type: 'date', required: false }),
     node('p', 'cloud-note', 'The signed calendar is cached on each child computer, so it still applies during a temporary internet outage.'));
-  editor('Weekly School Schedule', fields, form => mutate('save-subjects', editSchedule(captured, {
+  editor('School Year & Weekly Hours', fields, form => mutate('save-subjects', editSchedule(captured, {
     ...current, enabled: form.get('enabled') === 'on', timeZone: form.get('timeZone'),
     days: [0, 1, 2, 3, 4, 5, 6].filter(day => form.get(`day-${day}`) === 'on'), start: form.get('start'), end: form.get('end'),
     termStart: form.get('termStart') || null, termEnd: form.get('termEnd') || null
   })));
 }
-function addSchoolBreak() {
+function addSchoolBreak(existing = null) {
   const captured = structuredClone(snapshot); const current = scheduleValue(captured.rules.schedule);
-  editor('Add Vacation or Holiday', [field('Name', 'label'), field('First day', 'start', '', { type: 'date' }), field('Last day', 'end', '', { type: 'date' })],
-    form => mutate('save-subjects', editSchedule(captured, { ...current, breaks: [...current.breaks, {
-      id: crypto.randomUUID(), label: form.get('label'), start: form.get('start'), end: form.get('end')
+  editor(existing ? 'Edit Vacation or Holiday' : 'Add Vacation or Holiday', [field('Name', 'label', existing?.label || ''),
+    field('First day', 'start', existing?.start || '', { type: 'date' }), field('Last day', 'end', existing?.end || '', { type: 'date' })],
+    form => mutate('save-subjects', editSchedule(captured, { ...current, breaks: [...current.breaks.filter(item => item.id !== existing?.id), {
+      id: existing?.id || crypto.randomUUID(), label: form.get('label'), start: form.get('start'), end: form.get('end')
     }] })));
 }
-function addDayException() {
+function addDayException(date = '', existing = null) {
   const captured = structuredClone(snapshot); const current = scheduleValue(captured.rules.schedule);
-  editor('Add One-Day Exception', [field('Date', 'date', '', { type: 'date' }), selectField('That day should be', 'mode', [
+  editor(existing ? 'Edit One-Day Exception' : 'Add One-Day Exception', [field('Date', 'date', date, { type: 'date' }), selectField('That day should be', 'mode', [
     { value: 'closed', label: 'No school' }, { value: 'open', label: 'School open during normal hours' }
-  ], 'closed')], form => mutate('save-subjects', editSchedule(captured, { ...current,
-    exceptions: [...current.exceptions.filter(item => item.date !== form.get('date')), { date: form.get('date'), school: form.get('mode') === 'open' }]
-  })));
+  ], existing?.school ? 'open' : 'closed')], form => {
+    if (current.exceptions.some(item => item.date === form.get('date') && item.date !== existing?.date)) {
+      throw new Error('That day already has an exception. Edit it from the calendar.');
+    }
+    return mutate('save-subjects', editSchedule(captured, { ...current,
+      exceptions: [...current.exceptions.filter(item => item.date !== existing?.date), { date: form.get('date'), school: form.get('mode') === 'open' }]
+    }));
+  });
 }
 function editor(title, fields, save) {
   if (!usable || mutating) return;
@@ -393,6 +404,7 @@ function showRecovery(device) {
 }
 
 setupSidebarGroups();
+const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();
   item.addEventListener('click', () => selectTab(item.dataset.tab));
@@ -402,8 +414,8 @@ byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
 byId('add-subject-btn').addEventListener('click', () => editSubject());
 byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
-byId('add-school-break').addEventListener('click', addSchoolBreak);
-byId('add-day-exception').addEventListener('click', addDayException);
+byId('add-school-break').addEventListener('click', () => addSchoolBreak());
+byId('add-day-exception').addEventListener('click', () => addDayException());
 byId('cloud-editor-cancel').addEventListener('click', () => byId('cloud-editor').close());
 byId('cloud-editor-form').addEventListener('submit', async event => {
   event.preventDefault();
