@@ -12,6 +12,6 @@ export default async function FamilyDashboard() {
   // It is not a LAN iframe and never calls the parent's desktop.
   return <div className={styles.workspace} data-guard-workspace="true">
     <iframe title="BodeeGuard Parent Dashboard" src="/guard/dashboard/workspace/" className={styles.frame}
-      sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-top-navigation-by-user-activation" />
+      sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-downloads allow-top-navigation-by-user-activation" />
   </div>;
 }

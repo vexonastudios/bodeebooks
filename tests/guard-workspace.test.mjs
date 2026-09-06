@@ -168,6 +168,7 @@ test('message bridge preserves retry IDs but strips household, sender and device
 });
 
 test('private file upload has bounded dedicated parsing, sign-in, origin checks and no submitted authority', async () => {
+  assert.match(fs.readFileSync('app/guard/dashboard/page.tsx', 'utf8'), /sandbox="[^"]*allow-downloads/);
   const calls = [], api = async (...args) => { calls.push(args); return { saved: true }; };
   const upload = load('upload/route.ts', { api });
   const input = { action: 'upload-file', id: deviceId, studentId: deviceId, purpose: 'paper', name: 'Work.pdf', mime: 'application/pdf', data: 'a'.repeat(100000), householdId: 'foreign', storage_path: '/other', token: 'secret' };
