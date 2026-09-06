@@ -5,6 +5,7 @@ import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
 import { setupCloudGames } from './cloud-games-ui.js';
+import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -47,6 +48,7 @@ function selectTab(id) {
   records.setActive(id);
   files.setActive(id === 'grades');
   games.setActive(id === 'family-games');
+  learningVideos.setActive(id === 'learning-videos');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
 }
@@ -410,6 +412,12 @@ const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, 
   const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const value = await response.json();
   if (!response.ok) { const error = new Error(value.error || 'Family games could not connect.'); error.status = response.status; throw error; }
+  return value;
+} });
+const learningVideos = setupCloudLearningVideos({ root: byId('cloud-learning-videos'), parent: true, request: async (kind, input = {}) => {
+  const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, action: kind === 'save' ? 'save-learning-video' : 'list-learning-videos' }) });
+  const value = await response.json();
+  if (!response.ok) throw new Error(value.error || 'Learning videos could not connect.');
   return value;
 } });
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {

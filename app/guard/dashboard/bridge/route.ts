@@ -49,6 +49,8 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
   let body: unknown;
   if (uploadOnly !== (input.action === "upload-file")) return response({ error: "Use the designated file upload endpoint." }, 400);
   switch (input.action) {
+    case "list-learning-videos": path = "/learning-videos/list"; method = "POST"; body = {}; break;
+    case "save-learning-video": path = "/learning-videos/save"; method = "POST"; body = { id: input.id, revision: input.revision, url: input.url, title: input.title, folder: input.folder, order: input.order, active: input.active, approved: input.approved }; break;
     case "game-room": path = "/games/room"; method = "POST"; body = {}; break;
     case "game-settings": path = "/games/settings"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, settings: input.settings }; break;
     case "game-action": path = "/games/action"; method = "POST"; body = { id: input.id, action: input.gameAction, matchId: input.matchId, revision: input.revision }; break;

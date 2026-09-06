@@ -28,6 +28,19 @@ function request(input, { requestOrigin = origin, contentType = 'application/jso
     headers: { ...(requestOrigin ? { origin: requestOrigin } : {}), 'content-type': contentType }, body: typeof input === 'string' ? input : JSON.stringify(input) });
 }
 
+test('learning library bridge strips family authority and provides only fixed library routes', async () => {
+  const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
+  await route.POST(request({action:'list-learning-videos',householdId:'forged',studentId:'forged'}));
+  assert.deepEqual(calls[0],{path:'/learning-videos/list',body:{}});
+  const input={id:deviceId,revision:0,url:'https://youtu.be/47wkdQ80RSA',title:'Capitals',folder:'Songs',order:0,active:true,approved:true};
+  await route.POST(request({...input,action:'save-learning-video',householdId:'forged',deviceCredential:'secret',path:'/elsewhere'}));
+  assert.deepEqual(calls[1],{path:'/learning-videos/save',body:input});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request({action:'list-learning-videos'}))).status,401);
+  assert.equal((await route.POST(request({action:'save-learning-video'},{requestOrigin:'https://foreign.example'}))).status,403);
+  const workspace=await load('workspace/route.ts').GET(new Request(`${origin}/guard/dashboard/workspace/`));
+  assert.match(workspace.headers.get('content-security-policy'),/frame-src 'self'/);
+});
+
 test('game bridge forwards only parent game controls, not client-chosen family or player authority', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async (path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   const settings={enabled:true,dailyMinutes:60,requireSchool:true,start:'08:00',end:'20:00',days:[1,2,3],unlockDate:null};
