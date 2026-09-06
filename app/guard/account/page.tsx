@@ -222,6 +222,13 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <header className={styles.portalHeader}>
           <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Sign in once here to manage your family. Child computers install from your home network and do not need a Bodee Books or Clerk sign-in.</p></div>
         </header>
+        {isComplimentary && process.env.BODEEGUARD_CLOUD_PILOT_ENABLED === "true" && (
+          <section className={styles.notice}>
+            <div><strong>Private cloud dashboard preview</strong><p>Manage the new cloud-connected child pilot here. Your current LAN installation stays unchanged while we migrate.</p>
+              <Link className={styles.portalButton} href="/guard/dashboard/">Open family dashboard <ArrowRight size={16} /></Link>
+            </div>
+          </section>
+        )}
         {(params.billingError || params.checkout || params.channel || params.computerRemoved === "1" || params.computerRenamed === "1" || params.subscription || params.trial === "started") && (
           <aside className={params.billingError ? styles.errorNotice : styles.successNotice} role="status">
             {params.billingError
