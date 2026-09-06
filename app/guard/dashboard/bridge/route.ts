@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       path = `/students/${input.studentId}`; method = "PATCH"; body = { name: input.name, grade: input.grade };
       break;
     }
-    case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, revision: input.revision }; break;
+    case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, schedule: input.schedule, revision: input.revision }; break;
     case "assign-student":
     case "set-school-pause":
     case "create-recovery": {

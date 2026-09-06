@@ -1,5 +1,5 @@
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
+import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 
 const endpoint = '/guard/dashboard/bridge/';
@@ -44,7 +44,7 @@ function selectTab(id) {
   byId(`tab-${id}`).querySelector('h1')?.focus();
 }
 function setControls() {
-  document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn').forEach(control => {
+  document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
     control.disabled = !usable || mutating;
   });
 }
@@ -55,6 +55,7 @@ function showSnapshot() {
   renderStudents();
   renderSubjects();
   renderActivity();
+  renderSchedule();
   messaging.update(snapshot.students);
   setControls();
 }
@@ -223,12 +224,47 @@ function renderActivity() {
   }
   table.append(body); wrap.append(table); container.append(wrap);
 }
+function renderSchedule() {
+  const output = byId('cloud-school-schedule-summary');
+  if (!output) return;
+  const schedule = snapshot.rules.schedule;
+  if (!schedule?.enabled) { output.textContent = 'No weekly school window is enforced yet. Approved school links remain available whenever the account and computer are active.'; return; }
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  output.textContent = `${schedule.days.map(day => dayNames[day]).join(', ')} · ${schedule.start}–${schedule.end} · ${schedule.timeZone}`;
+}
 function field(label, name, value = '', { type = 'text', required = true, maxLength = 80 } = {}) {
   const wrapper = node('label', '', label);
   const input = node('input', 'admin-input');
   input.name = name; input.value = value; input.type = type; input.required = required; input.maxLength = maxLength;
   wrapper.append(input);
   return wrapper;
+}
+function editSchoolSchedule() {
+  const captured = structuredClone(snapshot);
+  const current = captured.rules.schedule;
+  const fields = [];
+  const enabledLabel = node('label', 'cloud-schedule-toggle');
+  const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = 'enabled'; enabled.checked = Boolean(current.enabled);
+  enabledLabel.append(enabled, node('span', '', 'Enforce this weekly school window'));
+  fields.push(enabledLabel);
+  const zoneLabel = node('label', '', 'School time zone');
+  const zone = node('select', 'admin-input'); zone.name = 'timeZone';
+  const zones = [...new Set([current.timeZone, Intl.DateTimeFormat().resolvedOptions().timeZone,
+    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu'])].filter(Boolean);
+  for (const value of zones) { const option = node('option', '', value.replaceAll('_', ' ')); option.value = value; zone.append(option); }
+  zone.value = current.timeZone;
+  zoneLabel.append(zone); fields.push(zoneLabel);
+  const days = node('fieldset', 'cloud-schedule-days'); days.append(node('legend', '', 'School days'));
+  ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].forEach((name, index) => {
+    const label = node('label'); const input = node('input'); input.type = 'checkbox'; input.name = `day-${index}`; input.checked = current.days.includes(index);
+    label.append(input, node('span', '', name.slice(0, 3))); days.append(label);
+  });
+  fields.push(days, field('School opens', 'start', current.start, { type: 'time' }), field('School closes', 'end', current.end, { type: 'time' }),
+    node('p', 'cloud-note', 'The signed schedule is cached on each child computer, so it still applies during a temporary internet outage. Date ranges and holidays will be added separately.'));
+  editor('Weekly School Schedule', fields, form => mutate('save-subjects', editSchedule(captured, {
+    enabled: form.get('enabled') === 'on', timeZone: form.get('timeZone'),
+    days: [0, 1, 2, 3, 4, 5, 6].filter(day => form.get(`day-${day}`) === 'on'), start: form.get('start'), end: form.get('end')
+  })));
 }
 function editor(title, fields, save) {
   if (!usable || mutating) return;
@@ -305,6 +341,7 @@ document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListen
 byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
 byId('add-subject-btn').addEventListener('click', () => editSubject());
+byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
 byId('cloud-editor-cancel').addEventListener('click', () => byId('cloud-editor').close());
 byId('cloud-editor-form').addEventListener('submit', async event => {
   event.preventDefault();

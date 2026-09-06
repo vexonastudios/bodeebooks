@@ -95,12 +95,13 @@ test('student edits use a fixed family-scoped API path and strip submitted autho
 });
 test('bridge preserves rules revision and returns conflicts without retrying mutations', async () => {
   let calls = 0;
+  const schedule = { enabled: true, timeZone: 'America/Chicago', days: [1, 2, 3, 4, 5], start: '08:00', end: '15:00' };
   const route = load('bridge/route.ts', { api: async (path, init) => {
     calls++; assert.equal(path, '/school-rules');
-    assert.deepEqual(JSON.parse(init.body), { revision: 2, subjects: [] });
+    assert.deepEqual(JSON.parse(init.body), { revision: 2, subjects: [], schedule });
     throw new CloudApiError('School rules changed in another window. Refresh before saving again.', 409);
   } });
-  const result = await route.POST(request({ action: 'save-subjects', revision: 2, subjects: [] }));
+  const result = await route.POST(request({ action: 'save-subjects', revision: 2, subjects: [], schedule, householdId: 'foreign' }));
   assert.equal(result.status, 409);
   assert.equal(calls, 1);
 });

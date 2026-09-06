@@ -27,7 +27,11 @@ export function editSubjects(snapshot, subjectId, title, url, remove = false, as
     subjects.splice(index, 1);
   } else if (index >= 0) subjects[index] = { ...subjects[index], title, url, ...(assignments === undefined ? {} : { assignments }) };
   else subjects.push({ id: subjectId, title, url, ...(assignments === undefined ? {} : { assignments }) });
-  return { revision: snapshot.rules.revision, subjects };
+  return { revision: snapshot.rules.revision, subjects, schedule: snapshot.rules.schedule };
+}
+
+export function editSchedule(snapshot, schedule) {
+  return { revision: snapshot.rules.revision, subjects: snapshot.rules.subjects.map(subject => ({ ...subject })), schedule };
 }
 
 export function assignmentFor(subject, studentId) {
