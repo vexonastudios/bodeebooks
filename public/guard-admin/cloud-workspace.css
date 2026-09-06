@@ -31,8 +31,16 @@
 #cloud-editor::backdrop, #cloud-recovery::backdrop { background: rgba(0,0,0,.7); }
 #cloud-editor h2, #cloud-recovery h2 { font-family: Outfit, sans-serif; margin-bottom: 20px; }
 #cloud-editor label { display: block; margin: 15px 0; line-height: 1.8; }
+.cloud-assignment-fields { margin: 20px 0; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.cloud-assignment-fields legend { padding: 0 6px; font-weight: 700; }
+#cloud-editor .cloud-assignment-row { display: grid; grid-template-columns: auto minmax(90px, 1fr) 90px minmax(110px, auto); align-items: center; gap: 10px; margin: 10px 0; }
+#cloud-editor .cloud-assignment-row input[type="checkbox"] { width: 18px; height: 18px; }
+#cloud-editor .cloud-assignment-row .admin-input { width: 100%; }
+.cloud-subject-goals { margin: 10px 0; padding: 8px 10px; border-left: 2px solid var(--accent-cyan); }
+.cloud-subject-goals summary { cursor: pointer; color: var(--text-secondary); font-size: 14px; font-weight: 700; }
+.cloud-subject-goals .cloud-note { margin: 8px 0 0 !important; }
 #cloud-recovery p { line-height: 1.6; margin-bottom: 16px; }
 #cloud-recovery code { display: block; overflow-wrap: anywhere; font-size: 22px; padding: 20px 0; }
 #cloud-recovery button { margin: 12px 12px 0 0; }
 .cloud-no-script { position: fixed; inset: 20%; z-index: 10000; padding: 24px; background: var(--bg-secondary); }
-@media (max-width: 650px) { .cloud-workspace .tab-header { align-items: flex-start; gap: 14px; } .cloud-workspace .monitor-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 650px) { .cloud-workspace .tab-header { align-items: flex-start; gap: 14px; } .cloud-workspace .monitor-grid { grid-template-columns: minmax(0, 1fr); } #cloud-editor .cloud-assignment-row { grid-template-columns: auto 1fr 80px; } #cloud-editor .cloud-assignment-row span:last-child { grid-column: 2 / -1; } }

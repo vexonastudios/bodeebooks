@@ -1,5 +1,5 @@
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects } from './cloud-workspace-model.js';
+import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 
 const endpoint = '/guard/dashboard/bridge/';
@@ -138,6 +138,13 @@ function renderComputers() {
     const total = node('div', 'monitor-timer-box');
     total.append(node('span', 'monitor-timer-label', 'Received today (UTC)'), node('span', 'monitor-timer-value', receivedTime(todaySeconds(snapshot, student?.id))));
     timerRow.append(total);
+    const goals = node('details', 'cloud-subject-goals');
+    const goalRows = [];
+    if (student) for (const subject of snapshot.rules.subjects) {
+      const progress = subjectProgress(snapshot, student.id, subject.id);
+      if (progress) goalRows.push(node('p', 'cloud-note', `${subject.title}: ${receivedTime(progress.seconds)} of ${progress.goalMinutes}m · ${progress.percent}%`));
+    }
+    if (goalRows.length) goals.append(node('summary', '', `${goalRows.length} subject goal${goalRows.length === 1 ? '' : 's'} today`), ...goalRows);
     const assignment = node('select', 'admin-input');
     assignment.dataset.cloudMutation = 'true';
     assignment.setAttribute('aria-label', `Student for ${device.computer_name}`);
@@ -153,7 +160,8 @@ function renderComputers() {
     recovery.dataset.cloudMutation = 'true';
     actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'), recovery);
     card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
-      node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow, assignment, actions,
+      node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow,
+      ...(goalRows.length ? [goals] : []), assignment, actions,
       node('p', 'cloud-note', device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study'));
     grid.append(card);
     clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => { selectTab('overview'); card.scrollIntoView({ block: 'nearest' }); }, 'nav-item'));
@@ -179,7 +187,11 @@ function renderSubjects() {
     card.dataset.cloudMutation = 'true';
     const heading = node('div', 'subject-card-admin-header');
     heading.append(node('span', 'subject-card-admin-icon', '📚'), node('span', 'subject-card-admin-name', subject.title));
-    card.append(heading, node('div', 'subject-card-admin-url', subject.url));
+    const assignments = snapshot.students.map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment);
+    const assignmentText = assignments.length
+      ? assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
+      : 'Not assigned to a child';
+    card.append(heading, node('div', 'subject-card-admin-url', subject.url), node('div', 'cloud-note', assignmentText));
     grid.append(card);
   }
   if (!snapshot.rules.subjects.length) grid.append(node('p', 'cloud-panel', 'No school links added yet. Add the curriculum websites your children use.'));
@@ -191,14 +203,16 @@ function renderActivity() {
   const wrap = node('div', 'cloud-table-wrap');
   const table = node('table');
   const head = node('thead'); const heading = node('tr');
-  for (const text of ['Date (UTC)', 'Student', 'Subject', 'Received time']) { const th = node('th', '', text); th.scope = 'col'; heading.append(th); }
+  for (const text of ['Date (UTC)', 'Student', 'Subject', 'Received time', 'Daily goal progress']) { const th = node('th', '', text); th.scope = 'col'; heading.append(th); }
   head.append(heading); table.append(head);
   const body = node('tbody');
   for (const activity of snapshot.activity) {
     const row = node('tr');
     const student = snapshot.students.find(item => item.id === activity.student_id);
     const subject = snapshot.rules.subjects.find(item => item.id === activity.subject_id);
-    for (const text of [activity.date_utc, student?.name || 'Previously assigned student', subject?.title || 'Previous school link', receivedTime(activity.seconds)]) row.append(node('td', '', text));
+    const progress = subjectProgress(snapshot, activity.student_id, activity.subject_id, activity.date_utc);
+    for (const text of [activity.date_utc, student?.name || 'Previously assigned student', subject?.title || 'Previous school link', receivedTime(activity.seconds),
+      progress ? `${progress.percent}% of ${progress.goalMinutes}m` : 'No current assignment']) row.append(node('td', '', text));
     body.append(row);
   }
   table.append(body); wrap.append(table); container.append(wrap);
@@ -222,12 +236,31 @@ function editSubject(subject = null) {
   const captured = structuredClone(snapshot);
   const subjectId = subject?.id || crypto.randomUUID();
   const fields = [field('Name', 'title', subject?.title || ''), field('School website', 'url', subject?.url || '', { type: 'url', maxLength: 2048 })];
+  const assignmentFields = node('fieldset', 'cloud-assignment-fields');
+  assignmentFields.append(node('legend', '', 'Children and daily goals'));
+  for (const student of snapshot.students) {
+    const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 };
+    const row = node('label', 'cloud-assignment-row');
+    const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current);
+    const name = node('span', '', student.name);
+    const goal = node('input', 'admin-input'); goal.type = 'number'; goal.name = `goal-${student.id}`; goal.min = '5'; goal.max = '480'; goal.required = enabled.checked; goal.disabled = !enabled.checked; goal.value = String(current?.dailyGoalMinutes || 30);
+    const minutes = node('span', '', 'minutes each school day');
+    enabled.addEventListener('change', () => { goal.disabled = !enabled.checked; goal.required = enabled.checked; });
+    row.append(enabled, name, goal, minutes); assignmentFields.append(row);
+  }
+  if (!snapshot.students.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
+  fields.push(assignmentFields);
   if (subject) fields.push(button('Remove subject', async () => {
     if (!confirm(`Remove ${subject.title} from cloud school links?`)) return;
     try { await mutate('save-subjects', editSubjects(captured, subject.id, '', '', true)); byId('cloud-editor').close(); }
     catch (error) { byId('cloud-editor-error').textContent = error.message; }
   }, 'btn btn-danger'));
-  editor(subject ? 'Edit Subject' : 'Add Subject', fields, form => mutate('save-subjects', editSubjects(captured, subjectId, form.get('title'), form.get('url'))));
+  editor(subject ? 'Edit Subject' : 'Add Subject', fields, form => {
+    const assignments = captured.students.filter(student => form.get(`assigned-${student.id}`) === 'on').map(student => ({
+      studentId: student.id, dailyGoalMinutes: Number(form.get(`goal-${student.id}`))
+    }));
+    return mutate('save-subjects', editSubjects(captured, subjectId, form.get('title'), form.get('url'), false, assignments));
+  });
 }
 function clearRecovery() {
   recoveryGeneration++;
