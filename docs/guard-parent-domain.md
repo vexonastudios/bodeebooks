@@ -59,3 +59,23 @@ bookstore/assets, gated bookmark redirects, mutation preservation, hostile retur
 URLs, Clerk form paths and analytics exclusion. Anonymous live probes are not
 proof of a completed parent login or a successful paid checkout; retain that
 distinction when reporting acceptance.
+
+## Cutover receipt — 2026-09-06
+
+- Website source `6425f7f` built successfully and is live at deployment
+  `dpl_9jD9HE2jrvGhzuMzFLBh8n9ES9SN`. The existing project serves the bookstore
+  and verified parent domain; the production redirect flag is enabled.
+- API deployment `dpl_34meoXUQe7LkuJ6pvjJjcJDyt5pU` redeployed the previously
+  running API source with the two exact authorized origins and new parent return
+  URL. No child API URL, Clerk keys, user records or subscriptions were changed.
+- 35 unit/component tests, TypeScript, scoped lint and the production build
+  passed. `node scripts/check-guard-domain.mjs` passed all 18 anonymous live
+  checks after promotion. API health and the existing Clerk frontend returned
+  200; the Clerk frontend accepts the new parent origin.
+- Parent sign-in through an actual existing family session, payment flows and
+  the future student installer remain separate acceptance tests. The script
+  intentionally does not create users, pair devices or start payments.
+- Source is backed up on `codex/cloud-parent-dashboard` in `bodeebooks`.
+  That repository's `main` has an unrelated history; it was not overwritten or
+  force-pushed. Existing uncommitted audiobook edits were excluded from this
+  deployment and preserved in the original checkout.
