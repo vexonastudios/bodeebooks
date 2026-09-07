@@ -1,4 +1,5 @@
 import { setupCloudLegacyActivation } from './cloud-legacy-activation.js';
+import { setupCloudLegacyTyping } from './cloud-legacy-typing.js';
 export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/',onApplied}) {
   if(!root)return {setActive(){}};
   let selected=null,busy=false,stopped=false,generation=0,archive=null;
@@ -11,6 +12,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   const list=node('div'),viewer=node('div'),activationRoot=node('div');activationRoot.id='cloud-legacy-activation';activationRoot.hidden=true;
   root.append(node('h2','Transfer and original records'),node('p','Choose a prepared Admin transfer folder. You can pause and resume without uploading verified parts again. Passwords, browser sessions and pending device commands stay in the private local backup.'),choose,start,pause,status,button('Refresh saved transfers',refresh),list,viewer);
   root.append(activationRoot);const activation=setupCloudLegacyActivation({root:activationRoot,request,onApplied});
+  const typingRoot=node('div');typingRoot.id='cloud-legacy-typing';typingRoot.hidden=true;root.append(typingRoot);const typingTransfer=setupCloudLegacyTyping({root:typingRoot,request,onApplied});
   function message(text){status.textContent=text;}
   const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');
   async function request(action,input={}) {
@@ -53,13 +55,14 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
     for(const item of data.archives){const card=node('div','','cloud-panel');card.append(node('h3',`${item.rehearsalOnly?'Rehearsal archive':'Original Admin archive'} · ${item.status}`),node('p',`${item.rows.toLocaleString()} records · ${item.files.toLocaleString()} files · ${new Date(item.createdAt).toLocaleString()}`));
       if(item.status==='verified')card.append(button('Open original records',()=>open(item.id)));
       if(item.status==='verified')card.append(button('Review profiles and balances',()=>{activationRoot.hidden=false;return activation.open(item.id);}));
+      if(item.status==='verified')card.append(button('Review original Typing history',()=>{typingRoot.hidden=false;return typingTransfer.open(item.id);}));
       if(item.status==='uploading')card.append(node('p','Choose the same local package above to resume.'));
       list.append(card);
     }
   }
   async function open(id){
     const current=++generation,data=await request('browse',{id});if(current!==generation)return;archive=data;viewer.replaceChildren();
-    viewer.append(node('h3','Original Admin records'),node('p',`This archive preserves original IDs, timestamps and relationships. ${archive.foreignKeyIssues} pre-existing missing references are retained. Archived commands cannot run, and archived balances have not changed current cloud balances.`));
+    viewer.append(node('h3','Original Admin records'),node('p',`This archive preserves original IDs, timestamps and relationships. ${archive.foreignKeyIssues} pre-existing missing references are retained. Archived commands cannot run. Profile and balance transfers have separate reviews and receipts below.`));
     const select=document.createElement('select');select.className='admin-input';select.setAttribute('aria-label','Original record category');
     for(const table of archive.manifest.tables){if(!table.exportedRows)continue;const option=node('option',`${table.name.replaceAll('_',' ')} (${table.exportedRows.toLocaleString()})`);option.value=table.name;select.append(option);}
     const rows=node('div'),pageLabel=node('p');let page=0;

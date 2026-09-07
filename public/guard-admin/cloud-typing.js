@@ -44,13 +44,14 @@ export function setupCloudTyping({ endpoint, mutate, editor, node, button }) {
   }
   function history(data) {
     const wrap = el('econ-typing-history'), table = node('table'); table.style.width = '100%';
-    const header = node('tr'); for (const value of ['Date / Time', 'Lesson or mode', 'WPM', 'Accuracy', 'Duration', 'Coins']) header.append(node('th', '', value)); table.append(header);
+    const header = node('tr'); for (const value of ['Date / Time', 'Lesson or mode', 'WPM', 'Accuracy', 'Duration', 'Coins', 'Source']) header.append(node('th', '', value)); table.append(header);
     for (const record of data.history.slice(0, 50)) {
       const row = node('tr');
-      for (const value of [new Date(record.created_at).toLocaleString(), record.lesson_id || record.mode, record.kind === 'speed' ? record.wpm : record.mastered ? 'Mastered' : 'Practice', `${record.accuracy}%`, `${record.duration_seconds}s`, record.coins_earned]) row.append(node('td', '', String(value)));
+      for (const value of [new Date(record.created_at).toLocaleString(), record.lesson_id || record.mode, record.kind === 'speed' ? record.wpm : record.mastered ? 'Mastered' : 'Practice', `${record.accuracy}%`, `${record.duration_seconds}s`, record.coins_earned,
+        record.origin === 'legacy' ? `Original Admin${record.reward_date ? '' : ' · reward date unknown'}` : 'Cloud']) row.append(node('td', '', String(value)));
       table.append(row);
     }
-    wrap.replaceChildren(data.history.length ? table : node('p', '', 'No cloud typing sessions yet. Earlier history still awaits transfer.'));
+    wrap.replaceChildren(data.history.length ? table : node('p', '', data.legacyHistoryImported ? 'No typing sessions recorded in the transferred history or cloud.' : 'No cloud typing sessions yet. Earlier history still awaits transfer.'));
     if (offset) wrap.append(button('Newer typing sessions', () => { offset = Math.max(0, offset - 50); void loadHistory(); }));
     if (data.history.length > 50) wrap.append(button('Older typing sessions', () => { offset += 50; void loadHistory(); }));
   }
@@ -96,7 +97,7 @@ export function setupCloudTyping({ endpoint, mutate, editor, node, button }) {
       });
     });
     el('econ-typing-stats').replaceChildren(...rows[0].stats.map(record => {
-      const card = node('div', 'cloud-panel'); card.append(node('strong', '', record.student_name), node('p', '', `${record.best_wpm} best WPM · ${record.avg_wpm} average WPM · ${record.total_sessions} cloud sessions`)); return card;
+      const card = node('div', 'cloud-panel'); card.append(node('strong', '', record.student_name), node('p', '', `${record.best_wpm} best WPM · ${record.avg_wpm} average WPM · ${record.total_sessions} saved speed tests`)); return card;
     }));
     const selected = el('econ-typing-sel').value;
     el('econ-typing-sel').replaceChildren(...rows.map(row => { const option = node('option', '', row.student.name); option.value = row.studentId; return option; }));
@@ -111,7 +112,7 @@ export function setupCloudTyping({ endpoint, mutate, editor, node, button }) {
       // Bound concurrent family reads; each response carries one child's page.
       for (let i = 0; i < students.length; i += 3) result.push(...await Promise.all(students.slice(i, i + 3).map(student => read(student.id))));
       if (!active || epoch !== generation || dirty) return;
-      rows = result; render(); notice.textContent = 'Guided lessons and speed tests share a daily limit of five coins. Earlier typing history still awaits transfer.';
+      rows = result; render(); notice.textContent = `Guided lessons and speed tests share a daily limit of five coins. ${rows.every(row=>row.legacyHistoryImported) ? 'Original Typing histories are connected; historical rewards are not added again.' : 'Some original Typing histories still await transfer in Settings.'}`;
     } catch (error) { if (active && epoch === generation) notice.textContent = error.message; }
     finally { loading = false; }
   }
