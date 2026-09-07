@@ -8,6 +8,7 @@ import { setupCloudGames } from './cloud-games-ui.js';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js';
 import { setupCloudReading } from './cloud-reading.js';
+import { setupCloudTyping } from './cloud-typing.js';
 import { setupCloudEconomy } from './cloud-economy.js';
 import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
@@ -51,7 +52,7 @@ function selectTab(id) {
   messaging.setActive(id === 'messages');
   records.setActive(id);
   reading.setActive(id === 'reports');
-  economy.setActive(id === 'economy');
+  economy.setActive(id === 'economy'); typing.setActive(id === 'economy');
   legacy.setActive(id === 'settings');
   files.setActive(id === 'grades');
   games.setActive(id === 'family-games');
@@ -72,7 +73,7 @@ function showSnapshot() {
   renderSubjects();
   records.update();
   reading.update();
-  economy.update();
+  economy.update(); typing.update(snapshot.students);
   files.update(snapshot.students);
   renderSchedule();
   renderSchoolCalendar();
@@ -418,6 +419,7 @@ const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
+const typing = setupCloudTyping({ endpoint, mutate, editor, node, button });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
 const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import') });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, request: async (kind, input = {}) => {

@@ -40,7 +40,7 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
   }
   function render(value) {
     el('econ-balances').replaceChildren(...value.balances.map(row => {
-      const line = node('div', 'cloud-panel'); line.append(node('strong', '', row.name), node('p', '', row.wallet.initialized ? `${row.wallet.balance} coins · ${row.wallet.totalEarned} earned in total` : `Earlier balance awaits transfer · ${row.wallet.cloudEarned} coins earned in cloud Reading`));
+      const line = node('div', 'cloud-panel'); line.append(node('strong', '', row.name), node('p', '', row.wallet.initialized ? `${row.wallet.balance} coins · ${row.wallet.totalEarned} earned in total` : `Earlier balance awaits transfer · ${row.wallet.cloudEarned} coins earned in the cloud`));
       line.append(button(row.wallet.initialized ? '+ / − Adjust coins' : 'Reconcile opening balance', () => adjust(row, row.wallet.initialized ? 'adjust' : 'opening-wallet'))); return line;
     }));
     const catalog = el('reward-catalog-list');
@@ -74,7 +74,7 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
       const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list-store', studentId: studentId || null, offset }) });
       const value = await response.json(); if (!response.ok) throw new Error(value.error || 'Economy could not connect.');
       if (!active || generation !== epoch) return;
-      data = value; render(value); el('cloud-economy-status').textContent = 'Cloud purchases, refunds and Reading rewards are connected. Other school/practice rewards and LAN histories still await transfer.';
+      data = value; render(value); el('cloud-economy-status').textContent = 'Cloud purchases, refunds, Reading and Typing rewards are connected. Other school/practice rewards and LAN histories still await transfer.';
     } catch (error) { if (active && generation === epoch) { data = null; for (const id of ['econ-balances','econ-purchases','reward-catalog-list']) el(id).replaceChildren(); el('cloud-economy-status').textContent = error.message; } }
     finally { loading = false; if (active && generation !== epoch) void load(); }
   }

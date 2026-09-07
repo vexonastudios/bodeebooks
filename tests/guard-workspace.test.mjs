@@ -88,6 +88,17 @@ test('Store bridge preserves receipt and price revisions while rejecting submitt
   assert.deepEqual(calls[1],{path:'/store/list',body:{studentId:deviceId,offset:50}});
 });
 
+test('Typing bridge forwards only parent settings and rejects submitted reward and child authority', async () => {
+  const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
+  const input={action:'typing-command',id:deviceId,studentId:deviceId,kind:'reset',revision:1,householdId:'forged',coins:9000,deviceCredential:'forged',correct_keystrokes:99999};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls[0],{path:'/typing/command',body:{id:deviceId,studentId:deviceId,kind:'reset',revision:1}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'list-typing',studentId:deviceId,offset:50,householdId:'forged'}));
+  assert.deepEqual(calls[1],{path:'/typing/list',body:{studentId:deviceId,offset:50}});
+});
+
 test('game bridge forwards only parent game controls, not client-chosen family or player authority', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async (path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   const settings={enabled:true,dailyMinutes:60,requireSchool:true,start:'08:00',end:'20:00',days:[1,2,3],unlockDate:null};
