@@ -8,6 +8,16 @@ import ts from 'typescript';
 class CloudApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
+test('legacy transfer uses parent-only fixed actions and bounded payloads without submitted authority', async () => {
+  const calls=[];const route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {saved:true};}});
+  const input={action:'put',id:'a'.repeat(64),sha256:'b'.repeat(64),data:'ZGF0YQ==',householdId:'forged',token:'secret',storagePath:'/other'};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls[0],{path:'/legacy/put',body:{id:input.id,sha256:input.sha256,data:input.data}});
+  assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal((await route.POST(request({...input,action:'constructor'}))).status,400);
+  assert.equal((await route.POST(request({...input,data:'a'.repeat(3*1024*1024)}))).status,413);
+});
 function load(relative, { authenticated = true, api = async () => ({}), name = 'Jamie' } = {}) {
   const filename = path.resolve('app/guard/dashboard', relative);
   const localRequire = createRequire(filename);

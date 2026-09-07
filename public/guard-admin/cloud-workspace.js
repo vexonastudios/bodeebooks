@@ -9,6 +9,7 @@ import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js';
 import { setupCloudReading } from './cloud-reading.js';
 import { setupCloudEconomy } from './cloud-economy.js';
+import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -51,6 +52,7 @@ function selectTab(id) {
   records.setActive(id);
   reading.setActive(id === 'reports');
   economy.setActive(id === 'economy');
+  legacy.setActive(id === 'settings');
   files.setActive(id === 'grades');
   games.setActive(id === 'family-games');
   learningVideos.setActive(id === 'learning-videos');
@@ -417,6 +419,7 @@ const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutat
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
+const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import') });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, request: async (kind, input = {}) => {
   const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
     : { ...input, action: kind === 'settings' ? 'game-settings' : 'game-room' };

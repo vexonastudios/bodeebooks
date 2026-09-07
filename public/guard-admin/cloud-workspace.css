@@ -86,4 +86,10 @@
 .cloud-record-text { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 400px; margin-top: 10px; }
 #cloud-grades-results summary { cursor: pointer; min-width: 130px; }
 #cloud-grades-older { margin-top: 16px; }
+#cloud-legacy-import { overflow-wrap: anywhere; }
+#cloud-legacy-import > .btn, #cloud-legacy-import input { margin: 8px 8px 8px 0; }
+#cloud-legacy-import details { padding: 10px 0; border-bottom: 1px solid var(--border-color, #e5e7eb); }
+#cloud-legacy-import summary { cursor: pointer; }
+#cloud-legacy-import dt { font-weight: 600; margin-top: 12px; }
+#cloud-legacy-import dd { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 12px; }
 @media (max-width: 600px) { .cloud-student-management { align-items: stretch; flex-direction: column; gap: 6px; padding-bottom: 18px; } }
