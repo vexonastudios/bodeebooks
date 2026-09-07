@@ -54,6 +54,19 @@ test('learning library bridge strips family authority and provides only fixed li
   assert.match(workspace.headers.get('content-security-policy'),/frame-src 'self'/);
 });
 
+test('Reading bridge uses fixed routes and strips household, device and reward authority', async () => {
+  const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
+  const input={action:'reading-command',studentId:deviceId,id:deviceId,kind:'finish',bookId:deviceId,revision:2,householdId:'forged',deviceCredential:'forged',completionBonus:9000,path:'/arbitrary'};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls[0],{path:'/reading/command',body:{studentId:deviceId,id:deviceId,kind:'finish',bookId:deviceId,revision:2}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'list-reading',studentId:deviceId,householdId:'forged'}));
+  assert.deepEqual(calls[1],{path:'/reading/list',body:{studentId:deviceId}});
+  await route.POST(request({action:'reading-history',studentId:deviceId,bookId:deviceId,offset:50,deviceId:'forged'}));
+  assert.deepEqual(calls[2],{path:'/reading/history',body:{studentId:deviceId,bookId:deviceId,offset:50}});
+});
+
 test('game bridge forwards only parent game controls, not client-chosen family or player authority', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async (path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   const settings={enabled:true,dailyMinutes:60,requireSchool:true,start:'08:00',end:'20:00',days:[1,2,3],unlockDate:null};
