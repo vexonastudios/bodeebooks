@@ -124,5 +124,5 @@ export async function approveComputer(_state: ActivationState, formData: FormDat
     body: "{}",
   });
   if ("error" in result) return { status: "error", message: result.error };
-  return { status: "success", message: "Computer approved. BodeeGuard will finish connecting it automatically." };
+  return { status: "success", message: "Child computer approved. The child app checks automatically. Next, assign a child in your family dashboard and save the computer’s offline recovery code." };
 }
