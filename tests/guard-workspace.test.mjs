@@ -88,6 +88,16 @@ test('Store bridge preserves receipt and price revisions while rejecting submitt
   assert.deepEqual(calls[1],{path:'/store/list',body:{studentId:deviceId,offset:50}});
 });
 
+test('Daily question bridge offers parent history only and strips submitted authority', async () => {
+  const calls=[];const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
+  const input={action:'list-daily-questions',studentId:deviceId,offset:50,householdId:'forged',deviceCredential:'forged',coins:9999,questionId:deviceId};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls,[{path:'/daily-questions/list',body:{studentId:deviceId,offset:50}}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal((await route.POST(request({...input,action:'daily-questions-command'}))).status,400);
+});
+
 test('Typing bridge forwards only parent settings and rejects submitted reward and child authority', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   const input={action:'typing-command',id:deviceId,studentId:deviceId,kind:'reset',revision:1,householdId:'forged',coins:9000,deviceCredential:'forged',correct_keystrokes:99999};
