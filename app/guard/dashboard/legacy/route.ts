@@ -8,6 +8,7 @@ const fields: Record<string, string[]> = {
   browse: ["id"], records: ["id", "table", "part"], downloadPart: ["id", "sha256"], list: [], withdraw: ["id"],
   inspectActivation: ["id"], planActivation: ["id", "requestId", "mappings"], applyActivation: ["planId", "digest"], activationHistory: [], rollbackActivation: ["planId"],
   inspectTypingTransfer: ["id"], planTypingTransfer: ["id", "requestId", "sourceId"], applyTypingTransfer: ["planId", "digest"], typingTransferHistory: [], rollbackTypingTransfer: ["planId"],
+  inspectDailyTransfer: ["id"], planDailyTransfer: ["id", "requestId", "sourceId"], applyDailyTransfer: ["planId", "digest"], dailyTransferHistory: [], rollbackDailyTransfer: ["planId"],
 };
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin || request.headers.get("sec-fetch-site") === "cross-site") return reply({ error: "Open the parent dashboard to transfer original records." }, 403);

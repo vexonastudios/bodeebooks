@@ -14,6 +14,12 @@ export function setupCloudDailyQuestions({ endpoint, getSnapshot }) {
       history.replaceChildren();
       for (const answer of data.answers.slice(0,50)) {
         const record = node('details'), question = answer.question;
+        if(answer.origin==='legacy'){
+          record.append(node('summary',`${answer.name} · ${answer.practice_date} · ${answer.kind==='verse'?'Daily Verse reward':'Brain Teaser'} · Original Admin · ${answer.coins} recorded coins`),
+            node('p','The original question and option text were not saved. No new coins were added by this transfer.'),
+            node('p',answer.correct===null?'The original Verse record saved its reward, not the chosen answer.':`Recorded result: ${answer.correct?'Correct':'Incorrect'} · Saved answer index: ${answer.selected_index}`),
+            node('p',answer.question_key?`Original question reference: ${answer.question_key}`:'No original question reference was recorded.'),node('p',`Saved ${new Date(answer.created_at).toLocaleString()}`));history.append(record);continue;
+        }
         record.append(node('summary', `${answer.name} · ${answer.practice_date} · ${answer.kind === 'verse' ? 'Daily Verse' : 'Brain Teaser'} · ${answer.correct ? 'Correct' : 'Practice'} · ${answer.coins} coins`),
           node('p', question.text || question.riddle), node('p', question.question || question.reference || ''),
           node('p', `Selected: ${question.options[answer.selected_index]}`), node('p', `Correct answer: ${question.options[question.answer_index]}`),
@@ -23,7 +29,7 @@ export function setupCloudDailyQuestions({ endpoint, getSnapshot }) {
         if (page < 0 || page > offset && data.answers.length <= 50) continue;
         const button = node('button',label); button.className='btn btn-secondary'; button.addEventListener('click',()=>{offset=page;generation++;void load();}); history.append(button);
       }
-      status.textContent = `${data.answers.length ? 'Cloud answers and rewards are connected.' : 'No cloud daily answers recorded.'} Earlier answer history still awaits transfer.`;
+      status.textContent = `${data.answers.length ? 'Saved answers and rewards are connected.' : 'No daily answers recorded.'} ${data.includesLanHistory?'Original daily history is included for imported children.':'Earlier answer history still awaits transfer.'}`;
     } catch(error) { if (active && epoch === generation) { history.replaceChildren(); status.textContent=error.message; } }
     finally { busy=false;refresh.disabled=false;if(active && epoch!==generation)void load(); }
   }

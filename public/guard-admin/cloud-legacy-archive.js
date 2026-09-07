@@ -1,5 +1,6 @@
 import { setupCloudLegacyActivation } from './cloud-legacy-activation.js';
 import { setupCloudLegacyTyping } from './cloud-legacy-typing.js';
+import { setupCloudLegacyDaily } from './cloud-legacy-daily.js';
 export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/',onApplied}) {
   if(!root)return {setActive(){}};
   let selected=null,busy=false,stopped=false,generation=0,archive=null;
@@ -13,6 +14,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   root.append(node('h2','Transfer and original records'),node('p','Choose a prepared Admin transfer folder. You can pause and resume without uploading verified parts again. Passwords, browser sessions and pending device commands stay in the private local backup.'),choose,start,pause,status,button('Refresh saved transfers',refresh),list,viewer);
   root.append(activationRoot);const activation=setupCloudLegacyActivation({root:activationRoot,request,onApplied});
   const typingRoot=node('div');typingRoot.id='cloud-legacy-typing';typingRoot.hidden=true;root.append(typingRoot);const typingTransfer=setupCloudLegacyTyping({root:typingRoot,request,onApplied});
+  const dailyRoot=node('div');dailyRoot.id='cloud-legacy-daily';dailyRoot.hidden=true;root.append(dailyRoot);const dailyTransfer=setupCloudLegacyDaily({root:dailyRoot,request,onApplied});
   function message(text){status.textContent=text;}
   const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');
   async function request(action,input={}) {
@@ -56,6 +58,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
       if(item.status==='verified')card.append(button('Open original records',()=>open(item.id)));
       if(item.status==='verified')card.append(button('Review profiles and balances',()=>{activationRoot.hidden=false;return activation.open(item.id);}));
       if(item.status==='verified')card.append(button('Review original Typing history',()=>{typingRoot.hidden=false;return typingTransfer.open(item.id);}));
+      if(item.status==='verified')card.append(button('Review original daily history',()=>{dailyRoot.hidden=false;return dailyTransfer.open(item.id);}));
       if(item.status==='uploading')card.append(node('p','Choose the same local package above to resume.'));
       list.append(card);
     }
