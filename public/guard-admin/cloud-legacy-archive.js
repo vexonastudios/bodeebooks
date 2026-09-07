@@ -1,4 +1,5 @@
-export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/'}) {
+import { setupCloudLegacyActivation } from './cloud-legacy-activation.js';
+export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/',onApplied}) {
   if(!root)return {setActive(){}};
   let selected=null,busy=false,stopped=false,generation=0,archive=null;
   const node=(tag,text='',className='')=>{const el=document.createElement(tag);el.textContent=text;el.className=className;return el;};
@@ -7,8 +8,9 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   const choose=document.createElement('input');choose.type='file';choose.multiple=true;choose.setAttribute('webkitdirectory','');choose.setAttribute('aria-label','Sanitized Admin transfer folder');
   const start=button('Upload / resume archive',transfer);start.disabled=true;
   const pause=button('Pause transfer',()=>{stopped=true;message('Pausing after the current parts finish. Resume the same folder to continue.');});pause.disabled=true;
-  const list=node('div'),viewer=node('div');
+  const list=node('div'),viewer=node('div'),activationRoot=node('div');activationRoot.id='cloud-legacy-activation';activationRoot.hidden=true;
   root.append(node('h2','Transfer and original records'),node('p','Choose a prepared Admin transfer folder. You can pause and resume without uploading verified parts again. Passwords, browser sessions and pending device commands stay in the private local backup.'),choose,start,pause,status,button('Refresh saved transfers',refresh),list,viewer);
+  root.append(activationRoot);const activation=setupCloudLegacyActivation({root:activationRoot,request,onApplied});
   function message(text){status.textContent=text;}
   const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');
   async function request(action,input={}) {
@@ -50,6 +52,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
     if(!data.archives.length)list.append(node('p','No original Admin archive has been transferred yet.'));
     for(const item of data.archives){const card=node('div','','cloud-panel');card.append(node('h3',`${item.rehearsalOnly?'Rehearsal archive':'Original Admin archive'} · ${item.status}`),node('p',`${item.rows.toLocaleString()} records · ${item.files.toLocaleString()} files · ${new Date(item.createdAt).toLocaleString()}`));
       if(item.status==='verified')card.append(button('Open original records',()=>open(item.id)));
+      if(item.status==='verified')card.append(button('Review profiles and balances',()=>{activationRoot.hidden=false;return activation.open(item.id);}));
       if(item.status==='uploading')card.append(node('p','Choose the same local package above to resume.'));
       list.append(card);
     }

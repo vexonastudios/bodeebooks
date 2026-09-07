@@ -423,7 +423,7 @@ const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => s
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
 const typing = setupCloudTyping({ endpoint, mutate, editor, node, button });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
-const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import') });
+const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import'), onApplied: refresh });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, request: async (kind, input = {}) => {
   const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
     : { ...input, action: kind === 'settings' ? 'game-settings' : 'game-room' };

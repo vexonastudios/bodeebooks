@@ -6,6 +6,7 @@ const reply = (body: unknown, status = 200) => Response.json(body, { status, hea
 const fields: Record<string, string[]> = {
   create: ["manifest"], status: ["id"], put: ["id", "sha256", "data"], verify: ["id", "key"], complete: ["id"],
   browse: ["id"], records: ["id", "table", "part"], downloadPart: ["id", "sha256"], list: [], withdraw: ["id"],
+  inspectActivation: ["id"], planActivation: ["id", "requestId", "mappings"], applyActivation: ["planId", "digest"], activationHistory: [], rollbackActivation: ["planId"],
 };
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin || request.headers.get("sec-fetch-site") === "cross-site") return reply({ error: "Open the parent dashboard to transfer original records." }, 403);
