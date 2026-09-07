@@ -28,6 +28,19 @@ function request(input, { requestOrigin = origin, contentType = 'application/jso
     headers: { ...(requestOrigin ? { origin: requestOrigin } : {}), 'content-type': contentType }, body: typeof input === 'string' ? input : JSON.stringify(input) });
 }
 
+test('assistant bridge requires parent sign-in and same-origin JSON, strips identity and arbitrary model/tools', async () => {
+  const calls=[];
+  const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {message:'Product help'};}});
+  const input={action:'assistant-ask',prompt:'Help',requestId:deviceId,ai:true,history:[],topicId:'offline',contextTab:'overview',householdId:'foreign',apiKey:'secret',tools:['delete'],path:'https://attacker.example',model:'expensive'};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls,[{path:'/assistant/ask',body:{prompt:'Help',requestId:deviceId,ai:true,history:[],topicId:'offline',contextTab:'overview'}}]);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  await route.POST(request({action:'assistant-welcome',householdId:'foreign'}));
+  assert.deepEqual(calls[1],{path:'/assistant/welcome',body:{}});
+  assert.equal((await route.POST(request({action:'assistant-execute'}))).status,400);
+});
+
 test('learning library bridge strips family authority and provides only fixed library routes', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   await route.POST(request({action:'list-learning-videos',householdId:'forged',studentId:'forged'}));

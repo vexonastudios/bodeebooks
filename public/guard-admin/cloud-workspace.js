@@ -6,6 +6,7 @@ import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
 import { setupCloudGames } from './cloud-games-ui.js';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
+import { setupCloudAssistant } from './cloud-assistant.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -450,6 +451,7 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
+setupCloudAssistant({ endpoint, navigate: selectTab });
 window.lucide?.createIcons();
 setControls();
 refresh();
