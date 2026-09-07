@@ -130,6 +130,15 @@ test('Daily question bridge offers parent history only and strips submitted auth
   assert.equal((await route.POST(request({...input,action:'daily-questions-command'}))).status,400);
 });
 
+test('Practice report bridge forwards only the selected child, module and page',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{answers:[]};}});
+  const input={action:'list-practice',studentId:deviceId,module:'words',offset:50,householdId:'foreign',coins:9999,selection:'forged'};
+  assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/practice/list',body:{studentId:deviceId,module:'words',offset:50}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal((await route.POST(request({action:'practice-command',studentId:deviceId,module:'words',selection:'forged'}))).status,400);
+});
+
 test('Typing bridge forwards only parent settings and rejects submitted reward and child authority', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   const input={action:'typing-command',id:deviceId,studentId:deviceId,kind:'reset',revision:1,householdId:'forged',coins:9000,deviceCredential:'forged',correct_keystrokes:99999};
