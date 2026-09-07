@@ -13,6 +13,10 @@ export function setupCloudPractice({endpoint,getSnapshot}){
       history.replaceChildren();
       for(const answer of data.answers.slice(0,50)){
         const detail=node('details'),question=answer.question;
+        if(answer.origin==='legacy'){
+          detail.append(node('summary',`${answer.name} · ${answer.practice_date} · ${answer.kind==='logic'?'Logic Lab':'Confused Words'} · Original Admin · ${answer.correct?'Correct':'Practice'} · ${answer.coins} coins recorded`),node('p','The original question and selected answer were not saved. No coins were added by this transfer.'),node('p',`Original question reference: ${answer.question_key}`),node('p',`Originally saved ${new Date(answer.created_at).toLocaleString()}`));
+          history.append(detail);continue;
+        }
         const selection=answer.kind==='words'?answer.selection:Array.isArray(answer.selection)?answer.selection.map(id=>question.parts.find(part=>String(part.id)===id)?.text||id).join(' → '):question.options[answer.selection]?.text;
         detail.append(node('summary',`${answer.name} · ${answer.practice_date} · ${answer.kind==='logic'?'Logic Lab':'Confused Words'} · ${answer.correct?'Correct':'Practice'} · ${answer.coins} coins`),node('p',question.scenario||question.sentence),node('p',question.question||question.prompt||''),node('p',`Selected: ${selection}`),node('p',`Saved ${new Date(answer.created_at).toLocaleString()}`));
         if(answer.kind==='words')detail.append(node('p',`Correct word: ${question.answer}`),node('p',question.tip?.rule||''));
@@ -21,7 +25,7 @@ export function setupCloudPractice({endpoint,getSnapshot}){
         history.append(detail);
       }
       for(const[label,page]of [['Newer practice results',offset-50],['Older practice results',offset+50]]){if(page<0||page>offset&&data.answers.length<=50)continue;const button=node('button',label);button.className='btn btn-secondary';button.onclick=()=>{offset=page;generation++;void load();};history.append(button);}
-      status.textContent=`${data.answers.length?'Cloud practice results and coins are connected.':'No cloud practice results recorded.'} Earlier practice history still awaits transfer.`;
+      status.textContent=`${data.answers.length?'Practice results are connected.':'No practice results recorded.'} ${data.includesLanHistory?'Original Admin history is connected for imported children. Recorded historical coins were not awarded again.':'Earlier practice history still awaits transfer.'}`;
     }catch(error){if(active&&epoch===generation){history.replaceChildren();status.textContent=error.message;}}
     finally{busy=false;refresh.disabled=false;if(active&&epoch!==generation)void load();}
   }
