@@ -6,6 +6,7 @@ import test from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
+import { cloudReleaseModule, cloudReleaseFixture, legacyReleaseFixture } from './guard-release-fixtures.mjs';
 
 // Render the real account component with isolated test identities and API data.
 // No authentication bypass or fixture endpoint is added to the running website.
@@ -28,6 +29,7 @@ async function render(account) {
       currentUser: async () => ({ fullName: 'Jamie Test', publicMetadata: {}, unsafeMetadata: {}, externalAccounts: [], primaryEmailAddress: { emailAddress: 'parent@example.com' } }),
     };
     if (name === '../actions') return new Proxy({}, { get: () => async () => {} });
+    if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { className: props.className, type: 'submit' }, props.children) };
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     if (name === 'next/link') return { __esModule: true, default: props => React.createElement('a', props, props.children) };
@@ -54,14 +56,14 @@ function fixture(overrides = {}) {
 test('account outage is explicit, not an empty household or not-subscribed claim', async () => {
   const html = await render(null);
   assert.match(html, /cannot load your family account/);
-  assert.doesNotMatch(html, /No computers connected yet|Not subscribed/);
+  assert.doesNotMatch(html, /No child computers connected yet|Not subscribed/);
 });
 
 test('closed enrollment does not offer a ticking trial or an unusable download', async () => {
   const html = await render(fixture());
   assert.match(html, /Welcome, Jamie Test/);
   assert.match(html, /Family enrollment has not opened yet/);
-  assert.doesNotMatch(html, /Start 30-day trial — no card|Download for Windows|Owner-only release controls/);
+  assert.doesNotMatch(html, /Start 30-day trial — no card|Download child app for Windows|Owner-only release controls/);
 });
 
 test('trial access has no cancellation, resume, or Stripe card-collection buttons', async () => {
@@ -99,9 +101,7 @@ test('external Beta requires deliberate consent; owner invite controls are restr
 test('release notes expand inside the account page instead of linking parents to GitHub', async () => {
   const html = await render(fixture({
     release: {
-      version: '1.2.157',
-      downloadUrl: 'https://github.com/vexonastudios/bodeeguard-stable-releases/releases/download/v1.2.157/BodeeGuard-Setup-1.2.157.exe',
-      notesUrl: 'https://github.com/vexonastudios/bodeeguard-stable-releases/releases/tag/v1.2.157',
+      ...cloudReleaseFixture('stable', '1.2.300'),
       notes: {
         title: 'Math help, safer assessments, and dependable time limits',
         sections: [{
@@ -113,9 +113,62 @@ test('release notes expand inside the account page instead of linking parents to
       }
     }
   }));
-  assert.match(html, /<details[^>]*><summary>What changed in 1\.2\.157<\/summary>/);
+  assert.match(html, /<details[^>]*><summary>What changed in 1\.2\.300<\/summary>/);
   assert.match(html, /Math help, safer assessments, and dependable time limits/);
   assert.match(html, /For parents/);
   assert.match(html, /Completed school quizzes now have a safer way back/);
   assert.doesNotMatch(html, /github\.com/);
+});
+
+test('all account states describe cloud setup without parent installation or network discovery', async () => {
+  for (const overrides of [{}, { billingMode: 'complimentary', entitlementStatus: 'active' },
+    { entitlementStatus: 'trial' }, { entitlementStatus: 'active' }, { entitlementStatus: 'grace' }]) {
+    const html = await render(fixture(overrides));
+    assert.match(html, /nothing for parents to install/);
+    assert.match(html, /Open family dashboard/);
+    assert.doesNotMatch(html, /Install the parent computer|Pair the parent computer|\bLAN\b|home network|Auto-Scan|3737|parent\/admin computers|First computer/);
+  }
+});
+
+test('an old installer neither enables cloud downloads nor appears as a cloud update', async () => {
+  const html = await render(fixture({ billingMode: 'complimentary', entitlementStatus: 'active', release: legacyReleaseFixture }));
+  assert.match(html, /Cloud installer not released yet/);
+  assert.match(html, /App already installed\? Approve its code/);
+  assert.doesNotMatch(html, /href="\/guard\/download\/windows"|What changed in 1\.2\.157|Version 1\.2\.157/);
+});
+
+test('legacy release eligibility cannot start a trial from the cloud page', async () => {
+  const html = await render(fixture({ release: legacyReleaseFixture,
+    enrollment: { customerLaunchOpen: true, canStartTrial: true, canSubscribe: true } }));
+  assert.doesNotMatch(html, /Start 30-day trial — no card|Subscribe for \$19\.99\/month/);
+});
+
+test('the verified account catalog must select a cloud artifact before enabling download', async () => {
+  const html = await render(fixture({ entitlementStatus: 'trial', release: cloudReleaseFixture() }));
+  assert.match(html, /href="\/guard\/download\/windows"/);
+  assert.match(html, /Download child app for Windows/);
+  assert.match(html, /Assign a child and save recovery/);
+  assert.doesNotMatch(html, /Cloud installer not released yet/);
+});
+
+test('browser sessions and old parent installations are not child-device slots', async () => {
+  const device = { platform: 'win32', appVersion: '1.2.300', lastSeenAt: '2030-01-01T10:00:00Z', revokedAt: null };
+  const html = await render(fixture({ entitlementStatus: 'active', devices: [
+    { ...device, id: 'old-parent', deviceRole: 'parent', computerName: 'Old parent' },
+    { ...device, id: 'old-default', computerName: 'Old default-role installation' },
+    { ...device, id: 'child-1', deviceRole: 'child', computerName: 'Learning laptop' },
+    { ...device, id: 'revoked-child', deviceRole: 'child', computerName: 'Removed laptop', revokedAt: '2030-01-01T10:00:00Z' },
+  ] }));
+  assert.match(html, /1 of 10 child computers/);
+  assert.match(html, /Learning laptop/);
+  assert.match(html, /Parent browser sessions do not use child device slots/);
+  assert.doesNotMatch(html, /Old parent|Old default-role installation|Removed laptop|Parent \/ admin/);
+});
+
+test('paid scheduled cancellation still offers resumption after cloud-only onboarding', async () => {
+  const html = await render(fixture({ entitlementStatus: 'active', hasBillingAccount: true, trialEligible: false,
+    cancelAtPeriodEnd: true, currentPeriodEndsAt: '2030-10-01T00:00:00Z' }));
+  assert.match(html, /Keep my subscription/);
+  assert.match(html, /Payment history/);
+  assert.doesNotMatch(html, /Cancel at the end of my billing period/);
 });

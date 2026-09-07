@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { cloudAccountRelease } from "../../../../shared/guard-cloud-release";
 
 type AccountDownloadStatus = {
   billingMode: "stripe" | "complimentary";
@@ -11,7 +12,7 @@ type AccountDownloadStatus = {
 function backToAccount(request: Request, reason: "access" | "unavailable") {
   const destination = new URL("/guard/account/", request.url);
   destination.searchParams.set("download", reason);
-  return NextResponse.redirect(destination, 303);
+  return NextResponse.redirect(destination, { status: 303, headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -21,21 +22,16 @@ export async function GET(request: Request) {
   if (!token || !apiBase) return backToAccount(request, "unavailable");
   try {
     const response = await fetch(`${apiBase}/v1/account`, {
-      headers: { Authorization: `Bearer ${token}` }, cache: "no-store",
+      headers: { Authorization: `Bearer ${token}` }, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) return backToAccount(request, "unavailable");
     const account = await response.json() as AccountDownloadStatus;
     if (account.billingMode !== "complimentary" && !["trial", "active", "grace"].includes(account.entitlementStatus)) {
       return backToAccount(request, "access");
     }
-    const release = account.release;
-    if (!release || !/^\d+\.\d+\.\d+$/.test(release.version)) return backToAccount(request, "unavailable");
-    const channel = account.releaseChannel === "beta" ? "beta" : "stable";
-    const expected = `https://github.com/vexonastudios/bodeeguard-${channel}-releases/releases/download/v${release.version}/BodeeGuard-Setup-${release.version}.exe`;
-    if (release.downloadUrl !== expected) return backToAccount(request, "unavailable");
-    // The account service verifies the signed bundle and asset digests and
-    // filters household-only builds before exposing this URL.
-    return NextResponse.redirect(expected, { status: 307, headers: { "Cache-Control": "private, no-store" } });
+    const release = cloudAccountRelease(account);
+    if (!release) return backToAccount(request, "unavailable");
+    return NextResponse.redirect(release.downloadUrl, { status: 307, headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return backToAccount(request, "unavailable");
   }

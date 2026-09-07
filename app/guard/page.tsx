@@ -42,7 +42,7 @@ const features = [
   {
     icon: MessageCircleMore,
     title: "One parent command center",
-    copy: "Manage every child, send messages, review progress, adjust access, lock a computer, or close BodeeGuard remotely from the parent dashboard.",
+    copy: "Open guard.bodeebooks.com on a phone or browser to manage children, review progress, and adjust access. Remote commands reach child computers when they are connected.",
   },
   {
     icon: Gamepad2,
@@ -52,7 +52,7 @@ const features = [
   {
     icon: Wifi,
     title: "Designed for real family computers",
-    copy: "Local safeguards keep working through internet interruptions, with protected sign-out, Wi-Fi recovery, LAN coordination, printing, and secure automatic updates.",
+    copy: "The child app keeps local work and timing through internet interruptions and syncs when connected again. Parent recovery stays available offline. Your own computer does not have to stay on.",
   },
 ];
 
@@ -73,8 +73,8 @@ const schoolDay = [
 
 const steps = [
   "Create and verify your parent account. Start the 30-day trial when your Windows download is ready—no card required.",
-  "Download once, install on the parent computer, and approve its pairing code from your account.",
-  "Use the parent’s local install link on each child computer. Children connect through your home network and need no website sign-in.",
+  "Install BodeeGuard Cloud on each child’s Windows computer. Approve the code it shows from your parent account—no website sign-in is needed on the child computer.",
+  "Assign a child and save an offline recovery code in your online dashboard. Confirm recovery in the child app, then begin school. Parents manage everything from a phone or browser, with nothing to install.",
 ];
 
 export default function GuardPage() {

@@ -41,7 +41,7 @@ const clerkAppearance = {
 const setupSteps = [
   { number: "1", title: "Parent account", detail: "Create and verify your secure login" },
   { number: "2", title: "Start when ready", detail: "30 days free · no card · no automatic charge" },
-  { number: "3", title: "Set up your home", detail: "Parent first, then children over home Wi-Fi" },
+  { number: "3", title: "Connect child computers", detail: "Install the child app · approve from your browser" },
 ];
 
 export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps) {
@@ -88,8 +88,8 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
 
             <div className={styles.benefitList}>
               <div><span><LockKeyhole size={18} /></span><p><strong>Your password stays with Clerk</strong><small>It is never copied to a child computer or stored inside BodeeGuard.</small></p></div>
-              <div><span><Laptop size={18} /></span><p><strong>Set up the parent computer once</strong><small>Approve its pairing code here. Child computers then install and connect through the parent over your home network.</small></p></div>
-              <div><span><Users size={18} /></span><p><strong>Built for a whole household</strong><small>The standard plan supports 2 parent/admin computers and up to 10 child computers.</small></p></div>
+              <div><span><Laptop size={18} /></span><p><strong>Only children need an app</strong><small>Install on each child’s Windows computer and approve its pairing code from your phone or browser. Parents use guard.bodeebooks.com with nothing to install.</small></p></div>
+              <div><span><Users size={18} /></span><p><strong>Built for a whole household</strong><small>Manage up to 10 child computers. Your parent browser sessions do not use child device slots, and your computer does not have to stay on.</small></p></div>
             </div>
 
             {isSignUp && (
@@ -119,8 +119,8 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
               <aside className={styles.firstWebAccountNote}>
                 <ShieldCheck size={18} />
                 <div>
-                  <strong>Already use BodeeGuard on your family computers?</strong>
-                  <p>The Windows app did not automatically create a web login. On your first visit here, create the parent account once—even if your family has used BodeeGuard for a long time.</p>
+                  <strong>First time here?</strong>
+                  <p>Create and verify your parent account before signing in. Children use the Windows app, not this parent login.</p>
                   <Link href={signUp}>Create my parent web account <ArrowRight size={14} /></Link>
                 </div>
               </aside>

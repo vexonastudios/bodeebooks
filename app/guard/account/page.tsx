@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards, Wifi } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
+import { cloudAccountRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
 import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
 import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
@@ -25,14 +26,7 @@ type BodeeGuardAccount = {
   billingMode: "stripe" | "complimentary";
   entitlementStatus: "inactive" | "trial" | "active" | "grace";
   releaseChannel: "beta" | "stable";
-  release?: {
-    version: string;
-    downloadUrl: string;
-    notes?: {
-      title: string;
-      sections: Array<{ heading: string; headline: string; summary: string; highlights: string[] }>;
-    } | null;
-  } | null;
+  release?: GuardAccountRelease | null;
   deviceLimits?: { parent: number; child: number };
   enrollment?: {
     customerLaunchOpen: boolean;
@@ -190,7 +184,6 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const isSubscribed = account && account.entitlementStatus !== "inactive";
   const canConnectComputers = Boolean(isComplimentary || isSubscribed);
   const activeDevices = account?.devices.filter(device => !device.revokedAt) || [];
-  const parentDevices = activeDevices.filter(device => device.deviceRole !== "child");
   const childDevices = activeDevices.filter(device => device.deviceRole === "child");
   const billing = account?.billing || null;
   const trialEligible = account.trialEligible === true;
@@ -201,9 +194,10 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const billingPeriodEnd = paidSubscription?.currentPeriodEndsAt || account?.currentPeriodEndsAt || null;
   const trialEnd = paidSubscription?.trialEndsAt || account?.trialEndsAt || null;
   const remainingTrialDays = isTrial ? trialDaysRemaining(trialEnd) : null;
-  const installerAvailable = Boolean(canConnectComputers && account.release);
-  const canStartTrial = account.enrollment?.canStartTrial === true;
-  const canSubscribe = account.enrollment?.canSubscribe === true;
+  const release = cloudAccountRelease(account);
+  const installerAvailable = Boolean(canConnectComputers && release);
+  const canStartTrial = account.enrollment?.canStartTrial === true && Boolean(release);
+  const canSubscribe = account.enrollment?.canSubscribe === true && Boolean(release);
   const channelLabel = account.releaseChannel === "beta" ? (isComplimentary ? "Family Beta" : "Beta") : "Stable";
   const statusLabel = isComplimentary ? "Complimentary Family Beta"
     : account?.entitlementStatus === "trial" ? "Free trial active"
@@ -220,15 +214,13 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
     <div className={styles.portalPage}>
       <div className={`container ${styles.portalShell}`}>
         <header className={styles.portalHeader}>
-          <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Sign in once here to manage your family. Child computers install from your home network and do not need a Bodee Books or Clerk sign-in.</p></div>
+          <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Your parent dashboard lives online at guard.bodeebooks.com. Only children’s Windows computers need the BodeeGuard app—there is nothing for parents to install.</p></div>
         </header>
-        {isComplimentary && process.env.BODEEGUARD_CLOUD_PILOT_ENABLED === "true" && (
-          <section className={styles.notice}>
-            <div><strong>Private cloud dashboard preview</strong><p>Manage the new cloud-connected child pilot here. Your current LAN installation stays unchanged while we migrate.</p>
+        <section className={styles.dashboardEntry} aria-label="Online parent dashboard">
+            <div><span className={styles.kicker}><Monitor size={15} /> Your online dashboard</span><h2>Manage school from your phone or browser.</h2><p>Set school rules, review progress, and manage connected child computers. You can close your browser or turn off your computer without stopping their school day.</p>
               <Link className={styles.portalButton} href="/guard/dashboard/">Open family dashboard <ArrowRight size={16} /></Link>
             </div>
-          </section>
-        )}
+        </section>
         {(params.billingError || params.checkout || params.channel || params.computerRemoved === "1" || params.computerRenamed === "1" || params.subscription || params.trial === "started") && (
           <aside className={params.billingError ? styles.errorNotice : styles.successNotice} role="status">
             {params.billingError
@@ -247,7 +239,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           <aside className={styles.errorNotice} role="status">
             {params.download === "access"
               ? "A BodeeGuard trial or subscription must be active before downloading the Windows installer."
-              : "The Windows installer is not available on this account's release channel yet. Nothing was installed; please try again after the next BodeeGuard release."}
+              : "The cloud student installer is not released on your account’s channel yet. Nothing was downloaded or installed. This page will offer it after release approval."}
           </aside>
         )}
         <div className={styles.portalGrid}>
@@ -269,9 +261,9 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             ) : (
               customerLaunchOpen || canStartTrial || canSubscribe || account?.hasBillingAccount ? (
                 trialEligible ? (
-                  <p><strong>30 days completely free with no card required.</strong> Protect up to 2 parent/admin computers and 10 child computers. When the trial ends, you decide whether to subscribe for $19.99 per month.</p>
+                  <p><strong>30 days completely free with no card required.</strong> Protect up to 10 child computers and manage them from your browser. When the trial ends, you decide whether to subscribe for $19.99 per month.</p>
                 ) : (
-                  <p><strong>$19.99 per month.</strong> A free trial is no longer available for this account. Subscribe when you are ready to continue, with up to 2 parent/admin computers and 10 child computers.</p>
+                  <p><strong>$19.99 per month.</strong> A free trial is no longer available for this account. Subscribe when you are ready to continue, with up to 10 child computers and an online parent dashboard.</p>
                 )
               ) : (
                 <p><strong>Your parent account is ready and free.</strong> Family trials will open when the Windows installer is ready. The 30-day trial requires no card and ends without a charge.</p>
@@ -293,20 +285,21 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           </section>
           <section className={styles.portalCard}>
             <div className={styles.cardIcon}><Laptop size={22} /></div>
-            <span className={styles.stepPill}>First computer</span>
-            <h2>{canConnectComputers ? "Install the parent computer" : "Your next setup step"}</h2>
+            <span className={styles.stepPill}>Children’s Windows app</span>
+            <h2>{canConnectComputers ? "Install on each child computer" : "Your next setup step"}</h2>
             {canConnectComputers ? (
               <>
-                <p>Download BodeeGuard here once and install it on the Windows computer that will manage your family.</p>
+                <p>Install BodeeGuard Cloud on each child’s Windows computer. Then approve its pairing code from your parent account on a phone or browser.</p>
                 {installerAvailable ? (
-                  <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download for Windows</a>
+                  <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
                 ) : (
-                  <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> {channelLabel} installer being prepared</span>
+                  <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
                 )}
-                <p className={styles.downloadHint}><ShieldCheck size={14} /> {installerAvailable ? "Only the parent computer needs this website sign-in." : "This download will turn on automatically when the verified installer is published."}</p>
+                <p className={styles.downloadHint}><ShieldCheck size={14} /> {installerAvailable ? "No website sign-in or parent password is needed on a child computer." : "Downloads open after a cloud release is approved for your channel. Private test installers are supplied separately."}</p>
+                <Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> App already installed? Approve its code</Link>
               </>
             ) : (
-              <p>{canStartTrial ? "Start your 30-day trial here first. Then install and pair the parent computer once; use its home-network installer for the children." : canSubscribe ? "Choose Subscribe to restore your family access. Your current installations and local records do not need to be replaced." : "Your trial clock has not started. This page will guide you through setup when your installer and family enrollment are ready."}</p>
+              <p>{canStartTrial ? "Start your 30-day trial here first. Then install the child app and approve each computer’s pairing code from your browser." : canSubscribe ? "Choose Subscribe to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup opens when the cloud child installer and family enrollment are ready. Creating an account does not start a trial or charge you."}</p>
             )}
           </section>
           <section className={styles.portalCard}>
@@ -318,16 +311,16 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         </div>
         <section className={styles.setupSection}>
           <div className={styles.sectionHeadingRow}><div><span className={styles.kicker}><ShieldCheck size={15} /> Software updates</span>
-            <h2>{channelLabel} updates{account.release ? ` · Version ${account.release.version}` : ""}</h2>
+            <h2>{channelLabel} updates{release ? ` · Version ${release.version}` : ""}</h2>
             <p>{isComplimentary ? "Your family receives new versions first and tests the same account activation and device controls as other families. Your access remains complimentary."
               : account.releaseChannel === "beta" ? "Your family has chosen early updates. Beta versions may have issues that are still being tested; you can return to Stable below. Your trial dates and subscription price stay the same."
                 : "Stable is the recommended channel for school days. Your family receives updates after Beta testing and a separate release approval."}</p>
-            {account.release && (
+            {release && (
               <details className={styles.releaseNotes}>
-                <summary>What changed in {account.release.version}</summary>
+                <summary>What changed in {release.version}</summary>
                 <div className={styles.releaseNotesBody}>
-                  {account.release.notes?.title && <p className={styles.releaseNotesTitle}>{account.release.notes.title}</p>}
-                  {account.release.notes?.sections?.length ? account.release.notes.sections.map((section, index) => (
+                  {release.notes?.title && <p className={styles.releaseNotesTitle}>{release.notes.title}</p>}
+                  {release.notes?.sections?.length ? release.notes.sections.map((section, index) => (
                     <section className={styles.releaseNotesSection} key={`${section.heading}-${index}`}>
                       <h3>{section.heading}</h3>
                       {section.headline && <strong>{section.headline}</strong>}
@@ -435,37 +428,37 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         {canConnectComputers && (
           <section className={styles.setupSection}>
             <div className={styles.setupHeading}>
-              <span className={styles.kicker}><Wifi size={15} /> Simple home setup</span>
-              <h2>One parent sign-in. Then use your home network.</h2>
-              <p>Do not sign in to bodeebooks.com on every child computer. Install and approve the parent computer first; it securely supplies BodeeGuard to the rest of the family over your LAN.</p>
+              <span className={styles.kicker}><Laptop size={15} /> Connect a child computer</span>
+              <h2>The child has the app. You have the dashboard.</h2>
+              <p>Use these steps for each child’s Windows computer. You do not need a parent desktop app or shared Wi-Fi. Internet is needed for pairing, syncing, and remote commands; offline computers receive commands when they reconnect.</p>
             </div>
             <ol className={styles.setupSteps}>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>1</span>
-                <div><strong>Pair the parent computer</strong><p>Open BodeeGuard there, choose <b>Settings → BodeeGuard Account</b>, and approve the short code it shows.</p><Link className={styles.stepAction} href="/guard/activate"><KeyRound size={15} /> Enter pairing code</Link></div>
+                <div><strong>Install the child app</strong><p>When the cloud download above is available, run it on the child’s Windows computer. Open <b>Connect this child computer</b> and choose <b>Get pairing code</b>.</p></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>2</span>
-                <div><strong>Open the local installer on each child</strong><p>Keep the parent computer awake with BodeeGuard running. Connect every computer to the same home network, then open:</p><code className={styles.lanAddress}>http://bodeeguard.local:3737/install</code><p>If that address does not open, use the alternative local address shown in the parent dashboard. Guest Wi-Fi may block connections between computers.</p></div>
+                <div><strong>Approve from your browser</strong><p>Enter that short code in your parent account on a phone or browser. You are approving the child computer—not the device you are browsing on.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Approve child pairing code</Link></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>3</span>
-                <div><strong>Choose Kid Computer</strong><p>Run the downloaded installer, select <b>Kid Computer</b>, and use Auto-Scan to find the parent. No website account or parent password is entered on the child.</p></div>
+                <div><strong>Assign a child and save recovery</strong><p>In the family dashboard, assign a child to the computer and save its offline parent recovery code. Confirm that recovery code in the child app before starting school.</p><Link className={styles.stepAction} href="/guard/dashboard/">Open family dashboard <ArrowRight size={15} /></Link></div>
               </li>
             </ol>
           </section>
         )}
         <section className={styles.computersSection}>
           <div className={styles.computersHeading}>
-            <div><span className={styles.kicker}><Monitor size={15} /> Household computers</span><h2>{activeDevices.length ? `${parentDevices.length} of ${account.deviceLimits?.parent || 2} parent · ${childDevices.length} of ${account.deviceLimits?.child || 10} child computers` : "No computers connected yet"}</h2><p className={styles.channelExplanation}>This list shows account activation and update check-ins. See live school activity in your local parent dashboard. Removing a computer does not cancel your subscription.</p></div>
+            <div><span className={styles.kicker}><Laptop size={15} /> Child computers</span><h2>{childDevices.length ? `${childDevices.length} of ${account.deviceLimits?.child || 10} child computers` : "No child computers connected yet"}</h2><p className={styles.channelExplanation}>This list shows approved child computers and their last check-in—not a guarantee they are online now. See assignments and school activity in your <Link href="/guard/dashboard/">online family dashboard</Link>. Parent browser sessions do not use child device slots. Removing a computer does not cancel your subscription.</p></div>
             {canConnectComputers && <Link className={styles.secondaryPortalButton} href="/guard/activate">Approve pairing code</Link>}
           </div>
-          {activeDevices.length ? (
+          {childDevices.length ? (
             <div className={styles.computerList}>
-              {activeDevices.map(device => (
+              {childDevices.map(device => (
                 <article className={styles.computerRow} key={device.id}>
-                  <div className={styles.computerIcon}>{device.deviceRole === "child" ? <Laptop size={20} /> : <Monitor size={20} />}</div>
-                  <div><strong>{device.computerName || "BodeeGuard computer"}<small className={styles.deviceRole}>{device.deviceRole === "child" ? "Child" : "Parent / admin"}</small></strong><span>{device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · {device.releaseChannel === "beta" ? "Beta" : "Stable"} · Last check-in {readableLastSeen(device.lastSeenAt)}</span></div>
+                  <div className={styles.computerIcon}><Laptop size={20} /></div>
+                  <div><strong>{device.computerName || "Child computer"}</strong><span>{device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · {device.releaseChannel === "beta" ? "Beta" : device.releaseChannel === "stable" ? "Stable" : "Channel unavailable"} · Last check-in {readableLastSeen(device.lastSeenAt)}</span></div>
                   <div className={styles.computerActions}>
                     <form className={styles.renameComputer} action={renameBodeeGuardComputer}>
                       <input type="hidden" name="deviceId" value={device.id} />
@@ -482,7 +475,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               ))}
             </div>
           ) : (
-            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? installerAvailable ? "Begin with the Windows download and the three setup steps above. The parent computer appears after its code is approved; child computers then enroll through it over your home network." : "Your account is ready. The first parent computer will appear here after your installer is available, installed, and paired." : "Connected-computer controls will appear here after your BodeeGuard access is active. No parent password is ever copied to a child computer."}</span></div>
+            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? "Each child computer appears after you approve its pairing code. If you already have the cloud app installed, approve its code now, then assign a child in the dashboard." : "Activate your family’s access when setup becomes available. Then install the child app and approve its pairing code here. No parent password is copied to a child computer."}</span></div>
           )}
         </section>
         {account.releaseOperator && <section className={styles.setupSection}>

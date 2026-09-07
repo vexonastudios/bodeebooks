@@ -58,7 +58,7 @@ export default function LiveComputers({ initial }: { initial: CloudDashboard }) 
       </article>;
     })}</div>
     <h3 className={styles.activityHeading}>Received cloud school time</h3>
-    <p>Last 14 days, grouped by UTC date. These are school-session minutes, not verified lesson completion. Existing LAN history is not imported here.</p>
+    <p>Last 14 days of synced activity, grouped by UTC date. These are school-session minutes, not verified lesson completion.</p>
     {!snapshot.activity?.length ? <p className={styles.empty}>No cloud school-time checkpoints received yet.</p> :
       <div className={styles.tableScroll}><table className={styles.activityTable}>
         <caption>School time received from cloud-connected computers</caption>
