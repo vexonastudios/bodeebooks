@@ -1,5 +1,5 @@
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, receivedTime, deliveryState, todaySeconds, editSubjects, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
+import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSubjects, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
@@ -149,13 +149,15 @@ function renderComputers() {
     top.append(identity);
     const timerRow = node('div', 'monitor-timer-row');
     const total = node('div', 'monitor-timer-box');
-    total.append(node('span', 'monitor-timer-label', 'Received today (UTC)'), node('span', 'monitor-timer-value', receivedTime(todaySeconds(snapshot, student?.id))));
+    total.append(node('span', 'monitor-timer-label', activityDayLabel(snapshot)), node('span', 'monitor-timer-value', receivedTime(todaySeconds(snapshot, student?.id))));
     timerRow.append(total);
     const goals = node('details', 'cloud-subject-goals');
     const goalRows = [];
     if (student) for (const subject of snapshot.rules.subjects) {
       const progress = subjectProgress(snapshot, student.id, subject.id);
-      if (progress) goalRows.push(node('p', 'cloud-note', `${subject.title}: ${receivedTime(progress.seconds)} of ${progress.goalMinutes}m · ${progress.percent}%`));
+      if (progress) goalRows.push(node('p', 'cloud-note', progress.seconds === null
+        ? `${subject.title}: received time unavailable · ${progress.goalMinutes}m goal`
+        : `${subject.title}: ${receivedTime(progress.seconds)} of ${progress.goalMinutes}m · ${progress.percent}%`));
     }
     if (goalRows.length) goals.append(node('summary', '', `${goalRows.length} subject goal${goalRows.length === 1 ? '' : 's'} today`), ...goalRows);
     const assignment = node('select', 'admin-input');

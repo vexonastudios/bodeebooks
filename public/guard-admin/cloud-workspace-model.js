@@ -5,6 +5,7 @@ export function connectionState(device, now) {
   return Number.isFinite(last) && now >= last - 5000 && now - last < 90000 ? 'Connected' : 'Not connected';
 }
 export function receivedTime(seconds) {
+  if (seconds == null || !Number.isFinite(Number(seconds))) return 'Not available';
   const value = Math.max(0, Math.floor(Number(seconds) || 0));
   return `${Math.floor(value / 60)}m ${value % 60}s`;
 }
@@ -13,8 +14,25 @@ export function deliveryState(device) {
     ? 'Waiting for computer confirmation'
     : device.locked ? 'School paused' : 'School available';
 }
+function activityScope(snapshot) {
+  if (Array.isArray(snapshot.activityBySchoolDate) && snapshot.activityDate && snapshot.activityTimeZone) {
+    return { rows: snapshot.activityBySchoolDate, date: snapshot.activityDate, dateField: 'date_local', timeZone: snapshot.activityTimeZone };
+  }
+  // Older deployed APIs explicitly label their existing totals as UTC. Never
+  // relabel them as school-local dates or pretend missing rows were migrated.
+  if (Array.isArray(snapshot.activity) && snapshot.serverTime) {
+    return { rows: snapshot.activity, date: snapshot.serverTime.slice(0, 10), dateField: 'date_utc', timeZone: 'UTC' };
+  }
+  return null;
+}
+export function activityDayLabel(snapshot) {
+  const scope = activityScope(snapshot);
+  return scope ? `Received today (${scope.timeZone})` : 'Received time unavailable';
+}
 export function todaySeconds(snapshot, studentId) {
-  return (snapshot.activity || []).filter(item => item.student_id === studentId && item.date_utc === snapshot.serverTime.slice(0, 10))
+  const scope = activityScope(snapshot);
+  if (!scope || !studentId) return null;
+  return scope.rows.filter(item => item.student_id === studentId && item[scope.dateField] === scope.date)
     .reduce((total, item) => total + (Number(item.seconds) || 0), 0);
 }
 export function editSubjects(snapshot, subjectId, title, url, remove = false, assignments, subjectSchedule) {
@@ -42,11 +60,13 @@ export function assignmentFor(subject, studentId) {
   return subject.assignments.find(item => item.studentId === studentId) || null;
 }
 
-export function subjectProgress(snapshot, studentId, subjectId, date = snapshot.serverTime.slice(0, 10)) {
+export function subjectProgress(snapshot, studentId, subjectId, date) {
   const subject = snapshot.rules.subjects.find(item => item.id === subjectId);
   const assignment = assignmentFor(subject, studentId);
   if (!assignment) return null;
-  const seconds = (snapshot.activity || []).filter(item => item.student_id === studentId && item.subject_id === subjectId && item.date_utc === date)
+  const scope = activityScope(snapshot);
+  if (!scope) return { seconds: null, goalMinutes: assignment.dailyGoalMinutes, percent: null };
+  const seconds = scope.rows.filter(item => item.student_id === studentId && item.subject_id === subjectId && item[scope.dateField] === (date || scope.date))
     .reduce((total, item) => total + Math.max(0, Number(item.seconds) || 0), 0);
   const goalSeconds = assignment.dailyGoalMinutes * 60;
   return { seconds, goalMinutes: assignment.dailyGoalMinutes, percent: Math.min(100, Math.floor(seconds * 100 / goalSeconds)) };
