@@ -67,6 +67,17 @@ test('Reading bridge uses fixed routes and strips household, device and reward a
   assert.deepEqual(calls[2],{path:'/reading/history',body:{studentId:deviceId,bookId:deviceId,offset:50}});
 });
 
+test('Store bridge preserves receipt and price revisions while rejecting submitted family authority', async () => {
+  const calls=[]; const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
+  const input={action:'store-command',id:deviceId,kind:'refund',redemptionId:deviceId,revision:1,householdId:'forged',studentBalance:9000,deviceCredential:'forged',sender:'forged'};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls[0],{path:'/store/command',body:{id:deviceId,kind:'refund',revision:1,redemptionId:deviceId}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'list-store',studentId:deviceId,offset:50,householdId:'forged'}));
+  assert.deepEqual(calls[1],{path:'/store/list',body:{studentId:deviceId,offset:50}});
+});
+
 test('game bridge forwards only parent game controls, not client-chosen family or player authority', async () => {
   const calls=[]; const route=load('bridge/route.ts',{api:async (path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {};}});
   const settings={enabled:true,dailyMinutes:60,requireSchool:true,start:'08:00',end:'20:00',days:[1,2,3],unlockDate:null};

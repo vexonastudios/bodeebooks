@@ -8,6 +8,7 @@ import { setupCloudGames } from './cloud-games-ui.js';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js';
 import { setupCloudReading } from './cloud-reading.js';
+import { setupCloudEconomy } from './cloud-economy.js';
 
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
@@ -49,6 +50,7 @@ function selectTab(id) {
   messaging.setActive(id === 'messages');
   records.setActive(id);
   reading.setActive(id === 'reports');
+  economy.setActive(id === 'economy');
   files.setActive(id === 'grades');
   games.setActive(id === 'family-games');
   learningVideos.setActive(id === 'learning-videos');
@@ -68,6 +70,7 @@ function showSnapshot() {
   renderSubjects();
   records.update();
   reading.update();
+  economy.update();
   files.update(snapshot.students);
   renderSchedule();
   renderSchoolCalendar();
@@ -413,6 +416,7 @@ const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
+const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, request: async (kind, input = {}) => {
   const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
     : { ...input, action: kind === 'settings' ? 'game-settings' : 'game-room' };
