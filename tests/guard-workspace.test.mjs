@@ -436,3 +436,12 @@ test('Geography bridge allows parent reports only and removes reward and device 
   assert.deepEqual(calls,[{path:'/geography/list',body:{studentId:deviceId,offset:50}}]);
   assert.equal((await route.POST(request({action:'geography-command',studentId:deviceId}))).status,400);
 });
+
+test('Spanish progress report bridge keeps parent authentication and strips submitted family and write authority',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{};}});
+  const input={action:'list-spanish',studentId:deviceId,householdId:'foreign',events:[{correct:true}],coins:9999};
+  const response=await route.POST(request(input));assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/no-store/);
+  assert.deepEqual(calls,[{path:'/spanish/list',body:{studentId:deviceId}}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+});
