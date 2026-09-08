@@ -1,6 +1,8 @@
 function node(tag,text = '') { const el = document.createElement(tag); el.textContent = text; return el; }
 function button(text,callback) { const el = node('button',text); el.type = 'button'; el.addEventListener('click',callback); return el; }
-export function setupCloudLearningVideos({ root, parent = false, request }) {
+export function setupCloudLearningVideos({ root, parent = false, request: transport, libraryKind = null }) {
+  let category=libraryKind || 'learning-videos';
+  const request=(kind,input={})=>transport(kind,{...input,category,libraryKind:category});
   root.classList.add('bg-learning-library');
   let active = false, busy = false, generation = 0, videos = [], draft = null, preview = null;
   const controls = node('div'); controls.className = 'bg-video-actions';
@@ -9,8 +11,12 @@ export function setupCloudLearningVideos({ root, parent = false, request }) {
   const editor = node('div'), previewHost = node('div');
   const folder = node('select'); folder.setAttribute('aria-label','Video folder');
   const refresh = button('Refresh',() => load());
+  const categorySelect=node('select');categorySelect.setAttribute('aria-label','Media library');
+  for(const [id,title]of [['learning-videos','Learning Videos'],['music','Music'],['videos','Videos']]){const option=node('option',title);option.value=id;categorySelect.append(option);}
+  categorySelect.onchange=()=>{category=categorySelect.value;generation++;editor.replaceChildren();stopPreview();void load();};
+  if(parent&&!libraryKind)controls.append(categorySelect);
   controls.append(refresh,folder);
-  if (parent) controls.prepend(button('Add a learning video',() => edit()));
+  if (parent) controls.prepend(button(category==='music'?'Add music':'Add a video',() => edit()));
   root.append(controls,status,editor,previewHost,list);
   const stopPreview = () => { preview?.remove(); preview = null; previewHost.replaceChildren(); };
   function showPreview(video) {
@@ -75,6 +81,7 @@ export function setupCloudLearningVideos({ root, parent = false, request }) {
   }
   folder.addEventListener('change',render);
   return {
+    setCategory(value) { if(!['music','videos','learning-videos'].includes(value))return;category=value;categorySelect.value=value;generation++;videos=[];editor.replaceChildren();stopPreview();if(active)void load(); },
     setActive(value) { active = value; if (!value) { generation++; stopPreview(); } else void load(); },
     clear() { generation++; active = false; videos = []; draft = null; editor.replaceChildren(); list.replaceChildren(); status.textContent = ''; stopPreview(); }
   };

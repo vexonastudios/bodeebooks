@@ -28,6 +28,9 @@ export async function GET(request: Request) {
     const user = await currentUser();
     const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
     const html = workspace.html
+      .replace(/<section class="tab-content" id="tab-music"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-music"><div class="tab-header"><h1>Music</h1></div><p class="cloud-note">Review the music your children can play. Hide any item to remove access.</p><div id="cloud-music-library"></div></section>')
+      .replace(/<section class="tab-content" id="tab-videos"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-videos"><div class="tab-header"><h1>Videos</h1></div><p class="cloud-note">Review the videos your children can watch. Hide any item to remove access.</p><div id="cloud-video-library"></div></section>')
+      .replace(/<section class="tab-content" id="tab-learning-videos"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-learning-videos"><div class="tab-header"><h1>Learning Videos</h1></div><p class="cloud-note">Your approved lessons, organized by folder.</p><div id="cloud-learning-videos"></div></section>')
       .replace(/(<div id="admin-badge-name"[^>]*>)[\s\S]*?(<\/div>)/, (_match, start, end) => `${start}${escapeHtml(name)}${end}`)
       .replace(/<section class="tab-content" id="tab-coloring-studio"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-coloring-studio" aria-label="Coloring Studio"><div id="cloud-coloring-studio"></div></section>')
       .replace(/<section class="tab-content" id="tab-math-coach"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-math-coach" aria-label="Math Coach"><div id="cloud-math-coach"></div></section>')

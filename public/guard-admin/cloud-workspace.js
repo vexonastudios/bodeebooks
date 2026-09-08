@@ -1,5 +1,6 @@
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupMainSchool } from './cloud-school-setup.js';
+import { setupParentGuide } from './cloud-parent-setup.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
@@ -41,6 +42,7 @@ let mutating = false;
 let editorSave = null;
 let recoveryGeneration = 0;
 let mobile = null;
+let parentGuide = null;
 
 function node(tag, className = '', text = '') {
   const element = document.createElement(tag);
@@ -83,6 +85,7 @@ function selectTab(id) {
   files.setActive(id === 'grades');
   games.setActive(id === 'family-games');
   learningVideos.setActive(id === 'learning-videos');
+  musicLibrary.setActive(id==='music');videoLibrary.setActive(id==='videos');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
   mobile?.setActive(id);
@@ -97,6 +100,7 @@ function showSnapshot() {
   // Do not destroy a selector the parent is using during background refresh.
   if (!byId('overview-grid').contains(document.activeElement)) renderComputers();
   mainSchool.render();
+  void parentGuide?.startOnce();
   renderStudents();
   renderSubjects();
   records.update();
@@ -464,12 +468,15 @@ const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, 
   if (!response.ok) { const error = new Error(value.error || 'Family games could not connect.'); error.status = response.status; throw error; }
   return value;
 } });
-const learningVideos = setupCloudLearningVideos({ root: byId('cloud-learning-videos'), parent: true, request: async (kind, input = {}) => {
+const mediaRequest = async (kind, input = {}) => {
   const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, action: kind === 'save' ? 'save-learning-video' : 'list-learning-videos' }) });
   const value = await response.json();
   if (!response.ok) throw new Error(value.error || 'Learning videos could not connect.');
   return value;
-} });
+};
+const learningVideos = setupCloudLearningVideos({root:byId('cloud-learning-videos'),parent:true,libraryKind:'learning-videos',request:mediaRequest});
+const musicLibrary = setupCloudLearningVideos({root:byId('cloud-music-library'),parent:true,libraryKind:'music',request:mediaRequest});
+const videoLibrary = setupCloudLearningVideos({root:byId('cloud-video-library'),parent:true,libraryKind:'videos',request:mediaRequest});
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();
   item.addEventListener('click', () => selectTab(item.dataset.tab));
@@ -506,6 +513,7 @@ window.addEventListener('pageshow', event => { if (event.persisted) { usable = f
 setupCloudAssistant({ endpoint, navigate: selectTab });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');
+parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, editSchool: student => mainSchool.edit(student) });
 window.lucide?.createIcons();
 setControls();
 refresh();
