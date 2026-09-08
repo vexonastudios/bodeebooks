@@ -1,0 +1,57 @@
+.worksheet-admin-header p { margin: 7px 0 0; color: var(--text-muted); }
+.worksheet-admin-header .btn { display: inline-flex; align-items: center; gap: 7px; }
+.worksheet-admin-header .btn svg { width: 16px; height: 16px; }
+.worksheet-admin-panel { margin-top: 18px; padding: 20px; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; background: rgba(255,255,255,.025); }
+.worksheet-admin-panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 17px; }
+.worksheet-admin-panel-heading span { color: #67e8f9; font-size: 11px; font-weight: 900; letter-spacing: .12em; }
+.worksheet-admin-panel-heading h2 { margin: 3px 0 0; color: var(--text-primary); font-size: 19px; }
+.worksheet-admin-panel-heading p { max-width: 620px; margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.worksheet-upload-layout { display: grid; grid-template-columns: minmax(210px, 300px) minmax(0, 1fr); gap: 20px; }
+.worksheet-upload-drop { min-height: 285px; display: grid; place-items: center; overflow: hidden; cursor: pointer; border: 1px dashed rgba(103,232,249,.35); border-radius: 15px; background: rgba(2, 21, 34, .68); }
+.worksheet-upload-drop:hover { border-color: #22d3ee; background: rgba(34,211,238,.055); }
+.worksheet-upload-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.worksheet-upload-drop img { width: 100%; height: 285px; padding: 9px; object-fit: contain; background: #eef2f5; }
+.worksheet-upload-drop > span { display: grid; justify-items: center; gap: 7px; color: var(--text-muted); }
+.worksheet-upload-drop > span svg { width: 34px; height: 34px; color: #67e8f9; }
+.worksheet-upload-drop > span strong { color: var(--text-primary); }
+.worksheet-upload-drop > span small { font-size: 11px; }
+.worksheet-upload-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); align-content: start; gap: 13px; }
+.worksheet-upload-fields label:not(.worksheet-visible-toggle), .worksheet-edit-fields label { display: grid; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 800; }
+.worksheet-upload-fields input[type="text"], .worksheet-upload-fields textarea, .worksheet-edit-fields input, .worksheet-edit-fields textarea { width: 100%; padding: 11px 12px; color: var(--text-primary); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; outline: none; background: rgba(4, 10, 24, .72); resize: vertical; }
+.worksheet-upload-fields input:focus, .worksheet-upload-fields textarea:focus, .worksheet-edit-fields input:focus, .worksheet-edit-fields textarea:focus { border-color: #22d3ee; box-shadow: 0 0 0 3px rgba(34,211,238,.09); }
+.worksheet-description-field { grid-column: 1 / -1; }
+.worksheet-visible-toggle { display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 12px; font-weight: 700; }
+.worksheet-visible-toggle input { accent-color: #22d3ee; }
+#worksheet-upload-submit { justify-self: end; display: inline-flex; align-items: center; gap: 7px; }
+#worksheet-upload-submit svg { width: 16px; height: 16px; }
+.worksheet-upload-status { grid-column: 1 / -1; min-height: 17px; margin: 0; color: var(--text-muted); font-size: 12px; }
+.worksheet-upload-status.error, .worksheet-admin-status.error { color: #fca5a5; }
+.worksheet-admin-status { min-height: 19px; margin-bottom: 11px; color: var(--text-muted); font-size: 12px; }
+.worksheet-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+.worksheet-admin-card { overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: rgba(5, 11, 25, .66); }
+.worksheet-admin-card.is-hidden { opacity: .67; }
+.worksheet-admin-preview { height: 210px; display: grid; place-items: center; background: #e8edf2; }
+.worksheet-admin-preview img { width: 100%; height: 100%; object-fit: contain; }
+.worksheet-admin-card-body { padding: 13px; }
+.worksheet-admin-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.worksheet-admin-source { color: #67e8f9; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .09em; }
+.worksheet-admin-visibility { padding: 4px 7px; border-radius: 999px; color: #6ee7b7; background: rgba(16,185,129,.12); font-size: 10px; font-weight: 900; }
+.worksheet-admin-visibility.hidden { color: #fbbf24; background: rgba(245,158,11,.1); }
+.worksheet-edit-fields { display: grid; gap: 9px; }
+.worksheet-edit-fields textarea { min-height: 66px; }
+.worksheet-admin-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 11px; }
+.worksheet-admin-actions button { min-height: 38px; border-radius: 9px; cursor: pointer; font-weight: 800; }
+.worksheet-card-save { color: #052e2b; border: 0; background: #5eead4; }
+.worksheet-card-remove { padding: 0 12px; color: #fecaca; border: 1px solid rgba(248,113,113,.24); background: rgba(239,68,68,.08); }
+.worksheet-admin-empty { grid-column: 1 / -1; padding: 38px 20px; color: var(--text-muted); text-align: center; border: 1px dashed rgba(255,255,255,.11); border-radius: 13px; }
+
+@media (max-width: 800px) {
+  .worksheet-upload-layout { grid-template-columns: 1fr; }
+  .worksheet-upload-fields { grid-template-columns: 1fr; }
+  .worksheet-description-field, .worksheet-upload-status { grid-column: auto; }
+  #worksheet-upload-submit { justify-self: stretch; justify-content: center; }
+  .worksheet-admin-panel-heading { flex-direction: column; }
+}
+
+/* Constrain original image previews to their card row. */
+.worksheet-admin-preview{grid-template-rows:minmax(0,1fr);overflow:hidden}.worksheet-admin-preview img{min-height:0;max-height:100%}#tab-worksheets .worksheet-admin-header p,#tab-worksheets .worksheet-admin-panel-heading p,#tab-worksheets .worksheet-upload-status,#tab-worksheets .worksheet-admin-status,#tab-worksheets .worksheet-upload-fields label:not(.worksheet-visible-toggle),#tab-worksheets .worksheet-edit-fields label{color:#a7b5cf}
