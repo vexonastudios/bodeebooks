@@ -9,6 +9,15 @@ class CloudApiError extends Error { constructor(message, status) { super(message
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
 
+test('Vocabulary transfer route forwards only the retained family review without submitted records or scores',async()=>{
+  const calls=[],route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+  const input={action:'planVocabularyTransfer',id:'a'.repeat(64),requestId:deviceId,sourceId:'forged',studentId:deviceId,coins:9999,householdId:'forged',rows:[{}]};
+  assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/legacy/planVocabularyTransfer',body:{id:input.id,requestId:deviceId}});
+  assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'applyVocabularyTransfer',planId:deviceId,digest:'b'.repeat(64),mastery:100}));assert.deepEqual(calls[1],{path:'/legacy/applyVocabularyTransfer',body:{planId:deviceId,digest:'b'.repeat(64)}});
+  await route.POST(request({action:'rollbackVocabularyTransfer',planId:deviceId,rows:[]}));assert.deepEqual(calls[2],{path:'/legacy/rollbackVocabularyTransfer',body:{planId:deviceId}});
+});
+
 test('Vocabulary parent route bounds terms and excludes submitted mastery, device and household authority',async()=>{
   const calls=[],route=load('vocabulary/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
   const terms=['steadfast','guile','integrity'].map(word=>({word,definition:'Synthetic exact '+word,score:100,id:'forged'}));

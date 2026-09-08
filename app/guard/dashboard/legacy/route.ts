@@ -12,6 +12,7 @@ const fields: Record<string, string[]> = {
   inspectPracticeTransfer: ["id"], planPracticeTransfer: ["id", "requestId", "sourceId"], applyPracticeTransfer: ["planId", "digest"], practiceTransferHistory: [], rollbackPracticeTransfer: ["planId"],
   inspectSpellingTransfer: ["id"], planSpellingTransfer: ["id", "requestId", "sourceId"], applySpellingTransfer: ["planId", "digest"], spellingTransferHistory: [], rollbackSpellingTransfer: ["planId"],
   inspectScienceTransfer: ["id"], planScienceTransfer: ["id", "requestId"], applyScienceTransfer: ["planId", "digest"], scienceTransferHistory: [], rollbackScienceTransfer: ["planId"],
+  inspectVocabularyTransfer: ["id"], planVocabularyTransfer: ["id", "requestId"], applyVocabularyTransfer: ["planId", "digest"], vocabularyTransferHistory: [], rollbackVocabularyTransfer: ["planId"],
   inspectGeographyTransfer: ["id"], planGeographyTransfer: ["id", "requestId", "sourceId"], applyGeographyTransfer: ["planId", "digest"], geographyTransferHistory: [], rollbackGeographyTransfer: ["planId"],
 };
 export async function POST(request: Request) {
