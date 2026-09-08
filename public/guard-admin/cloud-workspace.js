@@ -9,6 +9,7 @@ import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
+import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudReading } from './cloud-reading.js';
 import { setupCloudTyping } from './cloud-typing.js';
 import { setupCloudEconomy } from './cloud-economy.js';
@@ -53,7 +54,7 @@ function selectTab(id) {
   activateSidebarGroupForItem(item);
   messaging.setActive(id === 'messages');
   records.setActive(id);
-  reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports');
+  reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports'); geography.setActive(id === 'reports');
   economy.setActive(id === 'economy'); typing.setActive(id === 'economy');
   legacy.setActive(id === 'settings');
   files.setActive(id === 'grades');
@@ -74,7 +75,7 @@ function showSnapshot() {
   renderStudents();
   renderSubjects();
   records.update();
-  reading.update(); dailyQuestions.update(); practice.update();
+  reading.update(); dailyQuestions.update(); practice.update(); geography.update();
   economy.update(); typing.update(snapshot.students);
   files.update(snapshot.students);
   renderSchedule();
@@ -422,6 +423,7 @@ const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutat
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
+const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
 const typing = setupCloudTyping({ endpoint, mutate, editor, node, button });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });

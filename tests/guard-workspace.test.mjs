@@ -323,3 +323,10 @@ test('private file upload has bounded dedicated parsing, sign-in, origin checks 
   await bridge.POST(request({ action: 'read-file', id: deviceId, householdId: 'foreign', url: 'https://attacker.example' }));
   assert.equal(calls[1][0], '/files/read'); assert.deepEqual(JSON.parse(calls[1][1].body), { id: deviceId });
 });
+
+test('Geography bridge allows parent reports only and removes reward and device authority',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{};}});
+  assert.equal((await route.POST(request({action:'list-geography',studentId:deviceId,offset:50,coins:9999,deviceCredential:'forged',householdId:'other'}))).status,200);
+  assert.deepEqual(calls,[{path:'/geography/list',body:{studentId:deviceId,offset:50}}]);
+  assert.equal((await route.POST(request({action:'geography-command',studentId:deviceId}))).status,400);
+});
