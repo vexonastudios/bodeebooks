@@ -265,7 +265,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>3</span>
-                <div><strong>Finish setup</strong><p>Choose a child. Your family’s parent password syncs automatically.</p><Link className={styles.stepAction} href="/guard/dashboard/">Open dashboard <ArrowRight size={15} /></Link></div>
+                <div><strong>Choose their school</strong><p>Assign a child and choose Abeka, Bob Jones, another website, or no online school.</p><Link className={styles.stepAction} href="/guard/dashboard/">Finish setup <ArrowRight size={15} /></Link></div>
               </li>
             </ol>
           </> : <p className={styles.channelExplanation}>{canStartTrial ? "Start your trial below, then download and connect your child’s computer here." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}

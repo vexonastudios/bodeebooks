@@ -1,4 +1,8 @@
 /* Browser transport additions only; base.css and monitoring.css remain shared. */
+#family-school-setup summary{cursor:pointer;font-size:18px;font-weight:700}
+.cloud-main-school-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--border)}
+.cloud-main-school-row span{color:var(--text-secondary);flex:1}
+.cloud-main-school-row .btn{margin-left:auto}
 .cloud-workspace [hidden] { display: none !important; }
 .cloud-workspace .nav-item { text-decoration: none; }
 .cloud-account-link { margin-left: auto; color: var(--accent-green); font-size: 12px; }

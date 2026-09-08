@@ -1,4 +1,5 @@
 import { editCloudSubject } from './cloud-school-editor.js';
+import { setupMainSchool } from './cloud-school-setup.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
@@ -95,6 +96,7 @@ function showSnapshot() {
   if (!snapshot) return;
   // Do not destroy a selector the parent is using during background refresh.
   if (!byId('overview-grid').contains(document.activeElement)) renderComputers();
+  mainSchool.render();
   renderStudents();
   renderSubjects();
   records.update();
@@ -242,7 +244,9 @@ function renderStudents() {
       const archived = !student.archived_at;
       if (!confirm(archived ? `Archive ${student.name}? Their records and subject settings stay saved. Connected cloud computers will be unassigned when they reconnect. Offline computers may use their cached rules until reconnection or expiry.` : `Restore ${student.name}? Reassign their cloud computer in Overview when ready.`)) return;
       try { await mutate('archive-student', { studentId: student.id, archived }); } catch (_) { /* Existing feedback retains the error. */ }
-    }); archive.dataset.cloudMutation = 'true'; wrapper.append(row, archive); list.append(wrapper);
+    }); archive.dataset.cloudMutation = 'true';
+    const school = button('Main school', () => mainSchool.edit(student)); school.dataset.cloudMutation = 'true';
+    wrapper.append(row, school, archive); list.append(wrapper);
   }
   if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'No cloud students added yet. Existing student records remain in your current Admin app.'));
 }
@@ -433,6 +437,7 @@ setupSidebarGroups();
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 const schoolReview = setupCloudSchoolReview({ before: byId('subjects-grid-admin'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
+const mainSchool = setupMainSchool({ getSnapshot: () => snapshot, editor, field, selectField, node, button, mutate });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
@@ -471,7 +476,10 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
 });
 document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => selectTab(item.dataset.openTab)));
 byId('cloud-refresh').addEventListener('click', refresh);
-byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
+byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], async form => {
+  const student = await mutate('add-student', { name: form.get('name'), grade: form.get('grade') });
+  byId('cloud-editor').addEventListener('close', () => mainSchool.edit(student), { once: true });
+}));
 byId('add-subject-btn').addEventListener('click', () => editSubject());
 byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
 byId('add-school-break').addEventListener('click', () => addSchoolBreak());
