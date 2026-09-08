@@ -79,6 +79,11 @@
 #cloud-recovery p { line-height: 1.6; margin-bottom: 16px; }
 #cloud-recovery code { display: block; overflow-wrap: anywhere; font-size: 22px; padding: 20px 0; }
 #cloud-recovery button { margin: 12px 12px 0 0; }
+#cloud-recovery form { display: grid; gap: 12px; }
+#cloud-recovery label { display: grid; gap: 8px; }
+#cloud-recovery input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border-hover); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font: inherit; }
+#cloud-recovery form button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+#cloud-recovery form button svg { width: 18px; height: 18px; }
 .cloud-no-script { position: fixed; inset: 20%; z-index: 10000; padding: 24px; background: var(--bg-secondary); }
 @media (max-width: 650px) { .cloud-workspace .tab-header { align-items: flex-start; gap: 14px; } .cloud-workspace .monitor-grid { grid-template-columns: minmax(0, 1fr); } #cloud-editor .cloud-assignment-row { grid-template-columns: auto 1fr 80px; } #cloud-editor .cloud-assignment-row span:last-child { grid-column: 2 / -1; } }
 .cloud-record-filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; margin: 16px 0; padding: 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }

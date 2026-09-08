@@ -25,14 +25,14 @@ export async function setCloudComputerLock(form: FormData) {
   await mutate(`/devices/${encodeURIComponent(String(form.get("deviceId") || ""))}`, "PATCH", { locked: form.get("locked") === "true" });
 }
 
-export async function createCloudRecoveryCode(deviceId: string): Promise<{ code?: string; revision?: number; error?: string }> {
+export async function createCloudRecoveryCode(deviceId: string, password: string): Promise<{ saved?: boolean; revision?: number; error?: string }> {
   if (typeof deviceId !== "string" || !deviceId || deviceId.length > 128) return { error: "Choose a computer from your family." };
   try {
     // cloudApi verifies the Clerk session; the API checks household ownership.
-    // Return the one-time code only to this action caller, never in a URL/log.
-    return await cloudApi<{ code: string; revision: number }>(`/devices/${encodeURIComponent(deviceId)}/recovery`, { method: "POST" });
+    // Password is sent only in the authenticated HTTPS body, never a URL/log.
+    return await cloudApi<{ saved: boolean; revision: number }>(`/devices/${encodeURIComponent(deviceId)}/recovery`, { method: "POST", body: JSON.stringify({ password }) });
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "The recovery code could not be created." };
+    return { error: error instanceof Error ? error.message : "The parent password could not be saved." };
   }
 }
 

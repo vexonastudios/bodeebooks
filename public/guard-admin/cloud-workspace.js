@@ -208,13 +208,13 @@ function renderComputers() {
       catch { assignment.value = device.student_id || ''; }
     });
     const actions = node('div', 'cloud-actions');
-    const recovery = button('Offline recovery', () => showRecovery(device));
+    const recovery = button('Parent password', () => showRecovery(device));
     recovery.dataset.cloudMutation = 'true';
     actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'), recovery);
     card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
       node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow,
       ...(goalRows.length ? [goals] : []), assignment, actions,
-      node('p', 'cloud-note', device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study'));
+      node('p', 'cloud-note', device.recovery_configured ? 'Parent password set' : 'Set a parent password to finish setup'));
     mobile?.decorateCard(card, device.id);
     grid.append(card);
     clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => { selectTab('overview'); card.scrollIntoView({ block: 'nearest' }); }, 'nav-item'));
@@ -392,25 +392,33 @@ function clearRecovery() {
 }
 function showRecovery(device) {
   clearRecovery();
+  byId('cloud-recovery-title').textContent = 'Parent password';
   const generation = recoveryGeneration;
   const content = byId('cloud-recovery-content');
-  content.append(node('p', '', `Save a private recovery code for ${device.computer_name}. This is not your website password. The child computer must receive and confirm the code before studying.`),
-    node('p', '', 'Replacing a code invalidates it only after the computer receives the new policy. Keep the previous code until then.'));
-  const label = node('label', '', ' I am ready to save the new code privately.');
-  const check = node('input'); check.type = 'checkbox'; label.prepend(check);
-  const generate = button(device.recovery_configured ? 'Replace recovery code' : 'Create recovery code', async () => {
-    generate.disabled = true;
+  content.append(node('p', '', 'Choose a password only parents know. Use it to unlock or exit BodeeGuard, even without internet.'));
+  if (device.recovery_configured) content.append(node('p', '', 'Your current password works until the child app confirms the new one.'));
+  const form = node('form');
+  const label = node('label', '', 'Parent password');
+  const password = node('input'); password.type = 'text'; password.autocomplete = 'off'; password.spellcheck = false;
+  password.minLength = 6; password.maxLength = 64; password.required = true; password.placeholder = 'At least 6 characters';
+  label.append(password);
+  const save = button('Save parent password', () => {}, 'btn btn-primary'); save.type = 'submit';
+  const icon = node('i'); icon.setAttribute('data-lucide', 'shield-check'); save.prepend(icon);
+  const status = node('p'); status.setAttribute('role', 'status');
+  form.append(label, save, status); content.append(form);
+  form.addEventListener('submit', async event => {
+    event.preventDefault(); save.disabled = true; status.textContent = 'Saving…';
     try {
-      const result = await mutate('create-recovery', { deviceId: device.id });
+      await mutate('create-recovery', { deviceId: device.id, password: password.value });
+      password.value = '';
       if (generation !== recoveryGeneration || document.hidden || !byId('cloud-recovery').open) return;
-      content.replaceChildren(node('p', '', 'Save this now. It is shown once and is hidden when you leave this tab.'), node('code', '', result.code), node('p', '', `Waiting for computer policy revision ${result.revision}. Confirm this code in the cloud test app before use.`));
+      content.replaceChildren(node('p', '', 'Password saved. Type it in the child app and choose Confirm password.'));
     } catch (error) {
-      if (generation === recoveryGeneration && byId('cloud-recovery').open) content.append(node('p', '', `${error.message} Do not generate another code blindly if the result is uncertain.`));
-    }
-  }, 'btn btn-primary');
-  generate.disabled = true;
-  check.addEventListener('change', () => { generate.disabled = !check.checked; });
-  content.append(label, generate);
+      password.value = '';
+      if (generation === recoveryGeneration && byId('cloud-recovery').open) status.textContent = error.message;
+    } finally { save.disabled = false; }
+  });
+  window.lucide?.createIcons();
   byId('cloud-recovery').showModal();
 }
 

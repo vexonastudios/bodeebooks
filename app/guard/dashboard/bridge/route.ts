@@ -138,7 +138,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       if (typeof input.deviceId !== "string" || !uuid.test(input.deviceId)) return response({ error: "Choose a computer from your family." }, 400);
       path = `/devices/${input.deviceId}`;
       method = "PATCH";
-      if (input.action === "create-recovery") { path += "/recovery"; method = "POST"; body = {}; }
+      if (input.action === "create-recovery") { path += "/recovery"; method = "POST"; body = { password: input.password }; }
       else if (input.action === "assign-student") body = { studentId: input.studentId };
       else {
         if (typeof input.locked !== "boolean") return response({ error: "Choose pause or resume." }, 400);
