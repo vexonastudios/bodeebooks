@@ -73,6 +73,14 @@ test('Practice transfer bridge only forwards archive, source identity and exact 
   await route.POST(request({action:'applyPracticeTransfer',planId:deviceId,digest:'b'.repeat(64),coins:9999}));assert.deepEqual(calls[1],{path:'/legacy/applyPracticeTransfer',body:{planId:deviceId,digest:'b'.repeat(64)}});
   await route.POST(request({action:'rollbackPracticeTransfer',planId:deviceId,rows:[]}));assert.deepEqual(calls[2],{path:'/legacy/rollbackPracticeTransfer',body:{planId:deviceId}});
 });
+test('Geography transfer bridge only forwards archive, source identity and exact review IDs',async()=>{
+  const calls=[];const route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{};}});
+  const input={action:'planGeographyTransfer',id:'a'.repeat(64),sourceId:'original-child',requestId:deviceId,studentId:deviceId,coins:9999,householdId:'forged',rows:[{}]};
+  assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/legacy/planGeographyTransfer',body:{id:input.id,sourceId:input.sourceId,requestId:deviceId}});
+  assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'applyGeographyTransfer',planId:deviceId,digest:'b'.repeat(64),coins:9999}));assert.deepEqual(calls[1],{path:'/legacy/applyGeographyTransfer',body:{planId:deviceId,digest:'b'.repeat(64)}});
+  await route.POST(request({action:'rollbackGeographyTransfer',planId:deviceId,rows:[]}));assert.deepEqual(calls[2],{path:'/legacy/rollbackGeographyTransfer',body:{planId:deviceId}});
+});
 function request(input, { requestOrigin = origin, contentType = 'application/json' } = {}) {
   return new Request(`${origin}/guard/dashboard/bridge/`, { method: 'POST',
     headers: { ...(requestOrigin ? { origin: requestOrigin } : {}), 'content-type': contentType }, body: typeof input === 'string' ? input : JSON.stringify(input) });

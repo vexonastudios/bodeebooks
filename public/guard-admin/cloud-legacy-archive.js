@@ -2,6 +2,7 @@ import { setupCloudLegacyActivation } from './cloud-legacy-activation.js';
 import { setupCloudLegacyTyping } from './cloud-legacy-typing.js';
 import { setupCloudLegacyDaily } from './cloud-legacy-daily.js';
 import { setupCloudLegacyPractice } from './cloud-legacy-practice.js';
+import { setupCloudLegacyGeography } from './cloud-legacy-geography.js';
 export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/',onApplied}) {
   if(!root)return {setActive(){}};
   let selected=null,busy=false,stopped=false,generation=0,archive=null;
@@ -17,6 +18,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   const typingRoot=node('div');typingRoot.id='cloud-legacy-typing';typingRoot.hidden=true;root.append(typingRoot);const typingTransfer=setupCloudLegacyTyping({root:typingRoot,request,onApplied});
   const dailyRoot=node('div');dailyRoot.id='cloud-legacy-daily';dailyRoot.hidden=true;root.append(dailyRoot);const dailyTransfer=setupCloudLegacyDaily({root:dailyRoot,request,onApplied});
   const practiceRoot=node('div');practiceRoot.id='cloud-legacy-practice';practiceRoot.hidden=true;root.append(practiceRoot);const practiceTransfer=setupCloudLegacyPractice({root:practiceRoot,request,onApplied});
+  const geographyRoot=node('div');geographyRoot.id='cloud-legacy-geography';geographyRoot.hidden=true;root.append(geographyRoot);const geographyTransfer=setupCloudLegacyGeography({root:geographyRoot,request,onApplied});
   function message(text){status.textContent=text;}
   const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');
   async function request(action,input={}) {
@@ -62,6 +64,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
       if(item.status==='verified')card.append(button('Review original Typing history',()=>{typingRoot.hidden=false;return typingTransfer.open(item.id);}));
       if(item.status==='verified')card.append(button('Review original daily history',()=>{dailyRoot.hidden=false;return dailyTransfer.open(item.id);}));
       if(item.status==='verified')card.append(button('Review original Logic and Words history',()=>{practiceRoot.hidden=false;return practiceTransfer.open(item.id);}));
+      if(item.status==='verified')card.append(button('Review original Geography history',()=>{geographyRoot.hidden=false;return geographyTransfer.open(item.id);}));
       if(item.status==='uploading')card.append(node('p','Choose the same local package above to resume.'));
       list.append(card);
     }
