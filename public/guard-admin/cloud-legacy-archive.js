@@ -5,6 +5,7 @@ import { setupCloudLegacyPractice } from './cloud-legacy-practice.js';
 import { setupCloudLegacySpelling } from './cloud-legacy-spelling.js';
 import { setupCloudLegacyScience } from './cloud-legacy-science.js';
 import { setupCloudLegacyVocabulary } from './cloud-legacy-vocabulary.js';
+import { setupCloudLegacyPoems } from './cloud-legacy-poems.js';
 import { setupCloudLegacyGeography } from './cloud-legacy-geography.js';
 export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/',onApplied}) {
   if(!root)return {setActive(){}};
@@ -25,6 +26,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   const spellingRoot=node('div');spellingRoot.id='cloud-legacy-spelling';spellingRoot.hidden=true;root.append(spellingRoot);const spellingTransfer=setupCloudLegacySpelling({root:spellingRoot,request,onApplied});
   const scienceRoot=node('div');scienceRoot.id='cloud-legacy-science';scienceRoot.hidden=true;root.append(scienceRoot);const scienceTransfer=setupCloudLegacyScience({root:scienceRoot,request,onApplied});
   const vocabularyRoot=node('div');vocabularyRoot.id='cloud-legacy-vocabulary';vocabularyRoot.hidden=true;root.append(vocabularyRoot);const vocabularyTransfer=setupCloudLegacyVocabulary({root:vocabularyRoot,request,onApplied});
+  const poemsRoot=node('div');poemsRoot.id='cloud-legacy-poems';poemsRoot.hidden=true;root.append(poemsRoot);const poemsTransfer=setupCloudLegacyPoems({root:poemsRoot,request,onApplied});
   function message(text){status.textContent=text;}
   const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),value=>value.toString(16).padStart(2,'0')).join('');
   async function request(action,input={}) {
@@ -73,6 +75,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
       if(item.status==='verified')card.append(button('Review original Spelling history',()=>{spellingRoot.hidden=false;return spellingTransfer.open(item.id);}));
       if(item.status==='verified')card.append(button('Review original Science history',()=>{scienceRoot.hidden=false;return scienceTransfer.open(item.id);}));
       if(item.status==='verified')card.append(button('Review original Vocabulary history',()=>{vocabularyRoot.hidden=false;return vocabularyTransfer.open(item.id);}));
+      if(item.status==='verified')card.append(button('Review original Poem history',()=>{poemsRoot.hidden=false;return poemsTransfer.open(item.id);}));
       if(item.status==='verified')card.append(button('Review original Geography history',()=>{geographyRoot.hidden=false;return geographyTransfer.open(item.id);}));
       if(item.status==='uploading')card.append(node('p','Choose the same local package above to resume.'));
       list.append(card);
