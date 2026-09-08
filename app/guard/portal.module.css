@@ -108,6 +108,16 @@
 .billingHelp a { color: #0878c9; font-weight: 800; }
 .setupSection { margin-top: 20px; padding: 30px; border: 1px solid #cfe2e3; border-radius: 20px; background: linear-gradient(145deg, #ffffff, #eff9f8); box-shadow: 0 16px 36px rgba(19,55,69,.06); }
 .setupHeading { max-width: 760px; }
+.childSetup { padding: 24px 30px; }
+.childSetupHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.childSetupHeading h2 { margin-top: 8px; color: #12304a; font-size: 1.42rem; }
+.setupToggle { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #cbdcdf; border-radius: 9px; color: #087a8f; background: white; font: 750 .875rem var(--font-sans); cursor: pointer; }
+.setupToggle:focus-visible { outline: 3px solid #159cb4; outline-offset: 3px; }
+.childSetup [hidden] { display: none; }
+.setupDownload { display: flex; flex-wrap: wrap; }
+.accountDetailsGrid { grid-template-columns: 2fr 1fr; margin-top: 20px; }
+@media (max-width: 900px) { .accountDetailsGrid .billingCard { grid-column: auto; } }
+@media (max-width: 700px) { .childSetupHeading { flex-wrap: wrap; gap: 12px; } .childSetupHeading h2 { font-size: 1.2rem; } .setupDownload > a { width: 100%; padding: 12px 14px; text-align: center; } }
 .setupHeading h2 { margin-top: 8px; color: #12304a; font-size: 1.42rem; }
 .setupHeading > p { margin-top: 9px; color: #5d7183; font-size: .86rem; line-height: 1.65; }
 .setupSteps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; padding: 0; list-style: none; counter-reset: none; }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import ChildSetup from "./ChildSetup";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
 import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
@@ -170,6 +172,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const token = await session.getToken();
   const account = token ? await loadBodeeGuardAccount(token) : null;
   const params = await searchParams;
+  const setupCollapsed = (await cookies()).get("bg_child_setup_collapsed")?.value === "1";
   if (!account) return (
     <div className={styles.portalPage}><div className={`container ${styles.narrowShell}`}>
       <section className={styles.activationCard}><ShieldCheck size={29} /><h1>Welcome, {name}.</h1>
@@ -242,7 +245,32 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               : "The cloud student installer is not released on your account’s channel yet. Nothing was downloaded or installed. This page will offer it after release approval."}
           </aside>
         )}
-        <div className={styles.portalGrid}>
+        <ChildSetup initiallyCollapsed={setupCollapsed}>
+          {canConnectComputers ? <>
+            <div className={styles.setupDownload}>
+              {installerAvailable ? (
+                <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
+              ) : (
+                <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
+              )}
+            </div>
+            <ol className={styles.setupSteps}>
+              <li className={styles.setupStep}>
+                <span className={styles.stepNumber}>1</span>
+                <div><strong>Install</strong><p>Run the download on your child’s PC. Choose <b>Get pairing code</b>.</p></div>
+              </li>
+              <li className={styles.setupStep}>
+                <span className={styles.stepNumber}>2</span>
+                <div><strong>Connect</strong><p>Enter the pairing code here.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
+              </li>
+              <li className={styles.setupStep}>
+                <span className={styles.stepNumber}>3</span>
+                <div><strong>Finish setup</strong><p>Choose a child. Save the recovery code and confirm it in the app.</p><Link className={styles.stepAction} href="/guard/dashboard/">Open dashboard <ArrowRight size={15} /></Link></div>
+              </li>
+            </ol>
+          </> : <p className={styles.channelExplanation}>{canStartTrial ? "Start your trial below, then download and connect your child’s computer here." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}
+        </ChildSetup>
+        <div className={`${styles.portalGrid} ${styles.accountDetailsGrid}`}>
           <section className={`${styles.portalCard} ${styles.billingCard}`}>
             <div className={styles.cardIcon}><CreditCard size={22} /></div>
             <span className={styles.statusPill}>{statusLabel}</span>
@@ -282,25 +310,6 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             ) : !isComplimentary ? (
               <div className={styles.launchHold}><ShieldCheck size={16} /><span><strong>No payment is needed yet.</strong> {account.enrollment?.reason || "Your account will show the trial button here when family enrollment opens."}</span></div>
             ) : null}
-          </section>
-          <section className={styles.portalCard}>
-            <div className={styles.cardIcon}><Laptop size={22} /></div>
-            <span className={styles.stepPill}>Children’s Windows app</span>
-            <h2>{canConnectComputers ? "Install on each child computer" : "Your next setup step"}</h2>
-            {canConnectComputers ? (
-              <>
-                <p>Install BodeeGuard Cloud on each child’s Windows computer. Then approve its pairing code from your parent account on a phone or browser.</p>
-                {installerAvailable ? (
-                  <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
-                ) : (
-                  <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
-                )}
-                <p className={styles.downloadHint}><ShieldCheck size={14} /> {installerAvailable ? "No website sign-in or parent password is needed on a child computer." : "Downloads open after a cloud release is approved for your channel. Private test installers are supplied separately."}</p>
-                <Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> App already installed? Approve its code</Link>
-              </>
-            ) : (
-              <p>{canStartTrial ? "Start your 30-day trial here first. Then install the child app and approve each computer’s pairing code from your browser." : canSubscribe ? "Choose Subscribe to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup opens when the cloud child installer and family enrollment are ready. Creating an account does not start a trial or charge you."}</p>
-            )}
           </section>
           <section className={styles.portalCard}>
             <div className={styles.cardIcon}><UserRound size={22} /></div>
@@ -425,28 +434,6 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
 
           <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Trial families provide no card. If you later subscribe, payment details are handled by Stripe and BodeeGuard never stores your full card number. For account help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
         </section>
-        {canConnectComputers && (
-          <section className={styles.setupSection}>
-            <div className={styles.setupHeading}>
-              <span className={styles.kicker}><Laptop size={15} /> Setup</span>
-              <h2>Connect a child computer</h2>
-            </div>
-            <ol className={styles.setupSteps}>
-              <li className={styles.setupStep}>
-                <span className={styles.stepNumber}>1</span>
-                <div><strong>Install</strong><p>Run the download on your child’s PC. Choose <b>Get pairing code</b>.</p></div>
-              </li>
-              <li className={styles.setupStep}>
-                <span className={styles.stepNumber}>2</span>
-                <div><strong>Connect</strong><p>Enter the pairing code here.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
-              </li>
-              <li className={styles.setupStep}>
-                <span className={styles.stepNumber}>3</span>
-                <div><strong>Finish setup</strong><p>Choose a child. Save the recovery code and confirm it in the app.</p><Link className={styles.stepAction} href="/guard/dashboard/">Open dashboard <ArrowRight size={15} /></Link></div>
-              </li>
-            </ol>
-          </section>
-        )}
         <section className={styles.computersSection}>
           <div className={styles.computersHeading}>
             <div><span className={styles.kicker}><Laptop size={15} /> Child computers</span><h2>{childDevices.length ? `${childDevices.length} of ${account.deviceLimits?.child || 10} child computers` : "No child computers connected yet"}</h2><p className={styles.channelExplanation}>This list shows approved child computers and their last check-in—not a guarantee they are online now. See assignments and school activity in your <Link href="/guard/dashboard/">online family dashboard</Link>. Parent browser sessions do not use child device slots. Removing a computer does not cancel your subscription.</p></div>
