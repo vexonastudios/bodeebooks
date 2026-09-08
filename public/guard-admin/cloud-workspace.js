@@ -13,6 +13,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpelling } from './cloud-spelling.js';
 import { setupCloudScienceSpelling } from './cloud-science-spelling.js';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
+import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudReading } from './cloud-reading.js';
 import { setupCloudTyping } from './cloud-typing.js';
 import { setupCloudEconomy } from './cloud-economy.js';
@@ -60,6 +61,7 @@ function selectTab(id) {
   reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports'); geography.setActive(id === 'reports'); spelling.setActive(id === 'spelling');
   scienceSpelling.setActive(id === 'science-spelling');
   vocabulary.setActive(id === 'vocabulary');
+  poems.setActive(id === 'poems');
   economy.setActive(id === 'economy'); typing.setActive(id === 'economy');
   legacy.setActive(id === 'settings');
   files.setActive(id === 'grades');
@@ -432,6 +434,7 @@ const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot })
 const spelling = setupCloudSpelling({ endpoint });
 const scienceSpelling = setupCloudScienceSpelling();
 const vocabulary = setupCloudVocabulary();
+const poems = setupCloudPoems();
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
 const typing = setupCloudTyping({ endpoint, mutate, editor, node, button });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
