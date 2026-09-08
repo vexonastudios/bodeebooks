@@ -142,6 +142,28 @@
 
 .cloud-chat-attachment-field input {
   max-width: 100%;
+  cursor: pointer;
+}
+
+.cloud-chat-attachment-field {
+  min-height: 72px;
+  padding: 10px;
+  border: 1px dashed rgba(130, 138, 255, .55);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease;
+}
+
+.cloud-chat-attachment-field:hover,
+.cloud-chat-attachment-field:focus-within,
+.cloud-chat-attachment-field.is-dragging {
+  border-color: var(--accent-indigo, #828aff);
+  background: rgba(130, 138, 255, .1);
+}
+
+.cloud-chat-drop-hint {
+  color: var(--text-secondary, #b7c8dc);
+  font-size: .8rem;
 }
 
 #messages-attachment-status {

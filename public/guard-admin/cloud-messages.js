@@ -33,7 +33,7 @@ export function setupCloudMessages({ endpoint }) {
     el('messages-reply-btn').disabled = !selected || sending;
     el('messages-attachment').disabled = !selected || sending || pending.has(selected) || Boolean(attachments.get(selected));
     el('messages-attachment-clear').disabled = !selected || sending || pending.has(selected);
-    el('messages-attachment-status').textContent = attachments.get(selected)?.name || '';
+    el('messages-attachment-status').textContent = attachments.get(selected)?.name || el('messages-attachment').files[0]?.name || '';
     el('messages-reply-btn').textContent = pending.has(selected) ? 'Retry same message' : 'Send';
     el('messages-older').disabled = !selected || loading || !(cursor === undefined ? page?.nextBefore : cursor);
   }
@@ -95,6 +95,54 @@ export function setupCloudMessages({ endpoint }) {
       button.setAttribute('aria-pressed', String(student.id === selected)); button.addEventListener('click', () => choose(student.id)); return button;
     }));
   }
+  function canChooseAttachment() {
+    return Boolean(selected) && !sending && !pending.has(selected) && !attachments.has(selected);
+  }
+  function stageAttachment(file) {
+    if (!canChooseAttachment()) return;
+    if (!file || file.size > 2 * 1024 * 1024 || !file.size) {
+      note('Choose one nonempty image, PDF, or audio file up to 2 MB.');
+      return;
+    }
+    if (!/\.(?:png|jpe?g|webp|pdf|wav|mp3|webm|ogg)$/i.test(file.name)) {
+      note('Messages accepts PNG, JPEG, WebP, PDF, WAV, MP3, WebM, or OGG files.');
+      return;
+    }
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    el('messages-attachment').files = transfer.files;
+    controls();
+    note(`${file.name} is ready to send.`);
+  }
+  const dropZone = el('messages-attachment-dropzone');
+  const clearDropState = () => dropZone.classList.remove('is-dragging');
+  dropZone.addEventListener('dragenter', event => {
+    if (!canChooseAttachment() || !Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+    event.preventDefault();
+    dropZone.classList.add('is-dragging');
+  });
+  dropZone.addEventListener('dragover', event => {
+    if (!canChooseAttachment() || !Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    dropZone.classList.add('is-dragging');
+  });
+  dropZone.addEventListener('dragleave', clearDropState);
+  dropZone.addEventListener('drop', event => {
+    if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+    event.preventDefault();
+    clearDropState();
+    const files = [...(event.dataTransfer?.files || [])];
+    if (files.length !== 1) {
+      note('Drop one image, PDF, or audio file at a time.');
+      return;
+    }
+    stageAttachment(files[0]);
+  });
+  el('messages-attachment').addEventListener('change', () => {
+    if (!selected || attachments.has(selected)) return;
+    controls();
+  });
   el('messages-attachment-clear').addEventListener('click', () => {
     if (!selected || sending || pending.has(selected)) return;
     attachments.delete(selected); el('messages-attachment').value = ''; controls(); note('Attachment selection cleared. Any file already saved online remains in Gradebook → Private files.');
