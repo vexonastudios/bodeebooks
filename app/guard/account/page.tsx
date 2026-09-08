@@ -428,22 +428,21 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         {canConnectComputers && (
           <section className={styles.setupSection}>
             <div className={styles.setupHeading}>
-              <span className={styles.kicker}><Laptop size={15} /> Connect a child computer</span>
-              <h2>The child has the app. You have the dashboard.</h2>
-              <p>Use these steps for each child’s Windows computer. You do not need a parent desktop app or shared Wi-Fi. Internet is needed for pairing, syncing, and remote commands; offline computers receive commands when they reconnect.</p>
+              <span className={styles.kicker}><Laptop size={15} /> Setup</span>
+              <h2>Connect a child computer</h2>
             </div>
             <ol className={styles.setupSteps}>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>1</span>
-                <div><strong>Install the child app</strong><p>When the cloud download above is available, run it on the child’s Windows computer. Open <b>Connect this child computer</b> and choose <b>Get pairing code</b>.</p></div>
+                <div><strong>Install</strong><p>Run the download on your child’s PC. Choose <b>Get pairing code</b>.</p></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>2</span>
-                <div><strong>Approve from your browser</strong><p>Enter that short code in your parent account on a phone or browser. You are approving the child computer—not the device you are browsing on.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Approve child pairing code</Link></div>
+                <div><strong>Connect</strong><p>Enter the pairing code here.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>3</span>
-                <div><strong>Assign a child and save recovery</strong><p>In the family dashboard, assign a child to the computer and save its offline parent recovery code. Confirm that recovery code in the child app before starting school.</p><Link className={styles.stepAction} href="/guard/dashboard/">Open family dashboard <ArrowRight size={15} /></Link></div>
+                <div><strong>Finish setup</strong><p>Choose a child. Save the recovery code and confirm it in the app.</p><Link className={styles.stepAction} href="/guard/dashboard/">Open dashboard <ArrowRight size={15} /></Link></div>
               </li>
             </ol>
           </section>
