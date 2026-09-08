@@ -14,6 +14,7 @@ import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
+import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupCloudMathCoach } from './cloud-math-coach.js';
 import { setupCloudSpelling } from './cloud-spelling.js';
 import { setupCloudScienceSpelling } from './cloud-science-spelling.js';
@@ -67,6 +68,7 @@ function selectTab(id) {
   records.setActive(id);
   reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports'); geography.setActive(id === 'reports'); spanish.setActive(id === 'reports'); spelling.setActive(id === 'spelling');
   coloringStudio.setActive(id === 'coloring-studio');
+  screenshots.setActive(id === 'screenshots');
   mathCoach.setActive(id === 'math-coach');
   scienceSpelling.setActive(id === 'science-spelling');
   vocabulary.setActive(id === 'vocabulary');
@@ -99,6 +101,7 @@ function showSnapshot() {
   files.update(snapshot.students);
   renderSchedule();
   renderSchoolCalendar();
+  screenshots.update(snapshot);
   messaging.update(snapshot.students);
   setControls();
 }
@@ -417,6 +420,7 @@ const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
 const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
 const spanish = setupCloudSpanish({ endpoint, getSnapshot: () => snapshot });
 const coloringStudio = setupCloudColoringStudio({ endpoint });
+const screenshots = setupCloudScreenshots({ endpoint });
 const mathCoach = setupCloudMathCoach({ endpoint });
 const spelling = setupCloudSpelling({ endpoint });
 const scienceSpelling = setupCloudScienceSpelling();
