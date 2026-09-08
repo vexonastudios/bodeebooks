@@ -96,3 +96,5 @@
 
 /* Keep the original Science editor controls above the floating help launcher. */
 .cloud-workspace #science-spelling-list-modal{z-index:2300}
+
+.cloud-workspace #vocabulary-list-modal{z-index:2300}
