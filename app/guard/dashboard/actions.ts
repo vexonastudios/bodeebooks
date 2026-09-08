@@ -30,7 +30,7 @@ export async function createCloudRecoveryCode(deviceId: string, password: string
   try {
     // cloudApi verifies the Clerk session; the API checks household ownership.
     // Password is sent only in the authenticated HTTPS body, never a URL/log.
-    return await cloudApi<{ saved: boolean; revision: number }>(`/devices/${encodeURIComponent(deviceId)}/recovery`, { method: "POST", body: JSON.stringify({ password }) });
+    return await cloudApi<{ saved: boolean; revision: number }>("/parent-password", { method: "POST", body: JSON.stringify({ password }) });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "The parent password could not be saved." };
   }

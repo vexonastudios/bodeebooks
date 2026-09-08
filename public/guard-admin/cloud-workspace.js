@@ -166,6 +166,15 @@ function mutationButton(text, action, data, className) {
 }
 function renderComputers() {
   const grid = byId('overview-grid');
+  let passwordPanel = byId('family-parent-password');
+  if (!passwordPanel) {
+    passwordPanel = node('section', 'cloud-panel'); passwordPanel.id = 'family-parent-password';
+    grid.before(passwordPanel);
+  }
+  const familyPassword = snapshot.parentPassword || { configured: false, revision: 0 };
+  const passwordButton = button(familyPassword.configured ? 'Change parent password' : 'Set parent password', () => showRecovery(), 'btn btn-primary');
+  passwordButton.dataset.cloudMutation = 'true';
+  passwordPanel.replaceChildren(node('h2', '', 'Parent password'), node('p', '', 'One password for all your children’s computers. Use child app 1.2.173 or newer for automatic setup.'), passwordButton);
   const clients = byId('clients-panel');
   grid.replaceChildren();
   clients.replaceChildren();
@@ -208,13 +217,11 @@ function renderComputers() {
       catch { assignment.value = device.student_id || ''; }
     });
     const actions = node('div', 'cloud-actions');
-    const recovery = button('Parent password', () => showRecovery(device));
-    recovery.dataset.cloudMutation = 'true';
-    actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'), recovery);
+    actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'));
     card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
       node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow,
       ...(goalRows.length ? [goals] : []), assignment, actions,
-      node('p', 'cloud-note', device.recovery_configured ? 'Parent password set' : 'Set a parent password to finish setup'));
+      node('p', 'cloud-note', !familyPassword.configured ? 'Set your family’s parent password above.' : device.family_password_revision === familyPassword.revision && device.acknowledged_revision === device.revision ? 'Family password synced' : 'Waiting for computer to sync password'));
     mobile?.decorateCard(card, device.id);
     grid.append(card);
     clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => { selectTab('overview'); card.scrollIntoView({ block: 'nearest' }); }, 'nav-item'));
@@ -390,13 +397,13 @@ function clearRecovery() {
   recoveryGeneration++;
   byId('cloud-recovery-content').replaceChildren();
 }
-function showRecovery(device) {
+function showRecovery() {
   clearRecovery();
   byId('cloud-recovery-title').textContent = 'Parent password';
   const generation = recoveryGeneration;
   const content = byId('cloud-recovery-content');
-  content.append(node('p', '', 'Choose a password only parents know. Use it to unlock or exit BodeeGuard, even without internet.'));
-  if (device.recovery_configured) content.append(node('p', '', 'Your current password works until the child app confirms the new one.'));
+  content.append(node('p', '', 'One password to unlock or exit BodeeGuard on every child’s computer.'));
+  content.append(node('p', '', 'Syncs automatically with child app 1.2.173 or newer. Offline computers update when they reconnect.'));
   const form = node('form');
   const label = node('label', '', 'Parent password');
   const password = node('input'); password.type = 'text'; password.autocomplete = 'off'; password.spellcheck = false;
@@ -409,10 +416,10 @@ function showRecovery(device) {
   form.addEventListener('submit', async event => {
     event.preventDefault(); save.disabled = true; status.textContent = 'Saving…';
     try {
-      await mutate('create-recovery', { deviceId: device.id, password: password.value });
+      await mutate('set-parent-password', { password: password.value });
       password.value = '';
       if (generation !== recoveryGeneration || document.hidden || !byId('cloud-recovery').open) return;
-      content.replaceChildren(node('p', '', 'Password saved. Type it in the child app and choose Confirm password.'));
+      content.replaceChildren(node('p', '', 'Saved for your whole family. Child computers receive it automatically.'));
     } catch (error) {
       password.value = '';
       if (generation === recoveryGeneration && byId('cloud-recovery').open) status.textContent = error.message;

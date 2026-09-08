@@ -16,11 +16,10 @@ export default function RecoveryCode({ device }: { device: CloudDevice }) {
   }, []);
   return <details className={styles.recovery}>
     <summary>Parent password</summary>
-    <p>Choose a password only parents know. Use it to unlock or exit BodeeGuard, even without internet.</p>
-    {device.recovery_configured && <p>Your current password works until the child app confirms the new one.</p>}
+    <p>One password for all your children’s computers. Changes sync automatically with child app 1.2.173 or newer.</p>
     <form onSubmit={async event => {
       event.preventDefault(); setPending(true); setMessage("");
-      try { const result = await createCloudRecoveryCode(device.id, password); setMessage(result.error || "Password saved. Type it in the child app and choose Confirm password."); }
+      try { const result = await createCloudRecoveryCode(device.id, password); setMessage(result.error || "Saved for your whole family. Computers update when they connect."); }
       catch { setMessage("Could not save the password. Try again."); }
       finally { setPassword(""); setPending(false); }
     }}>
