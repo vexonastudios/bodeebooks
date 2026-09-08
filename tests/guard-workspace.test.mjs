@@ -9,6 +9,31 @@ class CloudApiError extends Error { constructor(message, status) { super(message
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
 
+test('School completion proxy strips submitted household, provider and reward authority', async () => {
+  const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { saved: true }; } });
+  const input = { action: 'review-school', id: deviceId, studentId: deviceId, subjectId: deviceId, date: '2026-09-08', revision: 0, rulesRevision: 1,
+    completed: true, parentNotes: 'Private parent review', householdId: 'forged', source: 'provider', coins: 999 };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(calls[0], { path: '/school/review', body: { id: deviceId, studentId: deviceId, subjectId: deviceId, date: input.date, revision: 0, rulesRevision: 1, completed: true, parentNotes: input.parentNotes } });
+  assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+  await route.POST(request({ ...input, action: 'list-school' }));
+  assert.deepEqual(calls[1], { path: '/school/list', body: { studentId: deviceId, date: input.date } });
+});
+
+test('School transfer proxy requires parent origin and forwards only the exact retained review', async () => {
+  const calls = [], route = load('legacy/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { saved: true }; } });
+  const input = { action: 'planSchoolTransfer', id: 'a'.repeat(64), requestId: deviceId, householdId: 'forged', rows: [], links: [], subjects: [], coins: 99 };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(calls[0], { path: '/legacy/planSchoolTransfer', body: { id: input.id, requestId: deviceId } });
+  assert.equal((await load('legacy/route.ts', { authenticated: false }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+  await route.POST(request({ ...input, action: 'applySchoolTransfer', planId: deviceId, digest: 'b'.repeat(64) }));
+  assert.deepEqual(calls[1], { path: '/legacy/applySchoolTransfer', body: { planId: deviceId, digest: 'b'.repeat(64) } });
+  await route.POST(request({ ...input, action: 'rollbackSchoolTransfer', planId: deviceId }));
+  assert.deepEqual(calls[2], { path: '/legacy/rollbackSchoolTransfer', body: { planId: deviceId } });
+});
+
 test('Worksheet transfer route forwards only the reviewed family snapshot and strips submitted rows or image authority',async()=>{
   const calls=[],route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}}),input={action:'planWorksheetTransfer',id:'a'.repeat(64),requestId:deviceId,studentId:deviceId,householdId:'forged',rows:[{}],audio:'forged',level:6};
   assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/legacy/planWorksheetTransfer',body:{id:input.id,requestId:deviceId}});assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);

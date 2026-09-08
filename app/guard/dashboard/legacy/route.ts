@@ -14,6 +14,7 @@ const fields: Record<string, string[]> = {
   inspectScienceTransfer: ["id"], planScienceTransfer: ["id", "requestId"], applyScienceTransfer: ["planId", "digest"], scienceTransferHistory: [], rollbackScienceTransfer: ["planId"],
   inspectVocabularyTransfer: ["id"], planVocabularyTransfer: ["id", "requestId"], applyVocabularyTransfer: ["planId", "digest"], vocabularyTransferHistory: [], rollbackVocabularyTransfer: ["planId"],
   inspectWorksheetTransfer: ["id"], planWorksheetTransfer: ["id", "requestId"], applyWorksheetTransfer: ["planId", "digest"], worksheetTransferHistory: [], rollbackWorksheetTransfer: ["planId"],
+  inspectSchoolTransfer: ["id"], planSchoolTransfer: ["id", "requestId"], applySchoolTransfer: ["planId", "digest"], schoolTransferHistory: [], rollbackSchoolTransfer: ["planId"],
   inspectPoemTransfer: ["id"], planPoemTransfer: ["id", "requestId"], applyPoemTransfer: ["planId", "digest"], poemTransferHistory: [], rollbackPoemTransfer: ["planId"],
   inspectGeographyTransfer: ["id"], planGeographyTransfer: ["id", "requestId", "sourceId"], applyGeographyTransfer: ["planId", "digest"], geographyTransferHistory: [], rollbackGeographyTransfer: ["planId"],
 };

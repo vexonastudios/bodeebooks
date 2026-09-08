@@ -1,5 +1,7 @@
+import { editCloudSubject } from './cloud-school-editor.js';
+import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSubjects, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
+import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
@@ -86,6 +88,7 @@ function showSnapshot() {
   renderStudents();
   renderSubjects();
   records.update();
+  schoolReview.update();
   reading.update(); dailyQuestions.update(); practice.update(); geography.update();
   economy.update(); typing.update(snapshot.students);
   files.update(snapshot.students);
@@ -235,16 +238,22 @@ function renderSubjects() {
     const card = button('', () => editSubject(subject), 'subject-card-admin');
     card.dataset.cloudMutation = 'true';
     const heading = node('div', 'subject-card-admin-header');
-    heading.append(node('span', 'subject-card-admin-icon', '📚'), node('span', 'subject-card-admin-name', subject.title));
-    const assignments = snapshot.students.filter(student => !student.archived_at).map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment);
+    const icon = node('span', 'subject-card-admin-icon');
+    const iconName = String(subject.icon || '').split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+    if (/^[a-z][a-z-]{0,79}$/.test(subject.icon || '') && window.lucide?.icons?.[iconName]) { const glyph = node('i'); glyph.setAttribute('data-lucide', subject.icon); icon.append(glyph); }
+    else icon.textContent = subject.icon || '📚';
+    heading.append(icon, node('span', 'subject-card-admin-name', subject.title));
+    const assignments = snapshot.students.filter(student => !student.archived_at).map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment && item.assignment.active !== false);
     const assignmentText = assignments.length
       ? assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
       : 'Not assigned to a child';
     const hours = subject.scheduleStart ? `Available ${subject.scheduleStart}–${subject.scheduleEnd} in the family time zone` : 'Available throughout the family school window';
-    card.append(heading, node('div', 'subject-card-admin-url', subject.url), node('div', 'cloud-note', hours), node('div', 'cloud-note', assignmentText));
+    card.append(heading, node('div', 'subject-card-admin-url', subject.kind === 'offline' ? 'Offline schoolwork' : subject.url), node('div', 'cloud-note', hours), node('div', 'cloud-note', assignmentText));
+    if (subject.kind) card.append(node('div', 'cloud-note', `${subject.active === false ? 'Hidden · ' : ''}${({ school: 'Required school', school_optional: 'Optional school', after_school: 'After school' })[subject.accessTier || 'school']}${subject.unlockAfterSubjectId ? ' · Has a prerequisite' : ''}`));
     grid.append(card);
   }
   if (!snapshot.rules.subjects.length) grid.append(node('p', 'cloud-panel', 'No school links added yet. Add the curriculum websites your children use.'));
+  window.lucide?.createIcons();
 }
 function renderSchedule() {
   const output = byId('cloud-school-schedule-summary');
@@ -358,48 +367,13 @@ function editor(title, fields, save) {
   byId('cloud-editor-error').textContent = '';
   editorSave = save;
   byId('cloud-editor').showModal();
+  byId('cloud-editor').scrollTop = 0;
 }
 function editSubject(subject = null) {
-  const captured = structuredClone(snapshot);
-  const subjectId = subject?.id || crypto.randomUUID();
-  const fields = [field('Name', 'title', subject?.title || ''), field('School website', 'url', subject?.url || '', { type: 'url', maxLength: 2048 }),
-    field('Available from (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }),
-    field('Available until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false }),
-    node('p', 'cloud-note', 'Leave both times empty to use the whole family school window. Subject hours use the family time zone and are cached for offline enforcement.')];
-  const domainsLabel = node('label', '', 'Additional allowed domains (optional)');
-  const domains = node('textarea', 'admin-input'); domains.name = 'allowedDomains'; domains.rows = 3; domains.maxLength = 5100;
-  domains.value = (subject?.allowedDomains || []).join('\n'); domains.placeholder = 'quizzes.example.com\nlogin.example.com';
-  domainsLabel.append(domains);
-  fields.push(domainsLabel, node('p', 'cloud-note', 'Approve only websites needed by this subject, separated by commas or new lines. Each domain includes its subdomains and uses HTTPS. The school website is already allowed; leave this empty if it needs no additional sites.'));
-  const assignmentFields = node('fieldset', 'cloud-assignment-fields');
-  assignmentFields.append(node('legend', '', 'Children and daily goals'));
-  for (const student of snapshot.students) {
-    const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 };
-    const row = node('label', 'cloud-assignment-row');
-    const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current);
-    const name = node('span', '', `${student.name}${student.archived_at ? ' (archived; settings retained)' : ''}`);
-    const goal = node('input', 'admin-input'); goal.type = 'number'; goal.name = `goal-${student.id}`; goal.min = '5'; goal.max = '480'; goal.required = enabled.checked; goal.disabled = !enabled.checked; goal.value = String(current?.dailyGoalMinutes || 30);
-    const minutes = node('span', '', 'minutes each school day');
-    enabled.addEventListener('change', () => { goal.disabled = !enabled.checked; goal.required = enabled.checked; });
-    row.append(enabled, name, goal, minutes); assignmentFields.append(row);
-  }
-  if (!snapshot.students.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
-  fields.push(assignmentFields);
-  if (subject) fields.push(button('Remove subject', async () => {
-    if (!confirm(`Remove ${subject.title} from cloud school links?`)) return;
-    try { await mutate('save-subjects', editSubjects(captured, subject.id, '', '', true)); byId('cloud-editor').close(); }
-    catch (error) { byId('cloud-editor-error').textContent = error.message; }
-  }, 'btn btn-danger'));
-  editor(subject ? 'Edit Subject' : 'Add Subject', fields, form => {
-    const assignments = captured.students.filter(student => form.get(`assigned-${student.id}`) === 'on').map(student => ({
-      studentId: student.id, dailyGoalMinutes: Number(form.get(`goal-${student.id}`))
-    }));
-    return mutate('save-subjects', editSubjects(captured, subjectId, form.get('title'), form.get('url'), false, assignments, {
-      scheduleStart: form.get('scheduleStart') || null, scheduleEnd: form.get('scheduleEnd') || null,
-      allowedDomains: String(form.get('allowedDomains') || '').split(/[,\n\r]+/).map(value => value.trim()).filter(Boolean)
-    }));
-  });
+  editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate,
+    close: () => byId('cloud-editor').close(), showError: message => { byId('cloud-editor-error').textContent = message; } }, subject);
 }
+
 function clearRecovery() {
   recoveryGeneration++;
   byId('cloud-recovery-content').replaceChildren();
@@ -431,6 +405,7 @@ function showRecovery(device) {
 setupSidebarGroups();
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
+const schoolReview = setupCloudSchoolReview({ before: byId('subjects-grid-admin'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });

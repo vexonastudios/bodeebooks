@@ -34,7 +34,7 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
   }
   function renderReport() {
     const total = report.rows.reduce((sum, row) => sum + row.seconds, 0);
-    status('reports', `${report.start} through ${report.end} · ${report.timeZone} · ${(total / 60).toFixed(1)} minutes received${report.truncated ? ' (partial result — over 1,000 rows; narrow the filters before exporting)' : ''}. Offline work appears after the child reconnects. This is measured school time, not verified lesson completion.`);
+    status('reports', `${report.start} through ${report.end} · ${report.timeZone} · ${(total / 60).toFixed(1)} minutes received${report.truncated ? ' (partial result — over 1,000 rows; narrow the filters before exporting)' : ''}. Offline work appears after the child reconnects. ${report.rows.some(row => row.includes_lan_history) ? 'Includes imported original time, counted once per subject and day. ' : ''}Lesson completion is reviewed separately.`);
     byId('cloud-report-export').disabled = report.truncated;
     byId('cloud-reports-results').replaceChildren(report.rows.length ? table(['Date', 'Student', 'Subject', 'Received time'], report.rows.map(row => [row.date, row.student_name, row.subject_name, `${Math.floor(row.seconds / 60)}m ${row.seconds % 60}s`])) : node('p', 'cloud-panel', 'No received school time matches these filters.'));
   }

@@ -63,11 +63,11 @@ export function assignmentFor(subject, studentId) {
 export function subjectProgress(snapshot, studentId, subjectId, date) {
   const subject = snapshot.rules.subjects.find(item => item.id === subjectId);
   const assignment = assignmentFor(subject, studentId);
-  if (!assignment) return null;
+  if (!assignment || assignment.active === false || subject.active === false) return null;
   const scope = activityScope(snapshot);
   if (!scope) return { seconds: null, goalMinutes: assignment.dailyGoalMinutes, percent: null };
   const seconds = scope.rows.filter(item => item.student_id === studentId && item.subject_id === subjectId && item[scope.dateField] === (date || scope.date))
     .reduce((total, item) => total + Math.max(0, Number(item.seconds) || 0), 0);
   const goalSeconds = assignment.dailyGoalMinutes * 60;
-  return { seconds, goalMinutes: assignment.dailyGoalMinutes, percent: Math.min(100, Math.floor(seconds * 100 / goalSeconds)) };
+  return { seconds, goalMinutes: assignment.dailyGoalMinutes, percent: goalSeconds > 0 ? Math.min(100, Math.floor(seconds * 100 / goalSeconds)) : null };
 }
