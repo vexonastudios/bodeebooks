@@ -9,6 +9,12 @@ class CloudApiError extends Error { constructor(message, status) { super(message
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
 
+test('Worksheet transfer route forwards only the reviewed family snapshot and strips submitted rows or image authority',async()=>{
+  const calls=[],route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}}),input={action:'planWorksheetTransfer',id:'a'.repeat(64),requestId:deviceId,studentId:deviceId,householdId:'forged',rows:[{}],audio:'forged',level:6};
+  assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/legacy/planWorksheetTransfer',body:{id:input.id,requestId:deviceId}});assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'applyWorksheetTransfer',planId:deviceId,digest:'b'.repeat(64),recordings:[],coins:999}));assert.deepEqual(calls[1],{path:'/legacy/applyWorksheetTransfer',body:{planId:deviceId,digest:'b'.repeat(64)}});await route.POST(request({action:'rollbackWorksheetTransfer',planId:deviceId,rows:[]}));assert.deepEqual(calls[2],{path:'/legacy/rollbackWorksheetTransfer',body:{planId:deviceId}});
+});
+
 test('Poem transfer route forwards only the reviewed family snapshot and strips uploaded records or audio authority',async()=>{
   const calls=[],route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}}),input={action:'planPoemTransfer',id:'a'.repeat(64),requestId:deviceId,studentId:deviceId,householdId:'forged',rows:[{}],audio:'forged',level:6};
   assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/legacy/planPoemTransfer',body:{id:input.id,requestId:deviceId}});assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
