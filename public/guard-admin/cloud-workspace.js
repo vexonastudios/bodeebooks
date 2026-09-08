@@ -13,6 +13,7 @@ import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
+import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudSpelling } from './cloud-spelling.js';
 import { setupCloudScienceSpelling } from './cloud-science-spelling.js';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
@@ -64,6 +65,7 @@ function selectTab(id) {
   messaging.setActive(id === 'messages');
   records.setActive(id);
   reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports'); geography.setActive(id === 'reports'); spanish.setActive(id === 'reports'); spelling.setActive(id === 'spelling');
+  coloringStudio.setActive(id === 'coloring-studio');
   scienceSpelling.setActive(id === 'science-spelling');
   vocabulary.setActive(id === 'vocabulary');
   poems.setActive(id === 'poems');
@@ -412,6 +414,7 @@ const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => s
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
 const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
 const spanish = setupCloudSpanish({ endpoint, getSnapshot: () => snapshot });
+const coloringStudio = setupCloudColoringStudio({ endpoint });
 const spelling = setupCloudSpelling({ endpoint });
 const scienceSpelling = setupCloudScienceSpelling();
 const vocabulary = setupCloudVocabulary();

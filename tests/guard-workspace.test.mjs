@@ -445,3 +445,16 @@ test('Spanish progress report bridge keeps parent authentication and strips subm
   assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });
+
+test('Coloring Studio bridge keeps page controls family-scoped and strips submitted image or household authority',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{};}});
+  const input={action:'coloring-request-action',requestId:deviceId,requestAction:'share',householdId:'forged',studentId:'forged',data:'forged-page',providerKey:'forged'};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls[0],{path:'/coloring-studio/action',body:{requestId:deviceId,action:'share'}});
+  await route.POST(request({action:'coloring-student-settings',studentId:deviceId,enabled:true,daily_limit:4,custom_prompts_enabled:true,allow_people:false,require_parent_approval:true,require_image_approval:false,householdId:'forged',image:'forged'}));
+  assert.deepEqual(calls[1],{path:'/coloring-studio/settings',body:{scope:'student',studentId:deviceId,enabled:true,daily_limit:4,custom_prompts_enabled:true,allow_people:false,require_parent_approval:true,require_image_approval:false}});
+  await route.POST(request({action:'coloring-image',requestId:deviceId,householdId:'forged',data:'forged'}));
+  assert.deepEqual(calls[2],{path:'/coloring-studio/image',body:{requestId:deviceId}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+});
