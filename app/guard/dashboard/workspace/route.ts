@@ -28,6 +28,7 @@ export async function GET(request: Request) {
     const user = await currentUser();
     const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
     const html = workspace.html
+      .replace('<h2>Computer setup &amp; offline recovery</h2><p>Assign students and save a recovery code for each cloud test computer from Overview. The code must be confirmed on that computer before school starts.</p>', '<h2>Computers &amp; Parent password</h2><p>Assign a child to each computer in Overview. Set one Parent password for your family; it also works offline.</p>')
       .replace(/<section class="tab-content" id="tab-music"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-music"><div class="tab-header"><h1>Music</h1></div><p class="cloud-note">Review the music your children can play. Hide any item to remove access.</p><div id="cloud-music-library"></div></section>')
       .replace(/<section class="tab-content" id="tab-videos"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-videos"><div class="tab-header"><h1>Videos</h1></div><p class="cloud-note">Review the videos your children can watch. Hide any item to remove access.</p><div id="cloud-video-library"></div></section>')
       .replace(/<section class="tab-content" id="tab-learning-videos"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-learning-videos"><div class="tab-header"><h1>Learning Videos</h1></div><p class="cloud-note">Your approved lessons, organized by folder.</p><div id="cloud-learning-videos"></div></section>')
