@@ -9,6 +9,15 @@ class CloudApiError extends Error { constructor(message, status) { super(message
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
 
+test('Science transfer route accepts only the family archive review and excludes submitted records and balances',async()=>{
+  const calls=[],route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+  const input={action:'planScienceTransfer',id:'a'.repeat(64),requestId:deviceId,sourceId:'forged',studentId:deviceId,coins:9999,householdId:'forged',rows:[{}]};
+  assert.equal((await route.POST(request(input))).status,200);assert.deepEqual(calls[0],{path:'/legacy/planScienceTransfer',body:{id:input.id,requestId:deviceId}});
+  assert.equal((await load('legacy/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'applyScienceTransfer',planId:deviceId,digest:'b'.repeat(64),researchEnergy:9999}));assert.deepEqual(calls[1],{path:'/legacy/applyScienceTransfer',body:{planId:deviceId,digest:'b'.repeat(64)}});
+  await route.POST(request({action:'rollbackScienceTransfer',planId:deviceId,rows:[]}));assert.deepEqual(calls[2],{path:'/legacy/rollbackScienceTransfer',body:{planId:deviceId}});
+});
 test('Science parent route bounds lists and excludes device, household, answer and provider authority',async()=>{
   const calls=[],route=load('science-spelling/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
   const input={action:'command',kind:'list',id:deviceId,listId:deviceId,revision:0,title:'Synthetic science',student_ids:[deviceId],words:[{word:'molecule',definition:'A group of atoms',correct:true,id:'forged',audio_url:'https://foreign.example'}],householdId:'forged',deviceCredential:'private',coins:999,model:'forged'};
