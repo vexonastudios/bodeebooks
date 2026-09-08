@@ -1,3 +1,4 @@
+import { setupChildGuide } from './cloud-child-setup.js';
 const learning = [
   ['music','Music','Listen to music you approve.','music'],['videos','Videos','Watch entertainment you approve.','videos'],
   ['typing','Typing School','Keyboard lessons and speed tests.'],['logic','Logic Lab','Reasoning puzzles.'],['words','Confused Words','Practice commonly mixed-up words.'],
@@ -25,9 +26,14 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
   const back = action('Back', () => move(-1)), later = action('Save and close', () => saveAndClose()), next = action('Next', () => move(1),'btn btn-primary');
   header.append(progress,heading); footer.append(later,back,next); form.append(header,body,error,footer); form.onsubmit = event => event.preventDefault(); dialog.append(form); document.body.append(dialog);
   let state = null, loading = false, loaded = false, busy = false, previousFocus;
+  const childGuide = setupChildGuide({ request, getSnapshot, learning, navigate, editSchool, onSaved: child => {
+    if (state) { state.children ||= []; const index=state.children.findIndex(row=>row.id===child.studentId); const row={id:child.studentId,completed:child.completed}; if(index<0)state.children.push(row);else state.children[index]=row; }
+    renderChildren();
+  }});
   const launch = action('Setup guide', () => open(), 'btn btn-secondary'); launch.id='parent-setup-guide'; document.getElementById('cloud-refresh')?.after(launch);
   const settings = document.getElementById('tab-settings'); const panel = node('section','','cloud-panel');
-  panel.append(node('h2','Family setup'),node('p','Choose activities, review starter content, or take the dashboard tour.'),action('Open setup guide',()=>open(0),'btn btn-primary'),action('Activity switches',()=>open(2)),action('Starter content',()=>open(4)));
+  panel.append(node('h2','Family defaults'),node('p','Choose the starting settings for all children. Each child can have different choices.'),action('Open setup guide',()=>open(0),'btn btn-primary'),action('Activity switches',()=>open(2)),action('Starter content',()=>open(4)));
+  const childPanel=node('div');panel.append(childPanel);
   settings?.querySelector('.tab-header')?.after(panel);
   dialog.addEventListener('cancel',event=>{event.preventDefault();void saveAndClose();});
   dialog.addEventListener('close',()=>{body.querySelectorAll('iframe').forEach(frame=>frame.remove());previousFocus?.focus();});
@@ -37,20 +43,20 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
     const value=await response.json();if(!response.ok)throw Error(value.error||'Setup could not be saved.');return value;
   }
   async function open(step) {
-    if(loading||busy)return; loading=true;launch.disabled=true;
+    if(loading||busy||childGuide.isOpen()||dialog.open)return; loading=true;launch.disabled=true;
     try { state=await request('get-setup');if(Number.isInteger(step))state.step=step;previousFocus=document.activeElement;render();dialog.showModal(); }
     catch(failure){launch.title=failure.message;launch.textContent='Retry setup guide';}
     finally{loading=false;launch.disabled=false;}
   }
   async function persist() {
     busy=true;error.textContent='';progress.textContent='Saving your choices…';form.querySelectorAll('button,input').forEach(control=>control.disabled=true);
-    try{state=await request('save-setup',state);launch.textContent=state.completed?'Setup guide':'Continue setup';return true;}
+    try{state=await request('save-setup',state);renderChildren();launch.textContent=state.completed?'Setup guide':'Continue setup';return true;}
     catch(failure){error.textContent=failure.message;return false;}
     finally{busy=false;progress.textContent=`Step ${state.step+1} of ${titles.length}`;form.querySelectorAll('button,input').forEach(control=>control.disabled=false);back.disabled=state.step===0;}
   }
   async function saveAndClose(){if(busy)return;if(await persist())dialog.close();}
   async function move(direction){if(busy)return;const before=state.step;
-    if(direction===1&&before===6){state.completed=true;if(await persist())dialog.close();return;}
+    if(direction===1&&before===6){const wasComplete=state.completed;state.completed=true;if(await persist()){dialog.close();void nextChild();}else state.completed=wasComplete;return;}
     state.step=Math.max(0,Math.min(6,state.step+direction));if(await persist())render();else state.step=before;
   }
   async function showSection(tab, callback){if(busy||!await persist())return;dialog.close();navigate(tab);callback?.();}
@@ -63,8 +69,8 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
     if(tab)body.append(link(`Set up ${title}`,tab));
   }
   function render(){body.replaceChildren();error.textContent='';heading.textContent=titles[state.step];progress.textContent=`Step ${state.step+1} of ${titles.length}`;back.disabled=state.step===0;next.textContent=state.step===6?'Finish setup':'Save and next';
-    const snapshot=getSnapshot(),children=snapshot?.students||[];
-    if(state.step===0){text('Add your children, then connect their computers. You can do one now and the others later.');
+    const snapshot=getSnapshot(),children=(snapshot?.students||[]).filter(child=>!child.archived_at);
+    if(state.step===0){text('Set your family defaults first. Then choose each child’s school, activities and content. You can add more children later.');
       children.forEach(child=>body.append(node('p',`${child.name}${child.grade?` · Grade ${child.grade}`:''}`,'setup-child')));
       body.append(link(children.length?'Manage children':'Add your first child','students',()=>document.getElementById('add-student-btn')?.click()));
       const account=node('a','Download the child app','btn btn-primary');account.href='/guard/account/';account.target='_top';body.append(account);
@@ -72,10 +78,10 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
       children.forEach(child=>{const row=node('div','','setup-child');row.append(node('strong',child.name),node('span',child.main_school?.provider?`School: ${child.main_school.provider}`:'No choice saved yet'),link('Choose school','overview',()=>editSchool(child)));body.append(row);});
       if(!children.length)body.append(link('Add a child first','students'));
       body.append(link('Set school hours and days off','calendar'),link('Assign subjects and time goals','subjects'));
-    }else if(state.step===2){text('Built-in questions are ready to use. Choose whether your family sees each activity. You do not need to approve individual questions.');
+    }else if(state.step===2){text('Choose the default for all children. You can change it for each child later. The questions are built in.');
       toggle('verse','Daily Verse','A Bible verse and question each day.');toggle('riddle','Brain Teaser','A daily thinking challenge.');
-    }else if(state.step===3){text('Choose which tools are available to your family. Individual assignments and limits still apply.');learning.forEach(([id,title,copy,tab])=>toggle(id,title,copy,tab));
-    }else if(state.step===4){text('Preview the BodeeGuard collections, then approve the ones you want. Skipped collections are not added.');
+    }else if(state.step===3){text('Choose family defaults. A child’s personal choices take priority. Assignments and limits still apply.');learning.forEach(([id,title,copy,tab])=>toggle(id,title,copy,tab));
+    }else if(state.step===4){text('Approve items for your family library. In child setup, choose which ones each child can use.');
       for(const collection of state.catalog.collections){const section=node('section','','setup-collection');section.append(node('h3',collection.title));
         if(!collection.items.length){section.append(node('p','No starter collection published yet.','setup-copy'));body.append(section);continue;}
         const details=node('details'),summary=node('summary',`Preview ${collection.items.length} items`);details.append(summary);
@@ -98,7 +104,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
     }else if(state.step===5){text('Use one Parent password for every child. It also works offline.');
       body.append(link(snapshot?.parentPassword?.configured?'Change Parent password':'Set Parent password','overview',()=>document.querySelector('#family-parent-password button')?.click()));
       for(const [tab,title,copy]of [['messages','Messages','Your notes pop up while children work.'],['screenshots','Screenshots','Take one on demand. Unkept screenshots expire after three days.'],['economy','Rewards','Choose coin rewards and spending options.'],['math-coach','AI limits','Decide whether Math Coach is available and set its daily limit.'],['coloring-studio','Image generation','Set render limits and sharing approval.']]){const row=node('div','','setup-child');row.append(node('strong',title),node('p',copy),link('Show me',tab));body.append(row);}
-    }else{text('Your choices are saved. You can reopen this guide from Settings whenever you like.');
+    }else{text('Your family defaults are saved. Next, personalize each child’s setup. You can change these defaults anytime in Settings.');
       body.append(node('h3','Your choices'));
       body.append(node('p',`${Object.values(state.features).filter(Boolean).length} activities on · ${Object.values(state.contentChoices).filter(choice=>choice.decision==='approved').length} starter collections approved`));
       const details=node('details'),summary=node('summary','Tour every dashboard section');details.append(summary);
@@ -106,8 +112,24 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
     }
     body.scrollTop=0;
   }
-  return { async startOnce(){if(loaded||loading||!getSnapshot())return;loaded=true;loading=true;
-    try{state=await request('get-setup');if(!state.completed){previousFocus=document.activeElement;render();dialog.showModal();launch.textContent='Continue setup';}}
+  function renderChildren(){
+    childPanel.replaceChildren(node('h3','Child setup'));
+    for(const child of (getSnapshot()?.students||[]).filter(row=>!row.archived_at)){
+      const completed=state?.children?.some(row=>row.id===child.id&&row.completed),row=node('div','','setup-child');
+      row.append(node('strong',child.name),node('span',completed?'Setup complete':'Uses family defaults until you personalize them'),action(completed?'Edit child choices':'Set up child',()=>openChild(child.id)));
+      childPanel.append(row);
+    }
+  }
+  async function openChild(studentId){if(loading||busy||dialog.open||childGuide.isOpen())return;await childGuide.open(studentId);}
+  async function nextChild(studentId){
+    if(!state?.completed||dialog.open||childGuide.isOpen()||document.querySelector('dialog[open]'))return;
+    const children=(getSnapshot()?.students||[]).filter(row=>!row.archived_at&&!state.children?.some(saved=>saved.id===row.id&&saved.completed));
+    const child=studentId?children.find(row=>row.id===studentId):children.find(row=>getSnapshot()?.devices?.some(device=>device.student_id===row.id))||children[0];
+    if(child)await openChild(child.id);
+  }
+  return { openChild, afterAssignment: nextChild, async startOnce(){renderChildren();if(loaded||loading||!getSnapshot())return;loaded=true;loading=true;
+    try{state=await request('get-setup');renderChildren();if(!state.completed){previousFocus=document.activeElement;render();dialog.showModal();launch.textContent='Continue setup';}}
     catch{launch.textContent='Open setup guide';}finally{loading=false;}
+    if(state?.completed)await nextChild();
   } };
 }

@@ -59,6 +59,8 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "review-school": path = "/school/review"; method = "POST"; body = { id: input.id, studentId: input.studentId, subjectId: input.subjectId, date: input.date,
       revision: input.revision, rulesRevision: input.rulesRevision, completed: input.completed, parentNotes: input.parentNotes }; break;
     case "get-setup": path = "/setup/get"; method = "POST"; body = {}; break;
+    case "get-child-setup": path = "/setup/child-get"; method = "POST"; body = { studentId: input.studentId }; break;
+    case "save-child-setup": path = "/setup/child-save"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, familyRevision: input.familyRevision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
     case "preview-starter": path = "/setup/preview"; method = "POST"; body = { itemId: input.itemId }; break;
     case "save-setup": path = "/setup/save"; method = "POST"; body = { revision: input.revision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
     case "list-daily-questions": path = "/daily-questions/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;

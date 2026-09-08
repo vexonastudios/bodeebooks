@@ -219,10 +219,11 @@ function renderComputers() {
     for (const item of options) { const option = node('option', '', item.name); option.value = item.id; assignment.append(option); }
     assignment.value = device.student_id || '';
     assignment.addEventListener('change', async () => {
-      try { await mutate('assign-student', { deviceId: device.id, studentId: assignment.value || null }); }
+      try { const studentId=assignment.value || null; await mutate('assign-student', { deviceId: device.id, studentId }); if(studentId)void parentGuide?.afterAssignment(studentId); }
       catch { assignment.value = device.student_id || ''; }
     });
     const actions = node('div', 'cloud-actions');
+    if(student)actions.append(button('Child setup',()=>parentGuide?.openChild(student.id)));
     actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'));
     card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
       node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow,
@@ -250,7 +251,8 @@ function renderStudents() {
       try { await mutate('archive-student', { studentId: student.id, archived }); } catch (_) { /* Existing feedback retains the error. */ }
     }); archive.dataset.cloudMutation = 'true';
     const school = button('Main school', () => mainSchool.edit(student)); school.dataset.cloudMutation = 'true';
-    wrapper.append(row, school, archive); list.append(wrapper);
+    const setup = button('Child setup', () => parentGuide?.openChild(student.id)); setup.disabled=!!student.archived_at;
+    wrapper.append(row, school, setup, archive); list.append(wrapper);
   }
   if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'No cloud students added yet. Existing student records remain in your current Admin app.'));
 }
@@ -485,7 +487,7 @@ document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListen
 byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], async form => {
   const student = await mutate('add-student', { name: form.get('name'), grade: form.get('grade') });
-  byId('cloud-editor').addEventListener('close', () => mainSchool.edit(student), { once: true });
+  byId('cloud-editor').addEventListener('close', () => parentGuide?.openChild(student.id), { once: true });
 }));
 byId('add-subject-btn').addEventListener('click', () => editSubject());
 byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
