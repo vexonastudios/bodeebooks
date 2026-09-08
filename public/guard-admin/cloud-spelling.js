@@ -112,7 +112,7 @@ function render() {
   byId('spelling-admin-status').textContent = `${viewCopy} on this page · ${data.students.length} children · Original history awaits transfer`;
   if (!lists.length) {
     const emptyCopy = currentView === 'active'
-      ? '<strong>No active spelling lists.</strong><br>Create this week’s list or scan the printed page from your phone.'
+      ? '<strong>No active spelling lists.</strong><br>Create this week’s list in the editor.'
       : currentView === 'archive'
         ? '<strong>The spelling archive is empty.</strong><br>Completed and archived weekly lists will remain available here.'
         : '<strong>No draft spelling lists.</strong><br>Save an unfinished list as a draft when you want to finish it later.';
@@ -227,7 +227,7 @@ function openModal(list = null, studentId = '') {
   byId('spelling-list-status').value = listStatus;
   byId('spelling-list-words').value = list?.words?.map(item => item.word).join('\n') || '';
   byId('spelling-list-archive').hidden = !list || list.status === 'archived';
-  byId('spelling-scan-status').textContent = '';
+  byId('spelling-scan-status').textContent = data.photoScanningAvailable===true?'':'Photo scanning is currently unavailable. Enter or paste the words below. The built-in spelling coach remains available.';
   byId('spelling-scan-status').className = 'spelling-scan-status';
   byId('spelling-list-photo').value = '';
   countWords();
@@ -306,6 +306,7 @@ async function preparePhoto(file) {
 function scanControls(busy){
   scanBusy=busy;
   for(const id of ['spelling-list-photo','spelling-list-save','spelling-list-archive','spelling-list-title','spelling-list-words','spelling-list-week','spelling-list-test','spelling-list-status'])byId(id).disabled=busy;
+  byId('spelling-list-photo').disabled=busy||data.photoScanningAvailable!==true;
   byId('spelling-list-student').disabled=busy||!!editingId;scanRetry.disabled=busy;
 }
 function resetScan(){scanGeneration++;pendingScan=null;scanRetry.hidden=true;scanControls(false);}
@@ -326,7 +327,7 @@ async function runScan(epoch){
   finally{if(epoch===scanGeneration){scanControls(false);byId('spelling-list-photo').value='';}}
 }
 async function scanPhoto(file) {
-  if (!file||scanBusy) return;
+  if (!file||scanBusy||data.photoScanningAvailable!==true) return;
   const epoch=++scanGeneration;pendingScan=null;scanRetry.hidden=true;scanControls(true);
   const status = byId('spelling-scan-status');
   status.className = 'spelling-scan-status';
