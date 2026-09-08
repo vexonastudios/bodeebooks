@@ -1,0 +1,341 @@
+// Adapted from the original weekly-list editor and progress cards.
+export function setupCloudSpelling({endpoint}){
+const API = '/spelling-adapter';
+
+let data = { students: [], lists: [], defaults: {} };
+let editingId = null;
+let currentView = 'active';
+
+const byId = id => document.getElementById(id);
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+})[character]);
+
+let active=false,loading=false,offset=0,pending=null;
+function notice(message){byId('spelling-admin-status').textContent=message;byId('spelling-scan-status').textContent=message;}
+async function send(action,input={}){const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...input})});const value=await response.json();if(!response.ok){const error=new Error(value.error||'Spelling could not connect.');error.status=response.status;throw error;}return value;}
+async function request(route,options={}){
+  if(!options.method)return send('list-spelling',{offset});
+  if(route.endsWith('/scan-list'))throw new Error('Photo extraction has not transferred yet. Enter and review the words below.');
+  const fingerprint=JSON.stringify([route,options.method,options.body||'']);
+  if(pending&&pending.fingerprint!==fingerprint)throw new Error('A previous Spelling change is awaiting confirmation. Use Retry saved change.');
+  if(!pending){const value=options.body?JSON.parse(options.body):{},coach=route.includes('/admin/coach/');let command;
+    if(coach){const student=data.students.find(child=>child.id===decodeURIComponent(route.split('/').at(-1)));if(!student)throw new Error('Refresh the selected child.');command={kind:'settings',studentId:student.id,revision:student.coach_revision,enabled:value.enabled};}
+    else {const listId=options.method==='POST'?crypto.randomUUID():decodeURIComponent(route.split('/').at(-1)),old=data.lists.find(list=>list.id===listId),archive=options.method==='DELETE';if(!old&&options.method!=='POST')throw new Error('Refresh the selected list.');const words=archive?old.words:value.words.map(word=>old?.words.find(item=>item.word.toLocaleLowerCase()===word.toLocaleLowerCase())||{word});command={kind:'list',studentId:archive?old.student_id:value.student_id,listId,revision:old?.revision||0,title:archive?old.title:value.title,weekStart:archive?old.week_start:value.week_start,testDate:archive?old.test_date:value.test_date,status:archive?'archived':value.status,words};}
+    pending={fingerprint,command:{...command,id:crypto.randomUUID()}};
+  }
+  try{const result=await send('spelling-command',pending.command);pending=null;retry.hidden=true;return result;}catch(error){if(error.status>=400&&error.status<500)pending=null;retry.hidden=!pending;throw error;}
+}
+
+function dateLabel(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return 'Not set';
+  const [year, month, day] = value.split('-').map(Number);
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    .format(new Date(year, month - 1, day, 12));
+}
+
+function modeLabel(mode) {
+  if (mode === 'learn') return 'Learn';
+  if (mode === 'test') return 'Practice pre-test';
+  return 'Practice';
+}
+
+function sessionDateLabel(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return '';
+  const today=data.date;
+  return value === today ? 'today' : `on ${dateLabel(value)}`;
+}
+
+function renderCompletedSession(session) {
+  if (!session) return '';
+  const total = Number(session.total_words) || 0;
+  const firstTry = Number(session.first_try_correct) || 0;
+  const missedFirstTry = Math.max(0, total - firstTry);
+  const eventual = Number(session.eventual_correct) || 0;
+  return `<div class="spelling-session-status is-complete">
+    <strong>✓ ${escapeHtml(modeLabel(session.mode))} completed ${escapeHtml(sessionDateLabel(session.session_date))}</strong>
+    <span>${firstTry}/${total} right first try · ${missedFirstTry} missed first try · ${eventual}/${total} eventually correct</span>
+  </div>`;
+}
+
+function renderActiveSession(session) {
+  const total = Number(session.total_words) || 0;
+  const attempted = Number(session.words_attempted) || 0;
+  const corrected = Number(session.eventual_correct_so_far) || 0;
+  const firstTry = Number(session.first_try_correct_so_far) || 0;
+  const missedFirstTry = Number(session.missed_first_try_so_far) || 0;
+  return `<div class="spelling-session-status is-progress">
+    <strong>⏳ ${escapeHtml(modeLabel(session.mode))} not finished</strong>
+    <span>${corrected}/${total} words completed · ${attempted}/${total} attempted · ${firstTry} right first try · ${missedFirstTry} missed first try</span>
+  </div>`;
+}
+
+function countWords() {
+  const count = byId('spelling-list-words').value.split(/[\r\n,;]+/).map(word => word.trim()).filter(Boolean).length;
+  byId('spelling-word-count').textContent = `${count} word${count === 1 ? '' : 's'}`;
+}
+
+function listBelongsToView(list, view) {
+  const status = String(list?.status || 'draft');
+  if (view === 'active') return status === 'active';
+  if (view === 'archive') return status === 'completed' || status === 'archived';
+  return status === 'draft';
+}
+
+function updateViewTabs(studentLists) {
+  const counts = {
+    active: studentLists.filter(list => listBelongsToView(list, 'active')).length,
+    archive: studentLists.filter(list => listBelongsToView(list, 'archive')).length,
+    draft: studentLists.filter(list => listBelongsToView(list, 'draft')).length
+  };
+  byId('spelling-active-count').textContent = counts.active;
+  byId('spelling-archive-count').textContent = counts.archive;
+  byId('spelling-draft-count').textContent = counts.draft;
+  document.querySelectorAll('[data-spelling-view]').forEach(button => {
+    const selected = button.dataset.spellingView === currentView;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-selected', String(selected));
+  });
+  return counts;
+}
+
+function render() {
+  const filter = byId('spelling-student-filter').value;
+  const studentLists = data.lists.filter(list => !filter || String(list.student_id) === filter);
+  const counts = updateViewTabs(studentLists);
+  const lists = studentLists.filter(list => listBelongsToView(list, currentView));
+  const root = byId('spelling-list-grid');
+  const viewCopy = currentView === 'active'
+    ? `${counts.active} active list${counts.active === 1 ? '' : 's'}`
+    : currentView === 'archive'
+      ? `${counts.archive} completed or archived list${counts.archive === 1 ? '' : 's'}`
+      : `${counts.draft} draft list${counts.draft === 1 ? '' : 's'}`;
+  byId('spelling-admin-status').textContent = `${viewCopy} on this page · ${data.students.length} children · Original history awaits transfer`;
+  if (!lists.length) {
+    const emptyCopy = currentView === 'active'
+      ? '<strong>No active spelling lists.</strong><br>Create this week’s list or scan the printed page from your phone.'
+      : currentView === 'archive'
+        ? '<strong>The spelling archive is empty.</strong><br>Completed and archived weekly lists will remain available here.'
+        : '<strong>No draft spelling lists.</strong><br>Save an unfinished list as a draft when you want to finish it later.';
+    root.innerHTML = `<div class="spelling-empty">${emptyCopy}</div>`;
+    return;
+  }
+  root.innerHTML = lists.map(list => {
+    const latestTest = list.latest_test;
+    const latestStudy = list.latest_study;
+    const studyTotal = Number(latestStudy?.total_words) || 0;
+    const studyFirstTry = Number(latestStudy?.first_try_correct) || 0;
+    const studyMissed = latestStudy ? Math.max(0, studyTotal - studyFirstTry) : null;
+    const activeSessions = Array.isArray(list.active_sessions) ? list.active_sessions : [];
+    const completedCount = list.completed_count ?? (Array.isArray(list.sessions) ? list.sessions.length : 0);
+    const status = String(list.status || 'draft');
+    return `<article class="spelling-list-card ${status === 'active' ? 'is-active' : ''}" data-spelling-list="${escapeHtml(list.id)}">
+      <div class="spelling-list-top"><div><div class="spelling-list-student">${escapeHtml(list.student_name)}</div><div class="spelling-list-title">${escapeHtml(list.title)}</div></div><span class="spelling-list-badge ${status}">${escapeHtml(status === 'active' ? 'Active list' : status)}</span></div>
+      <div class="spelling-list-meta"><span>${list.word_count} words</span><span>Week ${dateLabel(list.week_start)}</span><span>Pre-test ${dateLabel(list.test_date)}</span></div>
+      <div class="spelling-list-progress"><div><strong>${list.study_days ?? list.days_practiced ?? 0}</strong><span>Study days</span></div><div><strong>${latestStudy ? `${studyFirstTry}/${studyTotal}` : '—'}</strong><span>Right first try</span></div><div><strong>${latestStudy ? studyMissed : '—'}</strong><span>Missed first try</span></div></div>
+      <div class="spelling-pretest-row"><strong>Practice pre-test:</strong> ${latestTest ? `${Math.round(Number(latestTest.score_percent))}% · ${latestTest.first_try_correct}/${latestTest.total_words} right` : `Not taken yet · opens ${dateLabel(list.test_date)}`}</div>
+      ${renderCompletedSession(latestStudy)}
+      ${activeSessions.map(renderActiveSession).join('')}
+      ${list.trouble_words?.length ? `<div class="spelling-trouble-row"><strong>Needs work:</strong> ${list.trouble_words.map(item => `${escapeHtml(item.word)} (${item.misses})`).join(' · ')}</div>` : ''}
+      <div class="spelling-history-row">${completedCount} completed · ${activeSessions.length} unfinished</div>
+    </article>`;
+  }).join('');
+  root.querySelectorAll('[data-spelling-list]').forEach(card => card.addEventListener('click', () => openModal(data.lists.find(list => list.id === card.dataset.spellingList))));
+}
+
+function avatarMarkup(student) { return `<span class="spelling-coach-avatar">${escapeHtml(student.name.slice(0,1))}</span>`; }
+
+function renderCoachSettings() {
+  const root = byId('spelling-coach-grid');
+  if (!root) return;
+  root.innerHTML = data.students.map(student => {
+    const enabled = Number(student.spelling_coach_enabled) === 1;
+    const activeWords = Number(student.coach_active_words || 0);
+    const seenWords = Number(student.coach_words_seen || 0);
+    const detail = enabled
+      ? (activeWords ? `Helping with ${activeWords} current word${activeWords === 1 ? '' : 's'}` : seenWords ? 'No current hints needed' : 'Ready to learn from practice')
+      : 'Off — ordinary practice only';
+    return `<div class="spelling-coach-child">
+      ${avatarMarkup(student)}
+      <div class="spelling-coach-copy"><strong>${escapeHtml(student.name)}</strong><span>${escapeHtml(detail)}</span></div>
+      <label class="spelling-coach-toggle" title="Turn Personal Spelling Coach ${enabled ? 'off' : 'on'} for ${escapeHtml(student.name)}">
+        <input type="checkbox" data-spelling-coach-student="${escapeHtml(student.id)}" ${enabled ? 'checked' : ''} aria-label="Personal Spelling Coach for ${escapeHtml(student.name)}">
+        <span aria-hidden="true"></span>
+      </label>
+    </div>`;
+  }).join('');
+  root.querySelectorAll('[data-spelling-coach-student]').forEach(input => input.addEventListener('change', () => saveCoachSetting(input)));
+}
+
+async function saveCoachSetting(input) {
+  const student = data.students.find(item => String(item.id) === String(input.dataset.spellingCoachStudent));
+  if (!student) return;
+  const enabled = input.checked;
+  input.disabled = true;
+  try {
+    const saved = await request(`${API}/spelling/admin/coach/${encodeURIComponent(student.id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ enabled })
+    });
+    student.spelling_coach_enabled = enabled ? 1 : 0;
+    student.coach_revision = saved.revision;
+    notice(`Personal Spelling Coach ${enabled ? 'enabled' : 'disabled'} for ${student.name}.`);
+    renderCoachSettings();
+  } catch (error) {
+    input.checked = !enabled;
+    input.disabled = false;
+    notice(error.message, true);
+  }
+}
+
+function populateSelectors() {
+  const options = data.students.map(student => `<option value="${escapeHtml(student.id)}">${escapeHtml(student.name)} · Grade ${escapeHtml(student.grade || '')}</option>`).join('');
+  byId('spelling-list-student').innerHTML = options;
+  const filter = byId('spelling-student-filter');
+  const selected = filter.value;
+  filter.innerHTML = `<option value="">All students</option>${options}`;
+  if ([...filter.options].some(option => option.value === selected)) filter.value = selected;
+}
+
+async function loadSpellingTab() {
+  const status = byId('spelling-admin-status');
+  if (!status) return;
+  status.textContent = 'Loading weekly lists…';
+  try {
+    data = await request(`${API}/spelling/admin/lists`);
+    previous.disabled=offset===0;next.disabled=!data.hasMoreLists;
+    populateSelectors();
+    renderCoachSettings();
+    render();
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+function openModal(list = null, studentId = '') {
+  editingId = list?.id || null;
+  byId('spelling-list-modal-title').textContent = list ? 'Edit Weekly Spelling List' : 'New Weekly Spelling List';
+  byId('spelling-list-student').disabled = !!list;
+  byId('spelling-list-student').value = list?.student_id || studentId || data.students[0]?.id || '';
+  byId('spelling-list-title').value = list?.title || 'Weekly Spelling';
+  byId('spelling-list-week').value = list?.week_start || data.defaults.weekStart || '';
+  byId('spelling-list-test').value = list?.test_date || data.defaults.testDate || '';
+  const listStatus = ['active', 'draft', 'completed', 'archived'].includes(list?.status) ? list.status : 'active';
+  const historical = listStatus === 'completed' || listStatus === 'archived';
+  byId('spelling-status-completed').hidden = !historical;
+  byId('spelling-status-archived').hidden = !historical;
+  byId('spelling-list-status').value = listStatus;
+  byId('spelling-list-words').value = list?.words?.map(item => item.word).join('\n') || '';
+  byId('spelling-list-archive').hidden = !list || list.status === 'archived';
+  byId('spelling-scan-status').textContent = '';
+  byId('spelling-scan-status').className = 'spelling-scan-status';
+  byId('spelling-list-photo').value = '';
+  countWords();
+  byId('spelling-list-modal').classList.add('active');
+}
+
+function closeModal() {
+  byId('spelling-list-modal').classList.remove('active');
+  editingId = null;
+}
+
+async function saveList() {
+  const button = byId('spelling-list-save');
+  button.disabled = true;
+  button.textContent = 'Saving…';
+  try {
+    const payload = {
+      student_id: byId('spelling-list-student').value,
+      title: byId('spelling-list-title').value.trim(),
+      week_start: byId('spelling-list-week').value,
+      test_date: byId('spelling-list-test').value,
+      status: byId('spelling-list-status').value,
+      words: byId('spelling-list-words').value.split(/[\r\n,;]+/).map(word => word.trim()).filter(Boolean)
+    };
+    await request(editingId ? `${API}/spelling/admin/lists/${encodeURIComponent(editingId)}` : `${API}/spelling/admin/lists`, {
+      method: editingId ? 'PATCH' : 'POST',
+      body: JSON.stringify(payload)
+    });
+    closeModal();
+    notice('Weekly spelling list saved.');
+    await loadSpellingTab();
+  } catch (error) {
+    notice(error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Save List';
+  }
+}
+
+async function archiveList() {
+  if (!editingId || !window.confirm('Archive this spelling list? Its practice and pre-test history will be preserved.')) return;
+  try {
+    await request(`${API}/spelling/admin/lists/${encodeURIComponent(editingId)}`, { method: 'DELETE' });
+    closeModal();
+    notice('Spelling list archived.');
+    await loadSpellingTab();
+  } catch (error) { notice(error.message, true); }
+}
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('That photo could not be read'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function preparePhoto(file) {
+  if (!String(file.type || '').startsWith('image/')) throw new Error('Choose an image file');
+  const source = await readFile(file);
+  const image = await new Promise((resolve, reject) => {
+    const element = new Image(); element.onload = () => resolve(element); element.onerror = () => reject(new Error('That image could not be opened')); element.src = source;
+  });
+  const scale = Math.min(1, 2200 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement('canvas'); canvas.width = Math.round(image.naturalWidth * scale); canvas.height = Math.round(image.naturalHeight * scale);
+  const context = canvas.getContext('2d'); context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', .86);
+  return { data: dataUrl.split(',')[1], mime_type: 'image/jpeg' };
+}
+
+async function scanPhoto(file) {
+  if (!file) return;
+  const status = byId('spelling-scan-status');
+  status.className = 'spelling-scan-status';
+  status.textContent = 'Preparing and scanning the page…';
+  try {
+    const payload = await preparePhoto(file);
+    const result = await request(`${API}/spelling/scan-list`, { method: 'POST', body: JSON.stringify(payload) });
+    if (!result.words?.length) throw new Error(result.notes || 'No spelling words were found. Try a clearer, straighter photo.');
+    byId('spelling-list-words').value = result.words.map(item => item.word).join('\n');
+    if (result.title && (!byId('spelling-list-title').value || byId('spelling-list-title').value === 'Weekly Spelling')) byId('spelling-list-title').value = result.title;
+    const uncertain = result.words.filter(item => Number(item.confidence) < .8).length;
+    status.innerHTML = `Found <strong>${result.words.length}</strong> words.${uncertain ? ` <span class="spelling-low-confidence">Please carefully check ${uncertain} uncertain word${uncertain === 1 ? '' : 's'}.</span>` : ' Please review them before saving.'}`;
+    countWords();
+  } catch (error) {
+    status.className = 'spelling-scan-status error';
+    status.textContent = error.message;
+  } finally { byId('spelling-list-photo').value = ''; }
+}
+
+function setupSpelling() {
+  byId('spelling-add-list')?.addEventListener('click', () => openModal());
+  byId('spelling-list-cancel')?.addEventListener('click', closeModal);
+  byId('spelling-list-save')?.addEventListener('click', saveList);
+  byId('spelling-list-archive')?.addEventListener('click', archiveList);
+  byId('spelling-list-words')?.addEventListener('input', countWords);
+  byId('spelling-student-filter')?.addEventListener('change', render);
+  document.querySelectorAll('[data-spelling-view]').forEach(button => button.addEventListener('click', () => {
+    currentView = button.dataset.spellingView;
+    render();
+  }));
+  byId('spelling-list-photo')?.addEventListener('change', event => scanPhoto(event.target.files?.[0]));
+}
+
+const button=(label,fn)=>{const value=document.createElement('button');value.className='btn btn-secondary';value.textContent=label;value.onclick=()=>void Promise.resolve().then(fn).catch(error=>notice(error.message));return value;};
+const retry=button('Retry saved change',async()=>{if(!pending)return;retry.disabled=true;try{await send('spelling-command',pending.command);pending=null;retry.hidden=true;closeModal();await loadSpellingTab();}finally{retry.disabled=false;}});retry.hidden=true;
+const previous=button('Newer weekly lists',async()=>{offset=Math.max(0,offset-100);await loadSpellingTab();}),next=button('Older weekly lists',async()=>{offset+=100;await loadSpellingTab();});previous.disabled=next.disabled=true;
+byId('spelling-admin-status').after(retry);byId('spelling-list-grid').after(previous,next);setupSpelling();
+return{update(){},setActive(value){active=value;if(active&&!loading){loading=true;void loadSpellingTab().finally(()=>{loading=false;});}if(!active)closeModal();}};
+}

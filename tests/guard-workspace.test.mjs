@@ -86,6 +86,14 @@ function request(input, { requestOrigin = origin, contentType = 'application/jso
     headers: { ...(requestOrigin ? { origin: requestOrigin } : {}), 'content-type': contentType }, body: typeof input === 'string' ? input : JSON.stringify(input) });
 }
 
+test('Spelling bridge restricts parent list/settings commands and strips child attempts and household authority',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+  const input={action:'spelling-command',studentId:deviceId,id:deviceId,kind:'list',listId:deviceId,revision:0,title:'Synthetic weekly list',weekStart:'2026-09-07',testDate:'2026-09-11',status:'active',words:[{word:'letter'}],householdId:'forged',coins:999,correct:true};
+  assert.equal((await route.POST(request(input))).status,200);assert.equal(calls[0].path,'/spelling/command');assert.equal(calls[0].body.householdId,undefined);assert.equal(calls[0].body.coins,undefined);assert.equal(calls[0].body.correct,undefined);assert.deepEqual(calls[0].body.words,[{word:'letter'}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  await route.POST(request({action:'list-spelling',studentId:deviceId,offset:100,credential:'secret',coins:99}));assert.deepEqual(calls[1],{path:'/spelling/list',body:{studentId:deviceId,offset:100}});
+});
+
 test('assistant bridge requires parent sign-in and same-origin JSON, strips identity and arbitrary model/tools', async () => {
   const calls=[];
   const route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {message:'Product help'};}});
