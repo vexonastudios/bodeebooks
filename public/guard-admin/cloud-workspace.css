@@ -93,3 +93,6 @@
 #cloud-legacy-import dt { font-weight: 600; margin-top: 12px; }
 #cloud-legacy-import dd { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 12px; }
 @media (max-width: 600px) { .cloud-student-management { align-items: stretch; flex-direction: column; gap: 6px; padding-bottom: 18px; } }
+
+/* Keep the original Science editor controls above the floating help launcher. */
+.cloud-workspace #science-spelling-list-modal{z-index:2300}

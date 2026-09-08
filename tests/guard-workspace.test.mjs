@@ -8,6 +8,15 @@ import ts from 'typescript';
 class CloudApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
+
+test('Science parent route bounds lists and excludes device, household, answer and provider authority',async()=>{
+  const calls=[],route=load('science-spelling/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+  const input={action:'command',kind:'list',id:deviceId,listId:deviceId,revision:0,title:'Synthetic science',student_ids:[deviceId],words:[{word:'molecule',definition:'A group of atoms',correct:true,id:'forged',audio_url:'https://foreign.example'}],householdId:'forged',deviceCredential:'private',coins:999,model:'forged'};
+  assert.equal((await load('science-spelling/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);assert.equal((await route.POST(request(input,{contentType:'text/plain'}))).status,415);
+  assert.equal((await route.POST(request({...input,title:'a'.repeat(1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,kind:'attempt'}))).status,400);assert.equal((await route.POST(request({...input,words:Array(151).fill({word:'molecule'})}))).status,400);
+  const result=await route.POST(request(input));assert.equal(result.status,200);assert.match(result.headers.get('cache-control'),/no-store/);assert.deepEqual(calls[0],{path:'/science-spelling/command',body:{id:deviceId,kind:'list',listId:deviceId,revision:0,title:input.title,student_ids:[deviceId],words:[{word:'molecule',definition:'A group of atoms'}]}});
+  await route.POST(request({action:'list',view:'history',studentId:deviceId,offset:200,householdId:'forged'}));assert.deepEqual(calls[1],{path:'/science-spelling/list',body:{studentId:deviceId,view:'history',offset:200}});
+});
 test('Spelling photo bridge restricts parent origin and body size and forwards only the exact scan',async()=>{
   const calls=[],route=load('spelling-scan/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{words:[]};}});
   const input={id:deviceId,data:'a'.repeat(150000),mime:'image/jpeg',householdId:'forged',model:'forged',studentName:'Private',fileUrl:'https://foreign.example'};
