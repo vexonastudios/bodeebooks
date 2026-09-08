@@ -61,6 +61,11 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "coloring-student-settings": path = "/coloring-studio/settings"; method = "POST"; body = { scope: "student", studentId: input.studentId, enabled: input.enabled, daily_limit: input.daily_limit, custom_prompts_enabled: input.custom_prompts_enabled, allow_people: input.allow_people, require_parent_approval: input.require_parent_approval, require_image_approval: input.require_image_approval }; break;
     case "coloring-request-action": path = "/coloring-studio/action"; method = "POST"; body = { requestId: input.requestId, action: input.requestAction }; break;
     case "coloring-image": path = "/coloring-studio/image"; method = "POST"; body = { requestId: input.requestId }; break;
+    case "math-coach-overview": path = "/math-coach/overview"; method = "POST"; body = {}; break;
+    case "math-coach-global-settings": path = "/math-coach/settings"; method = "POST"; body = { scope: "global", monthly_unit_limit: input.monthly_unit_limit }; break;
+    case "math-coach-student-settings": path = "/math-coach/settings"; method = "POST"; body = { scope: "student", studentId: input.studentId, enabled: input.enabled, daily_question_limit: input.daily_question_limit }; break;
+    case "math-coach-action": path = "/math-coach/action"; method = "POST"; body = { studentId: input.studentId, action: input.mathAction }; break;
+    case "math-coach-transcript": path = "/math-coach/transcript"; method = "POST"; body = { studentId: input.studentId }; break;
     case "list-spelling": path = "/spelling/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
     case "spelling-command": path = "/spelling/command"; method = "POST"; body = { studentId: input.studentId, id: input.id, kind: input.kind, revision: input.revision,
       listId: input.listId, title: input.title, weekStart: input.weekStart, testDate: input.testDate, status: input.status, words: input.words, enabled: input.enabled }; break;
