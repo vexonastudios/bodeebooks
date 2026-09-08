@@ -3,6 +3,7 @@ import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
+import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
@@ -38,6 +39,7 @@ let usable = false;
 let mutating = false;
 let editorSave = null;
 let recoveryGeneration = 0;
+let mobile = null;
 
 function node(tag, className = '', text = '') {
   const element = document.createElement(tag);
@@ -82,6 +84,7 @@ function selectTab(id) {
   learningVideos.setActive(id === 'learning-videos');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
+  mobile?.setActive(id);
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
@@ -120,7 +123,7 @@ async function refresh() {
       failures = 0;
       byId('live-text').textContent = 'Connected · 30s refresh';
       byId('live-indicator').dataset.connected = 'true';
-      feedback(`Updated ${new Date(data.serverTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Current LAN computers are not part of this preview.`);
+      feedback(`Updated ${new Date(data.serverTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`);
       showSnapshot();
     } catch (error) {
       usable = false;
@@ -212,6 +215,7 @@ function renderComputers() {
       node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow,
       ...(goalRows.length ? [goals] : []), assignment, actions,
       node('p', 'cloud-note', device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study'));
+    mobile?.decorateCard(card, device.id);
     grid.append(card);
     clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => { selectTab('overview'); card.scrollIntoView({ block: 'nearest' }); }, 'nav-item'));
   }
@@ -477,6 +481,8 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => { clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
 setupCloudAssistant({ endpoint, navigate: selectTab });
+mobile = setupCloudMobile({ navigate: selectTab, refresh });
+mobile.setActive('overview');
 window.lucide?.createIcons();
 setControls();
 refresh();

@@ -1,0 +1,43 @@
+.cloud-mobile-only { display: none !important; }
+.cloud-mobile .cloud-mobile-only { display: flex !important; }
+.cloud-mobile { --bg-primary: #080b18; --bg-secondary: #11152b; --text-secondary: #a1aec4; }
+.cloud-mobile #admin-dashboard { display: grid; grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr); height: 100dvh; width: 100%; overflow: hidden; }
+.cloud-mobile #admin-dashboard > .sidebar { display: none; }
+.cloud-mobile .main-content { margin: 0; width: 100%; min-width: 0; min-height: 0; overflow: auto; padding: 18px 14px 80px; overscroll-behavior-y: contain; }
+.cloud-mobile .app-header { padding-top: calc(10px + env(safe-area-inset-top)); }
+.cloud-mobile .text-button { text-decoration: none; }
+.cloud-mobile .bottom-nav { display: grid !important; width: 100%; }
+.cloud-mobile .bottom-nav .nav-button { min-height: 48px; }
+.cloud-mobile .bottom-nav small { font-size: 10px; }
+.cloud-mobile .cloud-migration-note { display: none; }
+.cloud-mobile #tab-overview > .cloud-note { display: none; }
+.cloud-mobile .cloud-feedback { font-size: 12px; margin-bottom: 14px; }
+.cloud-mobile .tab-header { flex-wrap: wrap; margin-bottom: 18px; }
+.cloud-mobile .tab-header h1, .cloud-mobile-menu > h1 { font-size: 22px; }
+.cloud-mobile .monitor-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.cloud-mobile .monitor-card { padding: 12px; border-radius: 20px; }
+.cloud-mobile .monitor-card-top { margin: 0; gap: 8px; }
+.cloud-mobile .monitor-card-identity { flex: 1; min-width: 0; }
+.cloud-mobile .monitor-name { font-size: 16px; overflow-wrap: anywhere; }
+.cloud-mobile .monitor-avatar { width: 38px; height: 38px; font-size: 22px; }
+.cloud-mobile .mobile-card-time { font-size: 12px; color: #c7d2fe; white-space: nowrap; }
+.cloud-mobile .mobile-card-body { display: none; padding-top: 14px; }
+.cloud-mobile .is-open .mobile-card-body { display: block; }
+.cloud-mobile .monitor-card .cloud-actions { display: grid; grid-template-columns: 1fr 1fr; }
+.cloud-mobile .cloud-panel { padding: 16px; }
+.cloud-mobile .cloud-panel p { font-size: 13px; }
+.cloud-mobile .mobile-paper-shortcut { display: grid !important; }
+.cloud-mobile .more-list { display: grid; gap: 10px; margin-top: 18px; }
+.cloud-mobile .more-list > button { width: 100%; text-align: left; min-height: 48px; padding: 14px; }
+.cloud-mobile input:not([type=checkbox]):not([type=radio]), .cloud-mobile select, .cloud-mobile textarea { max-width: 100%; font-size: 16px; }
+.cloud-mobile input[type=checkbox], .cloud-mobile input[type=radio] { width: auto; min-height: auto; }
+.cloud-mobile .btn { min-height: 42px; white-space: normal; }
+.cloud-mobile .cloud-actions { flex-wrap: wrap; }
+.cloud-mobile .cloud-student-management { flex-wrap: wrap; }
+.cloud-mobile .cloud-file-row, .cloud-mobile .cloud-grade-filters { flex-wrap: wrap; }
+.cloud-mobile #tab-grades.active { display: flex; flex-direction: column; }
+.cloud-mobile #tab-grades .cloud-papers { order: -1; margin-bottom: 28px; }
+.cloud-mobile .cloud-messages-panel { min-width: 0; }
+.cloud-mobile #parent-assistant-launcher { bottom: calc(80px + env(safe-area-inset-bottom)); right: 14px; }
+.cloud-mobile #parent-assistant-drawer { bottom: calc(74px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 150px); width: calc(100% - 20px); right: 10px; }
+.cloud-mobile dialog { max-width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
