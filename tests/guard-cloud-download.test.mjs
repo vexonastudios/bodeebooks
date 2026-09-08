@@ -6,7 +6,7 @@ import test from 'node:test';
 import ts from 'typescript';
 import { cloudReleaseModule, cloudReleaseFixture, legacyReleaseFixture } from './guard-release-fixtures.mjs';
 
-const { cloudAccountRelease } = cloudReleaseModule;
+const { cloudAccountRelease, internalPilotRelease } = cloudReleaseModule;
 test('the cloud selector accepts only dedicated versioned cloud artifacts on the account channel', () => {
   for (const channel of ['beta', 'stable']) {
     const release = cloudReleaseFixture(channel);
@@ -25,7 +25,20 @@ test('the cloud selector accepts only dedicated versioned cloud artifacts on the
   assert.equal(cloudAccountRelease({ releaseChannel: 'unknown', release: cloudReleaseFixture() }), null);
 });
 
-async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token' } = {}) {
+test('the current internal Family Beta can expose only its configured cloud test installer', () => {
+  const eligible = { billingMode: 'complimentary', entitlementStatus: 'active', releaseChannel: 'beta' };
+  const release = internalPilotRelease(eligible, '1.2.167');
+  assert.equal(release?.version, '1.2.167');
+  assert.equal(release?.downloadUrl, '/guard/download/windows');
+  for (const account of [
+    { ...eligible, billingMode: 'stripe' },
+    { ...eligible, entitlementStatus: 'inactive' },
+    { ...eligible, releaseChannel: 'stable' },
+  ]) assert.equal(internalPilotRelease(account, '1.2.167'), null);
+  for (const version of ['', '01.2.167', '1.2', '1.2.65536']) assert.equal(internalPilotRelease(eligible, version), null);
+});
+
+async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token', internalPilot = false } = {}) {
   const filename = path.resolve('app/guard/download/windows/route.ts');
   const route = new Module(filename), localRequire = createRequire(filename);
   route.require = name => {
@@ -39,9 +52,19 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
     return localRequire(name);
   };
-  const previousFetch = globalThis.fetch, previousApi = process.env.BODEEGUARD_COMMERCIAL_API_URL;
+  const previousFetch = globalThis.fetch;
+  const previousEnvironment = Object.fromEntries(['BODEEGUARD_COMMERCIAL_API_URL', 'BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION', 'BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN', 'BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET'].map(name => [name, process.env[name]]));
   const calls = [];
   process.env.BODEEGUARD_COMMERCIAL_API_URL = 'https://fixture.invalid/api';
+  if (internalPilot) {
+    process.env.BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION = '1.2.167';
+    process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN = 'https://assets.example';
+    process.env.BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET = 'synthetic-test-secret';
+  } else {
+    delete process.env.BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION;
+    delete process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN;
+    delete process.env.BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET;
+  }
   globalThis.fetch = async (url, init) => {
     calls.push({ url, init });
     if (failFetch) throw new Error('service unavailable');
@@ -54,8 +77,9 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
     return { response: await route.exports.GET(new Request('https://guard.bodeebooks.com/download/windows/')), calls };
   } finally {
     globalThis.fetch = previousFetch;
-    if (previousApi === undefined) delete process.env.BODEEGUARD_COMMERCIAL_API_URL;
-    else process.env.BODEEGUARD_COMMERCIAL_API_URL = previousApi;
+    for (const [name, value] of Object.entries(previousEnvironment)) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
   }
 }
 
@@ -71,6 +95,18 @@ test('authenticated download sends no credential to GitHub and never caches the 
   assert.equal(calls[0].init.redirect, 'error');
   assert.equal(calls[0].init.cache, 'no-store');
   assert.ok(calls[0].init.signal);
+});
+
+test('the internal Family Beta download is an expiring signed asset URL, not a GitHub link', async () => {
+  const account = { billingMode: 'complimentary', entitlementStatus: 'active', releaseChannel: 'beta', release: null };
+  const { response } = await download({ account, internalPilot: true });
+  const url = new URL(response.headers.get('location'));
+  assert.equal(response.status, 307);
+  assert.equal(url.origin, 'https://assets.example');
+  assert.equal(url.pathname, '/v1/installers/internal/BodeeGuard-Cloud-Test-1.2.167.exe');
+  assert.match(url.searchParams.get('expires') || '', /^\d{10}$/);
+  assert.match(url.searchParams.get('signature') || '', /^[a-f0-9]{64}$/);
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
 });
 
 test('legacy, missing, wrong-channel and private test installers cannot be downloaded from account links', async () => {

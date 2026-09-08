@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
-import { cloudAccountRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
+import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
 import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
 import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
@@ -194,7 +194,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const billingPeriodEnd = paidSubscription?.currentPeriodEndsAt || account?.currentPeriodEndsAt || null;
   const trialEnd = paidSubscription?.trialEndsAt || account?.trialEndsAt || null;
   const remainingTrialDays = isTrial ? trialDaysRemaining(trialEnd) : null;
-  const release = cloudAccountRelease(account);
+  const release = cloudAccountRelease(account) || internalPilotRelease(account, process.env.BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION);
   const installerAvailable = Boolean(canConnectComputers && release);
   const canStartTrial = account.enrollment?.canStartTrial === true && Boolean(release);
   const canSubscribe = account.enrollment?.canSubscribe === true && Boolean(release);
