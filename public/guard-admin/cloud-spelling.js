@@ -11,12 +11,11 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
 })[character]);
 
-let active=false,loading=false,offset=0,pending=null;
+let active=false,loading=false,offset=0,pending=null,scanGeneration=0,pendingScan=null,scanBusy=false;
 function notice(message){byId('spelling-admin-status').textContent=message;byId('spelling-scan-status').textContent=message;}
 async function send(action,input={}){const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...input})});const value=await response.json();if(!response.ok){const error=new Error(value.error||'Spelling could not connect.');error.status=response.status;throw error;}return value;}
 async function request(route,options={}){
   if(!options.method)return send('list-spelling',{offset});
-  if(route.endsWith('/scan-list'))throw new Error('Photo extraction has not transferred yet. Enter and review the words below.');
   const fingerprint=JSON.stringify([route,options.method,options.body||'']);
   if(pending&&pending.fingerprint!==fingerprint)throw new Error('A previous Spelling change is awaiting confirmation. Use Retry saved change.');
   if(!pending){const value=options.body?JSON.parse(options.body):{},coach=route.includes('/admin/coach/');let command;
@@ -213,6 +212,7 @@ async function loadSpellingTab() {
 }
 
 function openModal(list = null, studentId = '') {
+  resetScan();
   editingId = list?.id || null;
   byId('spelling-list-modal-title').textContent = list ? 'Edit Weekly Spelling List' : 'New Weekly Spelling List';
   byId('spelling-list-student').disabled = !!list;
@@ -235,6 +235,7 @@ function openModal(list = null, studentId = '') {
 }
 
 function closeModal() {
+  resetScan();
   byId('spelling-list-modal').classList.remove('active');
   editingId = null;
 }
@@ -287,36 +288,54 @@ function readFile(file) {
 }
 
 async function preparePhoto(file) {
-  if (!String(file.type || '').startsWith('image/')) throw new Error('Choose an image file');
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>20*1024*1024) throw new Error('Choose a JPEG, PNG or WebP photo up to 20 MB.');
   const source = await readFile(file);
   const image = await new Promise((resolve, reject) => {
     const element = new Image(); element.onload = () => resolve(element); element.onerror = () => reject(new Error('That image could not be opened')); element.src = source;
   });
+  if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth*image.naturalHeight>40000000)throw new Error('Choose a smaller, clear photo of the printed list.');
   const scale = Math.min(1, 2200 / Math.max(image.naturalWidth, image.naturalHeight));
   const canvas = document.createElement('canvas'); canvas.width = Math.round(image.naturalWidth * scale); canvas.height = Math.round(image.naturalHeight * scale);
   const context = canvas.getContext('2d'); context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL('image/jpeg', .86);
-  return { data: dataUrl.split(',')[1], mime_type: 'image/jpeg' };
+  let dataUrl=canvas.toDataURL('image/jpeg',.86);
+  for(const quality of [.76,.66,.56]){if(dataUrl.length<=2700000)break;dataUrl=canvas.toDataURL('image/jpeg',quality);}
+  if(dataUrl.length>2700000)throw new Error('Crop the photo to the spelling words and choose it again.');
+  return { data: dataUrl.split(',')[1], mime: 'image/jpeg' };
 }
 
+function scanControls(busy){
+  scanBusy=busy;
+  for(const id of ['spelling-list-photo','spelling-list-save','spelling-list-archive','spelling-list-title','spelling-list-words','spelling-list-week','spelling-list-test','spelling-list-status'])byId(id).disabled=busy;
+  byId('spelling-list-student').disabled=busy||!!editingId;scanRetry.disabled=busy;
+}
+function resetScan(){scanGeneration++;pendingScan=null;scanRetry.hidden=true;scanControls(false);}
+async function runScan(epoch){
+  const status=byId('spelling-scan-status');status.className='spelling-scan-status';status.textContent='Scanning the printed words for your review…';scanControls(true);
+  try{
+    const response=await fetch('/guard/dashboard/spelling-scan/',{method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(28000),headers:{'Content-Type':'application/json'},body:JSON.stringify(pendingScan)});
+    const result=await response.json();if(!response.ok){const error=new Error(result.error||'The scan reply was lost. Retry this scan.');error.status=response.status;throw error;}
+    if(epoch!==scanGeneration)return;
+    pendingScan=null;scanRetry.hidden=true;
+    if(result.is_spelling_list===false)throw new Error('This photo does not look like a spelling list. Choose a clearer photo of the printed spelling words.');
+    if(!result.words?.length)throw new Error(result.notes||'No spelling words were found. Try a clearer photo.');
+    byId('spelling-list-words').value=result.words.map(item=>item.word).join('\n');
+    if(result.title&&(!byId('spelling-list-title').value||byId('spelling-list-title').value==='Weekly Spelling'))byId('spelling-list-title').value=result.title;
+    const uncertain=result.words.filter(item=>Number(item.confidence)<.8).length;
+    status.textContent=`Found ${result.words.length} words. ${uncertain?`Carefully check ${uncertain} uncertain word${uncertain===1?'':'s'}. `:''}Review every word before saving.${result.notes?' '+result.notes:''}`;countWords();
+  }catch(error){if(epoch===scanGeneration){if(error.status>=400&&error.status<500&&error.status!==409)pendingScan=null;status.className='spelling-scan-status error';status.textContent=error.message;scanRetry.hidden=!pendingScan;}}
+  finally{if(epoch===scanGeneration){scanControls(false);byId('spelling-list-photo').value='';}}
+}
 async function scanPhoto(file) {
-  if (!file) return;
+  if (!file||scanBusy) return;
+  const epoch=++scanGeneration;pendingScan=null;scanRetry.hidden=true;scanControls(true);
   const status = byId('spelling-scan-status');
   status.className = 'spelling-scan-status';
   status.textContent = 'Preparing and scanning the page…';
   try {
-    const payload = await preparePhoto(file);
-    const result = await request(`${API}/spelling/scan-list`, { method: 'POST', body: JSON.stringify(payload) });
-    if (!result.words?.length) throw new Error(result.notes || 'No spelling words were found. Try a clearer, straighter photo.');
-    byId('spelling-list-words').value = result.words.map(item => item.word).join('\n');
-    if (result.title && (!byId('spelling-list-title').value || byId('spelling-list-title').value === 'Weekly Spelling')) byId('spelling-list-title').value = result.title;
-    const uncertain = result.words.filter(item => Number(item.confidence) < .8).length;
-    status.innerHTML = `Found <strong>${result.words.length}</strong> words.${uncertain ? ` <span class="spelling-low-confidence">Please carefully check ${uncertain} uncertain word${uncertain === 1 ? '' : 's'}.</span>` : ' Please review them before saving.'}`;
-    countWords();
+    const payload=await preparePhoto(file);if(epoch!==scanGeneration)return;pendingScan={...payload,id:crypto.randomUUID()};await runScan(epoch);
   } catch (error) {
-    status.className = 'spelling-scan-status error';
-    status.textContent = error.message;
-  } finally { byId('spelling-list-photo').value = ''; }
+    if(epoch===scanGeneration){status.className='spelling-scan-status error';status.textContent=error.message;scanControls(false);byId('spelling-list-photo').value='';}
+  }
 }
 
 function setupSpelling() {
@@ -334,6 +353,7 @@ function setupSpelling() {
 }
 
 const button=(label,fn)=>{const value=document.createElement('button');value.className='btn btn-secondary';value.textContent=label;value.onclick=()=>void Promise.resolve().then(fn).catch(error=>notice(error.message));return value;};
+const scanRetry=button('Retry this photo scan',async()=>{if(pendingScan&&!scanBusy)await runScan(scanGeneration);});scanRetry.hidden=true;byId('spelling-scan-status').after(scanRetry);
 const retry=button('Retry saved change',async()=>{if(!pending)return;retry.disabled=true;try{await send('spelling-command',pending.command);pending=null;retry.hidden=true;closeModal();await loadSpellingTab();}finally{retry.disabled=false;}});retry.hidden=true;
 const previous=button('Newer weekly lists',async()=>{offset=Math.max(0,offset-100);await loadSpellingTab();}),next=button('Older weekly lists',async()=>{offset+=100;await loadSpellingTab();});previous.disabled=next.disabled=true;
 byId('spelling-admin-status').after(retry);byId('spelling-list-grid').after(previous,next);setupSpelling();

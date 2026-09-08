@@ -8,6 +8,14 @@ import ts from 'typescript';
 class CloudApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
+test('Spelling photo bridge restricts parent origin and body size and forwards only the exact scan',async()=>{
+  const calls=[],route=load('spelling-scan/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{words:[]};}});
+  const input={id:deviceId,data:'a'.repeat(150000),mime:'image/jpeg',householdId:'forged',model:'forged',studentName:'Private',fileUrl:'https://foreign.example'};
+  assert.equal((await load('spelling-scan/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);assert.equal((await route.POST(request(input,{contentType:'text/plain'}))).status,415);
+  assert.equal((await route.POST(request({...input,data:'a'.repeat(3*1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,mime:'text/html'}))).status,400);
+  const result=await route.POST(request(input));assert.equal(result.status,200);assert.match(result.headers.get('cache-control'),/no-store/);assert.deepEqual(calls,[{path:'/spelling/scan',body:{id:deviceId,data:input.data,mime:'image/jpeg'}}]);
+  assert.match(fs.readFileSync('app/guard/dashboard/cloud-api.ts','utf8'),/path === "\/spelling\/scan"/);
+});
 test('legacy transfer uses parent-only fixed actions and bounded payloads without submitted authority', async () => {
   const calls=[];const route=load('legacy/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {saved:true};}});
   const input={action:'put',id:'a'.repeat(64),sha256:'b'.repeat(64),data:'ZGF0YQ==',householdId:'forged',token:'secret',storagePath:'/other'};
