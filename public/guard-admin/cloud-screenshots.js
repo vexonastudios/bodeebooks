@@ -49,5 +49,5 @@ export function setupCloudScreenshots({ endpoint }) {
     root.append(list);
   }
   async function load() { const current = ++epoch; if (!active) return; root.textContent = 'Loading screenshots…'; try { const value = await call({ action: 'screenshots-overview' }); if (!active || current !== epoch) return; overview = value; render(); } catch (error) { if (active && current === epoch) root.textContent = error.message; } }
-  return { update(snapshot) { students = snapshot?.students || []; }, setActive(value) { active = value; epoch++; if (value) void load(); } };
+  return { refresh() { if(active)void load(); }, update(snapshot) { students = snapshot?.students || []; }, setActive(value) { active = value; epoch++; if (value) void load(); } };
 }

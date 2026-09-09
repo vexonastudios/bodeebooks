@@ -6,6 +6,7 @@ import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
+import './cloud-push-client.js';
 import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
@@ -438,6 +439,22 @@ const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot })
 const spanish = setupCloudSpanish({ endpoint, getSnapshot: () => snapshot });
 const coloringStudio = setupCloudColoringStudio({ endpoint });
 const screenshots = setupCloudScreenshots({ endpoint });
+const livePush = window.CloudPush.createCloudPushClient({
+  getIdentity: () => document.hidden ? null : 'parent',
+  getTicket: async () => {
+    const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'push-ticket'})});
+    if(!response.ok)throw Error('Live delivery is reconnecting');
+    return response.json();
+  },
+  onConnection: connected => messaging.setLive(connected),
+  onReady: () => screenshots.refresh(),
+  onSignal: hint => { if(hint.kind==='messages')messaging.notify(hint.studentId); if(hint.kind==='screenshots')screenshots.refresh(); }
+});
+livePush.refresh();
+document.addEventListener('visibilitychange',()=>livePush.refresh());
+window.addEventListener('online',()=>livePush.refresh());
+window.addEventListener('pagehide',()=>livePush.stop());
+window.addEventListener('pageshow',()=>livePush.start());
 const mathCoach = setupCloudMathCoach({ endpoint });
 const spelling = setupCloudSpelling({ endpoint });
 const scienceSpelling = setupCloudScienceSpelling();

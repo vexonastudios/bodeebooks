@@ -10,6 +10,7 @@ export function setupCloudMessages({ endpoint }) {
   let generation = 0;
   let timer = null;
   let loading = false;
+  let live = false, refreshQueued = false;
   let sending = false;
   let failures = 0;
   let error = '';
@@ -78,7 +79,8 @@ export function setupCloudMessages({ endpoint }) {
       note(`${error} Showing the last received messages; your draft remains here.`);
     } finally {
       loading = false; controls();
-      if (active && !document.hidden) timer = setTimeout(refresh, ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
+      if (active && !document.hidden && (refreshQueued || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
+      refreshQueued = false;
     }
   }
   function choose(child) {
@@ -187,6 +189,8 @@ export function setupCloudMessages({ endpoint }) {
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); });
   window.addEventListener('pagehide', () => clearTimeout(timer));
   return {
+    setLive(value) { live=value; clearTimeout(timer); if(active)void refresh(); },
+    notify(studentId) { if(studentId!==selected||!active)return; if(loading)refreshQueued=true;else void refresh(); },
     update(value) { students = value || []; renderStudents(); if (selected && !students.some(student => student.id === selected)) choose(null); },
     setActive(value) { active = value; clearTimeout(timer); if (active) void refresh(); }
   };
