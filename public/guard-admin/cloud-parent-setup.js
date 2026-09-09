@@ -1,4 +1,5 @@
 import { setupChildGuide } from './cloud-child-setup.js';
+import { decorateSetup, inlineChildren, inlineSchool, lockControls, setupSections } from './cloud-setup-controls.js';
 const learning = [
   ['music','Music','Listen to music you approve.','music'],['videos','Videos','Watch entertainment you approve.','videos'],
   ['typing','Typing School','Keyboard lessons and speed tests.'],['logic','Logic Lab','Reasoning puzzles.'],['words','Confused Words','Practice commonly mixed-up words.'],
@@ -18,15 +19,17 @@ const tour = [
 ];
 const titles = ['Your children','School and schedule','Daily activities','Learning tools','Starter content','Parent controls','Ready'];
 function node(tag, text = '', className = '') { const result = document.createElement(tag); result.textContent = text; result.className = className; return result; }
-export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }) {
+export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
   const style = document.createElement('link'); style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-parent-setup.css'; document.head.append(style);
   const dialog = node('dialog', '', 'parent-setup-dialog'); dialog.setAttribute('aria-labelledby','parent-setup-title');
-  const form = node('form'), header = node('header'), heading = node('h2','Set up your family'), progress = node('p','','setup-progress'); heading.id='parent-setup-title';
+  const form = node('div','','setup-frame'), header = node('header'), heading = node('h2','Set up your family'), progress = node('p','','setup-progress'); heading.id='parent-setup-title';
   const body = node('div','','setup-body'), error = node('p','','setup-error'), footer = node('footer'); error.setAttribute('role','alert');
   const back = action('Back', () => move(-1)), later = action('Save and close', () => saveAndClose()), next = action('Next', () => move(1),'btn btn-primary');
   header.append(progress,heading); footer.append(later,back,next); form.append(header,body,error,footer); form.onsubmit = event => event.preventDefault(); dialog.append(form); document.body.append(dialog);
   let state = null, loading = false, loaded = false, busy = false, previousFocus;
-  const childGuide = setupChildGuide({ request, getSnapshot, learning, navigate, editSchool, onSaved: child => {
+  let pendingFields=[];
+  const sections=setupSections({dialog,body,footer,navigate});
+  const childGuide = setupChildGuide({ request, getSnapshot, learning, navigate, mutate, onSaved: child => {
     if (state) { state.children ||= []; const index=state.children.findIndex(row=>row.id===child.studentId); const row={id:child.studentId,completed:child.completed}; if(index<0)state.children.push(row);else state.children[index]=row; }
     renderChildren();
   }});
@@ -49,17 +52,18 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
     finally{loading=false;launch.disabled=false;}
   }
   async function persist() {
-    busy=true;error.textContent='';progress.textContent='Saving your choices…';form.querySelectorAll('button,input').forEach(control=>control.disabled=true);
-    try{state=await request('save-setup',state);renderChildren();launch.textContent=state.completed?'Setup guide':'Continue setup';return true;}
+    busy=true;error.textContent='';progress.textContent='Saving your choices…';
+    let unlock=()=>{};
+    try{for(const save of pendingFields)await save();unlock=lockControls(form);state=await request('save-setup',state);renderChildren();launch.textContent=state.completed?'Setup guide':'Continue setup';decorateSetup(panel);return true;}
     catch(failure){error.textContent=failure.message;return false;}
-    finally{busy=false;progress.textContent=`Step ${state.step+1} of ${titles.length}`;form.querySelectorAll('button,input').forEach(control=>control.disabled=false);back.disabled=state.step===0;}
+    finally{busy=false;progress.textContent=`Step ${state.step+1} of ${titles.length}`;unlock();back.disabled=state.step===0;decorateSetup(dialog);}
   }
   async function saveAndClose(){if(busy)return;if(await persist())dialog.close();}
   async function move(direction){if(busy)return;const before=state.step;
     if(direction===1&&before===6){const wasComplete=state.completed;state.completed=true;if(await persist()){dialog.close();void nextChild();}else state.completed=wasComplete;return;}
-    state.step=Math.max(0,Math.min(6,state.step+direction));if(await persist())render();else state.step=before;
+    state.step=Math.max(0,Math.min(6,state.step+direction));if(await persist())render();else {state.step=before;progress.textContent=`Step ${before+1} of ${titles.length}`;back.disabled=before===0;}
   }
-  async function showSection(tab, callback){if(busy||!await persist())return;dialog.close();navigate(tab);callback?.();}
+  async function showSection(tab, callback){if(busy||!await persist())return;try{if(callback)callback();else sections.open(tab);}catch(failure){error.textContent=failure.message;}}
   function link(label,tab,callback){return action(label,()=>showSection(tab,callback),'btn btn-secondary setup-section-link');}
   function text(copy){body.append(node('p',copy,'setup-copy'));}
   function toggle(id,title,copy,tab){const row=node('label','','setup-choice'),input=document.createElement('input');input.type='checkbox';
@@ -68,15 +72,14 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
     const content=node('span');content.append(node('strong',title),node('small',copy));row.append(input,content);body.append(row);
     if(tab)body.append(link(`Set up ${title}`,tab));
   }
-  function render(){body.replaceChildren();error.textContent='';heading.textContent=titles[state.step];progress.textContent=`Step ${state.step+1} of ${titles.length}`;back.disabled=state.step===0;next.textContent=state.step===6?'Finish setup':'Save and next';
+  function render(){pendingFields=[];body.replaceChildren();error.textContent='';heading.textContent=titles[state.step];progress.textContent=`Step ${state.step+1} of ${titles.length}`;back.disabled=state.step===0;next.textContent=state.step===6?'Finish setup':'Save and next';
     const snapshot=getSnapshot(),children=(snapshot?.students||[]).filter(child=>!child.archived_at);
     if(state.step===0){text('Set your family defaults first. Then choose each child’s school, activities and content. You can add more children later.');
-      children.forEach(child=>body.append(node('p',`${child.name}${child.grade?` · Grade ${child.grade}`:''}`,'setup-child')));
-      body.append(link(children.length?'Manage children':'Add your first child','students',()=>document.getElementById('add-student-btn')?.click()));
-      const account=node('a','Download the child app','btn btn-primary');account.href='/guard/account/';account.target='_top';body.append(account);
+      pendingFields.push(inlineChildren({host:body,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}}));
+      const account=node('a','Download the child app','btn btn-secondary');account.href='/guard/account/';account.target='_blank';account.rel='noopener';body.append(account);
     }else if(state.step===1){text('Abeka, BJU, another website, or no online school. Choose separately for each child.');
-      children.forEach(child=>{const row=node('div','','setup-child');row.append(node('strong',child.name),node('span',child.main_school?.provider?`School: ${child.main_school.provider}`:'No choice saved yet'),link('Choose school','overview',()=>editSchool(child)));body.append(row);});
-      if(!children.length)body.append(link('Add a child first','students'));
+      children.forEach(student=>pendingFields.push(inlineSchool({host:body,student,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}})));
+      if(!children.length)body.append(action('Add a child first',()=>move(-1)));
       body.append(link('Set school hours and days off','calendar'),link('Assign subjects and time goals','subjects'));
     }else if(state.step===2){text('Choose the default for all children. You can change it for each child later. The questions are built in.');
       toggle('verse','Daily Verse','A Bible verse and question each day.');toggle('riddle','Brain Teaser','A daily thinking challenge.');
@@ -110,7 +113,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
       const details=node('details'),summary=node('summary','Tour every dashboard section');details.append(summary);
       for(const [tab,title,copy]of tour){if(!document.querySelector(`.nav-item[data-tab="${tab}"]`))continue;const row=node('div','','setup-tour-row');row.append(node('strong',title),node('p',copy),link('Show me',tab));details.append(row);}body.append(details);
     }
-    body.scrollTop=0;
+    body.scrollTop=0;decorateSetup(dialog);
   }
   function renderChildren(){
     childPanel.replaceChildren(node('h3','Child setup'));
@@ -119,6 +122,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, editSchool }
       row.append(node('strong',child.name),node('span',completed?'Setup complete':'Uses family defaults until you personalize them'),action(completed?'Edit child choices':'Set up child',()=>openChild(child.id)));
       childPanel.append(row);
     }
+    decorateSetup(panel);
   }
   async function openChild(studentId){if(loading||busy||dialog.open||childGuide.isOpen())return;await childGuide.open(studentId);}
   async function nextChild(studentId){

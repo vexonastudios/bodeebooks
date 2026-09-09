@@ -515,7 +515,7 @@ window.addEventListener('pageshow', event => { if (event.persisted) { usable = f
 setupCloudAssistant({ endpoint, navigate: selectTab });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');
-parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, editSchool: student => mainSchool.edit(student) });
+parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
 window.lucide?.createIcons();
 setControls();
 refresh();

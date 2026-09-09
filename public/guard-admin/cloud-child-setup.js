@@ -1,3 +1,4 @@
+import { decorateSetup, inlineSchool, lockControls, setupSections } from './cloud-setup-controls.js';
 const daily = [
   ['verse', 'Daily Verse', 'A built-in Bible verse and question.'],
   ['riddle', 'Brain Teaser', 'A built-in daily thinking challenge.']
@@ -9,10 +10,10 @@ function node(tag, text = '', className = '') {
 function button(label, callback, className = 'btn btn-secondary') {
   const element = node('button', label, className); element.type = 'button'; element.onclick = () => void callback(); return element;
 }
-export function setupChildGuide({ request, getSnapshot, learning, navigate, editSchool, onSaved }) {
+export function setupChildGuide({ request, getSnapshot, learning, navigate, mutate, onSaved }) {
   const dialog = node('dialog', '', 'parent-setup-dialog child-setup-dialog');
   dialog.setAttribute('aria-labelledby', 'child-setup-title');
-  const form = node('form'), header = node('header'), progress = node('p', '', 'setup-progress');
+  const form = node('div', '', 'setup-frame'), header = node('header'), progress = node('p', '', 'setup-progress');
   const heading = node('h2'); heading.id = 'child-setup-title';
   const body = node('div', '', 'setup-body'), error = node('p', '', 'setup-error'), footer = node('footer');
   error.setAttribute('role', 'alert');
@@ -21,6 +22,8 @@ export function setupChildGuide({ request, getSnapshot, learning, navigate, edit
   header.append(progress, heading); footer.append(later, back, next); form.append(header, body, error, footer);
   form.onsubmit = event => event.preventDefault(); dialog.append(form); document.body.append(dialog);
   let state, busy = false, previousFocus;
+  let saveSchool = async () => {};
+  const sections=setupSections({dialog,body,footer,navigate});
   dialog.addEventListener('cancel', event => { event.preventDefault(); void close(); });
   dialog.addEventListener('close', () => previousFocus?.isConnected && previousFocus.focus());
   async function open(studentId, step) {
@@ -40,11 +43,11 @@ export function setupChildGuide({ request, getSnapshot, learning, navigate, edit
   }
   async function persist() {
     busy = true; error.textContent = '';
-    form.querySelectorAll('button,input,select').forEach(control => control.disabled = true);
-    try { state = await request('save-child-setup', state); onSaved(state); return true; }
+    let unlock=()=>{};
+    try { await saveSchool();unlock=lockControls(form);state = await request('save-child-setup', state); onSaved(state); return true; }
     catch (failure) { error.textContent = failure.message; return false; }
     finally {
-      busy = false; form.querySelectorAll('button,input,select').forEach(control => control.disabled = false);
+      busy = false; unlock();
       back.disabled = state.step === 0;
     }
   }
@@ -56,11 +59,11 @@ export function setupChildGuide({ request, getSnapshot, learning, navigate, edit
     else state.step += direction;
     if (await persist()) {
       if (before === 3 && direction === 1) dialog.close(); else render();
-    } else { state.step = before; state.completed = wasComplete; }
+    } else { state.step = before; state.completed = wasComplete; back.disabled=before===0; }
   }
   async function section(tab, callback) {
     if (busy || !await persist()) return;
-    dialog.close(); navigate(tab); callback?.();
+    try { sections.open(tab, callback); } catch(failure) { error.textContent=failure.message; }
   }
   function copy(text) { body.append(node('p', text, 'setup-copy')); }
   function activity([id, title, description]) {
@@ -106,23 +109,16 @@ export function setupChildGuide({ request, getSnapshot, learning, navigate, edit
     renderItems(); section.append(select, details); body.append(section);
   }
   function render() {
-    footer.hidden = false; body.replaceChildren(); error.textContent = '';
+    footer.hidden = false; body.replaceChildren(); error.textContent = '';saveSchool=async()=>{};
     heading.textContent = `${state.student.name}’s setup`;
     progress.textContent = `Step ${state.step + 1} of 4 · ${steps[state.step]}`;
     back.disabled = state.step === 0; next.textContent = state.step === 3 ? 'Finish child setup' : 'Save and next';
     if (state.step === 0) {
       copy('These choices follow this child on every connected computer.');
-      const provider = state.student.main_school?.provider;
-      const names = { abeka: 'Abeka Academy', bju: 'Bob Jones / BJU Press', custom: 'Another school website', none: 'No online school' };
-      body.append(node('h3', names[provider] || 'Choose a main school'));
-      body.append(button(provider ? 'Change school' : 'Choose school', () => section('overview', () => {
-        const childId = state.studentId, editor = document.getElementById('cloud-editor');
-        editor?.addEventListener('close', () => void open(childId, 0), { once: true });
-        editSchool(getSnapshot().students.find(child => child.id === childId) || state.student);
-      })));
+      saveSchool=inlineSchool({host:body,student:getSnapshot().students.find(child=>child.id===state.studentId)||state.student,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}});
       const count = (getSnapshot().devices || []).filter(device => device.student_id === state.studentId).length;
       body.append(node('p', count ? `${count} connected computer${count === 1 ? '' : 's'}` : 'Connect a computer when you’re ready.', 'setup-copy'));
-      const download = node('a', 'Download child app', 'btn btn-secondary'); download.href = '/guard/account/'; download.target = '_top'; body.append(download);
+      const download = node('a', 'Download child app', 'btn btn-secondary'); download.href = '/guard/account/'; download.target = '_blank'; download.rel='noopener'; body.append(download);
     } else if (state.step === 1) {
       copy('Keep the family defaults, or choose On or Off just for this child.');
       [...daily, ...learning].forEach(activity);
@@ -137,7 +133,7 @@ export function setupChildGuide({ request, getSnapshot, learning, navigate, edit
       body.append(node('p', 'School assignments and AI permissions still apply.', 'setup-copy'));
       body.append(button('Subjects and time goals', () => section('subjects')), button('Math Coach limits', () => section('math-coach')), button('Coloring limits', () => section('coloring-studio')));
     }
-    body.scrollTop = 0;
+    body.scrollTop = 0;decorateSetup(dialog);
   }
   return { open, isOpen: () => dialog.open };
 }

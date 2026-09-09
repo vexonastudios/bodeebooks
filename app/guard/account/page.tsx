@@ -245,7 +245,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               : "The cloud student installer is not released on your account’s channel yet. Nothing was downloaded or installed. This page will offer it after release approval."}
           </aside>
         )}
-        <ChildSetup initiallyCollapsed={setupCollapsed}>
+        <ChildSetup initiallyCollapsed={setupCollapsed} highlightDownload={canConnectComputers && installerAvailable}>
           {canConnectComputers ? <>
             <div className={styles.setupDownload}>
               {installerAvailable ? (

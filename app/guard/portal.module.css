@@ -115,6 +115,9 @@
 .setupToggle:focus-visible { outline: 3px solid #159cb4; outline-offset: 3px; }
 .childSetup [hidden] { display: none; }
 .setupDownload { display: flex; flex-wrap: wrap; }
+.firstDownloadVisit .setupDownload .portalButton { outline: 3px solid #0ca6a4; outline-offset: 5px; box-shadow: 0 0 0 10px #0ca6a41c, 0 8px 24px #0878d838; animation: firstDownloadGlow 1.8s ease-in-out 3; }
+@keyframes firstDownloadGlow { 50% { outline-color: #59d8c9; box-shadow: 0 0 0 15px #0ca6a428, 0 8px 30px #0878d850; } }
+@media (prefers-reduced-motion: reduce) { .firstDownloadVisit .setupDownload .portalButton { animation: none; } }
 .accountDetailsGrid { grid-template-columns: 2fr 1fr; margin-top: 20px; }
 @media (max-width: 900px) { .accountDetailsGrid .billingCard { grid-column: auto; } }
 @media (max-width: 700px) { .childSetupHeading { flex-wrap: wrap; gap: 12px; } .childSetupHeading h2 { font-size: 1.2rem; } .setupDownload > a { width: 100%; padding: 12px 14px; text-align: center; } }
