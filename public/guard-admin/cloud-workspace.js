@@ -148,7 +148,7 @@ async function refresh() {
     } finally {
       clearTimeout(timeout);
       inFlight = null;
-      if (!document.hidden) timer = setTimeout(refresh, failures ? Math.min(1800000, 60000 * (2 ** Math.min(failures, 5))) : 1800000);
+      if (!document.hidden) timer = setTimeout(failures ? refresh : refreshComputers, failures ? Math.min(1800000, 60000 * (2 ** Math.min(failures, 5))) : 1800000);
     }
   })();
   return inFlight;
@@ -443,7 +443,19 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.addEventListener('click', () => selectTab(item.dataset.tab));
 });
 document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => selectTab(item.dataset.openTab)));
-byId('cloud-refresh').addEventListener('click', refresh);
+let refreshingComputers=false;
+async function refreshComputers(){
+  if(refreshingComputers)return;
+  refreshingComputers=true;
+  const control=byId('cloud-refresh');control.disabled=true;
+  feedback('Checking child computers…');
+  try{
+    await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(10000),body:JSON.stringify({action:'refresh-computers'})});
+    await new Promise(resolve=>setTimeout(resolve,1800));
+    await refresh();
+  }catch{await refresh();}finally{refreshingComputers=false;setControls();}
+}
+byId('cloud-refresh').addEventListener('click', refreshComputers);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], async form => {
   const student = await mutate('add-student', { name: form.get('name'), grade: form.get('grade') });
   byId('cloud-editor').addEventListener('close', () => parentGuide?.openChild(student.id), { once: true });
@@ -475,9 +487,9 @@ window.addEventListener('message', event => {
   if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
 });
 setupCloudAssistant({ endpoint, navigate: selectTab });
-mobile = setupCloudMobile({ navigate: selectTab, refresh });
+mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers });
 mobile.setActive('overview');
 parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
 window.lucide?.createIcons();
 setControls();
-refresh();
+refreshComputers();

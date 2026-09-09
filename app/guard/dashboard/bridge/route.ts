@@ -76,6 +76,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "coloring-student-settings": path = "/coloring-studio/settings"; method = "POST"; body = { scope: "student", studentId: input.studentId, enabled: input.enabled, daily_limit: input.daily_limit, custom_prompts_enabled: input.custom_prompts_enabled, allow_people: input.allow_people, require_parent_approval: input.require_parent_approval, require_image_approval: input.require_image_approval }; break;
     case "coloring-request-action": path = "/coloring-studio/action"; method = "POST"; body = { requestId: input.requestId, action: input.requestAction }; break;
     case "coloring-image": path = "/coloring-studio/image"; method = "POST"; body = { requestId: input.requestId, delivery: "url", thumbnail: input.thumbnail === true }; break;
+    case "refresh-computers": path = "/refresh"; method = "POST"; body = {}; break;
     case "screenshots-overview": path = "/screenshots/overview"; method = "POST"; body = {}; break;
     case "request-screenshot": path = "/screenshots/request"; method = "POST"; body = { studentId: input.studentId }; break;
     case "screenshot-action": path = "/screenshots/action"; method = "POST"; body = { screenshotId: input.screenshotId, action: input.screenshotAction }; break;
