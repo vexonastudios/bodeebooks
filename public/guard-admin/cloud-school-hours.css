@@ -1,0 +1,40 @@
+.school-hours-form{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;min-width:0}
+.school-hours-form>.school-hours-toggle,.school-hours-days,.school-hours-coins{grid-column:1/-1}
+.school-hours-form .setup-field{margin:7px 0;font-size:14px;line-height:1.4}
+.school-hours-form .setup-field input,.school-hours-form .setup-field select{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid #716584;border-radius:8px;background:#202034;color:#f1edff;font:inherit}
+.school-hours-form .school-hours-toggle{display:flex!important;align-items:center;gap:10px;margin:8px 0!important;line-height:1.4!important;font-weight:600}
+.school-hours-toggle input{width:18px!important;height:18px;flex-shrink:0;accent-color:#987ae3}
+.school-hours-form fieldset{min-width:0;margin:10px 0;padding:12px 16px;border:1px solid #ffffff26;border-radius:12px}
+.school-hours-form legend{font-size:16px;font-weight:700;padding:0 6px}
+.school-hours-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.school-hours-days .school-hours-toggle{flex-direction:column;gap:6px;font-size:13px;background:#ffffff05;border-radius:8px;padding:8px 0}
+.school-hours-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.school-hours-form input:disabled{opacity:.5}
+.school-hours-note{color:#aaa3bf;font-size:13px;line-height:1.45;margin:6px 0}
+.parent-setup-dialog,.parent-setup-dialog .setup-frame{max-height:calc(100dvh - 24px)}
+.parent-setup-dialog.setup-calendar-step{width:min(1000px,calc(100vw - 24px))}
+#cloud-editor.cloud-hours-editor{width:min(1000px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box}
+#cloud-editor.cloud-hours-editor .setup-field{display:flex;margin:7px 0;line-height:1.4}
+.parent-setup-dialog.setup-section-open{width:min(1440px,calc(100vw - 24px))}
+.parent-setup-dialog[data-setup-section="calendar"] header{padding:12px 20px}
+.parent-setup-dialog[data-setup-section="calendar"] .setup-body{padding:12px 20px}
+.parent-setup-dialog[data-setup-section="calendar"] .setup-subfooter{padding:10px 20px}
+.setup-embedded-panel#tab-calendar{padding:0!important}
+.setup-embedded-panel#tab-calendar>.tab-header{margin-bottom:10px;padding:0}
+.setup-embedded-panel#tab-calendar .cloud-panel{padding:16px;margin:0 0 12px}
+.setup-embedded-panel#tab-calendar .cloud-panel>h2{font-size:20px;margin:0 0 8px}
+.setup-embedded-panel#tab-calendar .cloud-panel>p{font-size:13px;margin:5px 0;line-height:1.35}
+.setup-embedded-panel .cloud-calendar-toolbar{margin:12px 0 8px;gap:8px}
+.setup-embedded-panel .cloud-calendar-toolbar h2{font-size:22px}
+.setup-embedded-panel .cloud-calendar-layout{grid-template-columns:minmax(0,1fr) minmax(230px,.36fr);gap:16px}
+.setup-embedded-panel .cloud-month-table{min-width:0;width:100%;border-spacing:3px}
+.setup-embedded-panel .cloud-month-table th{padding:4px;font-size:13px}
+.setup-embedded-panel .cloud-calendar-day{min-height:clamp(46px,calc((100dvh - 450px)/6),80px);padding:5px;gap:3px}
+.setup-embedded-panel .cloud-calendar-day strong{font-size:15px}
+.setup-embedded-panel .cloud-calendar-day span{font-size:12px;line-height:1.2}
+.setup-embedded-panel .cloud-day-details{padding:14px;max-height:calc(100dvh - 330px);overflow-y:auto}
+.setup-embedded-panel .cloud-day-details h3{font-size:17px;margin:0 0 12px}
+@media(max-width:700px){.school-hours-options{grid-template-columns:1fr 1fr}.school-hours-form{gap:4px 12px}.setup-embedded-panel .cloud-calendar-layout{grid-template-columns:1fr}.setup-embedded-panel .cloud-calendar-day{min-height:48px}.setup-embedded-panel .cloud-day-details{max-height:none}.setup-embedded-panel .cloud-calendar-day span{display:none}.parent-setup-dialog[data-setup-section="calendar"] .setup-body{padding:10px}.school-hours-form fieldset{padding:10px}.school-hours-form>.setup-field:has(select){grid-column:1/-1}}
+@media(max-width:400px){.school-hours-form>.setup-field{grid-column:1/-1}.school-hours-days{gap:2px}}
+
+@media(max-width:700px){.setup-embedded-panel .cloud-calendar-toolbar .cloud-actions{width:100%;flex-wrap:nowrap;gap:6px}.setup-embedded-panel .cloud-calendar-toolbar h2{font-size:19px;min-width:0;flex:1}.setup-embedded-panel .cloud-calendar-toolbar .btn{padding:8px 12px}.setup-embedded-panel .cloud-calendar-toolbar{justify-content:flex-end}}

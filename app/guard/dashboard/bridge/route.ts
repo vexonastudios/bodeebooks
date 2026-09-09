@@ -58,11 +58,13 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "list-school": path = "/school/list"; method = "POST"; body = { studentId: input.studentId, date: input.date }; break;
     case "review-school": path = "/school/review"; method = "POST"; body = { id: input.id, studentId: input.studentId, subjectId: input.subjectId, date: input.date,
       revision: input.revision, rulesRevision: input.rulesRevision, completed: input.completed, parentNotes: input.parentNotes }; break;
+    case "attendance-list": path = "/attendance/list"; method = "POST"; body = { date: input.date }; break;
+    case "attendance-excuse": path = "/attendance/excuse"; method = "POST"; body = { date: input.date, studentId: input.studentId }; break;
     case "get-setup": path = "/setup/get"; method = "POST"; body = {}; break;
     case "get-child-setup": path = "/setup/child-get"; method = "POST"; body = { studentId: input.studentId }; break;
     case "save-child-setup": path = "/setup/child-save"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, familyRevision: input.familyRevision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
     case "preview-starter": path = "/setup/preview"; method = "POST"; body = { itemId: input.itemId }; break;
-    case "save-setup": path = "/setup/save"; method = "POST"; body = { revision: input.revision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
+    case "save-setup": path = "/setup/save"; method = "POST"; body = { guideVersion: input.guideVersion, revision: input.revision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
     case "list-daily-questions": path = "/daily-questions/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
     case "list-practice": path = "/practice/list"; method = "POST"; body = { studentId: input.studentId, module: input.module, offset: input.offset }; break;
     case "list-geography": path = "/geography/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;

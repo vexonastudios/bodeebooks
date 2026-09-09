@@ -2,7 +2,7 @@ export function node(tag, text = '', className = '') {
   const element = document.createElement(tag); element.textContent = text; element.className = className; return element;
 }
 const icons = {
-  'Your children':'users', 'School and schedule':'school', 'Daily activities':'sun', 'Learning tools':'blocks', 'Starter content':'library', 'Parent controls':'shield-check', Ready:'circle-check',
+  'Your children':'users', School:'school', 'Calendar & school hours':'calendar-days', 'On-time rewards & late coins':'coins', 'Daily activities':'sun', 'Learning tools':'blocks', 'Starter content':'library', 'Parent controls':'shield-check', Ready:'circle-check',
   'Daily Verse':'book-open', 'Brain Teaser':'lightbulb', Music:'music', Videos:'video', 'Typing School':'keyboard', 'Logic Lab':'brain', 'Confused Words':'spell-check', Geography:'globe',
   Spelling:'spell-check', 'Science Spelling':'flask-conical', Vocabulary:'book-a', 'Poem Memorization':'book-open-text', Poems:'book-open-text', Quizzes:'list-checks',
   'Reading Log':'book-open', Notebook:'notebook-pen', Spanish:'languages', Piano:'piano', 'Art Studio':'palette', Artwork:'palette', Worksheets:'printer',
@@ -98,9 +98,9 @@ export function setupSections({ dialog, body, footer, navigate }) {
     const placeholder=document.createComment('setup section location'); panel.before(placeholder);
     const saved=document.createDocumentFragment(),scroll=body.scrollTop; while(body.firstChild)saved.append(body.firstChild);
     const controls=node('footer','','setup-subfooter'),back=node('button','Back to setup','btn btn-primary'); back.type='button'; controls.append(back);
-    footer.hidden=true; footer.after(controls); dialog.classList.add('setup-section-open');
+    footer.hidden=true; footer.after(controls); dialog.classList.add('setup-section-open'); dialog.dataset.setupSection=tab;
     restore=()=>{
-      placeholder.replaceWith(panel); body.replaceChildren(saved); controls.remove(); footer.hidden=false; dialog.classList.remove('setup-section-open'); restore=null;
+      placeholder.replaceWith(panel); body.replaceChildren(saved); controls.remove(); footer.hidden=false; dialog.classList.remove('setup-section-open'); delete dialog.dataset.setupSection; restore=null;
       navigate(previousTab); body.scrollTop=scroll; footer.querySelector('button:not(:disabled)')?.focus();
     };
     back.onclick=restore;

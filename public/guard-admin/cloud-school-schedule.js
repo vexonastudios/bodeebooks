@@ -36,6 +36,14 @@ function normalizeCloudSubjectSchedule(input) {
   return { scheduleStart, scheduleEnd };
 }
 
+function normalizeCloudAttendance(input) {
+  const value={enabled:false,graceMinutes:10,requiredActiveSeconds:120,coinsPerLateMinute:1,maxPenaltyCoins:30,onTimeBonusCoins:5,...input};
+  if(!input||typeof input!=='object'||Array.isArray(input)||typeof value.enabled!=='boolean')throw Error('Choose whether late coins are enabled.');
+  for(const [key,min,max]of [['graceMinutes',0,120],['requiredActiveSeconds',30,900],['coinsPerLateMinute',0,20],['maxPenaltyCoins',0,500],['onTimeBonusCoins',0,100]]) {
+    if(!Number.isInteger(value[key])||value[key]<min||value[key]>max)throw Error('Check the grace period and coin amounts.');
+  }
+  return {enabled:value.enabled,graceMinutes:value.graceMinutes,requiredActiveSeconds:value.requiredActiveSeconds,coinsPerLateMinute:value.coinsPerLateMinute,maxPenaltyCoins:value.maxPenaltyCoins,onTimeBonusCoins:value.onTimeBonusCoins};
+}
 function normalizeCloudSchoolSchedule(input) {
   const value = input == null ? DEFAULT_CLOUD_SCHOOL_SCHEDULE : input;
   if (!value || typeof value !== 'object' || Array.isArray(value) || typeof value.enabled !== 'boolean') {
@@ -80,7 +88,9 @@ function normalizeCloudSchoolSchedule(input) {
     exceptionDates.add(item.date);
     return { date: item.date, school: item.school };
   }).sort((a, b) => a.date.localeCompare(b.date));
-  return { enabled: value.enabled, timeZone, days, start, end, termStart, termEnd, breaks, exceptions };
+  const attendance=value.attendance==null?null:normalizeCloudAttendance(value.attendance);
+  if(attendance?.enabled&&!value.enabled)throw Error('Enable the school calendar before using late coins.');
+  return { enabled: value.enabled, timeZone, days, start, end, termStart, termEnd, breaks, exceptions, ...(attendance?{attendance}:{}) };
 }
 
 // Date-only evaluation is shared with the parent's monthly calendar. Never
