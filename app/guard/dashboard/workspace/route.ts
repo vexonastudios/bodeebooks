@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { cloudApi, CloudApiError } from "../cloud-api";
 import workspace from "../generated/workspace.json";
 import mediaPanels from "../generated/media.json";
+import { dashboardNotice } from "../dashboardNotice";
 
 const headers = {
   "Content-Type": "text/html; charset=utf-8",
@@ -15,7 +16,7 @@ function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 }
 function notice(message: string, status: number) {
-  return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BodeeGuard dashboard</title><body><h1>BodeeGuard Parent Dashboard</h1><p>${escapeHtml(message)}</p><a href="/guard/account/" target="_top">Back to parent account</a></body></html>`, { status, headers });
+  return new Response(dashboardNotice(message, status), { status, headers });
 }
 export async function GET(request: Request) {
   if (!(await auth()).isAuthenticated) return notice("Please sign in to your parent account again.", 401);
@@ -40,6 +41,6 @@ export async function GET(request: Request) {
       .replace('width=device-width, initial-scale=1.0', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
     return new Response(html, { headers });
   } catch (error) {
-    return notice(error instanceof CloudApiError ? error.message : "Cloud management could not be reached. Your current installation and family records are unchanged.", error instanceof CloudApiError ? error.status : 503);
+    return notice(error instanceof CloudApiError ? error.message : "BodeeGuard is temporarily unavailable.", error instanceof CloudApiError ? error.status : 503);
   }
 }

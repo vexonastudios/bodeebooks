@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import styles from "./workspace.module.css";
 import ParentPwa from "./ParentPwa";
+import ParentWorkspace from "./ParentWorkspace";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://guard.bodeebooks.com"),
@@ -20,8 +21,6 @@ export default async function FamilyDashboard() {
   // It is not a LAN iframe and never calls the parent's desktop.
   return <div className={styles.workspace} data-guard-workspace="true">
     <ParentPwa />
-    <iframe title="BodeeGuard Parent Dashboard" src="/guard/dashboard/workspace/" className={styles.frame}
-      allow="autoplay; fullscreen; encrypted-media"
-      sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-downloads allow-top-navigation-by-user-activation" />
+    <ParentWorkspace />
   </div>;
 }

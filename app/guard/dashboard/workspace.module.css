@@ -1,5 +1,6 @@
 .workspace { position: fixed; inset: 0; z-index: 100; background: #0d0d1a; }
 .frame { width: 100%; height: 100%; height: 100dvh; display: block; border: 0; }
+.connecting { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; color: #f8fafc; font: 18px system-ui, sans-serif; }
 .installBackdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: #0009; padding: 20px; }
 .installCard { width: min(100%, 380px); border: 1px solid #334155; border-radius: 20px; background: #11152b; color: #f8fafc; padding: 24px; }
 .installCard h2 { font-size: 22px; margin-bottom: 12px; }

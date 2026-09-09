@@ -10,6 +10,7 @@ import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuard
 import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
 import styles from "../portal.module.css";
+import AccountRetry from "../AccountRetry";
 
 export const metadata: Metadata = { title: "BodeeGuard Parent Account" };
 
@@ -160,6 +161,7 @@ async function loadBodeeGuardAccount(token: string): Promise<BodeeGuardAccount |
     const response = await fetch(`${apiBase}/v1/account`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) return null;
     return await response.json() as BodeeGuardAccount;
@@ -178,10 +180,9 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const setupCollapsed = (await cookies()).get("bg_child_setup_collapsed")?.value === "1";
   if (!account) return (
     <div className={styles.portalPage}><div className={`container ${styles.narrowShell}`}>
-      <section className={styles.activationCard}><ShieldCheck size={29} /><h1>Welcome, {name}.</h1>
-        <p>You are signed in. We cannot load your family account right now, so we cannot confirm your subscription or connected computers.</p>
-        <p>Your existing family data is preserved. Please refresh in a moment or <Link href="/feedback">contact support</Link> if this continues.</p>
-        <Link className={styles.portalButton} href="/guard/account/">Try again</Link>
+      <section className={styles.activationCard}><ShieldCheck size={29} /><h1>Let’s reconnect.</h1>
+        <p>Your family account is temporarily unavailable. Please try again in a moment.</p>
+        <AccountRetry className={styles.portalButton} />
       </section></div></div>
   );
   const customerLaunchOpen = Boolean(account.enrollment?.customerLaunchOpen);

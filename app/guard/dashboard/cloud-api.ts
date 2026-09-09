@@ -32,6 +32,6 @@ export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T>
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new CloudApiError(response.status < 500 && typeof payload.error === "string"
-    ? payload.error.slice(0, 600) : "The cloud dashboard could not be reached. Your current installation is unchanged.", response.status);
+    ? payload.error.slice(0, 600) : "BodeeGuard is temporarily unavailable. Please try again shortly.", response.status);
   return payload as T;
 }

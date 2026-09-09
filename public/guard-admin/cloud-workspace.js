@@ -124,7 +124,10 @@ async function refresh() {
     try {
       const response = await fetch(endpoint, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal });
       const data = await response.json();
-      if (!response.ok) throw new Error(response.status === 401 ? 'Your sign-in expired. Open Account to sign in again.' : data.error || 'The cloud service could not be reached.');
+      if (!response.ok) {
+        if (response.status === 401) window.parent.postMessage({type:'bodeeguard-renew-session'}, location.origin);
+        throw new Error(response.status === 401 ? 'Reconnecting your account…' : data.error || 'The cloud service could not be reached.');
+      }
       snapshot = data;
       usable = true;
       failures = 0;
@@ -496,6 +499,9 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
+window.addEventListener('message', event => {
+  if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
+});
 setupCloudAssistant({ endpoint, navigate: selectTab });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');
