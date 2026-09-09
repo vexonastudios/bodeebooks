@@ -4,8 +4,11 @@ export function setupCloudReading({ endpoint, getSnapshot }) {
   const node = (tag, text = '') => { const element = document.createElement(tag); element.textContent = text; return element; };
   const selector = node('select'), status = node('p'), wallet = node('p'), books = node('div'), history = node('div');
   selector.setAttribute('aria-label', 'Reading student');
+  selector.className = 'admin-select';
+  status.setAttribute('role', 'status');
   const refresh = node('button', 'Refresh reading'); refresh.className = 'btn btn-secondary'; refresh.type = 'button';
-  root.append(node('h2', 'Reading logs & completion coins'), selector, refresh, status, wallet, books, history);
+  const toolbar = node('div'); toolbar.className = 'cloud-report-toolbar'; toolbar.append(selector, refresh);
+  root.append(node('h2', 'Reading logs & completion coins'), toolbar, status, wallet, books, history);
   let active = false, generation = 0, busy = false, historyGeneration = 0;
   async function request(action, input) {
     const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000),

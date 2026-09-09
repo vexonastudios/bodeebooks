@@ -1,4 +1,76 @@
 /* Browser transport additions only; base.css and monitoring.css remain shared. */
+
+/* Shared controls from the original Admin stylesheet (outside its imports). */
+.cloud-workspace {
+  --border-color: var(--border);
+  --card-bg: var(--bg-card);
+  --bg-tertiary: var(--bg-input);
+}
+.spelling-trouble-row { margin-top:10px; padding:8px 9px; border-radius:9px; background:rgba(239,68,68,.07); color:#fca5a5; font-size:11px; }
+.spelling-trouble-row strong { color:#fecaca; }
+.h3-icon { width: 20px; height: 20px; margin-right: 8px; vertical-align: middle; stroke-width: 2px; color: var(--accent-color, #a78bfa); }
+.h1-icon { width: 26px; height: 26px; margin-right: 10px; vertical-align: middle; stroke-width: 2px; color: var(--accent-purple, #a78bfa); }
+.cloud-workspace h3:has(> .h3-icon) { display: flex; align-items: center; }
+
+/* Day-chip toggle for App Launcher schedule */
+.day-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+  user-select: none;
+}
+.day-chip:has(input:checked) {
+  background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4);
+  color: #a78bfa;
+}
+.day-chip input { accent-color: #a78bfa; }
+
+/* Student assignment checkboxes in app modal */
+.student-assign-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 12px; font-size: 13px; font-weight: 500;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+  user-select: none;
+}
+.student-assign-chip:has(input:checked) {
+  background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4);
+  color: #34d399;
+}
+.student-assign-chip input { accent-color: var(--accent-green); }
+
+/* App card in admin grid */
+.app-card-admin {
+  background: var(--card-bg, rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 20px; cursor: pointer;
+  transition: all 0.2s;
+}
+.app-card-admin:hover {
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.app-card-admin-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.app-card-admin-icon { font-size: 28px; }
+.app-card-admin-name { font-size: 16px; font-weight: 700; color: #fff; }
+.app-card-admin-path {
+  font-size: 11px; color: var(--text-muted); margin-top: 4px;
+  font-family: monospace; word-break: break-all; opacity: 0.7;
+}
+.app-card-admin-desc {
+  font-size: 13px; color: var(--text-muted); margin-top: 6px;
+}
+
+.cloud-report-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.cloud-report-toolbar .admin-select { width: auto; min-width: 160px; max-width: 100%; }
+#cloud-reading-reports > p, #cloud-spanish-reports > p { margin: 12px 0; color: var(--text-secondary); line-height: 1.6; font-size: 14px; }
+#cloud-reading-reports h3 { margin-bottom: 10px; }
+@media (max-width: 600px) { .cloud-report-toolbar { align-items: stretch; flex-direction: column; } .cloud-report-toolbar .admin-select { width: 100%; } }
+
 #family-school-setup summary{cursor:pointer;font-size:18px;font-weight:700}
 .cloud-main-school-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--border)}
 .cloud-main-school-row span{color:var(--text-secondary);flex:1}

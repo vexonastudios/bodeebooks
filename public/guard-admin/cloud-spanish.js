@@ -4,7 +4,8 @@ export function setupCloudSpanish({ endpoint, getSnapshot }) {
   const selector = node('select'), refresh = node('button', 'Refresh Spanish progress'), status = node('p'), content = node('div');
   selector.className = 'admin-select'; selector.setAttribute('aria-label', 'Spanish student');
   refresh.className = 'btn btn-secondary'; status.setAttribute('role', 'status');
-  root.append(node('h2', 'Spanish'), selector, refresh, status, content);
+  const toolbar = node('div'); toolbar.className = 'cloud-report-toolbar'; toolbar.append(selector, refresh);
+  root.append(node('h2', 'Spanish'), toolbar, status, content);
   let active = false, generation = 0;
   function update() {
     const selected = selector.value;
