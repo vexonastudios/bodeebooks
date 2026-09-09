@@ -453,7 +453,7 @@ async function refreshComputers(){
     await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(10000),body:JSON.stringify({action:'refresh-computers'})});
     await new Promise(resolve=>setTimeout(resolve,1800));
     await refresh();
-  }catch{await refresh();}finally{refreshingComputers=false;setControls();}
+  }catch{await refresh();}finally{refreshingComputers=false;control.disabled=false;setControls();}
 }
 byId('cloud-refresh').addEventListener('click', refreshComputers);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], async form => {
