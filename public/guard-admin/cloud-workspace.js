@@ -446,7 +446,7 @@ const livePush = window.CloudPush.createCloudPushClient({
     if(!response.ok)throw Error('Live delivery is reconnecting');
     return response.json();
   },
-  onConnection: connected => messaging.setLive(connected),
+  onConnection: connected => { byId('live-indicator').dataset.messagesConnected=String(connected); messaging.setLive(connected); },
   onReady: () => screenshots.refresh(),
   onSignal: hint => { if(hint.kind==='messages')messaging.notify(hint.studentId); if(hint.kind==='screenshots')screenshots.refresh(); }
 });
