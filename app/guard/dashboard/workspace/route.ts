@@ -10,7 +10,7 @@ const headers = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Content-Security-Policy": "default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src 'self' https://www.youtube.com https://noembed.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://yt3.ggpht.com; media-src blob:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
+  "Content-Security-Policy": "default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src 'self' https://www.youtube.com https://noembed.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://yt3.ggpht.com https://bodeeguard-cloud-assets.james-7f8.workers.dev; media-src blob: https://bodeeguard-cloud-assets.james-7f8.workers.dev; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
 };
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);

@@ -365,7 +365,7 @@ export function setupFamilyWatchTab() {
   loadStudents();
   loadFamilyWatch();
   pollTimer = window.setInterval(() => {
-    if ((!document.hidden && byId('tab-family-watch')?.classList.contains('active')) || familyWatchState.active) loadFamilyWatch();
+    if (!document.hidden && familyWatchState.active) loadFamilyWatch();
   }, 3000);
   clockTimer = window.setInterval(() => {
     if (familyWatchState.active) {

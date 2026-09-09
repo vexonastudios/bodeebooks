@@ -131,7 +131,7 @@ async function refresh() {
       snapshot = data;
       usable = true;
       failures = 0;
-      byId('live-text').textContent = 'Connected · 30s refresh';
+      byId('live-text').textContent = 'Updates every 30 minutes · Refresh anytime';
       byId('live-indicator').dataset.connected = 'true';
       feedback(`Updated ${new Date(data.serverTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`);
       showSnapshot();
@@ -145,7 +145,7 @@ async function refresh() {
     } finally {
       clearTimeout(timeout);
       inFlight = null;
-      if (!document.hidden) timer = setTimeout(refresh, Math.min(300000, 30000 * (2 ** Math.min(failures, 4))));
+      if (!document.hidden) timer = setTimeout(refresh, failures ? Math.min(1800000, 60000 * (2 ** Math.min(failures, 5))) : 1800000);
     }
   })();
   return inFlight;
