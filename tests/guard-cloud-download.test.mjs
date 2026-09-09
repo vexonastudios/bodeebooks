@@ -38,15 +38,15 @@ test('the current internal Family Beta can expose only its configured cloud test
   for (const version of ['', '01.2.167', '1.2', '1.2.65536']) assert.equal(internalPilotRelease(eligible, version), null);
 });
 
-async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token', internalPilot = false } = {}) {
+async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token', internalPilot = false, runAfter = false, metricFails = false } = {}) {
   const filename = path.resolve('app/guard/download/windows/route.ts');
-  const route = new Module(filename), localRequire = createRequire(filename);
+  const route = new Module(filename), localRequire = createRequire(filename), afterWork=[];
   route.require = name => {
     if (name === '@clerk/nextjs/server') return { auth: { protect: async () => {
       if (!authenticated) throw new Error('sign-in-required');
       return { getToken: async () => token };
     } } };
-    if (name === 'next/server') return { NextResponse: { redirect: (url, init) => new Response(null, {
+    if (name === 'next/server') return { after: work=>afterWork.push(work), NextResponse: { redirect: (url, init) => new Response(null, {
       status: typeof init === 'number' ? init : init.status, headers: { ...(init.headers || {}), Location: String(url) },
     }) } };
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
@@ -67,6 +67,7 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
   }
   globalThis.fetch = async (url, init) => {
     calls.push({ url, init });
+    if (url.endsWith('/downloads') && metricFails) throw new Error('metrics unavailable');
     if (failFetch) throw new Error('service unavailable');
     return { ok: apiOk, json: async () => account };
   };
@@ -74,7 +75,10 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
     route._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText, filename);
-    return { response: await route.exports.GET(new Request('https://guard.bodeebooks.com/download/windows/')), calls };
+    const response = await route.exports.GET(new Request('https://guard.bodeebooks.com/download/windows/'));
+    const callsBeforeResponse = calls.length;
+    if(runAfter)for(const work of afterWork)await work();
+    return { response, calls, callsBeforeResponse, queued:afterWork.length };
   } finally {
     globalThis.fetch = previousFetch;
     for (const [name, value] of Object.entries(previousEnvironment)) {
@@ -84,6 +88,15 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
 }
 
 const active = { billingMode: 'stripe', entitlementStatus: 'trial', releaseChannel: 'stable', release: cloudReleaseFixture() };
+test('download metrics run after the redirect and a metrics failure cannot block installation',async()=>{
+  for(const metricFails of [false,true]){
+    const {response,calls,callsBeforeResponse,queued}=await download({account:active,runAfter:true,metricFails});
+    assert.equal(response.status,307);assert.equal(callsBeforeResponse,1);assert.equal(queued,1);
+    assert.equal(calls[1].url,'https://fixture.invalid/api/v1/account/downloads');
+    const event=JSON.parse(calls[1].init.body);assert.equal(event.version,active.release.version);assert.equal(event.channel,'stable');assert.match(event.id,/^[a-f0-9-]{36}$/);
+  }
+  assert.equal((await download({account:{...active,entitlementStatus:'inactive'},runAfter:true})).queued,0);
+});
 test('authenticated download sends no credential to GitHub and never caches the redirect', async () => {
   const { response, calls } = await download({ account: active });
   assert.equal(response.status, 307);
