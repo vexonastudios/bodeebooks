@@ -1,5 +1,6 @@
 .school-hours-form{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;min-width:0}
-.school-hours-form>.school-hours-toggle,.school-hours-days,.school-hours-coins{grid-column:1/-1}
+.school-hours-days,.school-hours-coins{grid-column:1/-1}
+.school-hours-form>.school-hours-toggle{align-self:center}
 .school-hours-form .setup-field{margin:7px 0;font-size:14px;line-height:1.4}
 .school-hours-form .setup-field input,.school-hours-form .setup-field select{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid #716584;border-radius:8px;background:#202034;color:#f1edff;font:inherit}
 .school-hours-form .school-hours-toggle{display:flex!important;align-items:center;gap:10px;margin:8px 0!important;line-height:1.4!important;font-weight:600}
