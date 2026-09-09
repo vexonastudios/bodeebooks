@@ -4,9 +4,10 @@ import {operatorApi,OperatorError} from "./operator-api";
 import OperatorPanel from "./OperatorPanel";
 import type {Overview} from "./types";
 export const metadata={title:"BodeeGuard staff",robots:{index:false,follow:false}};
-export default async function StaffPage(){
+export default async function StaffPage({searchParams}:{searchParams:Promise<{tab?:string}>}){
   if(!(await auth()).isAuthenticated)redirect("/guard/sign-in/?redirect_url=%2Fadmin%2F");
   let overview:Overview;
   try{overview=await operatorApi<Overview>();}catch(error){if(error instanceof OperatorError&&[401,403].includes(error.status))notFound();throw error;}
-  return <OperatorPanel initial={overview}/>;
+  const {tab}=await searchParams;
+  return <OperatorPanel initial={overview} initialTab={['content','reports'].includes(tab||'')?tab:'overview'}/>;
 }

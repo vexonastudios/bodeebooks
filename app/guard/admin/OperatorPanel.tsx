@@ -14,11 +14,12 @@ async function imageUpload(file:File){
     const data=canvas.toDataURL("image/webp",.9).split(",")[1];if(data.length>2800000)throw Error("This image is still too large. Use a smaller drawing.");return data;
   }finally{bitmap.close();}
 }
-export default function OperatorPanel({initial}:{initial:Overview}){
+export default function OperatorPanel({initial,initialTab='overview'}:{initial:Overview;initialTab?:string}){
   const [tab,setTab]=useState("overview"),[overview,setOverview]=useState(initial),[catalog,setCatalog]=useState<Catalog|null>(null),[category,setCategory]=useState("music"),[search,setSearch]=useState(""),[dirty,setDirty]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState(""),[reports,setReports]=useState<Report[]>([]),[reference,setReference]=useState(""),[preview,setPreview]=useState<{items:Item[];index:number}|null>(null),[image,setImage]=useState(""),[previewError,setPreviewError]=useState("");
   const upload=useRef<HTMLInputElement>(null),cache=useRef(new Map<string,string>()),modal=useRef<HTMLDialogElement>(null);
   const work=useCallback(async(task:()=>Promise<void>)=>{setBusy(true);setError("");setNotice("");try{await task();}catch(error){setError(error instanceof Error?error.message:"Try again.");}finally{setBusy(false);}},[]);
-  function navigate(next:string){setTab(next);if(next==="content"&&!catalog)void work(async()=>setCatalog(await request<Catalog>("catalog")));if(next==="reports")void work(async()=>setReports((await request<{reports:Report[]}>("reports")).reports));}
+  function navigate(next:string){if(busy)return;setTab(next);const url=new URL(window.location.href);url.searchParams.set('tab',next);window.history.replaceState(null,'',url);if(next==="content"&&!catalog)void work(async()=>setCatalog(await request<Catalog>("catalog")));if(next==="reports")void work(async()=>setReports((await request<{reports:Report[]}>("reports")).reports));}
+  useEffect(()=>{if(initialTab==='content'){setTab('content');void work(async()=>setCatalog(await request<Catalog>('catalog')));}else if(initialTab==='reports'){setTab('reports');void work(async()=>setReports((await request<{reports:Report[]}>('reports')).reports));}},[initialTab,work]);
   const current=preview?.items[preview.index];
   useEffect(()=>{if(!preview)return;modal.current?.showModal();const focus=document.activeElement;return()=>{if(focus instanceof HTMLElement)focus.focus();};},[!!preview]);
   useEffect(()=>{let canceled=false;setImage("");setPreviewError("");if(!current||current.youtubeId)return;
