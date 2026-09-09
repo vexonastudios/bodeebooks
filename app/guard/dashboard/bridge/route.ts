@@ -83,7 +83,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "screenshot-image": path = "/screenshots/image"; method = "POST"; body = { screenshotId: input.screenshotId, delivery: "url", thumbnail: input.thumbnail === true }; break;
     case "math-coach-overview": path = "/math-coach/overview"; method = "POST"; body = {}; break;
     case "math-coach-global-settings": path = "/math-coach/settings"; method = "POST"; body = { scope: "global", monthly_unit_limit: input.monthly_unit_limit }; break;
-    case "math-coach-student-settings": path = "/math-coach/settings"; method = "POST"; body = { scope: "student", studentId: input.studentId, enabled: input.enabled, daily_question_limit: input.daily_question_limit }; break;
+    case "math-coach-student-settings": path = "/math-coach/settings"; method = "POST"; body = { scope: "student", studentId: input.studentId, enabled: input.enabled, daily_question_limit: input.daily_question_limit, require_daily_approval: input.require_daily_approval }; break;
     case "math-coach-action": path = "/math-coach/action"; method = "POST"; body = { studentId: input.studentId, action: input.mathAction }; break;
     case "math-coach-transcript": path = "/math-coach/transcript"; method = "POST"; body = { studentId: input.studentId }; break;
     case "list-spelling": path = "/spelling/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
