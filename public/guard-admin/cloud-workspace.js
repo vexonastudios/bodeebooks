@@ -1,10 +1,11 @@
+import { setupMonitoring } from './cloud-monitoring.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupParentGuide } from './cloud-parent-setup.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
+import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import './cloud-push-client.js';
 import { setupCloudMobile } from './cloud-mobile.js';
@@ -94,7 +95,7 @@ function selectTab(id) {
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
-    control.disabled = !usable || mutating;
+    control.disabled = !usable || mutating || control.dataset.requiresDevice === 'false';
   });
 }
 function showSnapshot() {
@@ -176,75 +177,27 @@ function mutationButton(text, action, data, className) {
   return result;
 }
 function renderComputers() {
-  const grid = byId('overview-grid');
-  let passwordPanel = byId('family-parent-password');
-  if (!passwordPanel) {
-    passwordPanel = node('section', 'cloud-panel'); passwordPanel.id = 'family-parent-password';
-    grid.before(passwordPanel);
-  }
+  monitoring.render();
+  const passwordPanel = byId('family-parent-password');
   const familyPassword = snapshot.parentPassword || { configured: false, revision: 0 };
   const passwordButton = button(familyPassword.configured ? 'Change parent password' : 'Set parent password', () => showRecovery(), 'btn btn-primary');
   passwordButton.dataset.cloudMutation = 'true';
-  passwordPanel.replaceChildren(node('h2', '', 'Parent password'), node('p', '', 'One password for all your children’s computers. Use child app 1.2.173 or newer for automatic setup.'), passwordButton);
-  const clients = byId('clients-panel');
-  grid.replaceChildren();
-  clients.replaceChildren();
-  if (!snapshot.devices.length) {
-    grid.append(node('p', 'cloud-panel', 'No cloud test computers connected yet. Your current LAN computers and records are unchanged.'));
-    clients.append(node('p', 'clients-empty', 'No cloud computers yet'));
-  }
+  passwordPanel.replaceChildren(node('h2', '', 'Parent password'), node('p', '', 'One password for all your children’s computers. It also works offline.'), passwordButton);
+  const list = byId('cloud-computer-settings'), clients = byId('clients-panel');
+  if(list.contains(document.activeElement))return;
+  list.replaceChildren();clients.replaceChildren();
   for (const device of snapshot.devices) {
     const student = snapshot.students.find(item => item.id === device.student_id);
-    const connected = connectionState(device, Date.parse(snapshot.serverTime));
-    const subject = snapshot.rules.subjects.find(item => item.id === device.current_subject);
-    const card = node('article', `monitor-card ${connected === 'Connected' ? 'monitor-card--active' : 'monitor-card--idle'}`);
-    const top = node('div', 'monitor-card-top');
-    const identity = node('div', 'monitor-card-identity');
-    const names = node('div', 'monitor-name-status');
-    names.append(node('h2', 'monitor-name', student?.name || device.computer_name), node('p', `monitor-status-badge ${connected === 'Connected' ? 'active' : 'idle'}`, connected));
-    identity.append(node('span', 'monitor-avatar', '👤'), names);
-    top.append(identity);
-    const timerRow = node('div', 'monitor-timer-row');
-    const total = node('div', 'monitor-timer-box');
-    total.append(node('span', 'monitor-timer-label', activityDayLabel(snapshot)), node('span', 'monitor-timer-value', receivedTime(todaySeconds(snapshot, student?.id))));
-    timerRow.append(total);
-    const lessonGroups=[];
-    const lessons=(snapshot.portalProgress||[]).filter(row=>row.student_id===student?.id);
-    for(const lesson of lessons) {
-      const group=node('div','cloud-abeka-courses'); group.setAttribute('aria-label',"Today's Abeka lessons");
-      for(const course of lesson.courses) { const chip=node('span',course.completed?'cloud-abeka-course complete':'cloud-abeka-course',(course.completed?'✓ ':'○ ')+course.courseName); chip.title=course.lessonLabel; group.append(chip); }
-      lessonGroups.push(group);
-    }
-    const goals = node('details', 'cloud-subject-goals');
-    const goalRows = [];
-    if (student) for (const subject of snapshot.rules.subjects) {
-      const progress = subjectProgress(snapshot, student.id, subject.id);
-      if (progress) goalRows.push(node('p', 'cloud-note', progress.seconds === null
-        ? `${subject.title}: received time unavailable · ${progress.goalMinutes}m goal`
-        : `${subject.title}: ${receivedTime(progress.seconds)} of ${progress.goalMinutes}m · ${progress.percent}%`));
-    }
-    if (goalRows.length) goals.append(node('summary', '', `${goalRows.length} subject goal${goalRows.length === 1 ? '' : 's'} today`), ...goalRows);
-    const assignment = node('select', 'admin-input');
-    assignment.dataset.cloudMutation = 'true';
-    assignment.setAttribute('aria-label', `Student for ${device.computer_name}`);
-    const options = [{ id: '', name: 'Assign a student…' }, ...snapshot.students.filter(item => !item.archived_at)];
-    for (const item of options) { const option = node('option', '', item.name); option.value = item.id; assignment.append(option); }
-    assignment.value = device.student_id || '';
-    assignment.addEventListener('change', async () => {
-      try { const studentId=assignment.value || null; await mutate('assign-student', { deviceId: device.id, studentId }); if(studentId)void parentGuide?.afterAssignment(studentId); }
-      catch { assignment.value = device.student_id || ''; }
-    });
-    const actions = node('div', 'cloud-actions');
-    if(student)actions.append(button('Child setup',()=>parentGuide?.openChild(student.id)));
-    actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'));
-    card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
-      node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow, ...lessonGroups,
-      ...(goalRows.length ? [goals] : []), assignment, actions,
-      node('p', 'cloud-note', !familyPassword.configured ? 'Set your family’s parent password above.' : device.family_password_revision === familyPassword.revision && device.acknowledged_revision === device.revision ? 'Family password synced' : 'Waiting for computer to sync password'));
-    mobile?.decorateCard(card, device.id);
-    grid.append(card);
-    clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => { selectTab('overview'); card.scrollIntoView({ block: 'nearest' }); }, 'nav-item'));
+    const row = node('div','cloud-computer-setting');row.id='computer-'+device.id;
+    const copy=node('div');copy.append(node('strong','',device.computer_name),node('p','cloud-note',device.app_version||'Version unavailable'),node('p','cloud-note',deliveryState(device)));
+    const assignment=node('select','admin-input');assignment.dataset.cloudMutation='true';assignment.setAttribute('aria-label','Student for '+device.computer_name);
+    for(const item of [{id:'',name:'Assign a student…'},...snapshot.students.filter(s=>!s.archived_at)]){const option=node('option','',item.name);option.value=item.id;assignment.append(option);}
+    assignment.value=device.student_id||'';
+    assignment.onchange=async()=>{try{await mutate('assign-student',{deviceId:device.id,studentId:assignment.value||null});parentGuide?.afterAssignment();}catch{assignment.value=device.student_id||'';}};
+    row.append(copy,assignment);list.append(row);
+    clients.append(button((student?.name||device.computer_name)+' · '+connectionState(device,Date.parse(snapshot.serverTime)),()=>{selectTab('settings');row.scrollIntoView({block:'nearest'});},'nav-item'));
   }
+  if(!snapshot.devices.length)list.append(node('p','cloud-note','No computers connected yet. Download the child app to get started.'));
 }
 function renderStudents() {
   const list = byId('students-list');
@@ -259,7 +212,7 @@ function renderStudents() {
     const wrapper = node('div', 'cloud-student-management');
     const archive = button(student.archived_at ? 'Restore student' : 'Archive student', async () => {
       const archived = !student.archived_at;
-      if (!confirm(archived ? `Archive ${student.name}? Their records and subject settings stay saved. Connected cloud computers will be unassigned when they reconnect. Offline computers may use their cached rules until reconnection or expiry.` : `Restore ${student.name}? Reassign their cloud computer in Overview when ready.`)) return;
+      if (!confirm(archived ? `Archive ${student.name}? Their records and subject settings stay saved. Connected cloud computers will be unassigned when they reconnect. Offline computers may use their cached rules until reconnection or expiry.` : `Restore ${student.name}? Reassign their computer in Settings when ready.`)) return;
       try { await mutate('archive-student', { studentId: student.id, archived }); } catch (_) { /* Existing feedback retains the error. */ }
     }); archive.dataset.cloudMutation = 'true';
     const school = button('Main school', () => mainSchool.edit(student)); school.dataset.cloudMutation = 'true';
@@ -431,6 +384,7 @@ setupSidebarGroups();
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 const schoolReview = setupCloudSchoolReview({ before: byId('subjects-grid-admin'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
+const monitoring = setupMonitoring({ getSnapshot: () => snapshot, mutate, navigate: selectTab, showError: feedback, mobile: () => mobile, openMessages: id => { messaging.openStudent(id); selectTab('messages'); } });
 const mainSchool = setupMainSchool({ getSnapshot: () => snapshot, editor, field, selectField, node, button, mutate });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });

@@ -26,7 +26,7 @@ export function setupMainSchool({getSnapshot,editor,field,selectField,node,butto
     const snapshot=getSnapshot(), children=snapshot.students.filter(s=>!s.archived_at);
     let panel=document.getElementById('family-school-setup');
     const fresh=!panel;
-    if(fresh) { panel=node('details','cloud-panel'); panel.id='family-school-setup'; document.getElementById('family-parent-password').before(panel); }
+    if(fresh) { panel=node('details','cloud-panel'); panel.id='family-school-setup'; document.getElementById('students-list').before(panel); }
     const unfinished=children.filter(s=>!s.main_school).length;
     if(fresh) panel.open=!children.length || unfinished>0;
     const summary=node('summary','',unfinished ? `Set up school · ${unfinished} ${unfinished===1?'child':'children'} to finish` : 'Your children’s schools');

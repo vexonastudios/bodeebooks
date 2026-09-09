@@ -189,6 +189,7 @@ export function setupCloudMessages({ endpoint }) {
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); });
   window.addEventListener('pagehide', () => clearTimeout(timer));
   return {
+    openStudent(id) { if(students.some(student=>student.id===id))choose(id); },
     setLive(value) { live=value; clearTimeout(timer); if(active)void refresh(); },
     notify(studentId) { if(studentId!==selected||!active)return; if(loading)refreshQueued=true;else void refresh(); },
     update(value) { students = value || []; renderStudents(); if (selected && !students.some(student => student.id === selected)) choose(null); },

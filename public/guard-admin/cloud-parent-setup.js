@@ -34,8 +34,9 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
   const childGuide = setupChildGuide({ request, getSnapshot, learning, navigate, mutate, onSaved: child => {
     if (state) { state.children ||= []; const index=state.children.findIndex(row=>row.id===child.studentId); const row={id:child.studentId,completed:child.completed}; if(index<0)state.children.push(row);else state.children[index]=row; }
     renderChildren();
+    if(dialog.open&&state?.step===7)render();
   }});
-  const launch = action('Setup guide', () => open(), 'btn btn-secondary'); launch.id='parent-setup-guide'; document.getElementById('cloud-refresh')?.after(launch);
+  const launch = action('Setup guide', () => open(), 'btn btn-secondary'); launch.id='parent-setup-guide'; document.querySelector('#tab-settings .tab-header')?.append(launch);
   const settings = document.getElementById('tab-settings'); const panel = node('section','','cloud-panel');
   panel.append(node('h2','Family defaults'),node('p','Choose the starting settings for all children. Each child can have different choices.'),action('Open setup guide',()=>open(0),'btn btn-primary'),action('Activity switches',()=>open(3)),action('Starter content',()=>open(5)));
   const childPanel=node('div');panel.append(childPanel);
@@ -62,7 +63,23 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
   }
   async function saveAndClose(){if(busy)return;if(await persist())dialog.close();}
   async function move(direction){if(busy)return;const before=state.step;
-    if(direction===1&&before===7){const wasComplete=state.completed;state.completed=true;if(await persist()){dialog.close();void nextChild();}else state.completed=wasComplete;return;}
+    if(direction===1&&before===7){
+      // Finish every child within this family flow, preserving personal choices.
+      // Partial saves can be retried without resetting a completed child.
+      busy=true;error.textContent='';const unlock=lockControls(form);
+      try{
+        for(const child of (getSnapshot()?.students||[]).filter(row=>!row.archived_at)){
+          if(state.children?.some(saved=>saved.id===child.id&&saved.completed))continue;
+          const choices=await request('get-child-setup',{studentId:child.id});
+          if(!choices.completed)await request('save-child-setup',{...choices,step:3,completed:true});
+          state.children ||= [];const saved=state.children.find(row=>row.id===child.id);
+          if(saved)saved.completed=true;else state.children.push({id:child.id,completed:true});
+        }
+      }catch(failure){error.textContent=failure.message;return;}
+      finally{busy=false;unlock();}
+      const wasComplete=state.completed;state.completed=true;
+      if(await persist())dialog.close();else state.completed=wasComplete;return;
+    }
     state.step=Math.max(0,Math.min(7,state.step+direction));if(await persist())render();else {state.step=before;progress.textContent=`Step ${before+1} of ${titles.length}`;back.disabled=before===0;}
   }
   async function showSection(tab, callback){if(busy||!await persist())return;try{if(callback)callback();else sections.open(tab);}catch(failure){error.textContent=failure.message;}}
@@ -76,7 +93,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
   }
   function render(){dialog.classList.toggle('setup-calendar-step',state.step===2);pendingFields=[];body.replaceChildren();error.textContent='';heading.textContent=titles[state.step];progress.textContent=`Step ${state.step+1} of ${titles.length}`;back.disabled=state.step===0;next.textContent=state.step===7?'Finish setup':'Save and next';
     const snapshot=getSnapshot(),children=(snapshot?.students||[]).filter(child=>!child.archived_at);
-    if(state.step===0){text('Set your family defaults first. Then choose each child’s school, activities and content. You can add more children later.');
+    if(state.step===0){text('Add all your children here. We’ll set them up together.');
       pendingFields.push(inlineChildren({host:body,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}}));
       const account=node('a','Download the child app','btn btn-secondary');account.href='/guard/account/';account.target='_blank';account.rel='noopener';body.append(account);
     }else if(state.step===1){text('Abeka, BJU, another website, or no online school. Choose separately for each child.');
@@ -111,9 +128,15 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
         body.append(section);
       }
     }else if(state.step===6){text('Use one Parent password for every child. It also works offline.');
-      body.append(link(snapshot?.parentPassword?.configured?'Change Parent password':'Set Parent password','overview',()=>document.querySelector('#family-parent-password button')?.click()));
+      body.append(link(snapshot?.parentPassword?.configured?'Change Parent password':'Set Parent password','settings',()=>document.querySelector('#family-parent-password button')?.click()));
       for(const [tab,title,copy]of [['messages','Messages','Your notes pop up while children work.'],['screenshots','Screenshots','Take one on demand. Unkept screenshots expire after three days.'],['economy','Rewards','Choose coin rewards and spending options.'],['math-coach','AI limits','Decide whether Math Coach is available and set its daily limit.'],['coloring-studio','Image generation','Set render limits and sharing approval.']]){const row=node('div','','setup-child');row.append(node('strong',title),node('p',copy),link('Show me',tab));body.append(row);}
-    }else{text('Your family defaults are saved. Next, personalize each child’s setup. You can change these defaults anytime in Settings.');
+    }else{text('Review all your children, then finish once. Keep the family settings or personalize any child.');
+      for(const child of children){const row=node('div','','setup-child setup-family-review');
+        const school=({abeka:'Abeka Academy',bju:'BJU Press',none:'No online school',custom:'Custom school'})[child.main_school?.provider]||'School can be chosen later';
+        row.append(node('strong',child.name),node('p',`${child.grade?`Grade ${child.grade} · `:''}${school}`),
+          action('Review child choices',()=>childGuide.open(child.id,1)));
+        body.append(row);
+      }
       body.append(node('h3','Your choices'));
       body.append(node('p',`${Object.values(state.features).filter(Boolean).length} activities on · ${Object.values(state.contentChoices).filter(choice=>choice.decision==='approved').length} starter collections approved`));
       const details=node('details'),summary=node('summary','Tour every dashboard section');details.append(summary);
@@ -131,15 +154,8 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
     decorateSetup(panel);
   }
   async function openChild(studentId){if(loading||busy||dialog.open||childGuide.isOpen())return;await childGuide.open(studentId);}
-  async function nextChild(studentId){
-    if(!state?.completed||dialog.open||childGuide.isOpen()||document.querySelector('dialog[open]'))return;
-    const children=(getSnapshot()?.students||[]).filter(row=>!row.archived_at&&!state.children?.some(saved=>saved.id===row.id&&saved.completed));
-    const child=studentId?children.find(row=>row.id===studentId):children.find(row=>getSnapshot()?.devices?.some(device=>device.student_id===row.id))||children[0];
-    if(child)await openChild(child.id);
-  }
-  return { openChild, afterAssignment: nextChild, async startOnce(){renderChildren();if(loaded||loading||!getSnapshot())return;loaded=true;loading=true;
+  return { openChild, afterAssignment: renderChildren, async startOnce(){renderChildren();if(loaded||loading||!getSnapshot())return;loaded=true;loading=true;
     try{state=await request('get-setup');renderChildren();if(!state.completed){previousFocus=document.activeElement;render();dialog.showModal();launch.textContent='Continue setup';}}
     catch{launch.textContent='Open setup guide';}finally{loading=false;}
-    if(state?.completed)await nextChild();
   } };
 }
