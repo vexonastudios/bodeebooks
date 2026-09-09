@@ -38,6 +38,21 @@ function accountNotice(message: string) {
   return `/guard/account?billingError=${encodeURIComponent(message)}`;
 }
 
+export async function reviewBodeeGuardPlan(computers:number) {
+  const result=await callAccountApi("/v1/account/plan/preview",{method:"POST",body:JSON.stringify({computers})});
+  return "error" in result?result:result.payload;
+}
+export async function confirmBodeeGuardPlan(token:string) {
+  const result=await callAccountApi("/v1/account/plan/confirm",{method:"POST",body:JSON.stringify({token})});
+  return "error" in result?result:result.payload as {url?:string;pending?:boolean;saved?:boolean};
+}
+export async function buyBodeeGuardAiBoost() {
+  const result=await callAccountApi("/v1/account/plan/boost",{method:"POST",body:"{}"});
+  if("error" in result)redirect(accountNotice(result.error));
+  if(!result.payload.url)redirect(accountNotice("Stripe checkout is temporarily unavailable."));
+  redirect(result.payload.url);
+}
+
 export async function startBodeeGuardTrial() {
   const result = await callAccountApi("/v1/account/trial", { method: "POST", body: "{}" });
   if ("error" in result) redirect(accountNotice(result.error));

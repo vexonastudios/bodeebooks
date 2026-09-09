@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import ChildSetup from "./ChildSetup";
+import PlanControls, {type AiAllowance} from "./PlanControls";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
 import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
@@ -30,6 +31,8 @@ type BodeeGuardAccount = {
   releaseChannel: "beta" | "stable";
   release?: GuardAccountRelease | null;
   deviceLimits?: { parent: number; child: number };
+  familyPlan?: {canChange:boolean};
+  aiAllowance?: AiAllowance|null;
   enrollment?: {
     customerLaunchOpen: boolean;
     betaInvited: boolean;
@@ -436,9 +439,10 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         </section>
         <section className={styles.computersSection}>
           <div className={styles.computersHeading}>
-            <div><span className={styles.kicker}><Laptop size={15} /> Child computers</span><h2>{childDevices.length ? `${childDevices.length} of ${account.deviceLimits?.child || 10} child computers` : "No child computers connected yet"}</h2><p className={styles.channelExplanation}>This list shows approved child computers and their last check-in—not a guarantee they are online now. See assignments and school activity in your <Link href="/guard/dashboard/">online family dashboard</Link>. Parent browser sessions do not use child device slots. Removing a computer does not cancel your subscription.</p></div>
+            <div><span className={styles.kicker}><Laptop size={15} /> Child computers</span><h2>{childDevices.length} of {account.deviceLimits?.child || 10} computers connected</h2><p className={styles.channelExplanation}>Manage school activity in your <Link href="/guard/dashboard/">family dashboard</Link>.</p></div>
             {canConnectComputers && <Link className={styles.secondaryPortalButton} href="/guard/activate">Approve pairing code</Link>}
           </div>
+          <PlanControls limit={account.deviceLimits?.child || 10} connected={childDevices.length} canChange={account.familyPlan?.canChange === true} complimentary={isComplimentary} allowance={account.aiAllowance || null}/>
           {childDevices.length ? (
             <div className={styles.computerList}>
               {childDevices.map(device => (
