@@ -11,7 +11,7 @@ import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
 import { setupCloudGames } from './cloud-games-ui.js';
-import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
+const setupCloudLearningVideos = () => ({setActive(){}}); // Original media panels initialize in cloud-media-admin.js.
 import { setupCloudAssistant } from './cloud-assistant.js';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';

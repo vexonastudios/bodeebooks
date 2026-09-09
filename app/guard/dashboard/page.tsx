@@ -21,6 +21,7 @@ export default async function FamilyDashboard() {
   return <div className={styles.workspace} data-guard-workspace="true">
     <ParentPwa />
     <iframe title="BodeeGuard Parent Dashboard" src="/guard/dashboard/workspace/" className={styles.frame}
+      allow="autoplay; fullscreen; encrypted-media"
       sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-downloads allow-top-navigation-by-user-activation" />
   </div>;
 }

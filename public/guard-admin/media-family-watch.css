@@ -1,0 +1,85 @@
+.family-watch-heading { align-items: flex-start; }
+.family-watch-heading > div > p:last-child { margin: 5px 0 0; color: var(--text-muted); font-size: 13px; }
+.family-watch-heading .btn svg, .family-watch-start svg, .family-watch-now-playing .btn svg { width: 17px; height: 17px; }
+.family-watch-eyebrow { margin: 0 0 5px; color: #67e8f9; font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.family-watch-launch-card, .family-watch-active-card { border: 1px solid rgba(103,232,249,.2); border-radius: 22px; background: radial-gradient(circle at 100% 0, rgba(6,182,212,.12), transparent 36%), rgba(12,18,35,.78); box-shadow: 0 22px 55px rgba(0,0,0,.2); }
+.family-watch-launch-card { padding: 26px; }
+.family-watch-launch-copy { display: flex; align-items: center; gap: 15px; margin-bottom: 24px; }
+.family-watch-launch-copy h2, .family-watch-active-card h2 { margin: 0 0 4px; font-family: 'Outfit', sans-serif; }
+.family-watch-launch-copy p, .family-watch-active-card p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.family-watch-icon { width: 52px; height: 52px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 17px; background: linear-gradient(145deg,#06b6d4,#2563eb); color: white; box-shadow: 0 12px 28px rgba(6,182,212,.25); }
+.family-watch-icon svg { width: 27px; height: 27px; }
+.family-watch-fields { display: grid; grid-template-columns: minmax(320px,1.5fr) minmax(230px,1fr); gap: 14px; }
+.family-watch-field { display: grid; gap: 7px; font-size: 12px; font-weight: 700; color: #cbd5e1; }
+.family-watch-field small { color: var(--text-muted); font-weight: 500; }
+.family-watch-input-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+.family-watch-input-row .btn { display: inline-flex; align-items: center; gap: 6px; }
+.family-watch-audience { margin-top: 18px; padding: 15px; border: 1px solid rgba(148,163,184,.13); border-radius: 16px; background: rgba(2,6,23,.22); }
+.family-watch-all-toggle { display: flex; align-items: center; gap: 11px; cursor: pointer; }
+.family-watch-all-toggle input { width: 19px; height: 19px; accent-color: #06b6d4; }
+.family-watch-all-toggle span { display: grid; gap: 2px; }
+.family-watch-all-toggle small { color: var(--text-muted); font-weight: 400; }
+.family-watch-student-picker { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 8px; margin-top: 13px; }
+.family-watch-student-picker[hidden] { display: none !important; }
+.family-watch-student-option { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border: 1px solid rgba(148,163,184,.14); border-radius: 12px; cursor: pointer; background: rgba(255,255,255,.025); }
+.family-watch-student-option:has(input:checked) { border-color: rgba(34,211,238,.5); background: rgba(6,182,212,.1); }
+.family-watch-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: rgba(255,255,255,.08); }
+.family-watch-inline-status { min-height: 20px; margin: 12px 0 4px; color: #94a3b8; font-size: 12px; }
+.family-watch-inline-status.error { color: #fca5a5; }
+.family-watch-start { display: inline-flex; align-items: center; gap: 7px; padding: 11px 16px; background: linear-gradient(135deg,#0891b2,#2563eb); border: 0; }
+.family-watch-active-card { overflow: hidden; }
+.family-watch-now-playing { display: grid; grid-template-columns: 160px minmax(0,1fr) auto; align-items: center; gap: 18px; padding: 20px; border-bottom: 1px solid rgba(148,163,184,.14); }
+.family-watch-now-playing img { width: 160px; aspect-ratio: 16/9; object-fit: cover; border-radius: 13px; background: #020617; }
+.family-watch-now-playing .btn { display: inline-flex; align-items: center; gap: 6px; }
+.family-watch-live-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+.family-watch-parent-view { display: grid; grid-template-columns: minmax(320px, 900px) minmax(220px, 1fr); align-items: center; gap: 20px; padding: 20px; border-bottom: 1px solid rgba(148,163,184,.14); background: rgba(2,6,23,.18); }
+.family-watch-parent-player-shell { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; border: 1px solid rgba(103,232,249,.22); border-radius: 17px; background: #020617; box-shadow: 0 18px 45px rgba(0,0,0,.3); }
+.family-watch-parent-player-shell iframe, .family-watch-parent-player-shell > div:first-child { width: 100% !important; height: 100% !important; border: 0; }
+.family-watch-parent-player-shell iframe { pointer-events: none; }
+.family-watch-parent-player-message { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 9px; padding: 20px; color: #cbd5e1; text-align: center; background: radial-gradient(circle at 50% 45%, rgba(8,145,178,.2), transparent 55%), #020617; }
+.family-watch-parent-player-message[hidden] { display: none; }
+.family-watch-parent-player-message svg { width: 28px; height: 28px; color: #67e8f9; animation: family-watch-spin 1.3s linear infinite; }
+.family-watch-parent-player-message.error { color: #fecaca; background: rgba(69,10,10,.94); }
+.family-watch-parent-player-message.error svg { color: #f87171; animation: none; }
+.family-watch-parent-sync { display: flex; align-items: flex-start; gap: 11px; padding: 15px; border: 1px solid rgba(148,163,184,.13); border-radius: 15px; background: rgba(255,255,255,.025); }
+.family-watch-parent-sync > div { display: grid; gap: 3px; }
+.family-watch-parent-sync strong { font-size: 13px; color: #e2e8f0; }
+.family-watch-parent-sync small { color: #94a3b8; font-size: 11px; line-height: 1.45; }
+.family-watch-parent-sync-dot { width: 9px; height: 9px; margin-top: 4px; flex: 0 0 auto; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,.65); }
+.family-watch-parent-sync-dot.synced { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.8); }
+.family-watch-parent-sync-dot.buffering { background: #f59e0b; }
+.family-watch-parent-sync-dot.error { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,.7); }
+@keyframes family-watch-spin { to { transform: rotate(360deg); } }
+.family-watch-transport { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 20px; border-bottom: 1px solid rgba(148,163,184,.14); }
+.family-watch-transport > button { min-width: 76px; height: 58px; display: grid; place-items: center; gap: 1px; padding: 7px 11px; border: 1px solid rgba(148,163,184,.18); border-radius: 13px; background: rgba(255,255,255,.04); color: #e2e8f0; cursor: pointer; }
+.family-watch-transport > button:hover { border-color: rgba(103,232,249,.55); background: rgba(6,182,212,.1); }
+.family-watch-transport > button svg { width: 20px; height: 20px; }
+.family-watch-transport > button span { font-size: 10px; font-weight: 700; }
+.family-watch-transport .family-watch-play { width: 88px; color: white; border-color: transparent; background: linear-gradient(135deg,#0891b2,#2563eb); }
+.family-watch-position { min-width: 90px; display: grid; text-align: center; }
+.family-watch-position strong { font: 800 21px 'Outfit', sans-serif; font-variant-numeric: tabular-nums; }
+.family-watch-position small { color: var(--text-muted); font-size: 10px; }
+.family-watch-volume { display: flex; align-items: center; gap: 7px; min-width: 180px; color: #94a3b8; }
+.family-watch-volume svg { width: 18px; height: 18px; }
+.family-watch-volume input { min-width: 100px; accent-color: #06b6d4; }
+.family-watch-volume span { width: 38px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.family-watch-children-header { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 20px 20px 12px; }
+.family-watch-children-header h3 { margin: 0; }
+.family-watch-children-header > p { max-width: 510px; text-align: right; }
+.family-watch-child-statuses { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 10px; padding: 0 20px 22px; }
+.family-watch-child { display: flex; align-items: center; gap: 10px; padding: 11px; border: 1px solid rgba(148,163,184,.13); border-radius: 14px; background: rgba(2,6,23,.26); }
+.family-watch-child > div { min-width: 0; display: grid; }
+.family-watch-child strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.family-watch-child small { color: #94a3b8; font-size: 11px; text-transform: capitalize; }
+.family-watch-child-state { width: 9px; height: 9px; margin-left: auto; border-radius: 50%; background: #64748b; }
+.family-watch-child-state.playing, .family-watch-child-state.ready { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.8); }
+.family-watch-child-state.buffering, .family-watch-child-state.loading, .family-watch-child-state.waiting { background: #f59e0b; }
+.family-watch-child-state.error { background: #ef4444; }
+@media (max-width: 1050px) {
+  .family-watch-fields { grid-template-columns: 1fr; }
+  .family-watch-now-playing { grid-template-columns: 130px 1fr; }
+  .family-watch-now-playing img { width: 130px; }
+  .family-watch-now-playing .btn { grid-column: 1/-1; justify-self: start; }
+  .family-watch-parent-view { grid-template-columns: 1fr; }
+  .family-watch-transport { flex-wrap: wrap; }
+}

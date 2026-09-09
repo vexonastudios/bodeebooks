@@ -1,14 +1,15 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { cloudApi, CloudApiError } from "../cloud-api";
 import workspace from "../generated/workspace.json";
+import mediaPanels from "../generated/media.json";
 
 const headers = {
   "Content-Type": "text/html; charset=utf-8",
   "Cache-Control": "private, no-store",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
-  "Referrer-Policy": "no-referrer",
-  "Content-Security-Policy": "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src blob:; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Content-Security-Policy": "default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src 'self' https://www.youtube.com https://noembed.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com https://yt3.ggpht.com; media-src blob:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
 };
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
@@ -27,15 +28,15 @@ export async function GET(request: Request) {
     await cloudApi();
     const user = await currentUser();
     const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
-    const html = workspace.html
+    const html = Object.entries(mediaPanels).reduce((html,[id,panel]) => html.replace(new RegExp(`<section class="tab-content" id="tab-${id}"[\\s\\S]*?<\\/section>`),panel),workspace.html)
       .replace('<h2>Computer setup &amp; offline recovery</h2><p>Assign students and save a recovery code for each cloud test computer from Overview. The code must be confirmed on that computer before school starts.</p>', '<h2>Computers &amp; Parent password</h2><p>Assign a child to each computer in Overview. Set one Parent password for your family; it also works offline.</p>')
-      .replace(/<section class="tab-content" id="tab-music"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-music"><div class="tab-header"><h1>Music</h1></div><p class="cloud-note">Review the music your children can play. Hide any item to remove access.</p><div id="cloud-music-library"></div></section>')
-      .replace(/<section class="tab-content" id="tab-videos"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-videos"><div class="tab-header"><h1>Videos</h1></div><p class="cloud-note">Review the videos your children can watch. Hide any item to remove access.</p><div id="cloud-video-library"></div></section>')
-      .replace(/<section class="tab-content" id="tab-learning-videos"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-learning-videos"><div class="tab-header"><h1>Learning Videos</h1></div><p class="cloud-note">Your approved lessons, organized by folder.</p><div id="cloud-learning-videos"></div></section>')
+
+
+
       .replace(/(<div id="admin-badge-name"[^>]*>)[\s\S]*?(<\/div>)/, (_match, start, end) => `${start}${escapeHtml(name)}${end}`)
       .replace(/<section class="tab-content" id="tab-coloring-studio"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-coloring-studio" aria-label="Coloring Studio"><div id="cloud-coloring-studio"></div></section>')
       .replace(/<section class="tab-content" id="tab-math-coach"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-math-coach" aria-label="Math Coach"><div id="cloud-math-coach"></div></section>')
-      .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-coloring-studio.css"><link rel="stylesheet" href="/guard-admin/cloud-math-coach.css"><link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width: 900px), (pointer: coarse) and (max-width: 1180px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"></head>')
+      .replace('</head>', '<link rel="stylesheet" href="/guard-admin/media-learning-videos.css"><link rel="stylesheet" href="/guard-admin/media-family-watch.css"><script src="/guard-admin/media-defaults.js"></script><script type="module" src="/guard-admin/cloud-media-admin.js"></script><link rel="stylesheet" href="/guard-admin/cloud-coloring-studio.css"><link rel="stylesheet" href="/guard-admin/cloud-math-coach.css"><link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width: 900px), (pointer: coarse) and (max-width: 1180px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"></head>')
       .replace('width=device-width, initial-scale=1.0', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
     return new Response(html, { headers });
   } catch (error) {
