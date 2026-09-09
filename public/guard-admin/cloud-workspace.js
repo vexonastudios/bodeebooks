@@ -100,8 +100,9 @@ function setControls() {
 }
 function showSnapshot() {
   if (!snapshot) return;
-  // Do not destroy a selector the parent is using during background refresh.
-  if (!byId('overview-grid').contains(document.activeElement)) renderComputers();
+  // Update card labels after a control is used. Computer selectors are protected
+  // separately in Settings, where assignments are edited.
+  renderComputers();
   mainSchool.render();
   void parentGuide?.startOnce();
   renderStudents();
