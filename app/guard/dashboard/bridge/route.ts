@@ -50,7 +50,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
   if (uploadOnly !== (input.action === "upload-file")) return response({ error: "Use the designated file upload endpoint." }, 400);
   switch (input.action) {
     case "push-ticket": path = "/push-ticket"; method = "POST"; body = {}; break;
-    case "media": path="/media"; method="POST"; body={path:input.path,method:input.method,body:input.body,requestId:input.requestId}; break;
+    case "media": path="/media"; method="POST"; body={path:input.path,method:input.method,body:input.body,requestId:input.requestId,ifNoneMatch:input.ifNoneMatch}; break;
     case "setup-school": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
       path = `/students/${encodeURIComponent(input.studentId)}/school`; method = "POST";
