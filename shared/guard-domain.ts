@@ -2,8 +2,8 @@
 export const GUARD_ORIGIN = "https://guard.bodeebooks.com";
 export const BOOKS_ORIGIN = "https://www.bodeebooks.com";
 export const isGuardHost = (host: string | null) => host?.toLowerCase() === "guard.bodeebooks.com";
-const appRoute = /^\/(?:account|activate|dashboard|sign-in|sign-up)(?:\/|$)|^\/download\/windows(?:\/|$)/;
-const pageRoute = /^\/(?:account|activate|dashboard)\/?$|^\/(?:sign-in|sign-up)(?:\/|$)|^\/download\/windows\/?$/;
+const appRoute = /^\/(?:account|activate|dashboard|admin|support|sign-in|sign-up)(?:\/|$)|^\/download\/windows(?:\/|$)/;
+const pageRoute = /^\/(?:account|activate|dashboard|admin|support)\/?$|^\/(?:sign-in|sign-up)(?:\/|$)|^\/download\/windows\/?$/;
 
 export function guardReturnPath(value: string | null, fallback = "/dashboard/") {
   if (!value || /[\\\u0000-\u001f]/.test(value)) return fallback;

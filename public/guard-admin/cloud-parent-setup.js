@@ -1,8 +1,9 @@
+import { artworkCollection } from './cloud-starter-gallery.js';
 import { inlineSchoolHours } from './cloud-school-hours-form.js';
 import { setupChildGuide } from './cloud-child-setup.js';
 import { decorateSetup, inlineChildren, inlineSchool, lockControls, setupSections } from './cloud-setup-controls.js';
 const learning = [
-  ['music','Music','Listen to music you approve.','music'],['videos','Videos','Watch entertainment you approve.','videos'],
+  ['music','Music','Listen to music you approve.'],['videos','Videos','Watch entertainment you approve.'],
   ['typing','Typing School','Keyboard lessons and speed tests.'],['logic','Logic Lab','Reasoning puzzles.'],['words','Confused Words','Practice commonly mixed-up words.'],
   ['geography','Geography','Maps and capital memory.'],['spelling','Spelling','Weekly word practice.','spelling'],['science-spelling','Science Spelling','Science terms and practice.','science-spelling'],
   ['vocabulary','Vocabulary','Learn and review word meanings.','vocabulary'],['poems','Poem Memorization','Practice and record poems.','poems'],['quizzes','Quizzes','Quizzes you assign.','quizzes'],
@@ -21,7 +22,7 @@ const tour = [
 const titles = ['Your children','School','Calendar & school hours','Daily activities','Learning tools','Starter content','Parent controls','Ready'];
 function node(tag, text = '', className = '') { const result = document.createElement(tag); result.textContent = text; result.className = className; return result; }
 export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
-  const style = document.createElement('link'); style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-parent-setup.css'; document.head.append(style);const hoursStyle=document.createElement('link');hoursStyle.rel='stylesheet';hoursStyle.href='/guard-admin/cloud-school-hours.css';document.head.append(hoursStyle);
+  const style = document.createElement('link'); style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-parent-setup.css'; document.head.append(style);const hoursStyle=document.createElement('link');hoursStyle.rel='stylesheet';hoursStyle.href='/guard-admin/cloud-school-hours.css';document.head.append(hoursStyle);const galleryStyle=document.createElement('link');galleryStyle.rel='stylesheet';galleryStyle.href='/guard-admin/cloud-starter-gallery.css';document.head.append(galleryStyle);
   const dialog = node('dialog', '', 'parent-setup-dialog'); dialog.setAttribute('aria-labelledby','parent-setup-title');
   const form = node('div','','setup-frame'), header = node('header'), heading = node('h2','Set up your family'), progress = node('p','','setup-progress'); heading.id='parent-setup-title';
   const body = node('div','','setup-body'), error = node('p','','setup-error'), footer = node('footer'); error.setAttribute('role','alert');
@@ -55,7 +56,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
   async function persist() {
     busy=true;error.textContent='';progress.textContent='Saving your choices…';
     let unlock=()=>{};
-    try{for(const save of pendingFields)await save();unlock=lockControls(form);state=await request('save-setup',{...state,guideVersion:2});renderChildren();launch.textContent=state.completed?'Setup guide':'Continue setup';decorateSetup(panel);return true;}
+    try{for(const save of pendingFields)await save();unlock=lockControls(form);state=await request('save-setup',{...state,guideVersion:2,catalogVersion:state.catalog.version});renderChildren();launch.textContent=state.completed?'Setup guide':'Continue setup';decorateSetup(panel);return true;}
     catch(failure){error.textContent=failure.message;return false;}
     finally{busy=false;progress.textContent=`Step ${state.step+1} of ${titles.length}`;unlock();back.disabled=state.step===0;decorateSetup(dialog);}
   }
@@ -93,7 +94,8 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
         if(!collection.items.length){section.append(node('p','No starter collection published yet.','setup-copy'));body.append(section);continue;}
         const details=node('details'),summary=node('summary',`Preview ${collection.items.length} items`);details.append(summary);
         const selected=new Set(state.contentChoices[collection.id]?.decision==='approved'?state.contentChoices[collection.id].items:collection.items.map(item=>item.id));
-        collection.items.forEach(item=>{const card=node('div','','setup-preview'),label=node('label','','setup-item'),check=node('input');check.type='checkbox';check.checked=selected.has(item.id);check.onchange=()=>{check.checked?selected.add(item.id):selected.delete(item.id);if(state.contentChoices[collection.id]?.decision==='approved')state.contentChoices[collection.id].items=[...selected];};
+        if(collection.id==='artwork')artworkCollection({section,items:collection.items,selected,onChange:()=>{if(state.contentChoices.artwork?.decision==='approved')state.contentChoices.artwork.items=[...selected];},request});
+        else collection.items.forEach(item=>{const card=node('div','','setup-preview'),label=node('label','','setup-item'),check=node('input');check.type='checkbox';check.checked=selected.has(item.id);check.onchange=()=>{check.checked?selected.add(item.id):selected.delete(item.id);if(state.contentChoices[collection.id]?.decision==='approved')state.contentChoices[collection.id].items=[...selected];};
           label.append(check,node('strong',item.title));card.append(label,node('p',item.description||''));
           const previewHost=node('div'),previewButton=action(item.youtubeId?'Play preview':'View page',async()=>{
             if(previewHost.childElementCount){previewHost.replaceChildren();previewButton.textContent=item.youtubeId?'Play preview':'View page';return;}
@@ -102,7 +104,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
               else{const file=await request('preview-starter',{itemId:item.id});if(!card.isConnected)return;const img=node('img');img.alt=item.title;img.src=`data:${file.mime};base64,${file.data}`;previewHost.append(img);}previewButton.textContent='Close preview';
             }catch(failure){error.textContent=failure.message;}finally{previewButton.disabled=false;}
           });card.append(previewButton,previewHost);details.append(card);
-        });section.append(details);
+        });if(collection.id!=='artwork')section.append(details);
         details.addEventListener('toggle',()=>{if(!details.open)details.querySelectorAll('iframe').forEach(frame=>frame.remove());});
         for(const [decision,label]of [['approved','Approve this collection'],['declined','Skip this collection']]){const row=node('label','','setup-choice'),input=document.createElement('input');input.type='radio';input.name=`starter-${collection.id}`;input.checked=state.contentChoices[collection.id]?.decision===decision;
           input.onchange=()=>{state.contentChoices[collection.id]={decision,version:state.catalog.version,items:decision==='approved'?[...selected]:[]};};row.append(input,node('span',label));section.append(row);}

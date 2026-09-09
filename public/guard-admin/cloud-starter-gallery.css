@@ -1,0 +1,19 @@
+.starter-artwork-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.starter-artwork-card{min-width:0;border:1px solid #ffffff26;border-radius:10px;overflow:hidden;background:#1d1c30}
+.starter-artwork-preview{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;background:#fff;cursor:zoom-in;border:0;padding:8px;color:#49445a}
+.starter-artwork-preview img{width:100%;height:100%;object-fit:contain}
+.starter-artwork-card>label{display:flex!important;gap:8px;padding:10px;align-items:flex-start;font-size:13px}
+.starter-artwork-card input{width:17px!important;height:17px;flex-shrink:0;accent-color:#a78bfa}
+dialog.starter-gallery{position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;padding:0;margin:0;border:0;border-radius:0;background:#0e0d1a;color:#f1edff;box-sizing:border-box}
+dialog.starter-gallery[open]{display:flex;flex-direction:column}
+.starter-gallery::backdrop{background:#050510e8}
+.starter-gallery header,.starter-gallery footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;flex-shrink:0}
+.starter-gallery h2{font-size:20px;margin:0}.starter-gallery header button{flex-shrink:0}
+.starter-gallery-stage{position:relative;display:flex;align-items:center;justify-content:center;gap:16px;flex:1;min-height:0;padding:0 20px}
+.starter-gallery-stage img{max-width:calc(100% - 150px);height:100%;object-fit:contain;background:white;border-radius:8px}
+.starter-gallery-stage img:not([src]){visibility:hidden}
+.starter-gallery-stage>.btn{flex-shrink:0;font-size:25px;min-width:48px;min-height:48px}
+.starter-gallery-status{position:absolute;top:45%;text-align:center}.starter-gallery-status:empty{display:none}
+.starter-gallery footer label{display:flex!important;align-items:center;gap:10px;font-size:16px}.starter-gallery footer input{width:20px;height:20px;accent-color:#a78bfa}
+.starter-gallery footer>span{font-size:13px;color:#bcb5d0}
+@media(max-width:600px){.starter-gallery header,.starter-gallery footer{padding:12px;gap:10px}.starter-gallery h2{font-size:16px}.starter-gallery footer{flex-wrap:wrap}.starter-gallery-stage{padding:0 8px;gap:4px}.starter-gallery-stage img{max-width:calc(100% - 100px)}.starter-gallery-stage>.btn{padding:4px;min-width:44px}}

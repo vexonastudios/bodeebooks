@@ -1,4 +1,5 @@
 import { decorateSetup, inlineSchool, lockControls, setupSections } from './cloud-setup-controls.js';
+import { artworkCollection } from './cloud-starter-gallery.js';
 const daily = [
   ['verse', 'Daily Verse', 'A built-in Bible verse and question.'],
   ['riddle', 'Brain Teaser', 'A built-in daily thinking challenge.']
@@ -95,6 +96,10 @@ export function setupChildGuide({ request, getSnapshot, learning, navigate, muta
       if (!customized) return;
       details.append(node('p', 'Only checked items are available to this child.', 'setup-copy'));
       const selected = new Set(state.contentChoices[group.id].items);
+      if(group.id==='artwork'){
+        artworkCollection({section:details,items:group.items,selected,onChange:()=>{state.contentChoices.artwork={items:[...selected]};},request});
+        return;
+      }
       group.items.forEach(item => {
         const label = node('label', '', 'setup-choice'), check = node('input'); check.type = 'checkbox'; check.checked = selected.has(item.id);
         check.onchange = () => { check.checked ? selected.add(item.id) : selected.delete(item.id); state.contentChoices[group.id] = { items: [...selected] }; };

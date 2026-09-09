@@ -465,8 +465,8 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           )}
         </section>
         {account.releaseOperator && <section className={styles.setupSection}>
-          <span className={styles.kicker}><ShieldCheck size={15} /> Owner-only release controls</span>
-          <p><Link href="/guard/support/">View support reports</Link></p>
+          <span className={styles.kicker}><ShieldCheck size={15} /> BodeeGuard staff</span>
+          <p><Link className={styles.secondaryPortalButton} href="/guard/admin/"><ShieldCheck size={18} /> Open product dashboard</Link></p>
           <h2>Invite a family to Beta</h2>
           <p>Ask the parent to create and verify their BodeeGuard account first. Invite that email below, then send them the account-page link. This saves an invitation; it does not send an email, start their trial, charge them, or make their account permanently free.</p>
           <p>The parent must choose Beta themselves. They can start their 30-day card-free trial only when a verified customer-capable Beta installer is available.</p>

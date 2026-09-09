@@ -63,8 +63,8 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "get-setup": path = "/setup/get"; method = "POST"; body = {}; break;
     case "get-child-setup": path = "/setup/child-get"; method = "POST"; body = { studentId: input.studentId }; break;
     case "save-child-setup": path = "/setup/child-save"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, familyRevision: input.familyRevision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
-    case "preview-starter": path = "/setup/preview"; method = "POST"; body = { itemId: input.itemId }; break;
-    case "save-setup": path = "/setup/save"; method = "POST"; body = { guideVersion: input.guideVersion, revision: input.revision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
+    case "preview-starter": path = "/setup/preview"; method = "POST"; body = { itemId: input.itemId, size: input.size }; break;
+    case "save-setup": path = "/setup/save"; method = "POST"; body = { catalogVersion: input.catalogVersion, guideVersion: input.guideVersion, revision: input.revision, step: input.step, completed: input.completed, features: input.features, contentChoices: input.contentChoices }; break;
     case "list-daily-questions": path = "/daily-questions/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
     case "list-practice": path = "/practice/list"; method = "POST"; body = { studentId: input.studentId, module: input.module, offset: input.offset }; break;
     case "list-geography": path = "/geography/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;

@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-import { createHmac } from "node:crypto";
-import { NextResponse } from "next/server";
+import { createHmac, randomUUID } from "node:crypto";
+import { after, NextResponse } from "next/server";
 import { cloudAccountRelease, internalPilotRelease } from "../../../../shared/guard-cloud-release";
 
 type AccountDownloadStatus = {
@@ -47,10 +47,26 @@ export async function GET(request: Request) {
       return backToAccount(request, "access");
     }
     const release = cloudAccountRelease(account);
-    if (release) return NextResponse.redirect(release.downloadUrl, { status: 307, headers: { "Cache-Control": "private, no-store" } });
+    function trackDownload(version: string) {
+      after(async () => {
+        try {
+          const tracked = await fetch(`${apiBase}/v1/account/downloads`, {
+            method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ id: randomUUID(), version, channel: account.releaseChannel }),
+            cache: "no-store", redirect: "error", signal: AbortSignal.timeout(5000),
+          });
+          if (!tracked.ok) console.warn("BodeeGuard download metric unavailable", tracked.status);
+        } catch { console.warn("BodeeGuard download metric unavailable"); }
+      });
+    }
+    if (release) {
+      trackDownload(release.version);
+      return NextResponse.redirect(release.downloadUrl, { status: 307, headers: { "Cache-Control": "private, no-store" } });
+    }
     const pilot = internalPilotRelease(account, process.env.BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION);
     const downloadUrl = pilot && internalPilotDownloadUrl(pilot.version);
     if (!downloadUrl) return backToAccount(request, "unavailable");
+    trackDownload(pilot.version);
     return NextResponse.redirect(downloadUrl, { status: 307, headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return backToAccount(request, "unavailable");

@@ -16,9 +16,11 @@ const { guardRoute, guardReturnPath, GUARD_ORIGIN, BOOKS_ORIGIN } = compiled.exp
 
 test('parent root and clean routes reuse the existing authenticated application', () => {
   assert.deepEqual(guardRoute(GUARD_ORIGIN + '/'), { kind: 'rewrite', url: GUARD_ORIGIN + '/guard/dashboard/' });
-  for (const route of ['/account/', '/dashboard/', '/sign-in/', '/sign-in/factor-one/', '/sign-up/verify-email-address/', '/activate/?userCode=ABCD-1234', '/download/windows/']) {
+  for (const route of ['/account/', '/dashboard/', '/admin/', '/support/', '/sign-in/', '/sign-in/factor-one/', '/sign-up/verify-email-address/', '/activate/?userCode=ABCD-1234', '/download/windows/']) {
     assert.deepEqual(guardRoute(GUARD_ORIGIN + route), { kind: 'rewrite', url: GUARD_ORIGIN + '/guard' + route });
   }
+  assert.equal(guardRoute(BOOKS_ORIGIN+'/admin/'),null,'the bookstore admin stays separate');
+  assert.equal(guardReturnPath('/admin/'),'/admin/');
 });
 
 test('marketing, assets, embedded dashboard endpoints and lookalike hosts are not redirected', () => {
