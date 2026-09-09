@@ -9,5 +9,5 @@ export default async function StaffPage({searchParams}:{searchParams:Promise<{ta
   let overview:Overview;
   try{overview=await operatorApi<Overview>();}catch(error){if(error instanceof OperatorError&&[401,403].includes(error.status))notFound();throw error;}
   const {tab}=await searchParams;
-  return <OperatorPanel initial={overview} initialTab={['content','reports'].includes(tab||'')?tab:'overview'}/>;
+  return <OperatorPanel initial={overview} initialTab={['content','reports','usage'].includes(tab||'')?tab:'overview'}/>;
 }

@@ -4,3 +4,7 @@ export type Overview={ai?:AiUsage;asOf:string;accounts:{total:number;new:number;
 export type Report={id:string;receivedAt:string;component:string;code:string;version:string;osVersion:string;stage:string;windowsError:number;errorType:string;location:string};
 
 export type AiUsage={totals:{requests:number;families:number;cost_micros:string;estimated_requests:number;first_tracked:string|null};features:{feature:string;model:string;requests:number;cost_micros:string}[];families:{family:string;billing_mode:string;requests:number;cost_micros:string;included_micros:string;child_computer_limit:number}[]};
+
+export type UsageCounters={requests:number;clientErrors:number;serverErrors:number;aborted:number;requestBytes:number;responseBytes:number;dbQueries:number;dbResultBytes:number;durationMs:number;maxResponseBytes:number;aiRequests:number;aiCostMicros:number;aiEstimatedMicros:number};
+export type UsageRow=UsageCounters&{feature?:string;family?:string;label?:string;date?:string};
+export type ResourceUsage={asOf:string;from:string;days:number;family:string;firstTracked:string|null;lastRecorded:string|null;truncated:boolean;totals:UsageCounters;features:UsageRow[];families:UsageRow[];daily:UsageRow[];warnings:string[];neon:{status:string;message?:string|null;fetchedAt?:string|null;nextRefreshAt?:string|null;data?:{source:string;projectId:string;from:string;to:string;plan:string|null;dataThrough:string|null;points:number;totals:Record<string,number>;daily:{date:string;computeSeconds:number;transferBytes:number}[]}|null}};
