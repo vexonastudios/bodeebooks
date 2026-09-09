@@ -204,6 +204,13 @@ function renderComputers() {
     const total = node('div', 'monitor-timer-box');
     total.append(node('span', 'monitor-timer-label', activityDayLabel(snapshot)), node('span', 'monitor-timer-value', receivedTime(todaySeconds(snapshot, student?.id))));
     timerRow.append(total);
+    const lessonGroups=[];
+    const lessons=(snapshot.portalProgress||[]).filter(row=>row.student_id===student?.id);
+    for(const lesson of lessons) {
+      const group=node('div','cloud-abeka-courses'); group.setAttribute('aria-label',"Today's Abeka lessons");
+      for(const course of lesson.courses) { const chip=node('span',course.completed?'cloud-abeka-course complete':'cloud-abeka-course',(course.completed?'✓ ':'○ ')+course.courseName); chip.title=course.lessonLabel; group.append(chip); }
+      lessonGroups.push(group);
+    }
     const goals = node('details', 'cloud-subject-goals');
     const goalRows = [];
     if (student) for (const subject of snapshot.rules.subjects) {
@@ -227,7 +234,7 @@ function renderComputers() {
     if(student)actions.append(button('Child setup',()=>parentGuide?.openChild(student.id)));
     actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'));
     card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
-      node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow,
+      node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow, ...lessonGroups,
       ...(goalRows.length ? [goals] : []), assignment, actions,
       node('p', 'cloud-note', !familyPassword.configured ? 'Set your family’s parent password above.' : device.family_password_revision === familyPassword.revision && device.acknowledged_revision === device.revision ? 'Family password synced' : 'Waiting for computer to sync password'));
     mobile?.decorateCard(card, device.id);
