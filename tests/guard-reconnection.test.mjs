@@ -33,3 +33,47 @@ test('account retry renews the token then performs a real reload, including a fa
     fail=true;await Retry({}).props.onClick();assert.equal(reloads,2);
   }finally{globalThis.window=previous;}
 });
+
+test('dashboard opened in a background tab waits for visibility before renewing and mounting its frame', async () => {
+  const previous = { window: globalThis.window, document: globalThis.document, setTimeout: globalThis.setTimeout };
+  const doc = new EventTarget(), win = new EventTarget(); doc.hidden = true;
+  win.location = { origin: 'https://guard.example', assign() {} };
+  let effect, renewals = 0; const ready = [];
+  globalThis.window = win; globalThis.document = doc; globalThis.setTimeout = () => 0;
+  try {
+    const ParentWorkspace = load('app/guard/dashboard/ParentWorkspace.tsx', {
+      react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect = fn; } },
+      '@clerk/nextjs': { useAuth: () => ({ isLoaded: true, getToken: async () => { renewals++; return 'synthetic'; } }) },
+      './workspace.module.css': { default: {} },
+    }).default;
+    ParentWorkspace(); const cleanup = effect();
+    await Promise.resolve(); assert.equal(renewals, 0); assert.deepEqual(ready, []);
+    doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange'));
+    for (let n = 0; n < 10; n++) await Promise.resolve();
+    assert.equal(renewals, 1); assert.deepEqual(ready, [true]);
+    cleanup();
+  } finally { Object.assign(globalThis, previous); }
+});
+
+test('hiding during initial auth renewal does not mount a background dashboard and can resume immediately', async () => {
+  const previous = { window: globalThis.window, document: globalThis.document, setTimeout: globalThis.setTimeout };
+  const doc = new EventTarget(), win = new EventTarget(); doc.hidden = false;
+  win.location = { origin: 'https://guard.example', assign() {} };
+  let effect, resolveToken, renewals = 0; const ready = [];
+  const token = new Promise(resolve => { resolveToken = resolve; });
+  globalThis.window = win; globalThis.document = doc; globalThis.setTimeout = () => 0;
+  try {
+    const ParentWorkspace = load('app/guard/dashboard/ParentWorkspace.tsx', {
+      react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect = fn; } },
+      '@clerk/nextjs': { useAuth: () => ({ isLoaded: true, getToken: () => { renewals++; return token; } }) },
+      './workspace.module.css': { default: {} },
+    }).default;
+    ParentWorkspace(); const cleanup = effect();
+    doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange')); resolveToken('synthetic');
+    for (let n = 0; n < 10; n++) await Promise.resolve();
+    assert.deepEqual(ready, []);
+    doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange'));
+    for (let n = 0; n < 10; n++) await Promise.resolve();
+    assert.equal(renewals, 2); assert.deepEqual(ready, [true]); cleanup();
+  } finally { Object.assign(globalThis, previous); }
+});

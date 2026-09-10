@@ -1,4 +1,5 @@
 import { setupMonitoring } from './cloud-monitoring.js?v=20260910-mobile1';
+import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupMainSchool } from './cloud-school-setup.js';
@@ -21,7 +22,7 @@ import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
-import { setupCloudScreenshots } from './cloud-screenshots.js';
+import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260910-visible1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-prompt1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
@@ -37,9 +38,6 @@ const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
 const byId = id => document.getElementById(id);
 let snapshot = null;
-let inFlight = null;
-let timer = null;
-let failures = 0;
 let usable = false;
 let mutating = false;
 let editorSave = null;
@@ -122,39 +120,7 @@ function showSnapshot() {
   setControls();
 }
 async function refresh() {
-  if (inFlight || document.hidden) return inFlight;
-  clearTimeout(timer);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
-  inFlight = (async () => {
-    try {
-      const response = await fetch(endpoint, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal });
-      const data = await response.json();
-      if (!response.ok) {
-        if (response.status === 401) window.parent.postMessage({type:'bodeeguard-renew-session'}, location.origin);
-        throw new Error(response.status === 401 ? 'Reconnecting your account…' : data.error || 'The cloud service could not be reached.');
-      }
-      snapshot = data;
-      usable = true;
-      failures = 0;
-      byId('live-text').textContent = 'Updates every 30 minutes · Refresh anytime';
-      byId('live-indicator').dataset.connected = 'true';
-      feedback(`Updated ${new Date(data.serverTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`);
-      showSnapshot();
-    } catch (error) {
-      usable = false;
-      failures++;
-      byId('live-text').textContent = 'Cloud not refreshed';
-      byId('live-indicator').dataset.connected = 'false';
-      feedback(`${error.message} ${snapshot ? 'Showing the last received information; changes are paused until reconnection.' : 'Your family records have not been cleared.'}`, true);
-      setControls();
-    } finally {
-      clearTimeout(timeout);
-      inFlight = null;
-      if (!document.hidden) timer = setTimeout(failures ? refresh : refreshComputers, failures ? Math.min(1800000, 60000 * (2 ** Math.min(failures, 5))) : 1800000);
-    }
-  })();
-  return inFlight;
+  return dashboardRefresh.refresh();
 }
 async function mutate(action, data) {
   if (!usable || mutating) throw new Error('Wait for a successful dashboard connection before making changes.');
@@ -398,10 +364,12 @@ const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot })
 const spanish = setupCloudSpanish({ endpoint, getSnapshot: () => snapshot });
 const coloringStudio = setupCloudColoringStudio({ endpoint });
 const screenshots = setupCloudScreenshots({ endpoint });
+let pushTicketController = null;
 const livePush = window.CloudPush.createCloudPushClient({
-  getIdentity: () => document.hidden ? null : 'parent',
+  getIdentity: () => dashboardRefresh.isVisible() ? 'parent' : null,
   getTicket: async () => {
-    const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'push-ticket'})});
+    pushTicketController = new AbortController();
+    const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.any([pushTicketController.signal,AbortSignal.timeout(15000)]),headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'push-ticket'})});
     if(!response.ok)throw Error('Live delivery is reconnecting');
     return response.json();
   },
@@ -409,11 +377,6 @@ const livePush = window.CloudPush.createCloudPushClient({
   onReady: () => screenshots.refresh(),
   onSignal: hint => { if(hint.kind==='messages')messaging.notify(hint.studentId); if(hint.kind==='screenshots')screenshots.refresh(); }
 });
-livePush.refresh();
-document.addEventListener('visibilitychange',()=>livePush.refresh());
-window.addEventListener('online',()=>livePush.refresh());
-window.addEventListener('pagehide',()=>livePush.stop());
-window.addEventListener('pageshow',()=>livePush.start());
 const mathCoach = setupCloudMathCoach({ endpoint });
 const spelling = setupCloudSpelling({ endpoint });
 const vocabulary = setupCloudVocabulary();
@@ -446,18 +409,46 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.addEventListener('click', () => selectTab(item.dataset.tab));
 });
 document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => selectTab(item.dataset.openTab)));
-let refreshingComputers=false;
-async function refreshComputers(){
-  if(refreshingComputers)return;
-  refreshingComputers=true;
-  const control=byId('cloud-refresh');control.disabled=true;
-  feedback('Checking child computers…');
-  try{
-    await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(10000),body:JSON.stringify({action:'refresh-computers'})});
-    await new Promise(resolve=>setTimeout(resolve,1800));
-    await refresh();
-  }catch{await refresh();}finally{refreshingComputers=false;control.disabled=false;setControls();}
-}
+const dashboardRefresh = createDashboardRefresh({
+  requestComputers: async signal => {
+    feedback('Checking child computers…');
+    const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),body:JSON.stringify({action:'refresh-computers'})});
+    if (!response.ok) throw new Error('Computer refresh unavailable');
+  },
+  refreshSnapshot: async signal => {
+    const response = await fetch(endpoint, {cache:'no-store',credentials:'same-origin',signal:AbortSignal.any([signal,AbortSignal.timeout(12000)])});
+    const data = await response.json();
+    signal.throwIfAborted();
+    if (!response.ok) {
+      if (response.status === 401) window.parent.postMessage({type:'bodeeguard-renew-session'}, location.origin);
+      throw new Error(response.status === 401 ? 'Reconnecting your account…' : data.error || 'The cloud service could not be reached.');
+    }
+    snapshot = data;
+    usable = true;
+    byId('live-text').textContent = 'Refreshes on opening · Every 30 min while visible';
+    byId('live-indicator').dataset.connected = 'true';
+    feedback(`Updated ${new Date(data.serverTime).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.`);
+    showSnapshot();
+  },
+  onError: error => {
+    usable = false;
+    byId('live-text').textContent = 'Cloud not refreshed';
+    byId('live-indicator').dataset.connected = 'false';
+    feedback(`${error.message} ${snapshot ? 'Showing the last received information; changes are paused until reconnection.' : 'Your family records have not been cleared.'}`, true);
+    setControls();
+  },
+  onBusy: busy => { byId('cloud-refresh').disabled = busy; setControls(); },
+  onResume: () => livePush.start(),
+  onSuspend: () => {
+    pushTicketController?.abort();
+    livePush.stop();
+    usable = false;
+    clearRecovery();
+    byId('cloud-recovery').close();
+    setControls();
+  },
+});
+const refreshComputers = () => dashboardRefresh.refreshComputers();
 byId('cloud-refresh').addEventListener('click', refreshComputers);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], async form => {
   const student = await mutate('add-student', { name: form.get('name'), grade: form.get('grade') });
@@ -479,15 +470,8 @@ byId('cloud-editor-form').addEventListener('submit', async event => {
 });
 byId('cloud-recovery-close').addEventListener('click', () => byId('cloud-recovery').close());
 byId('cloud-recovery').addEventListener('close', clearRecovery);
-document.addEventListener('visibilitychange', () => {
-  clearTimeout(timer);
-  if (document.hidden) { clearRecovery(); byId('cloud-recovery').close(); }
-  else refresh();
-});
-window.addEventListener('pagehide', () => { clearTimeout(timer); clearRecovery(); });
-window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
 window.addEventListener('message', event => {
-  if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
+  if (!usable && event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
 });
 setupCloudAssistant({ endpoint, navigate: selectTab });
 mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers, openSpelling:()=>spelling.openScanner(), getSnapshot:()=>snapshot, mutate, feedback });
@@ -495,4 +479,4 @@ mobile.setActive('overview');
 parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
 window.lucide?.createIcons();
 setControls();
-refreshComputers();
+dashboardRefresh.start();

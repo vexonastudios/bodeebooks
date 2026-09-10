@@ -2,7 +2,7 @@ import {initMusicAdmin} from './media-music.js';
 import {setupVideoTab,loadVideoTab} from './media-video.js';
 import {setupAudiobookTab,loadAudiobookTab} from './media-audiobooks.js';
 import {setupLearningVideosTab,loadLearningVideosTab} from './media-learning-videos.js';
-import {setupFamilyWatchTab,loadFamilyWatch} from './media-family-watch.js';
+import {setupFamilyWatchTab,loadFamilyWatchTab} from './media-family-watch.js?v=20260910-visible1';
 import {setupYouTubeSearch} from './media-youtube-search.js';
 window.refreshIcons=()=>window.lucide?.createIcons();
 window.showToast||=(message,error=false)=>{const el=document.getElementById('cloud-feedback');if(el){el.textContent=message;el.dataset.error=String(error);}};
@@ -30,7 +30,8 @@ document.addEventListener('click',event=>{
   dialog.append(close,player);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
 });
 let active='';
-function refresh(){const next=document.querySelector('.tab-content.active')?.id;if(next===active)return;active=next;
-  ({'tab-music':initMusicAdmin,'tab-videos':loadVideoTab,'tab-audiobooks':loadAudiobookTab,'tab-learning-videos':loadLearningVideosTab,'tab-family-watch':loadFamilyWatch}[next])?.();window.refreshIcons();
+function refresh(){if(document.hidden)return;const next=document.querySelector('.tab-content.active')?.id;if(next===active)return;active=next;
+  ({'tab-music':initMusicAdmin,'tab-videos':loadVideoTab,'tab-audiobooks':loadAudiobookTab,'tab-learning-videos':loadLearningVideosTab,'tab-family-watch':loadFamilyWatchTab}[next])?.();window.refreshIcons();
 }
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){active='';refresh();}});
 new MutationObserver(refresh).observe(document.querySelector('.main-content'),{attributes:true,attributeFilter:['class'],subtree:true});refresh();

@@ -9,17 +9,17 @@ export default function ParentWorkspace() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!isLoaded) return;
-    let disposed = false, pending = false, lastAttempt = 0;
+    let disposed = false, pending = false, opened = false, lastAttempt = 0;
     async function renew(force = false) {
-      if (disposed || pending || (!force && Date.now() - lastAttempt < 10000)) return;
+      if (disposed || document.hidden || pending || (opened && !force && Date.now() - lastAttempt < 10000)) return;
       pending = true; lastAttempt = Date.now();
       try {
         const token = await Promise.race([getToken({ skipCache: true }), new Promise<undefined>(resolve => setTimeout(resolve, 6000))]);
-        if (disposed) return;
+        if (disposed || document.hidden) return;
         if (token === null) { window.location.assign('/guard/sign-in/?redirect_url=%2Fguard%2Fdashboard%2F'); return; }
-        setReady(true);
+        opened = true; setReady(true);
         if (token) frame.current?.contentWindow?.postMessage({type:'bodeeguard-session-ready'}, window.location.origin);
-      } catch { if (!disposed) setReady(true); }
+      } catch { if (!disposed && !document.hidden) { opened = true; setReady(true); } }
       finally { pending = false; }
     }
     const message = (event: MessageEvent) => {

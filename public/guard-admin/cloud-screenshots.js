@@ -1,13 +1,17 @@
 export function setupCloudScreenshots({ endpoint }) {
   const root = document.getElementById('cloud-screenshots');
   let active = false, epoch = 0, overview = null, students = [];
+  let present = true, controller = null;
+  const visible = () => active && present && !document.hidden;
   const node = (tag, text = '', className = '') => { const value = document.createElement(tag); value.textContent = text; value.className = className; return value; };
-  async function call(input) {
-    const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(30000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+  async function call(input, signal) {
+    signal?.throwIfAborted();
+    const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
     const value = await response.json(); if (!response.ok) throw Error(value.error || 'Screenshots could not connect.'); return value;
   }
-  async function image(screenshotId,thumbnail=false) {
-    const file = await call({ action: 'screenshot-image', screenshotId, thumbnail });
+  async function image(screenshotId,thumbnail=false,signal) {
+    const file = await call({ action: 'screenshot-image', screenshotId, thumbnail }, signal);
+    signal?.throwIfAborted();
     if(file.url?.startsWith('https://bodeeguard-cloud-assets.james-7f8.workers.dev/v1/download/'))return file.url;
     if (file?.mime !== 'image/webp' || typeof file.data !== 'string') throw Error('The private screenshot was invalid.');
     return `data:${file.mime};base64,${file.data}`;
@@ -35,7 +39,7 @@ export function setupCloudScreenshots({ endpoint }) {
         const row = node('article', '', 'cloud-screenshot-row'), details = node('div', '', 'cloud-screenshot-details');
         details.append(node('strong', new Date(item.requested_at).toLocaleString()), node('p', statusText(item)));
         row.append(details);
-        if (item.has_image) { const preview = document.createElement('img'); preview.alt = `Private screenshot for ${student.name}`; preview.className = 'cloud-screenshot-preview'; preview.loading="lazy"; preview.style.cursor="zoom-in"; preview.onclick=async()=>{const dialog=document.createElement("dialog"),full=document.createElement("img"),close=node("button","Close","btn btn-secondary");full.alt=preview.alt;full.style.cssText="max-width:90vw;max-height:85vh;object-fit:contain";close.onclick=()=>dialog.close();dialog.append(close,full);dialog.addEventListener("close",()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();try{full.src=await image(item.id);}catch(error){full.alt=error.message;}}; image(item.id,true).then(url => { preview.src = url; }).catch(error => { preview.alt = error.message; }); row.append(preview); }
+        if (item.has_image) { const preview = document.createElement('img'); preview.alt = `Private screenshot for ${student.name}`; preview.className = 'cloud-screenshot-preview'; preview.loading="lazy"; preview.style.cursor="zoom-in"; preview.onclick=async()=>{const dialog=document.createElement("dialog"),full=document.createElement("img"),close=node("button","Close","btn btn-secondary");full.alt=preview.alt;full.style.cssText="max-width:90vw;max-height:85vh;object-fit:contain";close.onclick=()=>dialog.close();dialog.append(close,full);dialog.addEventListener("close",()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();try{full.src=await image(item.id);}catch(error){full.alt=error.message;}}; image(item.id,true,controller?.signal).then(url => { if (visible() && preview.isConnected) preview.src = url; }).catch(error => { preview.alt = error.message; }); row.append(preview); }
         if (item.status === 'captured') {
           const itemActions = node('div', '', 'cloud-actions');
           if (!item.retained) { const keep = node('button', 'Keep', 'btn btn-secondary'); keep.type = 'button'; keep.onclick = async () => { keep.disabled = true; try { await call({ action: 'screenshot-action', screenshotId: item.id, screenshotAction: 'keep' }); await load(); } catch (error) { keep.disabled = false; details.append(node('p', error.message)); } }; itemActions.append(keep); }
@@ -48,6 +52,10 @@ export function setupCloudScreenshots({ endpoint }) {
     if (!students.filter(item => !item.archived_at).length) list.append(node('p', 'Add and assign a cloud child computer in Overview before requesting a screenshot.', 'cloud-panel'));
     root.append(list);
   }
-  async function load() { const current = ++epoch; if (!active) return; root.textContent = 'Loading screenshots…'; try { const value = await call({ action: 'screenshots-overview' }); if (!active || current !== epoch) return; overview = value; render(); } catch (error) { if (active && current === epoch) root.textContent = error.message; } }
-  return { refresh() { if(active)void load(); }, update(snapshot) { students = snapshot?.students || []; }, setActive(value) { active = value; epoch++; if (value) void load(); } };
+  function suspend() { epoch++; controller?.abort(); }
+  async function load() { if (!visible()) return; suspend(); const current = epoch; controller = new AbortController(); const signal = controller.signal; root.textContent = 'Loading screenshots…'; try { const value = await call({ action: 'screenshots-overview' }, signal); if (!visible() || current !== epoch) return; overview = value; render(); } catch (error) { if (visible() && current === epoch) root.textContent = error.message; } }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) suspend(); });
+  window.addEventListener('pagehide', () => { present = false; suspend(); });
+  window.addEventListener('pageshow', () => { present = true; });
+  return { refresh() { if(visible())void load(); }, update(snapshot) { students = snapshot?.students || []; }, setActive(value) { active = value; suspend(); if (value) void load(); } };
 }

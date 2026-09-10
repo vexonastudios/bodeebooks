@@ -11,6 +11,8 @@ let parentPlayerVideoId = '';
 let parentPlayerLoadingId = '';
 let ytApiPromise = null;
 let lastParentSyncAt = 0;
+let loading = false;
+const visible = () => !document.hidden && byId('tab-family-watch')?.classList.contains('active');
 
 function byId(id) { return document.getElementById(id); }
 
@@ -271,12 +273,18 @@ function renderActiveState() {
 }
 
 export async function loadFamilyWatch() {
+  if (!visible() || loading) return;
+  loading = true;
   try {
     acceptState(await request(`${FAMILY_WATCH_API}/admin`));
-    renderActiveState();
+    if (visible()) renderActiveState();
   } catch (error) {
     if (byId('tab-family-watch')?.classList.contains('active')) setStatus(error.message, true);
-  }
+  } finally { loading = false; }
+}
+
+export function loadFamilyWatchTab() {
+  if (visible()) return Promise.all([loadStudents(), loadFamilyWatch()]);
 }
 
 async function loadStudents() {
@@ -347,7 +355,7 @@ async function endSession() {
 export function setupFamilyWatchTab() {
   byId('family-watch-refresh')?.addEventListener('click', () => {
     destroyParentPlayer();
-    return Promise.all([loadStudents(), loadFamilyWatch()]);
+    return loadFamilyWatchTab();
   });
   byId('family-watch-start')?.addEventListener('click', startSession);
   byId('family-watch-end')?.addEventListener('click', endSession);
@@ -362,13 +370,12 @@ export function setupFamilyWatchTab() {
   });
   byId('family-watch-volume')?.addEventListener('change', event => sendControl('volume', { volume: Number(event.currentTarget.value) }));
 
-  loadStudents();
-  loadFamilyWatch();
+  // Fetch the watch session only when its panel is opened.
   pollTimer = window.setInterval(() => {
-    if (!document.hidden && familyWatchState.active) loadFamilyWatch();
+    if (visible() && familyWatchState.active) loadFamilyWatch();
   }, 3000);
   clockTimer = window.setInterval(() => {
-    if (familyWatchState.active) {
+    if (visible() && familyWatchState.active) {
       byId('family-watch-position').textContent = formatPosition(currentPosition());
       if (Date.now() - lastParentSyncAt >= 1500) applyParentPlayback(familyWatchState);
     }
