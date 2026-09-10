@@ -416,7 +416,6 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
 document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => selectTab(item.dataset.openTab)));
 const dashboardRefresh = createDashboardRefresh({
   requestComputers: async signal => {
-    feedback('Checking child computers…');
     const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),body:JSON.stringify({action:'refresh-computers'})});
     if (!response.ok) throw new Error('Computer refresh unavailable');
   },
@@ -442,7 +441,19 @@ const dashboardRefresh = createDashboardRefresh({
     feedback(`${error.message} ${snapshot ? 'Showing the last received information; changes are paused until reconnection.' : 'Your family records have not been cleared.'}`, true);
     setControls();
   },
-  onBusy: busy => { byId('cloud-refresh').disabled = busy; setControls(); },
+  onBusy: busy => {
+    const initial = busy && !snapshot;
+    const loader = byId('cloud-dashboard-loading');
+    if (loader) {
+      loader.hidden = !initial;
+      loader.parentElement.classList.toggle('cloud-startup-loading', initial);
+      loader.parentElement.setAttribute('aria-busy', String(initial));
+    }
+    byId('cloud-refresh').disabled = busy;
+    byId('cloud-refresh').setAttribute('aria-busy', String(busy));
+    if (busy) feedback('');
+    setControls();
+  },
   onResume: () => livePush.start(),
   onSuspend: () => {
     pushTicketController?.abort();
