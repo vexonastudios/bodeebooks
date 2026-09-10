@@ -23,6 +23,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "pdfjs-dist": "6.3.289",
     "typescript": "^5"
   }
 }

@@ -61,7 +61,7 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
     status('grades', `${rows.length} grades on this page, newest entries first. Saved grades and child feedback are visible to the assigned child; private parent notes are never sent to child computers.`);
     setControls();
   }
-  function editGrade(existing = null, paper = null) {
+  function editGrade(existing = null, paper = null, onSaved = null) {
     const snapshot = getSnapshot();
     const students = snapshot.students.filter(student => !student.archived_at);
     if (!students.length) { status('grades', 'Add or restore a student before entering grades.'); return; }
@@ -83,7 +83,8 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
       node('p', 'cloud-note', 'Saving publishes this manually reviewed grade to the child. Automated grading, quiz capture, course weighting, and existing LAN grade history have not been transferred yet.')], async form => {
       await mutate('save-grade', { ...Object.fromEntries(form), id, revision: existing?.revision || 0, studentId: existing?.studentId || paper?.studentId || form.get('studentId'), scoreEarned: Number(form.get('scoreEarned')), scorePossible: Number(form.get('scorePossible')) });
       if (paper) await mutate('review-file', { id: paper.id, rotation: paper.rotation || 0, reviewed: true, gradeId: id });
-      await load('grades');
+      if (active === 'grades') await load('grades');
+      await onSaved?.();
     });
   }
   function fillSelect(select, choices) {
@@ -122,5 +123,5 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
     const url = URL.createObjectURL(new Blob(['\uFEFF' + schoolReportCsv(report)], { type: 'text/csv;charset=utf-8' }));
     const link = node('a'); link.href = url; link.download = `BodeeGuard-school-time-${report.start}-${report.end}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  return { update, gradePaper: paper => editGrade(null, paper), setActive(value) { active = value; if (initialized && ['grades', 'reports'].includes(value)) load(value); else { ++generation; controller?.abort(); } } };
+  return { update, gradePaper: (paper, onSaved) => editGrade(null, paper, onSaved), setActive(value) { active = value; if (initialized && ['grades', 'reports'].includes(value)) load(value); else { ++generation; controller?.abort(); } } };
 }

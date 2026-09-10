@@ -10,7 +10,8 @@ import { setupCloudMessages } from './cloud-messages.js';
 import './cloud-push-client.js';
 import { setupCloudMobile } from './cloud-mobile.js?v=20260910-mobile2';
 import { setupCloudCalendar } from './cloud-calendar.js';
-import { setupCloudRecords } from './cloud-records.js';
+import { setupCloudRecords } from './cloud-records.js?v=20260910-documents1';
+import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1';
 import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
 import { setupCloudGames } from './cloud-games-ui.js';
 const setupCloudLearningVideos = () => ({setActive(){}}); // Original media panels initialize in cloud-media-admin.js.
@@ -86,6 +87,7 @@ function selectTab(id) {
   economy.setActive(id === 'economy'); typing.setActive(id === 'economy');
   legacy.setActive(id === 'settings');
   files.setActive(id === 'grades');
+  documents.setActive(id === 'documents');
   games.setActive(id === 'family-games');
   learningVideos.setActive(id === 'learning-videos');
   musicLibrary.setActive(id==='music');videoLibrary.setActive(id==='videos');
@@ -112,6 +114,7 @@ function showSnapshot() {
   reading.update(); dailyQuestions.update(); practice.update(); geography.update(); spanish.update();
   economy.update(); typing.update(snapshot.students);
   files.update(snapshot.students);
+  documents.update();
   renderSchedule();
   renderSchoolCalendar();
   screenshots.update(snapshot);
@@ -388,6 +391,7 @@ const schoolReview = setupCloudSchoolReview({ before: byId('subjects-grid-admin'
 const monitoring = setupMonitoring({ getSnapshot: () => snapshot, mutate, navigate: selectTab, showError: feedback, mobile: () => mobile, openMessages: id => { messaging.openStudent(id); selectTab('messages'); } });
 const mainSchool = setupMainSchool({ getSnapshot: () => snapshot, editor, field, selectField, node, button, mutate });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
+const documents = setupCloudDocuments({ request: files.request, gradePaper: records.gradePaper, getStudents: () => snapshot?.students || [] });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
 const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
