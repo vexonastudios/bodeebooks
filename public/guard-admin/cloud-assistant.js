@@ -1,6 +1,6 @@
 // The cloud adapter reuses the desktop presentation, not its LAN endpoints,
 // settings, mutations or credentials. Conversation text lives only in this tab.
-export function setupCloudAssistant({ endpoint, navigate }) {
+export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const byId = id => document.getElementById(id);
   const drawer = byId('parent-assistant-drawer');
   if (!drawer) return;
@@ -51,19 +51,19 @@ export function setupCloudAssistant({ endpoint, navigate }) {
     background.inert = false; launcher.setAttribute('aria-expanded', 'false'); byId('parent-assistant-backdrop').hidden = true;
     (returnFocus?.isConnected ? returnFocus : launcher).focus();
   }
-  function sources(item, entries) {
+  function sources(item, entries, action = false) {
     const actions = document.createElement('div'); actions.className = 'assistant-message-actions';
     for (const source of (entries || []).slice(0, 3)) {
       if (!/^[a-z-]+$/.test(source.tab || '')) continue;
       const target = source.tab === 'account' ? null : byId(`tab-${source.tab}`);
       if (!target && source.tab !== 'account') continue;
       const details = document.createElement('span'); details.className = 'cloud-assistant-source';
-      details.textContent = `${source.title} · ${source.status === 'pending' ? 'Still being transferred' : source.status === 'partial' ? 'Partly connected' : 'Product guide'}`;
+      details.textContent = action ? source.title : `${source.title} · ${source.status === 'pending' ? 'Still being transferred' : source.status === 'partial' ? 'Partly connected' : 'Product guide'}`;
       actions.append(details);
       if (source.tab === 'account') {
         const link = document.createElement('a'); link.href = '/guard/account/'; link.target = '_top'; link.textContent = 'Open Account & billing'; actions.append(link);
       } else {
-        const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Open this page';
+        const button = document.createElement('button'); button.type = 'button'; button.textContent = action ? `Open ${source.title}` : 'Open this page';
         button.addEventListener('click', () => { close(); navigate(source.tab); }); actions.append(button);
       }
     }
@@ -99,7 +99,7 @@ export function setupCloudAssistant({ endpoint, navigate }) {
     };
     retry = body;
     message('user', prompt);
-    const pending = message('assistant', 'Checking BodeeGuard’s guide…', 'loading');
+    const pending = message('assistant', 'Working on your request…', 'loading');
     input.readOnly = true;
     try {
       const response = await request('assistant-ask', body);
@@ -107,8 +107,9 @@ export function setupCloudAssistant({ endpoint, navigate }) {
       pending.remove();
       const reply = message('assistant', response.message);
       const mode = document.createElement('small'); mode.className = 'cloud-assistant-mode';
-      mode.textContent = response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
-      reply.append(mode); sources(reply, response.sources);
+      mode.textContent = response.mode === 'action' ? 'Settings request complete' : response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
+      reply.append(mode); sources(reply, response.sources, response.mode === 'action');
+      if (response.mode === 'action' && response.change?.changedCount > 0) onChange?.(response.change.feature);
       if (response.notice) message('assistant', response.notice, 'cloud-assistant-notice');
       topicId = response.sources?.[0]?.id || topicId;
       history = [...history, { role: 'user', text: prompt }, { role: 'assistant', text: response.message.slice(0, 2400) }].slice(-4);

@@ -16,7 +16,7 @@ import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1'
 import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
 import { setupCloudGames } from './cloud-games-ui.js';
 const setupCloudLearningVideos = () => ({setActive(){}}); // Original media panels initialize in cloud-media-admin.js.
-import { setupCloudAssistant } from './cloud-assistant.js';
+import { setupCloudAssistant } from './cloud-assistant.js?v=20260910-math-controls1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
@@ -473,7 +473,7 @@ byId('cloud-recovery').addEventListener('close', clearRecovery);
 window.addEventListener('message', event => {
   if (!usable && event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
 });
-setupCloudAssistant({ endpoint, navigate: selectTab });
+setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers, openSpelling:()=>spelling.openScanner(), getSnapshot:()=>snapshot, mutate, feedback });
 mobile.setActive('overview');
 parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
