@@ -8,7 +8,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import './cloud-push-client.js';
-import { setupCloudMobile } from './cloud-mobile.js?v=20260910-mobile1';
+import { setupCloudMobile } from './cloud-mobile.js?v=20260910-mobile2';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
@@ -22,7 +22,7 @@ import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
-import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-mobile1';
+import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-mobile2';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
 import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudQuizzes } from './cloud-quizzes.js';

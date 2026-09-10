@@ -94,6 +94,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling, getSnapshot,
     const choose=button('Choose a file',()=>file.click(),'btn btn-secondary cloud-mobile-only');choose.prepend(icon('image-plus'));
     const selectedName=make('span','mobile-selected-file cloud-mobile-only','No photo selected');
     file.classList.add('mobile-native-file');
+    file.addEventListener('invalid',event=>{if(media.matches){event.preventDefault();byId('cloud-files-status').textContent='Take a photo or choose a file first.';takePhoto.focus();}});
     file.before(takePhoto,choose,camera);file.after(selectedName);
     file.addEventListener('change',()=>{selectedName.textContent=file.files?.[0]?.name||'No photo selected';});
     takePhoto.prepend(icon('camera'));
