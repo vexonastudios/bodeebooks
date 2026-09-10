@@ -2,7 +2,7 @@ import { setupDailyPlan } from './cloud-daily-plan.js?v=20260910-board2';
 import { setupMonitoring } from './cloud-monitoring.js?v=20260910-controls1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
-import { editCloudSubject } from './cloud-school-editor.js';
+import { editCloudSubject } from './cloud-school-editor.js?v=20260910-wide1';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupParentGuide } from './cloud-parent-setup.js?v=20260910-unified';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
