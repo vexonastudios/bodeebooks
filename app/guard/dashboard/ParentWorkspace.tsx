@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@clerk/nextjs";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import styles from "./workspace.module.css";
 
@@ -32,7 +33,13 @@ export default function ParentWorkspace() {
     void renew();
     return () => { disposed = true; window.removeEventListener('message', message); window.removeEventListener('online', visible); document.removeEventListener('visibilitychange', visible); };
   }, [getToken, isLoaded]);
-  if (!ready) return <div className={styles.connecting} role="status"><img src="/guard-icons/bodeeguard-parent-192.png" alt="" width="64" height="64" /><p>Opening your dashboard…</p></div>;
+  if (!ready) return <div className={styles.connecting} role="status">
+    <Image className={styles.connectingLogo} src="/guard-icons/bodeeguard-parent-192.png" alt="" width={64} height={64} priority />
+    <p>Opening your dashboard…</p>
+    <div className={styles.connectingProgress} role="progressbar" aria-label="Opening your dashboard">
+      <span />
+    </div>
+  </div>;
   return <iframe ref={frame} title="BodeeGuard Parent Dashboard" src="/guard/dashboard/workspace/" className={styles.frame}
     allow="autoplay; fullscreen; encrypted-media"
     sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-downloads allow-top-navigation-by-user-activation" />;
