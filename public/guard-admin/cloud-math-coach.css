@@ -1,9 +1,51 @@
-.cloud-math-family,.cloud-math-student,.cloud-math-transcript{margin:0 0 16px}.cloud-math-family label,.cloud-math-student label{display:block;margin:10px 0;color:var(--text-muted)}.cloud-math-family input[type=number],.cloud-math-student input[type=number]{display:block;margin-top:6px;max-width:180px}.cloud-math-family button,.cloud-math-student button{margin:10px 8px 0 0}.cloud-math-students{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.cloud-math-transcript{max-height:420px;overflow:auto}.cloud-math-message{padding:10px 12px;margin:8px 0;border-radius:10px;background:rgba(255,255,255,.045)}.cloud-math-message.coach{border-left:3px solid #38bdf8}.cloud-math-message.student{border-left:3px solid #2dd4bf}.cloud-math-message p{margin:5px 0 0;white-space:pre-wrap}
-
-/* Keep the original Math Coach cards legible on phones and inside setup. */
-#cloud-math-coach .cloud-math-students { grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); align-items: start; }
-#cloud-math-coach .cloud-math-family label, #cloud-math-coach .cloud-math-student label { color: var(--text-primary); line-height: 1.5; }
-#cloud-math-coach .cloud-math-student, #cloud-math-coach .cloud-math-transcript { min-width: 0; border-color: rgba(56,189,248,.2); border-radius: 14px; }
-#cloud-math-coach .cloud-math-message { overflow-wrap: anywhere; }
-#cloud-math-coach .cloud-math-family .btn, #cloud-math-coach .cloud-math-student .btn { white-space: normal; }
-#cloud-math-coach input[type=checkbox] { width: 18px; height: 18px; vertical-align: middle; accent-color: #38bdf8; }
+#cloud-math-coach .tab-header h1, #cloud-math-coach h2 { display:flex; align-items:center; gap:9px; }
+#cloud-math-coach .tab-header h1 svg { color:#a78bfa; }
+#cloud-math-coach .cloud-math-family, #cloud-math-coach .cloud-math-student, #cloud-math-coach .cloud-math-transcript { min-width:0; border:1px solid rgba(96,165,250,.2); border-radius:16px; background:linear-gradient(145deg,rgba(27,31,54,.95),rgba(18,21,37,.95)); box-shadow:0 16px 32px rgba(0,0,0,.12); }
+#cloud-math-coach .cloud-math-family { display:grid; grid-template-columns:minmax(260px,1fr) 180px auto; align-items:end; gap:16px; padding:22px 24px; margin:0 0 20px; }
+#cloud-math-coach .cloud-math-family h2 { grid-column:1/-1; margin:0; font-size:18px; }
+#cloud-math-coach .cloud-math-family h2 svg { color:#fbbf24; }
+#cloud-math-coach .cloud-math-family-copy { grid-column:1/-1; margin:-8px 0 0; color:var(--text-muted); }
+#cloud-math-coach .cloud-math-students { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr)); align-items:start; }
+#cloud-math-coach .cloud-math-child { display:grid; gap:10px; min-width:0; }
+#cloud-math-coach .cloud-math-student { padding:20px; }
+#cloud-math-coach .cloud-math-student-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+#cloud-math-coach .cloud-math-student h2 { margin:0; font-size:20px; }
+#cloud-math-coach .cloud-math-student h2 svg { width:19px; color:#c4b5fd; }
+#cloud-math-coach .cloud-math-status { flex:0 0 auto; padding:5px 9px; border:1px solid rgba(148,163,184,.3); border-radius:999px; color:#cbd5e1; font-size:12px; font-weight:700; }
+#cloud-math-coach .cloud-math-status.ready { color:#6ee7b7; border-color:rgba(52,211,153,.45); background:rgba(16,185,129,.1); }
+#cloud-math-coach .cloud-math-status.pending { color:#fde68a; border-color:rgba(251,191,36,.45); background:rgba(245,158,11,.1); }
+#cloud-math-coach .cloud-math-summary { margin:9px 0 18px; min-height:38px; color:var(--text-muted); font-size:13px; line-height:1.5; }
+#cloud-math-coach .cloud-math-toggle { display:flex; gap:11px; align-items:flex-start; padding:12px; margin:10px 0; border:1px solid rgba(148,163,184,.16); border-radius:12px; color:var(--text-primary); cursor:pointer; }
+#cloud-math-coach .cloud-math-toggle:has(input:checked) { border-color:rgba(56,189,248,.45); background:rgba(14,165,233,.08); }
+#cloud-math-coach .cloud-math-toggle input { width:18px; height:18px; margin:2px 0 0; accent-color:#38bdf8; }
+#cloud-math-coach .cloud-math-toggle-copy { display:grid; gap:3px; }
+#cloud-math-coach .cloud-math-toggle strong { display:flex; align-items:center; gap:7px; font-size:14px; }
+#cloud-math-coach .cloud-math-toggle strong svg { width:16px; color:#67e8f9; }
+#cloud-math-coach .cloud-math-toggle small { color:var(--text-muted); line-height:1.4; }
+#cloud-math-coach .cloud-math-limit { min-inline-size:0; margin:14px 0; padding:14px; border:1px solid rgba(148,163,184,.16); border-radius:12px; }
+#cloud-math-coach .cloud-math-limit legend { padding:0 5px; font-weight:700; color:var(--text-primary); }
+#cloud-math-coach .cloud-math-limit p { margin:0 0 12px; color:var(--text-muted); font-size:12px; line-height:1.45; }
+#cloud-math-coach .cloud-math-limit-options { display:flex; flex-wrap:wrap; gap:7px; }
+#cloud-math-coach .cloud-math-limit-choice { min-width:44px; margin:0; padding:7px 11px; font-size:13px; }
+#cloud-math-coach .cloud-math-limit-choice:first-child { min-width:auto; }
+#cloud-math-coach .cloud-math-limit-choice.selected { border-color:#38bdf8; background:rgba(14,165,233,.17); color:#e0f2fe; box-shadow:0 0 0 1px rgba(56,189,248,.25) inset; }
+#cloud-math-coach .cloud-math-custom-limit { display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--text-muted); font-size:12px; }
+#cloud-math-coach .cloud-math-custom-limit input { width:90px; }
+#cloud-math-coach .cloud-math-card-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:14px; }
+#cloud-math-coach .cloud-math-card-actions .btn { margin:0; display:inline-flex; align-items:center; gap:7px; }
+#cloud-math-coach .cloud-math-card-actions .btn svg { width:16px; }
+#cloud-math-coach .cloud-math-save-status { min-height:20px; margin:9px 0 0; color:var(--text-muted); font-size:13px; }
+#cloud-math-coach .cloud-math-number-field { display:grid; gap:7px; color:var(--text-primary); font-size:13px; font-weight:700; }
+#cloud-math-coach .cloud-math-number-field input { width:180px; }
+#cloud-math-coach .cloud-math-transcript { padding:0; overflow:hidden; }
+#cloud-math-coach .cloud-math-transcript summary { display:flex; align-items:center; gap:8px; min-height:48px; padding:0 15px; color:var(--text-primary); font-size:14px; font-weight:700; cursor:pointer; list-style:none; }
+#cloud-math-coach .cloud-math-transcript summary::-webkit-details-marker { display:none; }
+#cloud-math-coach .cloud-math-transcript summary svg { width:16px; color:#a78bfa; }
+#cloud-math-coach .cloud-math-transcript-note, #cloud-math-coach .cloud-math-transcript-list { margin:0; padding:0 15px 14px; color:var(--text-muted); font-size:13px; }
+#cloud-math-coach .cloud-math-message { padding:11px 12px; margin:8px 0; overflow-wrap:anywhere; border-radius:10px; background:rgba(255,255,255,.045); }
+#cloud-math-coach .cloud-math-message.coach { border-left:3px solid #38bdf8; }
+#cloud-math-coach .cloud-math-message.student { border-left:3px solid #2dd4bf; }
+#cloud-math-coach .cloud-math-message strong { display:flex; align-items:center; gap:6px; }
+#cloud-math-coach .cloud-math-message strong svg { width:15px; color:#a78bfa; }
+#cloud-math-coach .cloud-math-message p { margin:5px 0 0; white-space:pre-wrap; }
+@media (max-width:720px) { #cloud-math-coach .cloud-math-family { grid-template-columns:1fr; gap:12px; padding:18px; } #cloud-math-coach .cloud-math-number-field input { width:100%; } }
