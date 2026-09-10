@@ -5,7 +5,7 @@ import { decorateSetup, inlineChildren, inlineSchool, lockControls, setupSection
 const learning = [
   ['music','Music','Listen to music you approve.'],['videos','Videos','Watch entertainment you approve.'],
   ['typing','Typing School','Keyboard lessons and speed tests.'],['logic','Logic Lab','Reasoning puzzles.'],['words','Confused Words','Practice commonly mixed-up words.'],
-  ['geography','Geography','Maps and capital memory.'],['spelling','Spelling','Weekly word practice.','spelling'],['science-spelling','Science Spelling','Science terms and practice.','science-spelling'],
+  ['geography','Geography','Maps and capital memory.'],['spelling','Spelling','Weekly words and science terms.','spelling'],
   ['vocabulary','Vocabulary','Learn and review word meanings.','vocabulary'],['poems','Poem Memorization','Practice and record poems.','poems'],['quizzes','Quizzes','Quizzes you assign.','quizzes'],
   ['reading','Reading Log','Track books and reading.'],['notebook','Notebook','Writing saved on the child’s computer.'],['spanish','Spanish','Built-in language practice.'],['piano','Piano','Play and record locally.'],
   ['art-studio','Art Studio','Drawing saved on the child’s computer.'],['worksheets','Worksheets','Print from your approved library.','worksheets'],['learning-videos','Learning Videos','Watch your approved lessons.','learning-videos'],
@@ -15,7 +15,7 @@ const tour = [
   ['overview','Overview','See connected computers and current activity.'],['messages','Messages','Send a note, image or voice message.'],['screenshots','Screenshots','Request a screenshot when you need one. Unkept images expire after three days.'],
   ['students','Students','Add children and choose their school.'],['subjects','Subjects','Assign activities, school links and time goals to each child.'],['grades','Grades','Review work and save grades.'],
   ['calendar','Calendar / Schedule','Set school hours, days off and vacations.'],['math-coach','Math Coach','Approve access and set question limits.'],['learning-videos','Learning Videos','Review and arrange your lesson library.'],
-  ['spelling','Spelling','Set weekly words.'],['science-spelling','Science Spelling','Assign science terms.'],['vocabulary','Vocabulary','Choose word lists.'],['poems','Poems','Assign poems and review recordings.'],['quizzes','Quizzes','Create and assign quizzes.'],['worksheets','Worksheets','Approve, upload and organize printable pages.'],
+  ['spelling','Spelling','Set weekly words.'],['vocabulary','Vocabulary','Choose word lists.'],['poems','Poems','Assign poems and review recordings.'],['quizzes','Quizzes','Create and assign quizzes.'],['worksheets','Worksheets','Approve, upload and organize printable pages.'],
   ['music','Music','Review your approved music.'],['videos','Videos','Review your approved entertainment.'],['audiobooks','Audiobooks','Manage the listening library.'],['family-games','Family Games','Choose when children can play together.'],
   ['documents','Documents','Manage family files.'],['coloring-studio','Coloring Studio','Set image generation limits and review shared pages.'],['reports','Reports','Review study time and practice results.'],['browsing','Browsing Activity','Review reported school browsing.'],['economy','Economy','Choose rewards and coin settings.'],['apps','App Launcher','Manage allowed apps.'],['settings','Settings','Revisit setup and family settings.']
 ];

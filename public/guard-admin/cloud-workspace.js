@@ -2,13 +2,13 @@ import { setupMonitoring } from './cloud-monitoring.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupMainSchool } from './cloud-school-setup.js';
-import { setupParentGuide } from './cloud-parent-setup.js';
+import { setupParentGuide } from './cloud-parent-setup.js?v=20260910-unified';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import './cloud-push-client.js';
-import { setupCloudMobile } from './cloud-mobile.js';
+import { setupCloudMobile } from './cloud-mobile.js?v=20260910-unified';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
@@ -22,8 +22,7 @@ import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
-import { setupCloudSpelling } from './cloud-spelling.js';
-import { setupCloudScienceSpelling } from './cloud-science-spelling.js';
+import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-unified';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
 import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudQuizzes } from './cloud-quizzes.js';
@@ -64,6 +63,7 @@ function feedback(text, error = false) {
   byId('cloud-feedback').dataset.error = String(error);
 }
 function selectTab(id) {
+  if(id==='science-spelling')id='spelling';
   const item = document.querySelector(`.nav-item[data-tab="${id}"]`);
   if (!item || !byId(`tab-${id}`)) return;
   document.querySelectorAll('.nav-item').forEach(nav => {
@@ -78,7 +78,6 @@ function selectTab(id) {
   coloringStudio.setActive(id === 'coloring-studio');
   screenshots.setActive(id === 'screenshots');
   mathCoach.setActive(id === 'math-coach');
-  scienceSpelling.setActive(id === 'science-spelling');
   vocabulary.setActive(id === 'vocabulary');
   poems.setActive(id === 'poems');
   quizzes.setActive(id === 'quizzes');
@@ -412,7 +411,6 @@ window.addEventListener('pagehide',()=>livePush.stop());
 window.addEventListener('pageshow',()=>livePush.start());
 const mathCoach = setupCloudMathCoach({ endpoint });
 const spelling = setupCloudSpelling({ endpoint });
-const scienceSpelling = setupCloudScienceSpelling();
 const vocabulary = setupCloudVocabulary();
 const poems = setupCloudPoems();
 const quizzes = setupCloudQuizzes();

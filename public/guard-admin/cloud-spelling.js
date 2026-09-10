@@ -3,7 +3,7 @@ export function setupCloudSpelling({endpoint}){
 const API = '/spelling-adapter';
 
 let data = { students: [], lists: [], defaults: {} };
-let editingId = null;
+let editingId = null, editingWords = [];
 let currentView = 'active';
 
 const byId = id => document.getElementById(id);
@@ -20,7 +20,7 @@ async function request(route,options={}){
   if(pending&&pending.fingerprint!==fingerprint)throw new Error('A previous Spelling change is awaiting confirmation. Use Retry saved change.');
   if(!pending){const value=options.body?JSON.parse(options.body):{},coach=route.includes('/admin/coach/');let command;
     if(coach){const student=data.students.find(child=>child.id===decodeURIComponent(route.split('/').at(-1)));if(!student)throw new Error('Refresh the selected child.');command={kind:'settings',studentId:student.id,revision:student.coach_revision,enabled:value.enabled};}
-    else {const listId=options.method==='POST'?crypto.randomUUID():decodeURIComponent(route.split('/').at(-1)),old=data.lists.find(list=>list.id===listId),archive=options.method==='DELETE';if(!old&&options.method!=='POST')throw new Error('Refresh the selected list.');const words=archive?old.words:value.words.map(word=>old?.words.find(item=>item.word.toLocaleLowerCase()===word.toLocaleLowerCase())||{word});command={kind:'list',studentId:archive?old.student_id:value.student_id,listId,revision:old?.revision||0,title:archive?old.title:value.title,weekStart:archive?old.week_start:value.week_start,testDate:archive?old.test_date:value.test_date,status:archive?'archived':value.status,words};}
+    else {const listId=options.method==='POST'?crypto.randomUUID():decodeURIComponent(route.split('/').at(-1)),old=data.lists.find(list=>list.id===listId),archive=options.method==='DELETE';if(!old&&options.method!=='POST')throw new Error('Refresh the selected list.');const words=archive?old.words:value.words.map(word=>editingWords.find(item=>item.word.toLocaleLowerCase()===word.toLocaleLowerCase())||{word});command={kind:'list',studentId:archive?old.student_id:value.student_id,listId,revision:old?.revision||0,title:archive?old.title:value.title,weekStart:archive?old.week_start:value.week_start,testDate:archive?old.test_date:value.test_date,practiceOnly:archive?old.practice_only:value.practice_only,status:archive?'archived':value.status,words};}
     pending={fingerprint,command:{...command,id:crypto.randomUUID()}};
   }
   try{const result=await send('spelling-command',pending.command);pending=null;retry.hidden=true;return result;}catch(error){if(error.status>=400&&error.status<500)pending=null;retry.hidden=!pending;throw error;}
@@ -109,7 +109,7 @@ function render() {
     : currentView === 'archive'
       ? `${counts.archive} completed or archived list${counts.archive === 1 ? '' : 's'}`
       : `${counts.draft} draft list${counts.draft === 1 ? '' : 's'}`;
-  byId('spelling-admin-status').textContent = `${viewCopy} on this page · ${data.students.length} children · Original history awaits transfer`;
+  byId('spelling-admin-status').textContent = `${viewCopy} on this page · ${data.students.length} children`;
   if (!lists.length) {
     const emptyCopy = currentView === 'active'
       ? '<strong>No active spelling lists.</strong><br>Create this week’s list in the editor.'
@@ -130,10 +130,10 @@ function render() {
     const status = String(list.status || 'draft');
     return `<article class="spelling-list-card ${status === 'active' ? 'is-active' : ''}" data-spelling-list="${escapeHtml(list.id)}">
       <div class="spelling-list-top"><div><div class="spelling-list-student">${escapeHtml(list.student_name)}</div><div class="spelling-list-title">${escapeHtml(list.title)}</div></div><span class="spelling-list-badge ${status}">${escapeHtml(status === 'active' ? 'Active list' : status)}</span></div>
-      <div class="spelling-list-meta"><span>${list.word_count} words</span><span>Week ${dateLabel(list.week_start)}</span><span>Pre-test ${dateLabel(list.test_date)}</span></div>
+      <div class="spelling-list-meta"><span>${list.word_count} words</span>${list.practice_only?'<span>Practice anytime</span>':`<span>Week ${dateLabel(list.week_start)}</span><span>Pre-test ${dateLabel(list.test_date)}</span>`}</div>
       <div class="spelling-list-progress"><div><strong>${list.study_days ?? list.days_practiced ?? 0}</strong><span>Study days</span></div><div><strong>${latestStudy ? `${studyFirstTry}/${studyTotal}` : '—'}</strong><span>Right first try</span></div><div><strong>${latestStudy ? studyMissed : '—'}</strong><span>Missed first try</span></div></div>
-      <div class="spelling-pretest-row"><strong>Practice pre-test:</strong> ${latestTest ? `${Math.round(Number(latestTest.score_percent))}% · ${latestTest.first_try_correct}/${latestTest.total_words} right` : `Not taken yet · opens ${dateLabel(list.test_date)}`}</div>
-      ${renderCompletedSession(latestStudy)}
+      <div class="spelling-pretest-row"><strong>Practice pre-test:</strong> ${list.practice_only ? 'No scheduled test' : latestTest ? `${Math.round(Number(latestTest.score_percent))}% · ${latestTest.first_try_correct}/${latestTest.total_words} right` : `Not taken yet · opens ${dateLabel(list.test_date)}`}</div>
+      ${list.source_science_list_id?'<p class="spelling-history-row">Earlier science results are saved in Previous results below.</p>':''}${renderCompletedSession(latestStudy)}
       ${activeSessions.map(renderActiveSession).join('')}
       ${list.trouble_words?.length ? `<div class="spelling-trouble-row"><strong>Needs work:</strong> ${list.trouble_words.map(item => `${escapeHtml(item.word)} (${item.misses})`).join(' · ')}</div>` : ''}
       <div class="spelling-history-row">${completedCount} completed · ${activeSessions.length} unfinished</div>
@@ -205,19 +205,23 @@ async function loadSpellingTab() {
     previous.disabled=offset===0;next.disabled=!data.hasMoreLists;
     populateSelectors();
     renderCoachSettings();
+    renderBanks();
     render();
   } catch (error) {
     status.textContent = error.message;
   }
 }
 
-function openModal(list = null, studentId = '') {
+function openModal(list = null, studentId = '', bank = null) {
   resetScan();
   editingId = list?.id || null;
-  byId('spelling-list-modal-title').textContent = list ? 'Edit Weekly Spelling List' : 'New Weekly Spelling List';
+  editingWords = list?.words || bank?.words || [];
+  anytime.checked=!!list?.practice_only||!!bank;
+  updateDates();
+  byId('spelling-list-modal-title').textContent = list ? 'Edit Spelling List' : 'New Spelling List';
   byId('spelling-list-student').disabled = !!list;
   byId('spelling-list-student').value = list?.student_id || studentId || data.students[0]?.id || '';
-  byId('spelling-list-title').value = list?.title || 'Weekly Spelling';
+  byId('spelling-list-title').value = list?.title || bank?.title || 'Weekly Spelling';
   byId('spelling-list-week').value = list?.week_start || data.defaults.weekStart || '';
   byId('spelling-list-test').value = list?.test_date || data.defaults.testDate || '';
   const listStatus = ['active', 'draft', 'completed', 'archived'].includes(list?.status) ? list.status : 'active';
@@ -225,7 +229,7 @@ function openModal(list = null, studentId = '') {
   byId('spelling-status-completed').hidden = !historical;
   byId('spelling-status-archived').hidden = !historical;
   byId('spelling-list-status').value = listStatus;
-  byId('spelling-list-words').value = list?.words?.map(item => item.word).join('\n') || '';
+  byId('spelling-list-words').value = editingWords.map(item => item.word).join('\n');
   byId('spelling-list-archive').hidden = !list || list.status === 'archived';
   byId('spelling-scan-status').textContent = data.photoScanningAvailable===true?'':'Photo scanning is currently unavailable. Enter or paste the words below. The built-in spelling coach remains available.';
   byId('spelling-scan-status').className = 'spelling-scan-status';
@@ -251,6 +255,7 @@ async function saveList() {
       week_start: byId('spelling-list-week').value,
       test_date: byId('spelling-list-test').value,
       status: byId('spelling-list-status').value,
+      practice_only: anytime.checked,
       words: byId('spelling-list-words').value.split(/[\r\n,;]+/).map(word => word.trim()).filter(Boolean)
     };
     await request(editingId ? `${API}/spelling/admin/lists/${encodeURIComponent(editingId)}` : `${API}/spelling/admin/lists`, {
@@ -258,7 +263,7 @@ async function saveList() {
       body: JSON.stringify(payload)
     });
     closeModal();
-    notice('Weekly spelling list saved.');
+    notice('Spelling list saved.');
     await loadSpellingTab();
   } catch (error) {
     notice(error.message, true);
@@ -354,6 +359,29 @@ function setupSpelling() {
 }
 
 const button=(label,fn)=>{const value=document.createElement('button');value.className='btn btn-secondary';value.textContent=label;value.onclick=()=>void Promise.resolve().then(fn).catch(error=>notice(error.message));return value;};
+
+const anytimeLabel=document.createElement('label');anytimeLabel.className='spelling-history-row';
+const anytime=document.createElement('input');anytime.type='checkbox';anytimeLabel.append(anytime,document.createTextNode(' Practice anytime — no test date'));
+byId('spelling-list-week').closest('.form-group')?.before(anytimeLabel);
+if(!anytimeLabel.isConnected)byId('spelling-list-week').before(anytimeLabel);
+function updateDates(){for(const id of ['spelling-list-week','spelling-list-test']){byId(id).disabled=anytime.checked;byId(id).required=!anytime.checked;}}
+anytime.onchange=updateDates;
+const banks=document.createElement('details');banks.className='spelling-list-card';byId('spelling-list-grid').before(banks);
+function renderBanks(){
+  banks.replaceChildren();const heading=document.createElement('summary');heading.textContent='Word library · Science terms';banks.append(heading);
+  for(const bank of data.word_banks||[]){const row=document.createElement('div');row.className='spelling-list-meta';const name=document.createElement('span');name.textContent=bank.title+' · '+bank.words.length+' terms';const use=button('Use words',()=>openModal(null,byId('spelling-student-filter').value,bank));row.append(name,use);banks.append(row);}
+}
+async function exportEarlierResults(){
+  const rows=[];let offset=0;
+  for(;;){const response=await fetch('/guard/dashboard/science-spelling/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list',view:'history',offset,...(byId('spelling-student-filter').value?{studentId:byId('spelling-student-filter').value}:{})})});const result=await response.json();if(!response.ok)throw Error(result.error||'Previous results could not load.');rows.push(...result.rows);if(!result.hasMore)break;offset+=200;if(offset>=100000)throw Error('Choose one child to export fewer results.');}
+  const columns=['student','list','word','mode','response','correct','first_attempt','mastery_credit','created_at'];
+  const cell=value=>'"'+String(value??'').replace(/^[=+@-]/,"' const scanRetry=button(").replaceAll('"','""')+'"';
+  const csv=[columns.join(','),...rows.map(row=>columns.map(key=>cell(row[key])).join(','))].join('\r\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),link=document.createElement('a');link.href=url;link.download='previous-spelling-results.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  notice(rows.length+' previous results exported.');
+}
+byId('spelling-list-grid').after(button('Previous results (CSV)',exportEarlierResults));
+
 const scanRetry=button('Retry this photo scan',async()=>{if(pendingScan&&!scanBusy)await runScan(scanGeneration);});scanRetry.hidden=true;byId('spelling-scan-status').after(scanRetry);
 const retry=button('Retry saved change',async()=>{if(!pending)return;retry.disabled=true;try{await send('spelling-command',pending.command);pending=null;retry.hidden=true;closeModal();await loadSpellingTab();}finally{retry.disabled=false;}});retry.hidden=true;
 const previous=button('Newer weekly lists',async()=>{offset=Math.max(0,offset-100);await loadSpellingTab();}),next=button('Older weekly lists',async()=>{offset+=100;await loadSpellingTab();});previous.disabled=next.disabled=true;

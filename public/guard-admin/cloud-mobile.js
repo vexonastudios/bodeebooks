@@ -26,7 +26,7 @@ export function setupCloudMobile({ navigate, refresh }) {
     section.setAttribute('aria-label', title); section.append(make('h1', '', title));
     const list = make('div', 'more-list'); section.append(list); main.append(section); menus[id] = list;
   }
-  const addTabs = ['learning-videos', 'spelling', 'science-spelling', 'vocabulary', 'poems', 'worksheets'];
+  const addTabs = ['learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
