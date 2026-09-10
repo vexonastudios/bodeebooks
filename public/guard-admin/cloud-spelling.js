@@ -345,6 +345,9 @@ async function scanPhoto(file) {
 }
 
 function setupSpelling() {
+  const heading=document.querySelector('#tab-spelling h1');if(heading){heading.textContent='Spelling';const intro=heading.nextElementSibling;if(intro?.tagName==='P')intro.textContent='Set weekly words or choose science terms from the word library.';}
+  const add=byId('spelling-add-list');if(add){for(const child of add.childNodes)if(child.nodeType===Node.TEXT_NODE)child.textContent=' New List';}
+
   byId('spelling-add-list')?.addEventListener('click', () => openModal());
   byId('spelling-list-cancel')?.addEventListener('click', closeModal);
   byId('spelling-list-save')?.addEventListener('click', saveList);
@@ -360,11 +363,11 @@ function setupSpelling() {
 
 const button=(label,fn)=>{const value=document.createElement('button');value.className='btn btn-secondary';value.textContent=label;value.onclick=()=>void Promise.resolve().then(fn).catch(error=>notice(error.message));return value;};
 
-const anytimeLabel=document.createElement('label');anytimeLabel.className='spelling-history-row';
+const anytimeLabel=document.createElement('label');anytimeLabel.className='form-group';anytimeLabel.style.cssText='grid-column:1/-1;display:flex;gap:8px;align-items:center;color:var(--text-primary)';
 const anytime=document.createElement('input');anytime.type='checkbox';anytimeLabel.append(anytime,document.createTextNode(' Practice anytime — no test date'));
 byId('spelling-list-week').closest('.form-group')?.before(anytimeLabel);
 if(!anytimeLabel.isConnected)byId('spelling-list-week').before(anytimeLabel);
-function updateDates(){for(const id of ['spelling-list-week','spelling-list-test']){byId(id).disabled=anytime.checked;byId(id).required=!anytime.checked;}}
+function updateDates(){for(const id of ['spelling-list-week','spelling-list-test']){byId(id).closest('.form-group').hidden=anytime.checked;byId(id).disabled=anytime.checked;byId(id).required=!anytime.checked;}}
 anytime.onchange=updateDates;
 const banks=document.createElement('details');banks.className='spelling-list-card';byId('spelling-list-grid').before(banks);
 function renderBanks(){
