@@ -64,6 +64,7 @@ test('dashboard opened in a background tab waits for visibility before renewing 
     const ParentWorkspace = load('app/guard/dashboard/ParentWorkspace.tsx', {
       react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect = fn; } },
       '@clerk/nextjs': { useAuth: () => ({ isLoaded: true, getToken: async () => { renewals++; return 'synthetic'; } }) },
+      'next/image': { default: props => props },
       './workspace.module.css': { default: {} },
     }).default;
     ParentWorkspace(); const cleanup = effect();
@@ -86,6 +87,7 @@ test('hiding during initial auth renewal does not mount a background dashboard a
     const ParentWorkspace = load('app/guard/dashboard/ParentWorkspace.tsx', {
       react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect = fn; } },
       '@clerk/nextjs': { useAuth: () => ({ isLoaded: true, getToken: () => { renewals++; return token; } }) },
+      'next/image': { default: props => props },
       './workspace.module.css': { default: {} },
     }).default;
     ParentWorkspace(); const cleanup = effect();

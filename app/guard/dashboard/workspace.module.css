@@ -1,6 +1,12 @@
 .workspace { position: fixed; inset: 0; z-index: 100; background: #0d0d1a; }
 .frame { width: 100%; height: 100%; height: 100dvh; display: block; border: 0; }
 .connecting { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; color: #f8fafc; font: 18px system-ui, sans-serif; }
+.connectingLogo { border-radius: 14px; box-shadow: 0 12px 32px #0006; }
+.connecting p { margin: 0; }
+.connectingProgress { position: relative; width: min(220px, 62vw); height: 6px; overflow: hidden; border: 1px solid #29314a; border-radius: 999px; background: #171a2c; }
+.connectingProgress span { position: absolute; inset-block: 0; left: -45%; width: 45%; border-radius: inherit; background: linear-gradient(90deg, #0ea5e9, #27d3bd); animation: dashboardOpening 1.15s ease-in-out infinite; }
+@keyframes dashboardOpening { to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .connectingProgress span { left: 0; width: 100%; animation: none; } }
 .installBackdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: #0009; padding: 20px; }
 .installCard { width: min(100%, 380px); border: 1px solid #334155; border-radius: 20px; background: #11152b; color: #f8fafc; padding: 24px; }
 .installCard h2 { font-size: 22px; margin-bottom: 12px; }
