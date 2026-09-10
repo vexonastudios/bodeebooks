@@ -30,7 +30,7 @@ import { setupCloudQuizzes } from './cloud-quizzes.js';
 import { setupCloudWorksheets } from './cloud-worksheets.js';
 import { setupCloudReading } from './cloud-reading.js';
 import { setupCloudTyping } from './cloud-typing.js';
-import { setupCloudEconomy } from './cloud-economy.js';
+import { setupCloudEconomy } from './cloud-economy.js?v=20260910-wallet1';
 import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
 const endpoint = '/guard/dashboard/bridge/';

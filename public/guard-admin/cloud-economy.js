@@ -6,7 +6,7 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
   function close() { modal.classList.remove('active'); modal.setAttribute('aria-hidden', 'true'); editing = null; }
   function fields() {
     const time = el('reward-catalog-type').value === 'time'; el('reward-time-fields').hidden = !time;
-    el('reward-type-help').textContent = time ? 'Family Game Room is connected. Keep other player rewards hidden until those players transfer.' : 'Coins are deducted when requested. Mark it fulfilled when ready, or refund the coins.';
+    el('reward-type-help').textContent = time ? 'Music, videos, audiobooks and Family Games support extra time. Unused time stays saved. Your access rules still apply.' : 'Coins are deducted when requested. Mark it fulfilled when ready, or refund the coins.';
   }
   function open(item = null) {
     if (saving) return;
@@ -40,8 +40,13 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
   }
   function render(value) {
     el('econ-balances').replaceChildren(...value.balances.map(row => {
-      const line = node('div', 'cloud-panel'); line.append(node('strong', '', row.name), node('p', '', row.wallet.initialized ? `${row.wallet.balance} coins · ${row.wallet.totalEarned} earned in total` : `Earlier balance awaits transfer · ${row.wallet.cloudEarned} coins earned in the cloud`));
-      line.append(button(row.wallet.initialized ? '+ / − Adjust coins' : 'Reconcile opening balance', () => adjust(row, row.wallet.initialized ? 'adjust' : 'opening-wallet'))); return line;
+      const line = node('div', 'cloud-panel'); line.append(node('strong', '', row.name), node('p', '', `${row.wallet.balance} coins · ${row.wallet.totalEarned} earned in total`));
+      line.append(button('+ / − Adjust coins', () => adjust(row, 'adjust')));
+      if (!row.wallet.initialized) {
+        const previous = node('details', ''), summary = node('summary', '', 'Have coins from the old app?');
+        previous.append(summary, button('Add previous balance', () => adjust(row, 'opening-wallet'))); line.append(previous);
+      }
+      return line;
     }));
     const catalog = el('reward-catalog-list');
     catalog.innerHTML = value.items.map(item => `<article class="reward-admin-card${item.active ? '' : ' is-hidden'}"><div class="reward-admin-icon">${esc(item.icon)}</div><div class="reward-admin-main"><div class="reward-admin-title-row"><strong>${esc(item.name)}</strong><span class="reward-admin-pill ${item.active ? 'is-live' : 'is-hidden'}">${item.active ? 'IN STORE' : 'HIDDEN'}</span></div><div class="reward-admin-description">${esc(item.description)}</div><div class="reward-admin-meta"><span class="reward-admin-pill">${esc(item.type)}</span><span class="reward-admin-pill">🪙 ${item.price.toLocaleString()}</span><span class="reward-admin-pill">${item.daily_limit} / child / day</span>${item.type === 'time' ? `<span class="reward-admin-pill">${item.time_minutes} minutes · ${esc(item.media_type)}</span>` : ''}</div><div class="reward-admin-actions"><button class="btn btn-secondary" data-reward-edit="${esc(item.id)}">Edit</button><button class="btn btn-secondary" data-reward-toggle="${esc(item.id)}">${item.active ? 'Hide from Store' : 'Show in Store'}</button></div></div></article>`).join('') || '<p class="settings-hint">No cloud rewards yet. Select Add Reward to create one. The old catalog has not been imported.</p>';
@@ -74,7 +79,7 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
       const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list-store', studentId: studentId || null, offset }) });
       const value = await response.json(); if (!response.ok) throw new Error(value.error || 'Economy could not connect.');
       if (!active || generation !== epoch) return;
-      data = value; render(value); el('cloud-economy-status').textContent = 'Cloud purchases, refunds, Reading and Typing rewards are connected. Other school/practice rewards and LAN histories still await transfer.';
+      data = value; render(value); el('cloud-economy-status').textContent = 'Earned coins are available right away. Manage rewards and prices below.';
     } catch (error) { if (active && generation === epoch) { data = null; for (const id of ['econ-balances','econ-purchases','reward-catalog-list']) el(id).replaceChildren(); el('cloud-economy-status').textContent = error.message; } }
     finally { loading = false; if (active && generation !== epoch) void load(); }
   }
