@@ -1,0 +1,50 @@
+#cloud-editor:has(.cloud-subject-grid) { width: min(1400px,calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: 0; overflow: hidden; border-radius: 20px; box-shadow: 0 24px 90px #0008; }
+#cloud-editor:has(.cloud-subject-grid) form { display: grid; grid-template-rows: auto minmax(0,1fr) auto auto; max-height: calc(100dvh - 34px); }
+#cloud-editor:has(.cloud-subject-grid) #cloud-editor-title { display: flex; align-items: center; gap: 12px; padding: 18px 24px; margin: 0; border-bottom: 1px solid var(--border); font-size: 25px; }
+#cloud-editor:has(.cloud-subject-grid) #cloud-editor-title svg { width: 26px; height: 26px; color: #c4b5fd; }
+#cloud-editor:has(.cloud-subject-grid) #cloud-editor-fields { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 24px; scrollbar-width: thin; scrollbar-color: #595272 transparent; }
+#cloud-editor:has(.cloud-subject-grid) #cloud-editor-error { margin: 0; padding: 10px 24px; font-size: 14px; }
+#cloud-editor:has(.cloud-subject-grid) #cloud-editor-error:empty { display: none; }
+#cloud-editor:has(.cloud-subject-grid) .modal-actions { margin: 0; padding: 12px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-secondary); }
+#cloud-editor:has(.cloud-subject-grid) .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; min-height: 40px; }
+#cloud-editor:has(.cloud-subject-grid) svg { width: 18px; height: 18px; flex: none; }
+.cloud-subject-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; align-items: start; }
+.cloud-subject-panel { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: #ffffff03; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cloud-subject-panel h3,.cloud-subject-panel h4 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; line-height: 1.4; }
+.cloud-subject-panel h3 { padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.cloud-subject-panel h3 svg,.cloud-subject-panel h4 svg,.cloud-subject-assignments legend svg { color: #c4b5fd; }
+#cloud-editor .cloud-subject-grid label { display: flex; flex-direction: column; gap: 5px; margin: 0; line-height: 1.45; font-size: 13px; color: var(--text-secondary); min-width: 0; }
+#cloud-editor .cloud-subject-grid .admin-input { width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; font: inherit; font-size: 14px; line-height: 1.4; border-radius: 8px; box-sizing: border-box; color: var(--text-primary); }
+#cloud-editor .cloud-subject-grid textarea { resize: vertical; }
+#cloud-editor .cloud-subject-grid textarea[name=description] { min-height: 62px; }
+#cloud-editor .cloud-subject-grid .cloud-note { margin: 0; font-size: 12px; line-height: 1.55; color: var(--text-secondary); }
+#cloud-editor .cloud-subject-grid .cloud-schedule-toggle { flex-direction: row; align-items: center; gap: 9px; min-height: 30px; color: var(--text-primary); font-weight: 500; }
+#cloud-editor .cloud-subject-grid input[type=checkbox] { width: 18px; height: 18px; flex: none; accent-color: #a78bfa; }
+.cloud-subject-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.cloud-subject-icon-picker { display: grid; grid-template-columns: 52px minmax(0,1fr); align-items: end; gap: 10px; }
+.cloud-subject-icon-preview { display: grid; place-items: center; height: 52px; border: 1px solid var(--border); border-radius: 12px; background: #ffffff06; }
+#cloud-editor .cloud-subject-icon-preview svg { width: 28px; height: 28px; }
+#cloud-editor .cloud-subject-grid input[type=color] { width: 100%; height: 38px; padding: 3px; border-radius: 8px; }
+.cloud-subject-website { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border); padding-top: 12px; }
+.cloud-subject-retained { border-top: 1px solid var(--border); padding-top: 10px; }
+.cloud-subject-retained summary { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 12px; color: #c4b5fd; min-height: 30px; }
+#cloud-editor .cloud-subject-retained[open] .cloud-schedule-toggle { margin: 12px 0; }
+#cloud-editor .cloud-subject-assignments { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 10px 14px 14px; border-radius: 14px; }
+#cloud-editor .cloud-subject-assignments legend { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.cloud-subject-children { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 10px 0 0; }
+#cloud-editor .cloud-subject-grid .cloud-assignment-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 0; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #ffffff03; }
+#cloud-editor .cloud-subject-grid .cloud-subject-child { grid-column: 1 / -1; display: flex; flex-direction: row; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+#cloud-editor:has(.cloud-subject-grid) .cloud-subject-remove { margin-right: auto; font-size: 12px; }
+#cloud-editor .cloud-subject-grid :focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+@media(max-width: 1100px) { .cloud-subject-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .cloud-subject-children { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width: 760px) {
+  #cloud-editor:has(.cloud-subject-grid) { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 14px; }
+  #cloud-editor:has(.cloud-subject-grid) form { max-height: calc(100dvh - 18px); }
+  #cloud-editor:has(.cloud-subject-grid) #cloud-editor-title { padding: 16px; font-size: 22px; }
+  #cloud-editor:has(.cloud-subject-grid) #cloud-editor-fields { padding: 14px; }
+  #cloud-editor:has(.cloud-subject-grid) .modal-actions { padding: 12px 16px; }
+  #cloud-editor:has(.cloud-subject-grid) .cloud-subject-remove { font-size: 0; padding: 10px; }
+  .cloud-subject-grid,.cloud-subject-children { grid-template-columns: minmax(0,1fr); }
+  .cloud-subject-panel { padding: 14px; }
+}
+@media(pointer: coarse) { #cloud-editor .cloud-subject-grid .admin-input { min-height: 44px; font-size: 16px; } #cloud-editor .cloud-subject-grid .cloud-schedule-toggle,#cloud-editor .cloud-subject-grid .cloud-subject-child,.cloud-subject-retained summary,#cloud-editor:has(.cloud-subject-grid) .modal-actions .btn { min-height: 44px; } }
