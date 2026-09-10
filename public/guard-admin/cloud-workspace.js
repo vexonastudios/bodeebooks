@@ -21,7 +21,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
-import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910';
+import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
 import { setupCloudSpelling } from './cloud-spelling.js';
 import { setupCloudScienceSpelling } from './cloud-science-spelling.js';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';

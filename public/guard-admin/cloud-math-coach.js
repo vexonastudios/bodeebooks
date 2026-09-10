@@ -36,7 +36,7 @@ export function setupCloudMathCoach({ endpoint }) {
     const wrap = node('fieldset', '', 'cloud-math-limit');
     wrap.append(node('legend', 'Daily questions'), node('p', 'Choose a simple limit, or leave it open. Your family monthly limit still applies.'));
     const options = node('div', '', 'cloud-math-limit-options');
-    const custom = document.createElement('input'); custom.type = 'number'; custom.min = '1'; custom.max = '20'; custom.placeholder = 'Custom'; custom.className = 'admin-input';
+    const custom = document.createElement('input'); custom.type = 'number'; custom.min = '1'; custom.max = '20'; custom.placeholder = 'Other'; custom.className = 'admin-input';
     const choices = [{ value: 0, label: 'No limit' }, { value: 3, label: '3' }, { value: 5, label: '5' }, { value: 10, label: '10' }];
     const set = next => { limit = next; custom.value = [0, 3, 5, 10].includes(next) ? '' : String(next); for (const choice of options.querySelectorAll('button')) choice.classList.toggle('selected', Number(choice.dataset.limit) === next); };
     for (const choice of choices) {
