@@ -1,3 +1,4 @@
+import { setupDailyPlan } from './cloud-daily-plan.js';
 import { setupMonitoring } from './cloud-monitoring.js?v=20260910-controls1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
@@ -63,6 +64,7 @@ function feedback(text, error = false) {
   byId('cloud-feedback').dataset.routine = String(!error && text.startsWith('Updated '));
 }
 function selectTab(id) {
+  dailyPlan.setActive(id === 'daily-plan');
   if(id==='science-spelling')id='spelling';
   const item = document.querySelector(`.nav-item[data-tab="${id}"]`);
   if (!item || !byId(`tab-${id}`)) return;
@@ -107,6 +109,7 @@ function showSnapshot() {
   void parentGuide?.startOnce();
   renderStudents();
   renderSubjects();
+  dailyPlan.update();
   records.update();
   schoolReview.update();
   reading.update(); dailyQuestions.update(); practice.update(); geography.update(); spanish.update();
@@ -404,6 +407,8 @@ const mediaRequest = async (kind, input = {}) => {
 const learningVideos = setupCloudLearningVideos({root:byId('cloud-learning-videos'),parent:true,libraryKind:'learning-videos',request:mediaRequest});
 const musicLibrary = setupCloudLearningVideos({root:byId('cloud-music-library'),parent:true,libraryKind:'music',request:mediaRequest});
 const videoLibrary = setupCloudLearningVideos({root:byId('cloud-video-library'),parent:true,libraryKind:'videos',request:mediaRequest});
+const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, endpoint });
+
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();
   item.addEventListener('click', () => selectTab(item.dataset.tab));

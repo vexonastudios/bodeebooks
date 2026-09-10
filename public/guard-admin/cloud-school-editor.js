@@ -5,7 +5,7 @@ export function cloudSubjectEdit(captured, subjectId, form) {
   const assignments = captured.students.flatMap(student => {
     const current = subject ? assignmentFor(subject, student.id) : null, active = form.get(`assigned-${student.id}`) === 'on';
     if (!active && !current) return [];
-    return [{ studentId: student.id, active,
+    return [{ ...(current?.dailyPlan ? { dailyPlan: current.dailyPlan } : {}), studentId: student.id, active,
       dailyGoalMinutes: active ? Number(form.get(`goal-${student.id}`)) : current.dailyGoalMinutes,
       displayOrder: active ? Number(form.get(`order-${student.id}`)) : current.displayOrder ?? subject?.displayOrder ?? 0 }];
   });
@@ -66,6 +66,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
     const update = () => { for (const wrapper of [goal, order]) { const input = wrapper.querySelector('input'); input.disabled = !enabled.checked; input.required = enabled.checked; } };
     enabled.addEventListener('change', update); update(); row.append(enabled, node('span', '', student.name + (student.archived_at ? ' (archived; settings retained)' : '')), goal, order); assignmentFields.append(row);
   }
+  if (subject?.assignments?.some(a => a.dailyPlan)) assignmentFields.append(node('p', 'cloud-note', 'This subject has individual Daily plan settings. Change its placement and days in Daily plan.'));
   if (!captured.students.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.')); fields.push(assignmentFields);
   if (subject) fields.push(button('Remove subject', async () => {
     if (!confirm(`Remove ${subject.title} from cloud school? Its history is retained. Hide the subject instead to retain its assignments and prerequisites.`)) return;
