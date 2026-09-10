@@ -47,12 +47,11 @@
 .cloud-mobile .tab-content { padding: 0; }
 .cloud-mobile #tab-overview .cloud-overview-assistant,
 .cloud-mobile #cloud-monitor-stats,
-.cloud-mobile #cloud-refresh,
 .cloud-mobile #tab-overview > .cloud-overview-refresh-note { display: none; }
 .cloud-mobile .cloud-feedback:empty { display: none; }
 .cloud-mobile .tab-header { gap: 8px; justify-content: space-between; }
 .cloud-mobile #tab-overview .tab-header h1::before { content: 'RIGHT NOW'; display: block; color: #a5b4fc; font-size: 10px; letter-spacing: .12em; margin-bottom: 6px; }
-.cloud-mobile #tab-overview .tab-header > .cloud-actions { display: none; }
+.cloud-mobile #tab-overview .tab-header > .cloud-actions { display: flex; width:100%; justify-content:space-between; }
 .cloud-mobile .mobile-pause-all { align-items: center; font-size: 11px; }
 .cloud-mobile .cloud-monitor-card { padding: 0; opacity: 1; min-height: 0; }
 .cloud-mobile .cloud-monitor-card > .monitor-card-top { display: none; }

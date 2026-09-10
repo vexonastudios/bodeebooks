@@ -1,6 +1,6 @@
 // The parent phone layout uses the same authenticated cloud actions as desktop.
 import { preparePhotoForUpload } from './parent-photo-upload.js';
-export function setupCloudMobile({ navigate, refresh, openSpelling, getSnapshot, mutate, feedback }) {
+export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   const byId = id => document.getElementById(id);
   const make = (tag, className, text = '') => { const el = document.createElement(tag); el.className = className; el.textContent = text; return el; };
   const button = (label, action, className = 'secondary') => {
@@ -71,15 +71,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling, getSnapshot,
   const shortcutCopy=make('span','');shortcutCopy.append(make('strong','','Photograph school papers'),make('small','','Student work, word lists and answer keys'));
   shortcut.append(shortcutIcon,shortcutCopy,icon('chevron-right'));
   byId('tab-overview').querySelector('.tab-header').after(shortcut);
-  const overviewStatus=make('p','inline-status cloud-mobile-only');shortcut.after(overviewStatus);
-  const pauseAll=button('Pause school',async()=>{
-    const devices=getSnapshot()?.devices||[];if(!devices.length)return;
-    const locked=!devices.every(d=>d.locked);pauseAll.disabled=true;
-    try{for(const device of devices)if(device.locked!==locked)await mutate('set-school-pause',{deviceId:device.id,locked});feedback(locked?'School paused for all computers.':'School resumed for all computers.');}
-    catch(error){feedback(error.message,true);}finally{pauseAll.disabled=false;}
-  },'danger-outline cloud-mobile-only mobile-pause-all');
-  byId('tab-overview').querySelector('.tab-header').append(pauseAll);
-  const pendingNotice=make('p','mobile-review-notice cloud-mobile-only');pendingNotice.hidden=true;overviewStatus.after(pendingNotice);
+  const pendingNotice=make('p','mobile-review-notice cloud-mobile-only');pendingNotice.hidden=true;shortcut.after(pendingNotice);
   document.addEventListener('cloud-papers-listed',event=>{
     const count=event.detail.pending;pendingNotice.hidden=!count;pendingNotice.textContent=count+' paper'+(count===1?'':'s')+' waiting for review in Papers.';
   });
@@ -132,9 +124,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling, getSnapshot,
       }
       if (media.matches) main.scrollTop = 0;
     },
-    update(snapshot){
-      overviewStatus.textContent='Updated '+new Date(snapshot.serverTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-      pauseAll.disabled=!snapshot.devices.length;pauseAll.textContent=snapshot.devices.length&&snapshot.devices.every(d=>d.locked)?'Resume school':'Pause school';
+    update(){
     },
     decorateCard(card, id, model) {
       card.classList.add('student-card');
@@ -152,7 +142,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling, getSnapshot,
       toggle.setAttribute('aria-controls', body.id); toggle.setAttribute('aria-expanded', String(expanded.has(id)));
       const head=make('span','student-card-head'),avatar=card.querySelector('.monitor-avatar').cloneNode(true),copy=make('span','student-summary-copy');
       const total=Math.max(0,Number(model?.total)||0),time=total>=3600?Math.floor(total/3600)+'h '+Math.floor(total/60)%60+'m':Math.floor(total/60)+'m';
-      const activity=model?.device?.locked?'School paused':model?.online?model.current?.title||'Dashboard':'Not currently active';
+      const activity=model?.device?.locked?'Computer locked':model?.online?model.current?.title||'Dashboard':'Not currently active';
       copy.append(make('strong','student-name',card.querySelector('.monitor-name').textContent),make('span','student-meta',activity+' · '+time+' today'));
       const pill=make('span','online-pill '+(model?.online?'online':''),model?.online?'Online':'Offline'),chevron=icon('chevron-down');chevron.classList.add('expand-icon');
       head.append(avatar,copy,pill,chevron);toggle.append(head);

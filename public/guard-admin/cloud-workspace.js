@@ -1,4 +1,4 @@
-import { setupMonitoring } from './cloud-monitoring.js?v=20260910-mobile1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260910-controls1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js';
@@ -9,7 +9,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import './cloud-push-client.js';
-import { setupCloudMobile } from './cloud-mobile.js?v=20260910-mobile2';
+import { setupCloudMobile } from './cloud-mobile.js?v=20260910-controls1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js?v=20260910-documents1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1';
@@ -58,7 +58,7 @@ function button(text, callback, className = 'btn btn-secondary') {
   return element;
 }
 function feedback(text, error = false) {
-  byId('cloud-feedback').textContent = text;
+  byId('cloud-feedback').textContent = !error && text.startsWith('Updated ') ? '' : text;
   byId('cloud-feedback').dataset.error = String(error);
   byId('cloud-feedback').dataset.routine = String(!error && text.startsWith('Updated '));
 }

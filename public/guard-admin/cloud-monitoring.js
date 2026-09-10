@@ -55,6 +55,14 @@ function ring(model){
 }
 export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showError,mobile}){
   const grid=document.getElementById('overview-grid');
+  const header=grid.closest('section').querySelector('.tab-header');
+  const refresh=document.getElementById('cloud-refresh');
+  const updated=node('time','cloud-overview-updated');updated.id='cloud-overview-updated';updated.setAttribute('aria-live','polite');
+  const refreshGroup=node('div','cloud-overview-refresh');refresh.before(refreshGroup);refreshGroup.append(updated,refresh);
+  const lockAll=button('Lock All Computers','lock-keyhole',el=>run(el,async()=>{
+    const devices=getSnapshot()?.devices||[];
+    if(devices.length)await mutate('computer-command',{kind:'lock-all',locked:!devices.every(d=>d.locked)});
+  }),'btn monitor-student-action--lock');lockAll.id='cloud-lock-all';lockAll.dataset.cloudMutation='true';header.querySelector('.cloud-actions').prepend(lockAll);
   const stats=node('div','command-center cloud-monitor-stats');stats.id='cloud-monitor-stats';grid.before(stats);
   const assistant=node('form','cloud-overview-assistant');
   const input=node('input');input.placeholder='Ask about settings, activities or your dashboard…';input.setAttribute('aria-label','Ask BodeeGuard');input.maxLength=1500;
@@ -86,12 +94,15 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     for(const [glyph,value,total,label]of [['activity',models.filter(m=>m.online&&m.current&&!m.device.locked).length,models.length,'Studying'],['laptop',online,snapshot.devices.length,'Computers connected'],['circle-check',models.reduce((n,m)=>n+m.done,0),models.reduce((n,m)=>n+m.required,0),'Subject goals done']]){
       const stat=node('div','cc-stat'),copy=node('div','cc-stat-body'),count=node('span','cc-stat-value',String(value));count.append(node('span','cc-of',` / ${total}`));copy.append(count,node('span','cc-stat-label',label));stat.append(icon(glyph),copy);stats.append(stat);
     }
-    const asOf=node('div','cloud-monitor-asof');asOf.append(node('strong','',new Date(snapshot.serverTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})),node('span','','Last refreshed'));stats.append(asOf);
+    updated.dateTime=snapshot.serverTime;updated.textContent='Updated '+new Date(snapshot.serverTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    const allLocked=snapshot.devices.length>0&&snapshot.devices.every(d=>d.locked);
+    lockAll.replaceChildren(icon(allLocked?'lock-open':'lock-keyhole'),document.createTextNode(allLocked?'Unlock All Computers':'Lock All Computers'));
+    lockAll.disabled=!snapshot.devices.length;lockAll.dataset.requiresDevice=String(!!snapshot.devices.length);
     for(const model of models){
       const {student,device}=model;
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
       const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=node('span','monitor-avatar',student.name.split(/\s+/).map(n=>n[0]).slice(0,2).join('').toUpperCase());avatar.style.setProperty('--child-color',model.color);
-      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!device?'No computer connected':device.locked?'School paused':model.online?model.current?.title||'Dashboard':'Not connected'));
+      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!device?'No computer connected':device.locked?'Computer locked':model.online?model.current?.title||'Dashboard':'Not connected'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
       const clocks=node('div','monitor-timer-row');
       for(const [label,time,cls]of [['School today',model.total,''],['Subject today',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
@@ -104,9 +115,26 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       const actions=node('div','cloud-monitor-actions');
       const shot=button('Snap Screen','camera',el=>run(el,async()=>{await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');}),'monitor-control monitor-control--screenshot');shot.disabled=!device;shot.dataset.requiresDevice=String(!!device);shot.dataset.cloudMutation='true';actions.append(shot);
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
+      if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
+        const lockMedia=button('Lock Media','lock-keyhole',el=>run(el,async()=>{
+          for(const [kind] of mediaTypes)if(model.media[kind].unlocked)await mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:student.id,operation:'override',unlocked:false}});
+        },'Normal media rules restored.'),'monitor-control monitor-control--lock-media');
+        lockMedia.title='Remove today’s media bypasses and restore your usual rules.';lockMedia.dataset.cloudMutation='true';actions.append(lockMedia);
+      }
       const pair=node('div','monitor-student-actions');
-      const pause=button(device?.locked?'Resume school':'Pause school',device?.locked?'play':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked})),'monitor-student-action monitor-student-action--lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
+      const pause=button(device?.locked?'Unlock computer':'Lock computer',device?.locked?'lock-open':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked})),'monitor-student-action monitor-student-action--lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
       pair.append(pause,button('Message','send',()=>openMessages(student.id),'monitor-student-action monitor-student-action--message'));actions.append(pair);card.append(actions);
+      const close=button('Close BodeeGuard','power',el=>run(el,()=>mutate('computer-command',{kind:'close',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),'Close request sent. It expires in two minutes if the computer does not receive it.'),'monitor-control monitor-control--close');
+      const parts=String(device?.app_version||'').split('.').map(Number),supportsClose=parts.length===3&&parts.every(Number.isInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=201));
+      close.disabled=!supportsClose;close.dataset.requiresDevice=String(supportsClose);close.dataset.cloudMutation='true';
+      close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';actions.append(close);
+      if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
+      const quick=node('details','monitor-quick-unlock'),summary=node('summary');summary.append(icon('key-round'),document.createTextNode('Quick Unlock…'));quick.append(summary);
+      const options=node('div','monitor-quick-options');options.append(node('strong','','Unlock for today'),node('p','','Bypass hours and prerequisites. Daily media limits still apply.'));
+      for(const subject of model.goals){const unlocked=student.quick_unlock?.date===snapshot.activityDate&&student.quick_unlock.subjectIds.includes(subject.id);
+        const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>run(el,()=>mutate('computer-command',{kind:'quick-unlock',studentId:student.id,subjectId:subject.id,unlocked:!unlocked}),'Saved for today.'),'btn btn-secondary');choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';options.append(choice);}
+      if(!model.goals.length)options.append(node('p','','Assign school subjects in Settings to unlock them here.'));
+      quick.append(options);actions.append(quick);
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
       mobile()?.decorateCard(card,student.id,model);grid.append(card);
     }

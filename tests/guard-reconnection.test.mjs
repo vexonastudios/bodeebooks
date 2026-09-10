@@ -11,6 +11,26 @@ function load(file, mocks={}) {
   mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,filename);
   return mod.exports;
 }
+test('remote computer commands require the parent session and same origin, and forward no submitted authority', async () => {
+  let authenticated = false; const calls = [];
+  const { POST } = load('app/guard/dashboard/bridge/route.ts', {
+    '@clerk/nextjs/server': { auth: async () => ({ isAuthenticated: authenticated }) },
+    '../cloud-api': { CloudApiError: class extends Error {}, cloudApi: async (...args) => { calls.push(args); return { delivery: 'pending' }; } },
+  });
+  const input = { action: 'computer-command', kind: 'close', deviceId: '11111111-1111-4111-8111-111111111111', revision: 4,
+    requestId: '22222222-2222-4222-8222-222222222222', householdId: 'foreign', token: 'untrusted', path: '/admin', method: 'DELETE' };
+  const request = (origin = 'https://guard.example', site = 'same-origin') => new Request('https://guard.example/guard/dashboard/bridge', {
+    method: 'POST', headers: { origin, 'sec-fetch-site': site, 'content-type': 'application/json' }, body: JSON.stringify(input),
+  });
+  assert.equal((await POST(request())).status, 401); assert.equal(calls.length, 0);
+  authenticated = true;
+  assert.equal((await POST(request('https://other.example'))).status, 403);
+  assert.equal((await POST(request('https://guard.example', 'cross-site'))).status, 403); assert.equal(calls.length, 0);
+  const result = await POST(request()); assert.equal(result.status, 200);
+  assert.equal(result.headers.get('cache-control'), 'private, no-store');
+  assert.equal(calls[0][0], '/computers/command'); assert.equal(calls[0][1].method, 'POST');
+  assert.deepEqual(JSON.parse(calls[0][1].body), { kind: 'close', deviceId: input.deviceId, revision: 4, requestId: input.requestId });
+});
 test('dashboard errors have standalone styling, safe text and usable full-page recovery links',()=>{
   const {dashboardNotice}=load('app/guard/dashboard/dashboardNotice.ts');
   const unavailable=dashboardNotice('database secret',503);
