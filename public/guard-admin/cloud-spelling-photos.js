@@ -13,7 +13,11 @@ export function createSpellingPhotoTray({input,status,onScan,onBusy}) {
   const box=input.closest('.spelling-scan-box');
   if(box){box.before(root);box.hidden=true;}else input.before(root);
   document.getElementById('spelling-list-student')?.closest('.form-group')?.after(root);
-  root.append(title,hint,actions,pages,scan,camera);actions.append(take,choose);
+  const promptLabel=make('label','spelling-scan-prompt-label','What should we include? (optional)');
+  const prompt=make('textarea','admin-input');prompt.id='spelling-scan-prompt';prompt.rows=2;prompt.maxLength=500;
+  prompt.placeholder='Include the main vocabulary words in the right-hand column.';
+  promptLabel.htmlFor=prompt.id;
+  root.append(title,hint,actions,pages,promptLabel,prompt,scan,camera);actions.append(take,choose);
   let selected=[],busy=false,enabled=false,locked=false,preparing=false,epoch=0;
   const notice=message=>{status.textContent=message;status.className='spelling-scan-status';};
   function render(){
@@ -26,7 +30,7 @@ export function createSpellingPhotoTray({input,status,onScan,onBusy}) {
     });
     const frozen=busy||locked||preparing||!enabled;
     choose.disabled=take.disabled=frozen||selected.length===6;
-    input.disabled=camera.disabled=frozen;
+    input.disabled=camera.disabled=prompt.disabled=frozen;
     scan.disabled=frozen||!selected.length;
     scan.textContent=preparing?'Preparing photos…':busy?'Scanning…':`Scan ${selected.length||''} photo${selected.length===1?'':'s'} together`;
     window.lucide?.createIcons();
@@ -59,14 +63,14 @@ export function createSpellingPhotoTray({input,status,onScan,onBusy}) {
     try{
       const images=[];const budget=Math.min(2700000,Math.floor(3400000/selected.length));
       for(const page of selected){images.push(await prepare(page,budget));if(generation!==epoch)return;}
-      preparing=false;await onScan(images);
+      preparing=false;await onScan(images,prompt.value.trim());
     }catch(error){if(generation===epoch)notice(error.message);}
     finally{if(generation===epoch){preparing=false;onBusy(false);render();}}
   }
   render();
   return {
     setState(value){busy=value.busy;enabled=value.enabled;locked=value.locked;render();},
-    reset(){epoch++;for(const page of selected)URL.revokeObjectURL(page.url);selected=[];preparing=false;locked=false;render();},
+    reset(){epoch++;for(const page of selected)URL.revokeObjectURL(page.url);selected=[];prompt.value='';preparing=false;locked=false;render();},
     focus(){root.scrollIntoView({block:'start',behavior:'smooth'});(take.disabled?root:take).focus();}
   };
 }

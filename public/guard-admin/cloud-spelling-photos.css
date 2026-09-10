@@ -14,3 +14,8 @@
   .spelling-photo-pages { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .spelling-photo-tray > button { width: 100%; justify-content: center; }
 }
+
+.spelling-scan-prompt-label { display: block; margin: 14px 0 7px; font-size: 13px; color: var(--text-primary,#e2e8f0); }
+.spelling-photo-tray #spelling-scan-prompt { display: block; box-sizing: border-box; width: 100%; min-height: 76px; margin: 0 0 14px; padding: 10px 12px; border: 1px solid rgba(129,140,248,.3); border-radius: 10px; background: var(--bg-input,#11152b); color: var(--text-primary,#e2e8f0); font: inherit; resize: vertical; }
+.spelling-photo-tray #spelling-scan-prompt::placeholder { color: var(--text-secondary,#94a3b8); }
+.spelling-photo-tray #spelling-scan-prompt:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }

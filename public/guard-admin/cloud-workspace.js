@@ -22,7 +22,7 @@ import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
-import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-mobile2';
+import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-prompt1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
 import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudQuizzes } from './cloud-quizzes.js';

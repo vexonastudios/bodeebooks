@@ -1,4 +1,4 @@
-import { createSpellingPhotoTray } from './cloud-spelling-photos.js?v=20260910-mobile1';
+import { createSpellingPhotoTray } from './cloud-spelling-photos.js?v=20260910-prompt1';
 // Adapted from the original weekly-list editor and progress cards.
 export function setupCloudSpelling({endpoint}){
 const API = '/spelling-adapter';
@@ -351,7 +351,7 @@ async function exportEarlierResults(){
 byId('spelling-list-grid').after(button('Previous results (CSV)',exportEarlierResults));
 
 const scanRetry=button('Retry this photo scan',async()=>{if(pendingScan&&!scanBusy)await runScan(scanGeneration);});scanRetry.hidden=true;byId('spelling-scan-status').after(scanRetry);
-const photoTray=createSpellingPhotoTray({input:byId('spelling-list-photo'),status:byId('spelling-scan-status'),onBusy:scanControls,onScan:async images=>{pendingScan={id:crypto.randomUUID(),images};scanRetry.hidden=true;await runScan(++scanGeneration);}});
+const photoTray=createSpellingPhotoTray({input:byId('spelling-list-photo'),status:byId('spelling-scan-status'),onBusy:scanControls,onScan:async(images,prompt)=>{pendingScan={id:crypto.randomUUID(),images,prompt};scanRetry.hidden=true;await runScan(++scanGeneration);}});
 const retry=button('Retry saved change',async()=>{if(!pending)return;retry.disabled=true;try{await send('spelling-command',pending.command);pending=null;retry.hidden=true;closeModal();await loadSpellingTab();}finally{retry.disabled=false;}});retry.hidden=true;
 const previous=button('Newer weekly lists',async()=>{offset=Math.max(0,offset-100);await loadSpellingTab();}),next=button('Older weekly lists',async()=>{offset+=100;await loadSpellingTab();});previous.disabled=next.disabled=true;
 byId('spelling-admin-status').after(retry);byId('spelling-list-grid').after(previous,next);setupSpelling();
