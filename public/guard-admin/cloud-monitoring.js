@@ -80,6 +80,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
   }
   function render(){
     const snapshot=getSnapshot();if(!snapshot)return;
+    mobile()?.update(snapshot);
     const models=monitoringChildren(snapshot);grid.replaceChildren();stats.replaceChildren();
     const online=snapshot.devices.filter(d=>connectionState(d,Date.parse(snapshot.serverTime))==='Connected').length;
     for(const [glyph,value,total,label]of [['activity',models.filter(m=>m.online&&m.current&&!m.device.locked).length,models.length,'Studying'],['laptop',online,snapshot.devices.length,'Computers connected'],['circle-check',models.reduce((n,m)=>n+m.done,0),models.reduce((n,m)=>n+m.required,0),'Subject goals done']]){
@@ -107,7 +108,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       const pause=button(device?.locked?'Resume school':'Pause school',device?.locked?'play':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked})),'monitor-student-action monitor-student-action--lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
       pair.append(pause,button('Message','send',()=>openMessages(student.id),'monitor-student-action monitor-student-action--message'));actions.append(pair);card.append(actions);
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
-      mobile()?.decorateCard(card,student.id);grid.append(card);
+      mobile()?.decorateCard(card,student.id,model);grid.append(card);
     }
     if(!models.length)grid.append(node('p','cloud-panel','Add your children in Students to see them here.'));
     window.lucide?.createIcons();

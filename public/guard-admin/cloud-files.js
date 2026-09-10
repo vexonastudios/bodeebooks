@@ -10,6 +10,7 @@ export function setupCloudFiles({ endpoint, gradePaper }) {
     if (loading || !active) return; loading = true;
     try {
       const result = await request('list-files');
+      document.dispatchEvent(new CustomEvent('cloud-papers-listed',{detail:{pending:result.files.filter(file=>file.purpose==='paper'&&file.ready&&!file.reviewedAt&&!file.gradeId).length}}));
       el('cloud-files-list').replaceChildren(...result.files.map(file => {
         const row = tools.element('article'); row.className = 'cloud-file-row';
         row.append(tools.element('span', `${students.find(student => student.id === file.studentId)?.name || 'Child'} · ${file.name} · ${file.purpose === 'paper' ? (file.reviewedAt ? 'Reviewed' : 'Awaiting review') : 'Message attachment'}`));

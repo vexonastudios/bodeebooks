@@ -1,4 +1,4 @@
-import { setupMonitoring } from './cloud-monitoring.js';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260910-mobile1';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupMainSchool } from './cloud-school-setup.js';
@@ -8,10 +8,10 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import './cloud-push-client.js';
-import { setupCloudMobile } from './cloud-mobile.js?v=20260910-unified';
+import { setupCloudMobile } from './cloud-mobile.js?v=20260910-mobile1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
-import { setupCloudFiles } from './cloud-files.js';
+import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
 import { setupCloudGames } from './cloud-games-ui.js';
 const setupCloudLearningVideos = () => ({setActive(){}}); // Original media panels initialize in cloud-media-admin.js.
 import { setupCloudAssistant } from './cloud-assistant.js';
@@ -22,7 +22,7 @@ import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
-import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-unified2';
+import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-mobile1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
 import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudQuizzes } from './cloud-quizzes.js';
@@ -61,6 +61,7 @@ function button(text, callback, className = 'btn btn-secondary') {
 function feedback(text, error = false) {
   byId('cloud-feedback').textContent = text;
   byId('cloud-feedback').dataset.error = String(error);
+  byId('cloud-feedback').dataset.routine = String(!error && text.startsWith('Updated '));
 }
 function selectTab(id) {
   if(id==='science-spelling')id='spelling';
@@ -485,7 +486,7 @@ window.addEventListener('message', event => {
   if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
 });
 setupCloudAssistant({ endpoint, navigate: selectTab });
-mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers });
+mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers, openSpelling:()=>spelling.openScanner(), getSnapshot:()=>snapshot, mutate, feedback });
 mobile.setActive('overview');
 parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
 window.lucide?.createIcons();

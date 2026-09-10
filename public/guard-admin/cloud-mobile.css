@@ -41,3 +41,64 @@
 .cloud-mobile #parent-assistant-launcher { bottom: calc(80px + env(safe-area-inset-bottom)); right: 14px; }
 .cloud-mobile #parent-assistant-drawer { bottom: calc(74px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 150px); width: calc(100% - 20px); right: 10px; }
 .cloud-mobile dialog { max-width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
+
+/* Keep the phone overview focused on quick controls, as in the original app. */
+.cloud-mobile .main-content { padding: 22px 14px 90px; }
+.cloud-mobile .tab-content { padding: 0; }
+.cloud-mobile #tab-overview .cloud-overview-assistant,
+.cloud-mobile #cloud-monitor-stats,
+.cloud-mobile #cloud-refresh,
+.cloud-mobile #tab-overview > .cloud-overview-refresh-note { display: none; }
+.cloud-mobile .cloud-feedback:empty { display: none; }
+.cloud-mobile .tab-header { gap: 8px; justify-content: space-between; }
+.cloud-mobile #tab-overview .tab-header h1::before { content: 'RIGHT NOW'; display: block; color: #a5b4fc; font-size: 10px; letter-spacing: .12em; margin-bottom: 6px; }
+.cloud-mobile #tab-overview .tab-header > .cloud-actions { display: none; }
+.cloud-mobile .mobile-pause-all { align-items: center; font-size: 11px; }
+.cloud-mobile .cloud-monitor-card { padding: 0; opacity: 1; min-height: 0; }
+.cloud-mobile .cloud-monitor-card > .monitor-card-top { display: none; }
+.cloud-mobile .student-card-summary { width: 100%; }
+.cloud-mobile .student-card-head { width: 100%; min-height: 44px; }
+.cloud-mobile .student-summary-copy { flex: 1; text-align: left; }
+.cloud-mobile .student-meta { font-size: 11px; color: #a1aec4; }
+.cloud-mobile .online-pill { margin-left: auto; flex: none; font-size: 9px; }
+.cloud-mobile .expand-icon { width: 13px; height: 13px; margin-left: 0; flex: none; }
+.cloud-mobile .mobile-card-body { padding: 2px 12px 12px; }
+.cloud-mobile .monitor-avatar { flex: none; border-radius: 50%; }
+.cloud-mobile .mobile-paper-shortcut small { white-space: normal; }
+.cloud-mobile .mobile-paper-shortcut svg { width: 22px; height: 22px; }
+.cloud-mobile .paper-workflow-grid { grid-template-columns: minmax(0,1fr); gap: 10px; }
+.cloud-mobile .paper-workflow-card { display: grid; width: 100%; min-height: 74px; grid-template-columns: 46px minmax(0,1fr) 16px; grid-template-rows: auto; align-items: center; justify-items: stretch; padding: 13px; gap: 12px; text-align: left; border-radius: 20px; }
+.cloud-mobile .paper-workflow-card > span { width: 46px; height: 46px; }
+.cloud-mobile .paper-workflow-card strong { display: block; font-size: 14px; }
+.cloud-mobile .paper-workflow-card small { display: block; margin-top: 4px; font-size: 11px; line-height: 1.4; color: #a1aec4; }
+.cloud-mobile .paper-workflow-card svg { width: 22px; height: 22px; }
+.cloud-mobile .paper-workflow-card > svg { width: 16px; height: 16px; }
+.cloud-mobile .paper-workflow-card.saved-papers { min-height: 68px; border-color: #244559; background: linear-gradient(135deg,#102c40,#11152b); }
+.cloud-mobile .saved-papers > span { background: #103850; }
+.cloud-mobile .mobile-paper-back { align-items: center; gap: 8px; padding: 0 0 14px; }
+.cloud-mobile .mobile-paper-back svg { width: 17px; height: 17px; }
+.cloud-mobile .mobile-native-file { display: none; }
+.cloud-mobile #cloud-paper-form { display: grid; gap: 10px; }
+.cloud-mobile #cloud-paper-form label { min-width: 0; }
+.cloud-mobile #cloud-paper-form .btn { margin: 6px 8px 0 0; display: inline-flex !important; gap: 7px; align-items: center; }
+.cloud-mobile #cloud-paper-form svg { width: 18px; height: 18px; }
+.cloud-mobile .mobile-selected-file { font-size: 12px; overflow-wrap: anywhere; margin-top: 8px; }
+.cloud-mobile .mobile-review-notice { padding: 12px; border: 1px solid #705322; border-radius: 14px; background: #20171b; color: #fde68a; font-size: 12px; }
+.cloud-mobile [hidden] { display: none !important; }
+.cloud-mobile .bottom-nav svg { width: 22px; height: 22px; margin: 0 auto 3px; }
+.cloud-mobile .header-actions .icon-button { display: grid; place-items: center; }
+.cloud-mobile .header-actions svg { width: 20px; height: 20px; }
+.cloud-mobile #parent-assistant-launcher { max-width: 180px; min-height: 40px; padding: 9px 13px; font-size: 12px; }
+.cloud-mobile #tab-grades .cloud-papers { order: 0; margin: 0 0 22px; }
+.cloud-mobile #tab-grades .mobile-paper-back { order: -2; }
+.cloud-mobile #tab-grades .cloud-papers { order: -1; }
+
+.cloud-workspace.cloud-mobile #tab-overview .monitor-grid { grid-template-columns: minmax(0,1fr); gap: 10px; }
+.cloud-workspace.cloud-mobile .cloud-monitor-card { padding: 0; }
+
+.cloud-mobile .bottom-nav .nav-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.cloud-mobile .bottom-nav .nav-button small { white-space: nowrap; font-size: 10px; }
+.cloud-mobile .bottom-nav svg { margin: 0; }
+.cloud-mobile:has(#spelling-list-modal.active) #parent-assistant-launcher { display: none; }
+
+.cloud-mobile .cloud-feedback[data-routine="true"] { display: none; }

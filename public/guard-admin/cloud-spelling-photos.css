@@ -1,0 +1,16 @@
+.spelling-photo-tray { grid-column: 1 / -1; padding: 18px; margin: 16px 0; border: 1px solid rgba(129,140,248,.28); border-radius: 16px; background: rgba(99,102,241,.06); }
+.spelling-photo-tray > strong { font-size: 17px; }
+.spelling-photo-tray > p { color: var(--text-secondary,#94a3b8); font-size: 13px; margin: 6px 0 14px; }
+.spelling-photo-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.spelling-photo-tray .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; }
+.spelling-photo-tray svg { width: 18px; height: 18px; flex: none; }
+.spelling-photo-pages { display: grid; grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); gap: 10px; margin: 14px 0; }
+.spelling-photo-page { position: relative; margin: 0; min-width: 0; }
+.spelling-photo-page img { width: 100%; height: 130px; object-fit: contain; border: 1px solid rgba(129,140,248,.25); border-radius: 10px; background: #fff; }
+.spelling-photo-page figcaption { font-size: 12px; margin-top: 4px; }
+.spelling-photo-page button { width: 100%; margin-top: 5px; padding: 6px; font-size: 11px; }
+@media(max-width:600px) {
+  .spelling-photo-tray { padding: 13px; }
+  .spelling-photo-pages { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .spelling-photo-tray > button { width: 100%; justify-content: center; }
+}
