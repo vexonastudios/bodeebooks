@@ -1,3 +1,78 @@
-#tab-daily-plan{max-width:1700px;margin:auto}#tab-daily-plan .tab-header h1{display:flex;align-items:center;gap:12px}#tab-daily-plan svg{width:20px;height:20px;flex-shrink:0}.daily-plan-controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:24px 0}.daily-plan-controls>label{display:flex;align-items:center;gap:12px;font-weight:600}.daily-plan-controls select{min-width:180px}.daily-plan-status{flex:1;color:var(--text-secondary,#aaa8c3);font-size:13px}.daily-plan-status[data-error=true]{color:#fda4af}.daily-plan-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.daily-plan-column{border:1px solid #38364f;border-top:3px solid #a78bfa;border-radius:18px;padding:18px;background:#141427;min-width:0}.daily-plan-column[data-plan-group=after_school]{border-top-color:#34d399}.daily-plan-column[data-plan-group=scheduled]{border-top-color:#38bdf8}.daily-plan-column h2{font-size:18px;display:flex;align-items:center;gap:9px}.daily-plan-count{margin-left:auto;border-radius:30px;background:#26243a;padding:4px 9px;font-size:12px}.daily-plan-column>.cloud-note{min-height:36px;font-size:13px;line-height:1.5;margin:12px 0 18px}.daily-plan-card{padding:16px;margin-top:14px;border:1px solid #39374e;border-radius:13px;background:#1d1c30;box-shadow:0 5px 15px #0002;cursor:grab;min-width:0}.daily-plan-card-title{display:flex;align-items:center;gap:9px}.daily-plan-card-title>svg:first-child{color:#c4b5fd}.daily-plan-card-title>svg:last-child{margin-left:auto;color:#88849d;width:15px}.daily-plan-card-summary,.daily-plan-hours{font-size:13px;color:#b9b6cf;line-height:1.5;margin:9px 0}.daily-plan-field{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#c9c6df;margin-top:12px}.daily-plan-field input,.daily-plan-field select{width:100%;min-width:0;box-sizing:border-box;font:inherit;font-size:14px;padding:10px;border:1px solid #48435e;border-radius:8px;background:#111120;color:#f3f1ff}.daily-plan-off{font-size:12px;color:#facc88}.daily-plan-card-settings{margin-top:14px;border-top:1px solid #38344d;padding-top:12px}.daily-plan-card-settings summary{font-size:13px;cursor:pointer;color:#c4b5fd;display:flex;align-items:center;gap:8px}.daily-plan-days{display:flex;gap:8px;flex-wrap:wrap;border:0;padding:0;margin:16px 0}.daily-plan-days legend{font-size:12px}.daily-plan-days label{align-items:center;gap:5px;margin:0}.daily-plan-days input{width:18px;height:18px;accent-color:#a78bfa}.daily-plan-hours-inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.daily-plan-card-settings .btn{font-size:12px;margin-top:12px;display:inline-flex;align-items:center;gap:6px}.daily-plan-card-settings .cloud-note{font-size:12px;line-height:1.5}.daily-plan-empty{border:1px dashed #595272;padding:32px 10px;border-radius:12px;text-align:center;color:#aaa5c3;font-size:13px}.daily-plan-column.drag-over{outline:3px solid #a78bfa;outline-offset:2px}.daily-plan-card.dragging{opacity:.4}.daily-plan-available{margin:22px 0}.daily-plan-tray>summary{padding:18px;border:1px solid #38364f;border-radius:13px;cursor:pointer;font-weight:600}.daily-plan-tray .daily-plan-column{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:12px}.daily-plan-tray h2,.daily-plan-tray .daily-plan-column>.cloud-note{grid-column:1/-1}.daily-plan-tray .daily-plan-card{margin:0}.daily-plan-controls .btn{display:inline-flex;align-items:center;gap:8px}#tab-daily-plan :focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}@media(max-width:1100px){.daily-plan-board{gap:10px}.daily-plan-column{padding:12px}.daily-plan-card{padding:12px}}@media(max-width:800px){.daily-plan-board{grid-template-columns:1fr}.daily-plan-tray .daily-plan-column{grid-template-columns:1fr}.daily-plan-column>.cloud-note{min-height:0}.daily-plan-controls{gap:10px}.daily-plan-controls>label{width:100%}.daily-plan-status{flex-basis:100%}.daily-plan-controls select{flex:1}.daily-plan-column h2{font-size:19px}.daily-plan-card{cursor:auto}}
-
-.daily-plan-controls>label{white-space:nowrap}.daily-plan-controls{position:sticky;top:0;z-index:2;background:var(--bg-primary,#0d0c1d);padding:12px 0}.daily-plan-status{min-width:130px}
+#tab-daily-plan { max-width: 1920px; margin: auto; }
+#tab-daily-plan .tab-header h1 { display: flex; align-items: center; gap: 12px; }
+#tab-daily-plan svg { width: 18px; height: 18px; flex-shrink: 0; }
+.daily-plan-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; position: sticky; top: 0; z-index: 2; background: var(--bg-primary,#0d0c1d); padding: 10px 0; }
+.daily-plan-controls > label { display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; }
+.daily-plan-controls select { min-width: 160px; }
+.daily-plan-controls .btn { display: inline-flex; align-items: center; gap: 8px; }
+.daily-plan-status { flex: 1; min-width: 130px; color: var(--text-secondary,#aaa8c3); font-size: 13px; line-height: 1.5; }
+.daily-plan-status[data-error=true] { color: #fda4af; }
+.daily-plan-layout { display: grid; grid-template-columns: minmax(220px,.95fr) minmax(0,3fr); gap: 14px; height: max(380px,calc(100dvh - 270px)); max-height: 1000px; overflow-anchor: none; }
+.daily-plan-board { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; min-width: 0; min-height: 0; }
+.daily-plan-available { min-width: 0; min-height: 0; }
+.daily-plan-available > .daily-plan-column { height: 100%; }
+.daily-plan-column { display: flex; flex-direction: column; box-sizing: border-box; border: 1px solid #38364f; border-top: 3px solid #a78bfa; border-radius: 16px; padding: 14px 10px 10px; background: #141427; min-width: 0; min-height: 0; }
+.daily-plan-column[data-plan-group=anytime] { border-top-color: #94a3b8; background: #111321; }
+.daily-plan-column[data-plan-group=after_school] { border-top-color: #34d399; }
+.daily-plan-column[data-plan-group=scheduled] { border-top-color: #38bdf8; }
+.daily-plan-column h2 { font-size: 15px; line-height: 1.4; display: flex; align-items: center; gap: 7px; margin: 0 4px; }
+.daily-plan-count { margin-left: auto; border-radius: 30px; background: #26243a; padding: 3px 7px; font-size: 11px; flex-shrink: 0; }
+.daily-plan-column > .cloud-note { font-size: 12px; line-height: 1.5; margin: 8px 4px 12px; }
+.daily-plan-list { flex: 1; min-height: 90px; overflow-y: auto; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #595272 transparent; padding: 3px 4px 8px; border-radius: 10px; }
+.daily-plan-card { padding: 11px; margin-bottom: 10px; border: 1px solid #39374e; border-radius: 11px; background: #1d1c30; box-shadow: 0 3px 10px #0002; cursor: grab; min-width: 0; }
+.daily-plan-card:last-child { margin-bottom: 0; }
+.daily-plan-card-title { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.4; }
+.daily-plan-card-title > strong { overflow-wrap: anywhere; }
+.daily-plan-card-title > svg:first-child { color: #c4b5fd; }
+.daily-plan-card-title > svg:last-child { margin-left: auto; color: #88849d; width: 14px; }
+.daily-plan-card-summary,.daily-plan-hours { font-size: 12px; color: #b9b6cf; line-height: 1.4; margin: 6px 0; }
+.daily-plan-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c9c6df; margin-top: 12px; }
+.daily-plan-field input,.daily-plan-field select { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-size: 13px; padding: 8px; border: 1px solid #48435e; border-radius: 7px; background: #111120; color: #f3f1ff; }
+.daily-plan-move { margin-top: 8px; }
+.daily-plan-move select { cursor: pointer; }
+.daily-plan-off { font-size: 11px; color: #facc88; margin: 6px 0; }
+.daily-plan-card-settings { margin-top: 7px; }
+.daily-plan-card-settings summary { font-size: 12px; min-height: 30px; cursor: pointer; color: #c4b5fd; display: flex; align-items: center; gap: 7px; }
+.daily-plan-card-settings[open] summary { border-bottom: 1px solid #38344d; padding-bottom: 6px; }
+.daily-plan-days { display: flex; gap: 8px; flex-wrap: wrap; border: 0; padding: 0; margin: 14px 0; }
+.daily-plan-days legend { font-size: 12px; margin-bottom: 8px; }
+.daily-plan-days label { align-items: center; gap: 5px; margin: 0; }
+.daily-plan-days input { width: 18px; height: 18px; accent-color: #a78bfa; }
+.daily-plan-hours-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.daily-plan-card-settings .btn { font-size: 12px; margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; }
+.daily-plan-card-settings .cloud-note { font-size: 12px; line-height: 1.5; }
+.daily-plan-empty { border: 1px dashed #595272; padding: 26px 10px; border-radius: 10px; text-align: center; color: #aaa5c3; font-size: 12px; line-height: 1.6; }
+.daily-plan-column.drag-over { outline: 3px solid #a78bfa; outline-offset: -3px; background: #242039; }
+.daily-plan-card.dragging { opacity: .4; }
+.daily-plan-search { display: flex; align-items: center; gap: 7px; margin: 0 4px 10px; padding: 0 9px; border: 1px solid #48435e; border-radius: 8px; background: #111120; color: #aaa5c3; }
+.daily-plan-search .admin-input { width: 100%; min-width: 0; padding: 10px 0; margin: 0; background: transparent; border: 0; box-shadow: none; font: inherit; font-size: 13px; color: #f3f1ff; }
+.daily-plan-search:focus-within { outline: 2px solid #c4b5fd; }
+#tab-daily-plan :focus-visible { outline: 3px solid #c4b5fd; outline-offset: 2px; }
+@media(max-width: 1350px) and (min-width: 901px) {
+  .daily-plan-layout { grid-template-columns: 220px minmax(0,1fr); height: auto; max-height: none; align-items: start; }
+  .daily-plan-available { position: sticky; top: 100px; height: max(360px,calc(100dvh - 160px)); }
+  .daily-plan-board { grid-template-columns: 1fr; }
+  .daily-plan-board .daily-plan-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; max-height: 450px; align-items: start; }
+  .daily-plan-board .daily-plan-card { margin: 0; }
+}
+@media(max-width: 1100px) and (min-width: 901px) {
+  .daily-plan-board .daily-plan-list { grid-template-columns: 1fr; }
+}
+@media(max-width: 900px) {
+  .daily-plan-layout { display: flex; flex-direction: column; height: auto; max-height: none; }
+  .daily-plan-board { grid-template-columns: 1fr; }
+  .daily-plan-available .daily-plan-list { max-height: 340px; }
+  .daily-plan-board .daily-plan-list { max-height: 480px; }
+  .daily-plan-controls { gap: 10px; position: static; }
+  .daily-plan-controls > label { width: 100%; }
+  .daily-plan-status { flex-basis: 100%; margin: 0; }
+  .daily-plan-controls select { flex: 1; }
+  .daily-plan-column h2 { font-size: 17px; }
+  .daily-plan-card { cursor: auto; }
+}
+@media(pointer: coarse) {
+  .daily-plan-field input,.daily-plan-field select,.daily-plan-search .admin-input { min-height: 44px; font-size: 16px; }
+  .daily-plan-card-settings summary { min-height: 44px; }
+  .daily-plan-days label { min-width: 36px; min-height: 44px; }
+  .daily-plan-days input { width: 22px; height: 22px; min-height: 22px; }
+}
