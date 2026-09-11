@@ -4,9 +4,10 @@ export const PLAN_GROUPS = [
   ['scheduled', 'Certain days & times', 'Available during the hours you choose.', 'calendar-clock'],
   ['anytime', 'No school requirement', 'Activities without a school-completion requirement.', 'sun']
 ];
-const names = { 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'learning-videos': 'Learning Videos', poems: 'Poems' };
+const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'learning-videos': 'Learning Videos', poems: 'Poems' };
 const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
-const mediaKinds = { music: 'music', videos: 'video', audiobooks: 'audiobook' };
+icons.games = 'gamepad-2';
+const mediaKinds = { music: 'music', videos: 'video', audiobooks: 'audiobook', games:'family_game' };
 export function dailyPlanCards(snapshot, details, studentId) {
   const activities = snapshot.schoolActivities || [], cards = [], seen = new Set();
   for (const subject of snapshot.rules.subjects) {
@@ -18,7 +19,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     const stats = details.media?.[mediaKinds[module]], plan = assignment.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
     cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url,
-      goal: assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || [0,1,2,3,4,5,6],
+      goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || stats?.days || [0,1,2,3,4,5,6],
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
       limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: details.features?.[module] === false || stats?.enabled === false,
       assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow: details.requirements?.find(r => r.module === module)?.required === true });
@@ -29,7 +30,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     seen.add(module);
     const stats = details.media?.[mediaKinds[module]], requiredNow = details.requirements?.find(r => r.module === module)?.required === true;
     cards.push({ key: `module:${module}`, module, title: names[module] || module.charAt(0).toUpperCase() + module.slice(1), icon: icons[module] || 'sparkles', url: activity.url,
-      goal: module === 'typing' ? 15 : 0, placement: stats?.requireCompletion ? 'after_school' : requiredNow ? 'school' : 'anytime', days: [0,1,2,3,4,5,6],
+      goal: module === 'typing' ? 15 : 0, placement: stats?.requireCompletion ? 'after_school' : requiredNow ? 'school' : 'anytime', days: stats?.days || [0,1,2,3,4,5,6],
       start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? null,
       disabled: details.features?.[module] === false || stats?.enabled === false, assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow });
   }
@@ -55,7 +56,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     if (card.placement === 'school' && !card.portal && !card.assignedWork && card.module && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
     if (!card.days.length) throw Error(`Choose at least one day for ${card.title}.`);
     if ((!!card.start !== !!card.end) || card.start && card.start >= card.end || card.placement === 'scheduled' && !card.start) throw Error(`Choose valid hours for ${card.title}.`);
-    assignment.dailyGoalMinutes = card.goal; assignment.active = true;
+    assignment.dailyGoalMinutes = card.portal || card.assignedWork ? 0 : card.goal; assignment.active = true;
     assignment.dailyPlan = { placement: card.placement, days: card.days, start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes };
   }
   if (subjects.length > 30) throw Error('Your plan supports up to 30 distinct subjects. Remove unused subjects first.');
@@ -67,7 +68,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
 export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTemplate) {
   const baseline = dailyPlanCards({ ...snapshot, rules: { ...snapshot.rules, subjects: [] } }, {}, 'family');
   for (const card of baseline) {
-    if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120 }[card.module]; card.placement = 'after_school'; }
+    if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120, games:60 }[card.module]; card.placement = 'after_school'; }
   }
   baseline.unshift({ key: 'school', title: 'Each child’s school', icon: 'graduation-cap', portal: true, goal: 0,
     placement: 'school', days: [0,1,2,3,4,5,6], start: null, end: null, limitMinutes: null });
@@ -108,7 +109,7 @@ export function applyFamilyPlan(snapshot, template, studentIds, newId = () => cr
       // A fallback module card must not reactivate an explicitly hidden subject.
       if (!card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
         && (subject.active === false || subject.assignments?.some(a => a.studentId === studentId && a.active === false)))) continue;
-      changes.push({ ...card, ...structuredClone(entry), key: card.key, goal: card.portal ? card.goal : entry.goal });
+      changes.push({ ...card, ...structuredClone(entry), key: card.key, goal: card.portal || card.assignedWork ? 0 : entry.goal });
     }
     current = { ...current, rules: { ...current.rules, ...saveDailyPlan(current, studentId, changes, newId) } };
   }
