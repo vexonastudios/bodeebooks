@@ -27,5 +27,20 @@ profile; no live plans or messages were changed.
 
 Local fixture and build evidence is retained in the BodeeGuard checkout under
 `.tmp/check-parent-polish.cjs` and `.tmp/verification/parent-polish-*`.
-Production publication and authenticated acceptance are recorded below after
-deployment. The child installer itself is the existing 1.2.219 test release.
+The child installer itself is the existing 1.2.219 test release.
+
+## Publication and acceptance
+
+Website source `eda653e` was deployed and promoted to the existing production
+domains as **`dpl_HZW9V6egpkctEQ7UED5ewoXXJdQa`**:
+`bodeebooks-2tzevimza-vexonastudios-3984s-projects.vercel.app`.
+The deployment sets `BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION=1.2.219`.
+At **2026-09-11 23:49:55 UTC**, all six public JS/CSS assets matched the reviewed
+release files by SHA-256.
+
+A fresh authenticated load of guard.bodeebooks.com/dashboard/ then verified
+**Family default · all children** was selected upon opening Daily Plan. Messages
+showed the text field followed by Record voice, Attach a file, Clear attachment
+and Send in the new tools container. The account page showed **Version 1.2.219**.
+No family settings were saved and no messages or computer commands were sent
+during this acceptance check.
