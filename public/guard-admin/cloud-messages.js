@@ -12,6 +12,7 @@ export function setupCloudMessages({ endpoint }) {
   let generation = 0;
   let timer = null;
   let loading = false;
+  let live = false, refreshQueued = false;
   let sending = false;
   let failures = 0;
   let error = '';
@@ -102,7 +103,8 @@ export function setupCloudMessages({ endpoint }) {
     controls();
   }
   async function refresh() {
-    if (!active || document.hidden || !selected || loading) return;
+    if (!active || document.hidden || !selected) return;
+    if (loading) { refreshQueued = true; return; }
     clearTimeout(timer); loading = true; controls();
     const child = selected; const ticket = generation;
     try {
@@ -118,7 +120,8 @@ export function setupCloudMessages({ endpoint }) {
       note(`${error} Showing the last received messages; your draft remains here.`);
     } finally {
       loading = false; controls();
-      if (active && !document.hidden) timer = setTimeout(refresh, ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
+      if (active && !document.hidden && (refreshQueued || ticket !== generation || !live || failures)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
+      refreshQueued = false;
     }
   }
   function choose(child) {
@@ -233,13 +236,16 @@ export function setupCloudMessages({ endpoint }) {
       if (ticket !== generation || result.studentId !== child) return;
       older = [...result.messages, ...older]; cursor = result.nextBefore; render();
     } catch (failure) { if (ticket === generation) note(failure.message); }
-    finally { loading = false; controls(); if (active && !document.hidden) timer = setTimeout(refresh, ticket === generation ? 30000 : 0); }
+    finally { loading = false; controls(); if (active && !document.hidden && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 30000); refreshQueued = false; }
   });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
+    openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
+    setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); clearTimeout(timer); if (active) return refresh(); },
+    notify(studentId) { if (studentId === selected && active) return refresh(); },
     update(value) { students = value || []; renderStudents(); if (selected && !students.some(student => student.id === selected)) choose(null); },
-    setActive(value) { active = value; clearTimeout(timer); if (active) void refresh(); else pauseMedia(); }
+    setActive(value) { active = value; clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }
   };
 }
