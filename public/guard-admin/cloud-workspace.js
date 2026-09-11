@@ -1,5 +1,5 @@
 import { setupDailyPlan } from './cloud-daily-plan.js?v=20260910-board2';
-import { setupMonitoring } from './cloud-monitoring.js?v=20260910-photos1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260911-screenshot1';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
@@ -24,7 +24,7 @@ import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
-import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260910-cards1';
+import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260911-screenshot1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-prompt1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';

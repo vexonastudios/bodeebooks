@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       .replace('<main class="main-content">', `<main class="main-content cloud-startup-loading" aria-busy="true">${dashboardLoading}`)
       .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-dashboard-loading.css?v=20260910-loading1"></head>')
       .replace('</head>', '<link id="cloud-subject-editor-style" rel="stylesheet" href="/guard-admin/cloud-school-editor.css?v=20260910-wide1"></head>')
-      .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-student-profile.css?v=20260910-photos1"><link rel="stylesheet" href="/guard-admin/cloud-screenshots.css?v=20260910-cards1"></head>')
+      .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-student-profile.css?v=20260910-photos1"><link rel="stylesheet" href="/guard-admin/cloud-screenshots.css?v=20260911-screenshot1"></head>')
       .replace('/guard-admin/cloud-games.css"', '/guard-admin/cloud-games.css?v=20260910-tabletop1"')
       .replace('/guard-admin/cloud-messages.css"', '/guard-admin/cloud-messages.css?v=20260910-voice3"')
       .replace(/<section class="tab-content" id="tab-family-games"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-family-games" aria-label="Family Games"><div id="cloud-family-games"></div></section>')
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       .replace(/(<div id="admin-badge-name"[^>]*>)[\s\S]*?(<\/div>)/, (_match, start, end) => `${start}${escapeHtml(name)}${end}`)
       .replace(/<section class="tab-content" id="tab-coloring-studio"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-coloring-studio" aria-label="Coloring Studio"><div id="cloud-coloring-studio"></div></section>')
       .replace(/<section class="tab-content" id="tab-math-coach"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-math-coach" aria-label="Math Coach"><div id="cloud-math-coach"></div></section>')
-      .replace('<script type="module" src="/guard-admin/cloud-workspace.js"></script>', '<script type="module" src="/guard-admin/cloud-workspace.js?v=20260910-voice3"></script>')
+      .replace('<script type="module" src="/guard-admin/cloud-workspace.js"></script>', '<script type="module" src="/guard-admin/cloud-workspace.js?v=20260911-screenshot1"></script>')
       .replace(/<section class="tab-content" id="tab-documents"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-documents" aria-label="Documents"></section>')
       .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-documents.css?v=20260910-documents1"><link rel="stylesheet" href="/guard-admin/media-learning-videos.css"><link rel="stylesheet" href="/guard-admin/media-family-watch.css"><script src="/guard-admin/media-defaults.js"></script><script type="module" src="/guard-admin/cloud-media-admin.js?v=20260910-visible1"></script><link rel="stylesheet" href="/guard-admin/cloud-coloring-studio.css"><link rel="stylesheet" href="/guard-admin/cloud-math-coach.css?v=20260910b"><link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width: 900px), (pointer: coarse) and (max-width: 1180px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css?v=20260910-plan1"><link rel="stylesheet" href="/guard-admin/cloud-spelling-photos.css?v=20260910-prompt1"></head>')
       .replace('width=device-width, initial-scale=1.0', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
