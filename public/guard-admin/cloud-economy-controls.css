@@ -1,0 +1,46 @@
+#tab-economy, #tab-typing { max-width: 1540px; margin-inline: auto; }
+#tab-economy .tab-header, #tab-typing .tab-header { align-items: center; margin-bottom: 12px; }
+#tab-economy h1, #tab-typing h1, #tab-typing h2 { display:flex; align-items:center; gap:12px; }
+#tab-economy h1 svg, #tab-typing h1 svg { color:#b5a3f4; width:28px; height:28px; }
+#tab-economy .btn, #tab-typing .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+#tab-economy .btn svg, #tab-typing .btn svg, #tab-typing h2 svg { width:18px; height:18px; flex-shrink:0; }
+#tab-economy .settings-section, #tab-typing .settings-section { padding:24px; margin:24px 0; border:1px solid var(--border,#2d2c43); border-radius:18px; background:rgba(255,255,255,.018); }
+#tab-economy #econ-balances { display:grid!important; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+#tab-economy #econ-balances .cloud-panel { padding:18px; margin:0; border-radius:14px; }
+#tab-economy #econ-balances strong { font-size:18px; }
+#tab-economy #econ-balances p { color:#c8baff; margin:12px 0; }
+#tab-economy #econ-balances details { margin-top:12px; font-size:12px; color:var(--text-muted); }
+#tab-economy .reward-catalog-list { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+#tab-economy .reward-admin-card { display:flex; flex-direction:column; padding:20px; border-top:3px solid #818cf8; background:linear-gradient(145deg,rgba(129,140,248,.07),rgba(255,255,255,.02)); }
+#tab-economy .reward-admin-card[data-media=music] { border-top-color:#60a5fa; }
+#tab-economy .reward-admin-card[data-media=video] { border-top-color:#fbbf24; }
+#tab-economy .reward-admin-card[data-media=audiobook] { border-top-color:#fb923c; }
+#tab-economy .reward-admin-card[data-media=family_game] { border-top-color:#34d399; }
+#tab-economy .reward-admin-icon { color:#b5a3f4; }
+#tab-economy .reward-admin-title-row { margin-top:4px; font-size:17px; }
+#tab-economy .reward-admin-title-row > strong { min-height:42px; }
+#tab-economy .reward-admin-title-row .reward-admin-pill { white-space:nowrap; }
+.cloud-controls-refresh { display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
+.cloud-controls-refresh #cloud-economy-status { margin:0; max-width:480px; text-align:right; }
+#tab-economy .reward-admin-price { display:flex; align-items:center; gap:8px; margin:18px 0 12px; font-size:28px; font-weight:750; color:#fde68a; }
+#tab-economy .reward-admin-price svg { width:23px; height:23px; }
+#tab-economy .reward-admin-price small { font-size:13px; font-weight:500; color:var(--text-muted); }
+#tab-economy .reward-admin-description { font-size:13px; min-height:36px; }
+#tab-economy .reward-admin-pill { font-size:10px; }
+#tab-economy .reward-admin-actions { margin-top:20px; flex-wrap:wrap; }
+#tab-economy .reward-admin-actions .btn { min-height:38px; font-size:12px; }
+#cloud-economy-status { font-size:13px; color:var(--text-muted); min-height:20px; }
+#tab-typing h2 { margin-bottom:12px; font-size:19px; }
+.cloud-typing-ranking { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px; }
+.cloud-typing-ranking .cloud-panel { margin:0; display:grid; grid-template-columns:36px 1fr; gap:8px; padding:18px; }
+.cloud-typing-place { color:#c4b5fd; font-weight:700; }
+.cloud-typing-wpm { grid-column:2; color:#6ee7b7; font-size:24px; }
+.cloud-typing-ranking p { grid-column:2; color:var(--text-muted); font-size:12px; margin:0; }
+.cloud-typing-settings-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:end; }
+#econ-typing-history { overflow-x:auto; margin-top:18px; }
+#econ-typing-sel { display:block; max-width:260px; margin-top:8px; }
+@media(max-width:720px) {
+ #tab-economy .settings-section, #tab-typing .settings-section { padding:16px; }
+ #tab-economy .reward-catalog-list, #tab-economy #econ-balances, .cloud-typing-ranking, .cloud-typing-settings-grid { grid-template-columns:1fr; }
+ #tab-economy .btn, #tab-typing .btn { min-height:44px; }
+}

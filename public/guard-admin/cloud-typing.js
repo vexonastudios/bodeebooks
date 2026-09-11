@@ -9,7 +9,7 @@ function courseMarkup(data) {
           const count = eligible ? `${row.mastered_count}/${row.total_lessons}` : 'Speed Test';
           return `<div style="padding:14px;border:1px solid rgba(255,255,255,0.08);border-radius:13px;background:rgba(255,255,255,0.035);">
             <div style="display:flex;align-items:center;gap:9px;">
-              👤
+              <i data-lucide="user-round" aria-hidden="true"></i>
               <div><strong style="font-size:14px;">${esc(row.student.name)}</strong><div style="font-size:11px;color:var(--text-muted);">Grade ${esc(row.student.grade || 'Not set')}</div></div>
             </div>
             <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12px;"><span>${status}</span><strong>${count}</strong></div>
@@ -19,7 +19,7 @@ function courseMarkup(data) {
         }).join('')}
       </div>
       <div style="padding:16px;border-radius:13px;background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.16);">
-        <div style="display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(120px,.8fr) minmax(170px,1.2fr);gap:12px;align-items:end;">
+        <div class="cloud-typing-settings-grid">
           <div class="form-group"><label>Student controls</label><select id="typing-course-student" class="admin-select">${data.students.map(row => `<option value="${row.student.id}">${esc(row.student.name)}</option>`).join('')}</select></div>
           <div class="form-group"><label>Daily lesson</label><select id="typing-course-goal" class="admin-select"><option value="3">3 minutes</option><option value="5">5 minutes</option><option value="8">8 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option></select></div>
           <div class="form-group"><label>Starting lesson</label><select id="typing-course-start" class="admin-select">${data.lesson_options.map(lesson => `<option value="${lesson.id}">${lesson.order}. ${esc(lesson.title)}</option>`).join('')}</select></div>
@@ -51,7 +51,7 @@ export function setupCloudTyping({ endpoint, mutate, editor, node, button }) {
         record.origin === 'legacy' ? `Original Admin${record.reward_date ? '' : ' · reward date unknown'}` : 'Cloud']) row.append(node('td', '', String(value)));
       table.append(row);
     }
-    wrap.replaceChildren(data.history.length ? table : node('p', '', data.legacyHistoryImported ? 'No typing sessions recorded in the transferred history or cloud.' : 'No cloud typing sessions yet. Earlier history still awaits transfer.'));
+    wrap.replaceChildren(data.history.length ? table : node('p', '', data.legacyHistoryImported ? 'No typing sessions recorded in the transferred history or cloud.' : 'No saved typing sessions for this child yet.'));
     if (offset) wrap.append(button('Newer typing sessions', () => { offset = Math.max(0, offset - 50); void loadHistory(); }));
     if (data.history.length > 50) wrap.append(button('Older typing sessions', () => { offset += 50; void loadHistory(); }));
   }
@@ -96,8 +96,8 @@ export function setupCloudTyping({ endpoint, mutate, editor, node, button }) {
         await mutate('typing-command', { studentId: row.studentId, id, kind: 'reset', revision: row.settings.revision }); dirty = false; await load();
       });
     });
-    el('econ-typing-stats').replaceChildren(...rows[0].stats.map(record => {
-      const card = node('div', 'cloud-panel'); card.append(node('strong', '', record.student_name), node('p', '', `${record.best_wpm} best WPM · ${record.avg_wpm} average WPM · ${record.total_sessions} saved speed tests`)); return card;
+    el('econ-typing-stats').replaceChildren(...rows[0].stats.map((record, index) => {
+      const card = node('div', 'cloud-panel'); card.append(node('span', 'cloud-typing-place', record.total_sessions ? `#${index + 1}` : '—'), node('strong', '', record.student_name), node('strong', 'cloud-typing-wpm', record.total_sessions ? `${record.best_wpm} WPM` : 'No score yet'), node('p', '', `${record.avg_wpm} average WPM · ${record.total_sessions} completed tests`)); return card;
     }));
     const selected = el('econ-typing-sel').value;
     el('econ-typing-sel').replaceChildren(...rows.map(row => { const option = node('option', '', row.student.name); option.value = row.studentId; return option; }));
@@ -106,17 +106,17 @@ export function setupCloudTyping({ endpoint, mutate, editor, node, button }) {
   }
   async function load() {
     if (!active || loading || saving || dirty || pendingCommand) return;
-    const epoch = ++generation; loading = true;
+    const epoch = ++generation; loading = true; notice.textContent = 'Loading typing progress…'; el('cloud-typing-refresh').disabled = true;
     try {
       const result = [];
       // Bound concurrent family reads; each response carries one child's page.
       for (let i = 0; i < students.length; i += 3) result.push(...await Promise.all(students.slice(i, i + 3).map(student => read(student.id))));
       if (!active || epoch !== generation || dirty) return;
-      rows = result; render(); notice.textContent = `Guided lessons and speed tests share a daily limit of five coins. ${rows.every(row=>row.legacyHistoryImported) ? 'Original Typing histories are connected; historical rewards are not added again.' : 'Some original Typing histories still await transfer in Settings.'}`;
+      rows = result; render(); window.lucide?.createIcons(); notice.textContent = `Guided lessons and speed tests share a daily limit of five coins. ${rows.every(row=>row.legacyHistoryImported) ? 'Original Typing histories are connected; historical rewards are not added again.' : 'WPM rankings are also shown in each child’s Typing screen.'}`;
     } catch (error) { if (active && epoch === generation) notice.textContent = error.message; }
-    finally { loading = false; }
+    finally { loading = false; el('cloud-typing-refresh').disabled = false; if (active && epoch !== generation) void load(); }
   }
   el('econ-typing-sel').addEventListener('change', () => { offset = 0; void loadHistory(); });
-  el('cloud-economy-refresh').addEventListener('click', () => { if (!dirty && !pendingCommand) void load(); });
+  el('cloud-typing-refresh').addEventListener('click', () => { if (!dirty && !pendingCommand) void load(); });
   return { update(value) { students = value.filter(student => !student.archived_at); if (active && !rows.length) void load(); }, setActive(value) { active = value; generation++; if (value) void load(); } };
 }
