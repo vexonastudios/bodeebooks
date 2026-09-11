@@ -16,7 +16,7 @@ import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js?v=20260910-documents1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1';
 import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
-import { setupCloudGames } from './cloud-games-ui.js';
+import { setupCloudGames } from './cloud-games-ui.js?v=20260910-gallery1';
 const setupCloudLearningVideos = () => ({setActive(){}}); // Original media panels initialize in cloud-media-admin.js.
 import { setupCloudAssistant } from './cloud-assistant.js?v=20260910-math-controls1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
@@ -393,7 +393,10 @@ const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
 const typing = setupCloudTyping({ endpoint, mutate, editor, node, button });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
 const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import'), onApplied: refresh });
-const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, request: async (kind, input = {}) => {
+const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true,
+  assetBase: new URL('/guard-admin/family-games/v1/', location.href),
+  renderAvatar: child => studentAvatar(snapshot?.students?.find(student => student.id === child.id) || child),
+  request: async (kind, input = {}) => {
   const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
     : { ...input, action: kind === 'settings' ? 'game-settings' : 'game-room' };
   const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
