@@ -1,7 +1,7 @@
 import { FAMILY_GAME_PREVIEWS } from './cloud-games-catalog.js';
-// Shared family room controls. No LAN fetches, client-authoritative moves or
-// background game polling when this room is closed/hidden.
-export function setupCloudGames({ root, request, parent = false, renderAvatar, externalRequest, assetBase = new URL('assets/family-games/v1/', window.location.href) }) {
+import { setupTabletop } from './cloud-tabletop-ui.js';
+// LAN traffic stays in the installed main process. Parent access remains cloud-managed.
+export function setupCloudGames({ root, request, parent = false, renderAvatar, externalRequest, lanRequest, tabletop = parent || !!lanRequest, assetBase = new URL('assets/family-games/v1/', window.location.href) }) {
   let external={supported:false,games:[]};
   const gameActions=new Map();
   let active = false, room = null, selected = null, square = null, timer = null, loading = false, busy = false;
@@ -19,6 +19,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   const content = node('div', '', 'cloud-game-layout');
   const formArea = node('div');
   const gallery = makeGallery();
+  const tabletopRoot=node('section');
+  const tabletopUI=tabletop?setupTabletop({root:tabletopRoot,request:lanRequest,parent}):null;
   root.classList.add('cloud-family-room'); root.classList.toggle('is-parent', parent);
   root.append(header, formArea, content);
   function note(text) { status.textContent = text; }
@@ -138,12 +140,12 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     controlsView();
     if (!room) { content.replaceChildren(); return; }
     const people = node('aside', '', 'cloud-game-people'); people.append(heading('h3', parent ? 'Family game access' : 'Your family', 'users-round'));
-    people.append(node('p', parent ? 'Choose when each child can play.' : 'Invite a sibling to play Checkers.', 'cloud-note'));
+    people.append(node('p', parent ? 'Choose when each child can play.' : tabletop ? 'Family Games access and daily time.' : 'Invite a sibling to play Checkers.', 'cloud-note'));
     for (const child of room.children) {
       const row = node('article', '', 'cloud-game-person');
       const identity = node('div', '', 'cloud-game-person-heading');
       const avatar = renderAvatar?.(child) || node('span', child.name.trim().slice(0, 1).toUpperCase(), 'cloud-game-avatar');
-      const who = node('div'); who.append(node('strong', child.name), node('small', child.online ? 'In game room' : 'Away', child.online ? 'cloud-game-online' : 'cloud-note')); identity.append(avatar, who);
+      const who = node('div'); who.append(node('strong', child.name), node('small', tabletop ? (child.id===room.studentId?'This computer':'Family member') : child.online ? 'In game room' : 'Away', !tabletop&&child.online ? 'cloud-game-online' : 'cloud-note')); identity.append(avatar, who);
       const access = node('span', child.access.allowed ? 'Available' : 'Locked', `cloud-game-badge ${child.access.allowed ? 'available' : 'locked'}`); identity.append(access); row.append(identity);
       if (!child.access.allowed) row.append(node('p', child.access.reason || 'Ask your parent to unlock Family Games.', 'cloud-game-access-reason'));
       if (child.access.remainingSeconds != null) {
@@ -155,7 +157,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
         const days = child.settings?.days || [], names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         const schedule = node('p', '', 'cloud-game-schedule'); schedule.append(icon('calendar-days'), document.createTextNode(`${days.length === 7 ? 'Every day' : days.map(d => names[d]).join(', ') || 'No days selected'} · ${child.settings?.start || '00:00'}–${child.settings?.end || '24:00'}`)); row.append(schedule);
         row.append(button('Access & game time', () => openSettings(child), !fresh || busy, 'sliders-horizontal'));
-      } else if (child.id !== room.studentId) row.append(button('Invite to Checkers', () => act('invite', null, { opponentId: child.id }), !fresh || busy || loading || !!pending || !child.access.allowed || !room.children.find(c => c.id === room.studentId)?.access.allowed, 'send'));
+      } else if (!tabletop && child.id !== room.studentId) row.append(button('Invite to Checkers', () => act('invite', null, { opponentId: child.id }), !fresh || busy || loading || !!pending || !child.access.allowed || !room.children.find(c => c.id === room.studentId)?.access.allowed, 'send'));
       people.append(row);
     }
     const matches = node('section', '', 'cloud-game-matches'); matches.append(heading('h3', 'Checkers', 'circle-dot'));
@@ -202,8 +204,11 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       display.append(board, node('p',`Saved online · ${new Date(match.updatedAt).toLocaleTimeString()} · Match expires ${new Date(match.expiresAt).toLocaleString()}`, 'cloud-note'));
     }
     const play = node('main', '', 'cloud-game-play');
-    if (match) play.append(display);
-    play.append(matches, gallery);
+    if(tabletop){
+      play.append(tabletopRoot);
+      if(parent&&room.matches.length){const old=node('details');old.append(node('summary','Previous online Checkers matches'),matches);if(match)old.append(display);play.append(old);}
+    }else{if (match) play.append(display);play.append(matches);}
+    play.append(gallery);
     content.replaceChildren(people, play); icons();
     if (focusedSquare) [...content.querySelectorAll('.cloud-checkers-square')].find(cell => cell.getAttribute('aria-label')?.startsWith(focusedSquare+' '))?.focus({ preventScroll: true });
     else if (content.contains(focusedElement)) focusedElement.focus({ preventScroll: true });
@@ -222,12 +227,12 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     finally {
       loading = false;
       if (ticket === generation) render();
-      if (active && !document.hidden && !external.playing) timer = setTimeout(refresh, Math.min(parent?1800000:60000,(parent ? 1800000 : 5000)*2**Math.min(failures,4)));
+      if (active && !document.hidden && !external.playing && (!tabletop||parent)) timer = setTimeout(refresh, Math.min(parent?1800000:60000,(parent ? 1800000 : 5000)*2**Math.min(failures,4)));
     }
   }
   function setActive(value) { active = value; clearTimeout(timer); if (active) refresh(); else { generation++; fresh = false; square = null; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); } }
   function clear() { generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); fresh = false; if (!document.hidden && active) refresh(); else render(); });
   window.addEventListener('pagehide', () => { active = false; clear(); clearTimeout(timer); });
-  return { setActive, clear, refresh, setExternalState, isEditing: () => settingsOpen };
+  return { setActive, clear, refresh, setExternalState, setLanState:value=>tabletopUI?.setState(value), isEditing: () => settingsOpen };
 }

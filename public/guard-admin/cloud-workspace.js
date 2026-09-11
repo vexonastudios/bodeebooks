@@ -16,7 +16,7 @@ import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js?v=20260910-documents1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1';
 import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
-import { setupCloudGames } from './cloud-games-ui.js?v=20260910-windows1';
+import { setupCloudGames } from './cloud-games-ui.js?v=20260910-tabletop1';
 const setupCloudLearningVideos = () => ({setActive(){}}); // Original media panels initialize in cloud-media-admin.js.
 import { setupCloudAssistant } from './cloud-assistant.js?v=20260910-math-controls1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
