@@ -61,3 +61,56 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
   if (subjects.length > 30) throw Error('Your plan supports up to 30 distinct subjects. Remove unused subjects first.');
   return { revision: snapshot.rules.revision, subjects, schedule: structuredClone(snapshot.rules.schedule) };
 }
+
+// Templates contain only plan choices. A child's school URL, assignments,
+// feature switches, activity records and media banks are never copied.
+export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTemplate) {
+  const baseline = dailyPlanCards({ ...snapshot, rules: { ...snapshot.rules, subjects: [] } }, {}, 'family');
+  for (const card of baseline) {
+    if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120 }[card.module]; card.placement = 'after_school'; }
+  }
+  baseline.unshift({ key: 'school', title: 'Each child’s school', icon: 'graduation-cap', portal: true, goal: 0,
+    placement: 'school', days: [0,1,2,3,4,5,6], start: null, end: null, limitMinutes: null });
+  for (const subject of snapshot.rules.subjects) {
+    if (subject.active === false || subject.isSchoolPortal || snapshot.schoolActivities.some(a => a.url === subject.url)) continue;
+    const owner = snapshot.students.find(s => !s.archived_at && (!subject.assignments || subject.assignments.some(a => a.studentId === s.id && a.active !== false)));
+    const card = owner && dailyPlanCards(snapshot, {}, owner.id).find(c => c.subjectId === subject.id);
+    if (card) baseline.push({ ...card, key: `subject:${subject.id}` });
+  }
+  for (const card of baseline) {
+    const saved = template?.activities?.find(entry => entry.key === card.key);
+    if (saved) Object.assign(card, structuredClone(saved));
+  }
+  return baseline;
+}
+
+export function templateFromCards(cards) {
+  const entries = new Map();
+  for (const card of cards) {
+    const key = card.portal ? 'school' : card.module ? `module:${card.module}` : card.key.startsWith('subject:') ? card.key : `subject:${card.subjectId}`;
+    if (!entries.has(key)) entries.set(key, { key, goal: card.portal ? 0 : card.goal, placement: card.placement,
+      days: [...card.days], start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes ?? null });
+  }
+  return { version: 1, activities: [...entries.values()] };
+}
+
+export function applyFamilyPlan(snapshot, template, studentIds, newId = () => crypto.randomUUID()) {
+  if (!template?.activities?.length) throw Error('Save a family default first.');
+  if (!studentIds.length || new Set(studentIds).size !== studentIds.length || studentIds.some(id => !snapshot.students.some(s => s.id === id && !s.archived_at)))
+    throw Error('Choose children from this family.');
+  let current = structuredClone(snapshot);
+  for (const studentId of studentIds) {
+    const changes = [];
+    for (const card of dailyPlanCards(current, {}, studentId)) {
+      const key = card.portal ? 'school' : card.module ? `module:${card.module}` : `subject:${card.subjectId}`;
+      const entry = template.activities.find(item => item.key === key);
+      if (!entry) continue;
+      // A fallback module card must not reactivate an explicitly hidden subject.
+      if (!card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
+        && (subject.active === false || subject.assignments?.some(a => a.studentId === studentId && a.active === false)))) continue;
+      changes.push({ ...card, ...structuredClone(entry), key: card.key, goal: card.portal ? card.goal : entry.goal });
+    }
+    current = { ...current, rules: { ...current.rules, ...saveDailyPlan(current, studentId, changes, newId) } };
+  }
+  return { revision: snapshot.rules.revision, subjects: current.rules.subjects };
+}
