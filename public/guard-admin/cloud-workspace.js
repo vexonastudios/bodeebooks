@@ -217,7 +217,7 @@ function renderSubjects() {
     const assignmentText = assignments.length
       ? assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
       : 'Not assigned to a child';
-    const hours = subject.scheduleStart ? `Available ${subject.scheduleStart}–${subject.scheduleEnd} in the family time zone` : 'Available throughout the family school window';
+    const hours = globalThis.BODEE_CLOUD_SCHEDULE.cloudSubjectAlwaysOpen(subject) ? 'Always open · no time cutoff' : subject.scheduleStart ? `Available ${subject.scheduleStart}–${subject.scheduleEnd} in the family time zone` : 'Uses the family school calendar';
     card.append(heading, node('div', 'subject-card-admin-url', subject.kind === 'offline' ? 'Offline schoolwork' : subject.url), node('div', 'cloud-note', hours), node('div', 'cloud-note', assignmentText));
     if (subject.kind) card.append(node('div', 'cloud-note', `${subject.active === false ? 'Hidden · ' : ''}${({ school: 'Required school', school_optional: 'Optional school', after_school: 'After school' })[subject.accessTier || 'school']}${subject.unlockAfterSubjectId ? ' · Has a prerequisite' : ''}`));
     grid.append(card);

@@ -73,13 +73,15 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   }
   function field(text, input) { const label = make('label', 'daily-plan-field', text); label.append(input); return label; }
   function cardView(card) {
+    const alwaysOpen = card.placement !== 'scheduled' && (card.alwaysOpen ?? card.placement === 'school');
     const el = make('article', 'daily-plan-card'); el.dataset.planKey = card.key; el.draggable = !busy;
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
     const summary = card.key === 'school' ? 'Uses each child’s assigned school and lesson goals' : card.portal ? 'Finish school lessons' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
-    if (card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
+    if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
+    else if (card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
     if (card.disabled) el.append(make('p', 'daily-plan-off', 'Turned off in child or activity settings'));
     const select = make('select', 'admin-select'); select.setAttribute('aria-label', `Move ${card.title} to`);
     const prompt = make('option', '', 'Move to…'); prompt.value = ''; prompt.disabled = true; select.append(prompt);
@@ -94,14 +96,14 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
     if (card.limitMinutes !== null) {
       const limit = make('input', 'admin-input'); limit.type = 'number'; limit.min = '1'; limit.max = '480'; limit.value = card.limitMinutes; limit.onchange = () => { card.limitMinutes = Number(limit.value); changed(card); }; settings.append(field('Daily media minutes', limit));
     }
-    const days = make('fieldset', 'daily-plan-days'); days.append(make('legend', '', 'Days'));
+    const days = make('fieldset', 'daily-plan-days'); days.append(make('legend', '', card.placement === 'school' ? 'Required work days' : 'Days'));
     for (const [d, name] of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].entries()) { const input = make('input'); input.type = 'checkbox'; input.checked = card.days.includes(d); input.onchange = () => { card.days = input.checked ? [...card.days, d].sort() : card.days.filter(n => n !== d); changed(card); }; days.append(field(name, input)); }
     settings.append(days);
     const hours = make('div', 'daily-plan-hours-inputs');
     for (const [key, text] of [['start','From'],['end','Until']]) { const input = make('input', 'admin-input'); input.type = 'time'; input.value = card[key] || ''; input.onchange = () => { card[key] = input.value || null; changed(card); }; hours.append(field(text, input)); }
-    settings.append(hours);
-    if (card.placement !== 'scheduled') settings.append(action('No time window', 'clock', () => { card.start = card.end = null; changed(card); render(); }));
-    settings.append(make('p', 'cloud-note', card.placement === 'school' ? 'School calendar hours also apply.' : card.placement === 'after_school' ? 'Required work must finish, even during these hours.' : 'These hours work independently of the school calendar.'));
+    if (!alwaysOpen) settings.append(hours);
+    if (!alwaysOpen && card.placement !== 'scheduled') settings.append(action('No time window', 'clock', () => { card.start = card.end = null; changed(card); render(); }));
+    settings.append(make('p', 'cloud-note', alwaysOpen ? 'Always open. School days decide when work is required, not when it can be opened. Change Always open in Edit Subject to use a time window.' : card.placement === 'school' ? 'School calendar hours also apply.' : card.placement === 'after_school' ? 'Required work must finish, even during these hours.' : 'These hours work independently of the school calendar.'));
     if (card.module) settings.append(action('Activity settings', 'settings', () => { if (!changes.size || confirm('Keep this draft and open activity settings? Return to Daily plan to save it.')) navigate(card.module === 'games' ? 'family-games' : card.module === 'art-studio' || card.module === 'typing' ? 'students' : card.module); }));
     el.append(settings); el.querySelectorAll('input,button').forEach(n => { n.disabled = busy; }); return el;
   }

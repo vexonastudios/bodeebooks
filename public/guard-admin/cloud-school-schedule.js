@@ -24,6 +24,7 @@ function validDate(value) {
 }
 
 function normalizeCloudSubjectSchedule(input) {
+  if (input?.alwaysOpen !== undefined && typeof input.alwaysOpen !== 'boolean') throw new Error('Choose whether this subject is always open.');
   const rawStart = input?.scheduleStart;
   const rawEnd = input?.scheduleEnd;
   const scheduleStart = rawStart == null || rawStart === '' ? null : rawStart;
@@ -33,7 +34,17 @@ function normalizeCloudSubjectSchedule(input) {
       (scheduleStart && (!TIME.test(scheduleStart) || !TIME.test(scheduleEnd) || scheduleStart >= scheduleEnd))) {
     throw new Error('Choose subject start and end times, with the start earlier than the end.');
   }
-  return { scheduleStart, scheduleEnd };
+  const days = input?.scheduleDays;
+  if (days != null && (!Array.isArray(days) || !days.length || days.some(day => !Number.isInteger(day) || day < 0 || day > 6))) throw new Error('Choose valid activity days.');
+  return { scheduleStart, scheduleEnd, ...(input?.alwaysOpen === undefined ? {} : { alwaysOpen: input.alwaysOpen }), ...(days == null ? {} : { scheduleDays: [...new Set(days)].sort() }) };
+}
+
+function cloudSubjectAlwaysOpen(subject) {
+  // A parent's explicit scheduled Daily Plan remains the strongest time rule.
+  // School-day choices still determine required work, not whether it can open.
+  if (subject?.dailyPlan?.placement === 'scheduled') return false;
+  if (typeof subject?.alwaysOpen === 'boolean') return subject.alwaysOpen;
+  return !subject?.isReward && (subject?.accessTier || 'school') !== 'after_school';
 }
 
 function normalizeCloudAttendance(input) {
@@ -128,7 +139,8 @@ function cloudSchoolScheduleState(input, at = Date.now()) {
 
 function cloudSubjectScheduleState(subject, familySchedule, at = Date.now()) {
   const subjectSchedule = normalizeCloudSubjectSchedule(subject);
-  if (!subjectSchedule.scheduleStart) return { allowed: true, reason: null, localTime: null, ...subjectSchedule };
+  if (cloudSubjectAlwaysOpen(subject)) return { allowed: true, reason: null, localTime: null, ...subjectSchedule };
+  if (!subjectSchedule.scheduleStart && !subjectSchedule.scheduleDays) return { allowed: true, reason: null, localTime: null, ...subjectSchedule };
   const schedule = normalizeCloudSchoolSchedule(familySchedule);
   const instant = new Date(at);
   if (!Number.isFinite(instant.getTime())) throw new Error('The school clock is invalid.');
@@ -136,11 +148,14 @@ function cloudSubjectScheduleState(subject, familySchedule, at = Date.now()) {
     timeZone: schedule.timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
   }).formatToParts(instant).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
   const localTime = `${values.hour}:${values.minute}`;
-  const allowed = localTime >= subjectSchedule.scheduleStart && localTime < subjectSchedule.scheduleEnd;
-  return { allowed, reason: allowed ? null : 'subject_hours', localTime, ...subjectSchedule };
+  const { localDate } = cloudSchoolDateParts(schedule.timeZone, at);
+  const day = new Date(localDate + 'T00:00:00Z').getUTCDay();
+  const dayAllowed = !subjectSchedule.scheduleDays || subjectSchedule.scheduleDays.includes(day);
+  const allowed = dayAllowed && (!subjectSchedule.scheduleStart || localTime >= subjectSchedule.scheduleStart && localTime < subjectSchedule.scheduleEnd);
+  return { allowed, reason: allowed ? null : dayAllowed ? 'subject_hours' : 'subject_day', localTime, ...subjectSchedule };
 }
 
 const cloudScheduleApi = { DEFAULT_CLOUD_SCHOOL_SCHEDULE, normalizeCloudSchoolSchedule, cloudSchoolScheduleState,
-  normalizeCloudSubjectSchedule, cloudSubjectScheduleState, cloudSchoolDayState, cloudSchoolDateParts, validTimeZone };
+  normalizeCloudSubjectSchedule, cloudSubjectScheduleState, cloudSubjectAlwaysOpen, cloudSchoolDayState, cloudSchoolDateParts, validTimeZone };
 if (typeof module !== 'undefined') module.exports = cloudScheduleApi;
 else globalThis.BODEE_CLOUD_SCHEDULE = Object.freeze(cloudScheduleApi);
