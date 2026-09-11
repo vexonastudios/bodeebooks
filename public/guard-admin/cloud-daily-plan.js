@@ -102,7 +102,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
     settings.append(hours);
     if (card.placement !== 'scheduled') settings.append(action('No time window', 'clock', () => { card.start = card.end = null; changed(card); render(); }));
     settings.append(make('p', 'cloud-note', card.placement === 'school' ? 'School calendar hours also apply.' : card.placement === 'after_school' ? 'Required work must finish, even during these hours.' : 'These hours work independently of the school calendar.'));
-    if (card.module) settings.append(action('Activity settings', 'settings', () => { if (!changes.size || confirm('Keep this draft and open activity settings? Return to Daily plan to save it.')) navigate(card.module === 'art-studio' || card.module === 'typing' ? 'students' : card.module); }));
+    if (card.module) settings.append(action('Activity settings', 'settings', () => { if (!changes.size || confirm('Keep this draft and open activity settings? Return to Daily plan to save it.')) navigate(card.module === 'games' ? 'family-games' : card.module === 'art-studio' || card.module === 'typing' ? 'students' : card.module); }));
     el.append(settings); el.querySelectorAll('input,button').forEach(n => { n.disabled = busy; }); return el;
   }
   function render() {
