@@ -4,6 +4,8 @@ export function setupCloudScreenshots({ endpoint }) {
   const root = document.getElementById('cloud-screenshots');
   let active = false, epoch = 0, overview = null, students = [], devices = [];
   let present = true, controller = null, viewer = null;
+  let availability = null, availabilityUntil = 0, expiryTimer = null, serverOffset = 0;
+  const requests = new Map(), notices = new Map();
   const expanded = new Set();
   const visible = () => active && present && !document.hidden;
   const node = (tag, text = '', cls = '') => { const el = document.createElement(tag); el.textContent = text; el.className = cls; return el; };
@@ -12,8 +14,37 @@ export function setupCloudScreenshots({ endpoint }) {
   };
   async function call(input, signal) {
     signal?.throwIfAborted();
-    const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
-    const value = await response.json(); if (!response.ok) throw Error(value.error || 'Screenshots could not connect.'); return value;
+    const timeout = AbortSignal.timeout(input.action === 'request-screenshot' ? 12000 : 30000);
+    const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: signal ? AbortSignal.any([signal, timeout]) : timeout, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+    const value = await response.json(); if (!response.ok) { const error = Error(value.error || 'Screenshots could not connect.'); error.status = response.status; throw error; } return value;
+  }
+  function setAvailability(value) {
+    availability = value || null; availabilityUntil = Date.now() + 75000;
+    if (Number.isFinite(Date.parse(value?.checkedAt))) serverOffset = Date.parse(value.checkedAt) - Date.now();
+  }
+  const online = studentId => Date.now() < availabilityUntil && availability?.known === true && availability.availableStudentIds.includes(studentId);
+  const pending = studentId => overview?.screenshots.some(item => item.student_id === studentId && item.status === 'pending' && Date.parse(item.request_expires_at) > Date.now() + serverOffset);
+  function scheduleExpiry() {
+    clearTimeout(expiryTimer);
+    const deadlines = [availabilityUntil, ...(overview?.screenshots || []).filter(item => item.status === 'pending').map(item => Date.parse(item.request_expires_at) - serverOffset)].filter(value => value > Date.now());
+    if (visible() && deadlines.length) expiryTimer = setTimeout(() => { if (visible()) render(); }, Math.min(...deadlines) - Date.now() + 20);
+  }
+  async function requestScreenshot(student) {
+    if (!visible() || !online(student.id) || pending(student.id) || requests.has(student.id)) return;
+    const abort = new AbortController(); requests.set(student.id, abort); notices.set(student.id, 'Sending request…'); render();
+    try {
+      const result = await call({ action: 'request-screenshot', studentId: student.id }, abort.signal);
+      if (overview) overview.screenshots = [result, ...overview.screenshots.filter(item => item.id !== result.id)];
+      notices.delete(student.id);
+    } catch (error) {
+      notices.set(student.id, error.name === 'TimeoutError' || error.name === 'AbortError' || error.name === 'TypeError'
+        ? 'The request could not be confirmed. Refresh to check its result before trying again.' : error.message);
+      if (error.status === 409 || error.status === 503) availability = { ...availability, availableStudentIds: (availability?.availableStudentIds || []).filter(id => id !== student.id) };
+    } finally {
+      requests.delete(student.id);
+      if (visible()) render();
+    }
+    if (visible() && !notices.has(student.id)) await load();
   }
   async function image(screenshotId, thumbnail = false, signal) {
     const file = await call({ action: 'screenshot-image', screenshotId, thumbnail }, signal);
@@ -23,7 +54,8 @@ export function setupCloudScreenshots({ endpoint }) {
     return 'data:' + file.mime + ';base64,' + file.data;
   }
   function statusText(item) {
-    if (item.status === 'pending') return 'Waiting for child’s app';
+    if (item.status === 'pending') return Date.parse(item.request_expires_at) <= Date.now() + serverOffset
+      ? 'The child app did not respond. Refresh and try again when it is online.' : 'Waiting for child’s app…';
     if (item.status === 'captured') return item.retained ? 'Kept' : 'Expires ' + new Date(item.expires_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
     if (item.status === 'failed') return item.failure || 'The child app did not respond.';
     return item.status === 'expired' ? 'Expired' : item.status;
@@ -81,14 +113,14 @@ export function setupCloudScreenshots({ endpoint }) {
     for (const student of students.filter(item => !item.archived_at)) {
       const card = node('section', '', 'cloud-panel cloud-screenshot-card'), top = node('div', '', 'cloud-screenshot-child'), identity = node('div');
       const assigned = devices.some(device => device.student_id === student.id);
-      identity.append(node('h2', student.name), node('p', assigned ? 'Child computer' : 'No computer connected', 'cloud-note')); top.append(studentAvatar(student), identity);
-      const status = node('p', '', 'cloud-screenshot-error'); status.setAttribute('role', 'status');
-      const request = button('Take screenshot', 'camera', async () => {
-        request.disabled = true; status.textContent = 'Sending request…';
-        try { await call({ action: 'request-screenshot', studentId: student.id }); await load(); }
-        catch (error) { request.disabled = false; status.textContent = error.message; }
-      }, 'btn btn-primary');
-      request.disabled = !assigned; card.append(top, request, status);
+      const connected = online(student.id);
+      const connection = !assigned ? 'No computer connected' : Date.now() >= availabilityUntil || !availability?.known ? 'Refresh to check connection' : connected ? 'Online' : 'Offline';
+      identity.append(node('h2', student.name), node('p', connection, 'cloud-note')); top.append(studentAvatar(student), identity);
+      const status = node('p', notices.get(student.id) || '', 'cloud-screenshot-error'); status.setAttribute('role', 'status');
+      const request = button('Take screenshot', 'camera', () => void requestScreenshot(student), 'btn btn-primary');
+      request.disabled = !connected || requests.has(student.id) || pending(student.id);
+      request.title = !connected ? 'Open BodeeGuard on this child’s computer, then refresh.' : pending(student.id) ? 'A screenshot request is already waiting for this child.' : 'Capture this child’s BodeeGuard screen';
+      card.dataset.studentId = student.id; card.append(top, request, status);
       const items = (byStudent.get(student.id) || []).sort((a, b) => Date.parse(b.requested_at) - Date.parse(a.requested_at));
       if (!items.length) { const empty = node('div', '', 'cloud-screenshot-empty'); empty.append(icon('image'), node('p', 'No screenshots yet')); card.append(empty); }
       else card.append(screenshotRow(items[0], student));
@@ -103,18 +135,18 @@ export function setupCloudScreenshots({ endpoint }) {
       list.append(card);
     }
     if (!students.some(item => !item.archived_at)) list.append(node('p', 'Add a child in Students, then connect their computer in Settings.', 'cloud-panel'));
-    root.append(list); window.lucide?.createIcons();
+    root.append(list); window.lucide?.createIcons(); scheduleExpiry();
   }
-  function suspend() { epoch++; controller?.abort(); viewer?.close(); }
+  function suspend(cancelRequests = false) { epoch++; controller?.abort(); viewer?.close(); clearTimeout(expiryTimer); if (cancelRequests) for (const request of requests.values()) request.abort(); }
   async function load() {
     if (!visible()) return; suspend(); const current = epoch; controller = new AbortController(); const signal = controller.signal;
     root.setAttribute('aria-busy', 'true'); if (!overview) root.textContent = 'Loading screenshots…';
-    try { const value = await call({ action: 'screenshots-overview' }, signal); if (!visible() || current !== epoch) return; overview = value; render(); }
+    try { const value = await call({ action: 'screenshots-overview' }, signal); if (!visible() || current !== epoch) return; overview = value; if (value.devices) devices = value.devices; setAvailability(value.availability); for (const id of notices.keys()) if (!requests.has(id)) notices.delete(id); render(); }
     catch (error) { if (visible() && current === epoch) { root.replaceChildren(node('p', error.message, 'cloud-screenshot-error'), button('Try again', 'refresh-cw', () => void load())); window.lucide?.createIcons(); } }
     finally { if (current === epoch) root.setAttribute('aria-busy', 'false'); }
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) suspend(); });
-  window.addEventListener('pagehide', () => { present = false; suspend(); });
-  window.addEventListener('pageshow', () => { present = true; });
-  return { refresh() { if (visible()) void load(); }, update(snapshot) { students = snapshot?.students || []; devices = snapshot?.devices || []; }, setActive(value) { active = value; suspend(); if (value) void load(); } };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) suspend(true); else if (visible()) void load(); });
+  window.addEventListener('pagehide', () => { present = false; suspend(true); });
+  window.addEventListener('pageshow', () => { present = true; if (visible()) void load(); });
+  return { refresh() { if (visible()) return load(); }, update(snapshot) { students = snapshot?.students || []; devices = snapshot?.devices || []; setAvailability(snapshot?.screenshotAvailability); if (visible() && overview) render(); }, setActive(value) { active = value; suspend(!value); if (value) return load(); } };
 }

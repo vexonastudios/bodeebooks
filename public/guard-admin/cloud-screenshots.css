@@ -2,6 +2,7 @@
 #cloud-screenshots svg{width:18px;height:18px;flex-shrink:0}
 #cloud-screenshots .tab-header h1 svg{width:26px;height:26px;color:#c4b5fd}
 #cloud-screenshots .btn,.cloud-screenshot-viewer .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;font-size:13px;padding:9px 13px}
+#cloud-screenshots .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 .cloud-screenshot-note{margin:0 0 20px!important;font-size:14px;line-height:1.5}
 .cloud-screenshot-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),360px));gap:18px;align-items:start}
 .cloud-panel.cloud-screenshot-card{display:grid;gap:14px;padding:18px;border:1px solid #333047;border-radius:18px;margin:0;background:linear-gradient(145deg,#1b1a2d,#131320)}

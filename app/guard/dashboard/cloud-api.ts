@@ -31,7 +31,7 @@ export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T>
   const token = await session.getToken();
   if (!token) throw new CloudApiError("Please sign in again to continue.", 401);
   const response = await fetch(`${apiBase}/v1/account/dashboard${path}`, {
-    ...init, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(path === "/media" || path.startsWith("/setup/") || path.startsWith("/coloring-studio/") || path.startsWith("/screenshots/") || path.startsWith("/files/") || path.startsWith("/assistant/") || path.startsWith("/legacy/") || path.startsWith("/science-spelling/") || path.startsWith("/poems/") || path.startsWith("/worksheets/") || path === "/spelling/scan" ? 180000 : 10000),
+    ...init, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(path === "/screenshots/request" || path === "/screenshots/overview" ? 10000 : path === "/media" || path.startsWith("/setup/") || path.startsWith("/coloring-studio/") || path.startsWith("/screenshots/") || path.startsWith("/files/") || path.startsWith("/assistant/") || path.startsWith("/legacy/") || path.startsWith("/science-spelling/") || path.startsWith("/poems/") || path.startsWith("/worksheets/") || path === "/spelling/scan" ? 180000 : 10000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
   });
   const payload = await response.json().catch(() => ({}));

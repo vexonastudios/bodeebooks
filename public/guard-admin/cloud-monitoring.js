@@ -55,6 +55,8 @@ function ring(model){
   box.title=`${model.done} of ${model.required} subject goals completed`;box.append(svg,node('span','ring-label',`${model.done}/${model.required}`));return box;
 }
 export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showError,mobile}){
+  let screenshotExpiry = null;
+  const canScreenshot = studentId => { const state=getSnapshot()?.screenshotAvailability;return state?.known===true&&state.availableStudentIds?.includes(studentId)&&Date.now()-Date.parse(state.checkedAt)<75000; };
   const grid=document.getElementById('overview-grid');
   const header=grid.closest('section').querySelector('.tab-header');
   const refresh=document.getElementById('cloud-refresh');
@@ -73,7 +75,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
   async function run(control,callback,notice){
     control.disabled=true;
     try{await callback();if(notice)showError(notice,false);}catch(error){showError(error.message,true);}
-    finally{if(control.isConnected)control.disabled=false;}
+    finally{if(control.isConnected)control.disabled=control.dataset.requiresDevice==='false';}
   }
   function mediaControl(model,kind,label,glyph){
     const row=node('div','monitor-media-action');row.dataset.media=kind;
@@ -88,6 +90,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     menu.append(summary,options);row.append(main,menu);return row;
   }
   function render(){
+    clearTimeout(screenshotExpiry);
     const snapshot=getSnapshot();if(!snapshot)return;
     mobile()?.update(snapshot);
     const models=monitoringChildren(snapshot);grid.replaceChildren();stats.replaceChildren();
@@ -114,7 +117,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       if(!model.activity.length)list.append(node('p','monitor-activity-empty','No activity received today.'));activity.append(list);card.append(activity);
       if(model.courses.length){const lessons=node('div','cloud-abeka-courses');lessons.setAttribute('aria-label',"Today's Abeka lessons");for(const c of model.courses)lessons.append(node('span',`cloud-abeka-course${c.completed?' complete':''}`,`${c.completed?'✓':'○'} ${c.courseName}`));card.append(lessons);}
       const actions=node('div','cloud-monitor-actions');
-      const shot=button('Snap Screen','camera',el=>run(el,async()=>{await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');}),'monitor-control monitor-control--screenshot');shot.disabled=!device;shot.dataset.requiresDevice=String(!!device);shot.dataset.cloudMutation='true';actions.append(shot);
+      const shot=button('Snap Screen','camera',el=>run(el,async()=>{if(!canScreenshot(student.id)){el.dataset.requiresDevice='false';throw Error('The child app must be online. Refresh to check its connection.');}await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');}),'monitor-control monitor-control--screenshot');shot.disabled=!canScreenshot(student.id);shot.dataset.requiresDevice=String(!shot.disabled);shot.dataset.cloudMutation='true';shot.title=shot.disabled?'Open the child app, then refresh to check its connection.':'Capture the child’s BodeeGuard screen';actions.append(shot);
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
       if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
         const lockMedia=button('Lock Media','lock-keyhole',el=>run(el,async()=>{
@@ -141,6 +144,8 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     }
     if(!models.length)grid.append(node('p','cloud-panel','Add your children in Students to see them here.'));
     window.lucide?.createIcons();
+    const expires=Date.parse(snapshot.screenshotAvailability?.checkedAt)+75000-Date.now();
+    if(expires>0)screenshotExpiry=setTimeout(()=>{grid.querySelectorAll('.monitor-control--screenshot').forEach(control=>{control.disabled=true;control.dataset.requiresDevice='false';control.title='Refresh to check the child app’s connection.';});},expires+20);
   }
   return {render};
 }
