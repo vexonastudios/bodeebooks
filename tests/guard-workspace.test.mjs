@@ -371,6 +371,15 @@ test('bridge preserves rules revision and returns conflicts without retrying mut
   assert.equal(result.status, 409);
   assert.equal(calls, 1);
 });
+
+test('family default uses the authenticated rules save without caller-supplied household identity', async () => {
+  const template = { version: 1, activities: [{ key: 'module:typing', goal: 15, placement: 'school', days: [1], start: null, end: null, limitMinutes: null }] };
+  const route = load('bridge/route.ts', { api: async (path, init) => {
+    assert.equal(path, '/school-rules'); assert.equal(init.method, 'PUT');
+    assert.deepEqual(JSON.parse(init.body), { revision: 2, subjects: [], dailyPlanTemplate: template }); return { revision: 3 };
+  } });
+  assert.equal((await route.POST(request({ action: 'save-subjects', revision: 2, subjects: [], dailyPlanTemplate: template, householdId: 'foreign' }))).status, 200);
+});
 test('recovery and pause/assignment route only to the selected device through household-authenticated API', async () => {
   const calls = [];
   const route = load('bridge/route.ts', { api: async (...args) => { calls.push(args); return { code: 'synthetic-test-code', revision: 7 }; } });

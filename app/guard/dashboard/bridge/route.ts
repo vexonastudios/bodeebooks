@@ -149,7 +149,8 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       path = `/students/${input.studentId}`; method = "PATCH"; body = { name: input.name, grade: input.grade, ...(Object.hasOwn(input, "photo") ? { photo: input.photo } : {}) };
       break;
     }
-    case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, schedule: input.schedule, revision: input.revision }; break;
+    case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, schedule: input.schedule, revision: input.revision,
+      ...(Object.hasOwn(input, "dailyPlanTemplate") ? { dailyPlanTemplate: input.dailyPlanTemplate } : {}) }; break;
     case "assign-student":
     case "set-school-pause":
     case "create-recovery": {
