@@ -1,5 +1,6 @@
 import { setupDailyPlan } from './cloud-daily-plan.js?v=20260910-board2';
-import { setupMonitoring } from './cloud-monitoring.js?v=20260910-controls1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260910-photos1';
+import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js?v=20260910-wide1';
@@ -23,7 +24,7 @@ import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
-import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260910-visible1';
+import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260910-cards1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-prompt1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
@@ -64,6 +65,7 @@ function feedback(text, error = false) {
   byId('cloud-feedback').dataset.routine = String(!error && text.startsWith('Updated '));
 }
 function selectTab(id) {
+  if (byId('cloud-feedback').dataset.error !== 'true') feedback('');
   dailyPlan.setActive(id === 'daily-plan');
   if(id==='science-spelling')id='spelling';
   const item = document.querySelector(`.nav-item[data-tab="${id}"]`);
@@ -135,7 +137,7 @@ async function mutate(action, data) {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'That change could not be saved.');
     await refresh();
-    feedback('Saved. Computer changes wait for confirmation from the child’s app.');
+    feedback('');
     return result;
   } catch (error) {
     const message = error.name === 'TimeoutError' || error.name === 'TypeError'
@@ -181,7 +183,7 @@ function renderStudents() {
     row.setAttribute('aria-label', `Edit ${student.name}`);
     const info = node('div', 'student-row-info');
     info.append(node('div', 'student-row-name', `${student.name}${student.archived_at ? ' · Archived' : ''}`), node('div', 'student-row-pin', student.grade ? `Grade ${student.grade}` : 'Grade not specified'));
-    row.append(node('span', 'student-row-avatar', '👤'), info);
+    row.append(studentAvatar(student, 'student-row-avatar'), info, profileIcon('pencil'));
     const wrapper = node('div', 'cloud-student-management');
     const archive = button(student.archived_at ? 'Restore student' : 'Archive student', async () => {
       const archived = !student.archived_at;
@@ -190,13 +192,14 @@ function renderStudents() {
     }); archive.dataset.cloudMutation = 'true';
     const school = button('Main school', () => mainSchool.edit(student)); school.dataset.cloudMutation = 'true';
     const setup = button('Child setup', () => parentGuide?.openChild(student.id)); setup.disabled=!!student.archived_at;
+    school.prepend(profileIcon('school')); setup.prepend(profileIcon('sliders-horizontal')); archive.prepend(profileIcon(student.archived_at ? 'archive-restore' : 'archive'));
     wrapper.append(row, school, setup, archive); list.append(wrapper);
   }
   if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'No cloud students added yet. Existing student records remain in your current Admin app.'));
+  window.lucide?.createIcons();
 }
 function editStudent(student) {
-  editor('Edit Student', [field('Name', 'name', student.name), field('Grade level (optional)', 'grade', student.grade || '', { required: false, maxLength: 30 })],
-    form => mutate('edit-student', { studentId: student.id, name: form.get('name'), grade: form.get('grade') }));
+  editStudentProfile({ student, editor, field, mutate });
 }
 function renderSubjects() {
   const grid = byId('subjects-grid-admin');
