@@ -126,6 +126,17 @@
   gap: 6px;
 }
 
+.cloud-chat-voice { grid-column: 1 / -1; min-width: 0; }
+.cloud-chat-voice-actions, .cloud-chat-voice-preview { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cloud-chat-voice-preview[hidden] { display: none; }
+.cloud-chat-voice-preview { margin-top: 12px; padding: 12px; border: 1px solid #44547b; border-radius: 12px; background: #18263b; }
+.cloud-chat-voice-preview audio { flex: 1 1 240px; min-width: 0; max-width: 100%; }
+.cloud-chat-voice .btn, .cloud-chat-compose-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; }
+.cloud-chat-voice svg, .cloud-chat-compose-actions svg { width: 18px; height: 18px; flex: none; }
+.cloud-chat-voice .recording { border-color: #fb7185; color: #ffacbb; background: #422137; }
+#messages-record-status { color: #b9c6e3; font-size: .9rem; font-variant-numeric: tabular-nums; }
+#messages-voice-duration { color: #b9c6e3; font-size: .8rem; }
+
 .cloud-chat-compose textarea,
 #message-body {
   display: block;
@@ -207,8 +218,12 @@
   }
 
   .cloud-chat-conversation {
-    height: 600px;
+    min-height: 600px;
+    height: auto;
   }
+
+  #messages-thread-content { max-height: 400px; }
+  .cloud-chat-voice-preview audio { flex: 0 0 100%; width: 100%; }
 
   .cloud-chat-compose {
     grid-template-columns: 1fr;

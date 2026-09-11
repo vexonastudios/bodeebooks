@@ -11,6 +11,36 @@ function load(file, mocks={}) {
   mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,filename);
   return mod.exports;
 }
+test('dashboard refuses insecure API addresses before requesting or transmitting a parent token', async () => {
+  const savedUrl=process.env.BODEEGUARD_COMMERCIAL_API_URL, savedFetch=globalThis.fetch;
+  let tokens=0, requests=0;
+  const {cloudApi}=load('app/guard/dashboard/cloud-api.ts',{'server-only':{},'@clerk/nextjs/server':{auth:async()=>({isAuthenticated:true,getToken:async()=>{tokens++;return 'synthetic-parent-token';}})}});
+  globalThis.fetch=async(url,init)=>{requests++;assert.equal(url,'https://api.example/v1/account/dashboard/messages');assert.equal(init.redirect,'error');assert.equal(init.headers.Authorization,'Bearer synthetic-parent-token');return new Response('{}',{status:200});};
+  try {
+    for(const url of ['http://api.example','https://user:secret@api.example','https://api.example?token=secret','https://api.example#fragment']){
+      process.env.BODEEGUARD_COMMERCIAL_API_URL=url;await assert.rejects(cloudApi('/messages'),/secure HTTPS/);
+    }
+    assert.equal(tokens,0);assert.equal(requests,0);
+    process.env.BODEEGUARD_COMMERCIAL_API_URL='https://api.example';await cloudApi('/messages');assert.equal(tokens,1);assert.equal(requests,1);
+  }finally{globalThis.fetch=savedFetch;if(savedUrl===undefined)delete process.env.BODEEGUARD_COMMERCIAL_API_URL;else process.env.BODEEGUARD_COMMERCIAL_API_URL=savedUrl;}
+});
+test('parent workspace delegates microphone access only to its own authenticated frame',async()=>{
+  let authenticated=true;
+  const route=load('app/guard/dashboard/workspace/route.ts',{
+    '@clerk/nextjs/server':{auth:async()=>({isAuthenticated:authenticated}),currentUser:async()=>({firstName:'Test parent'})},
+    '../cloud-api':{cloudApi:async()=>({}),CloudApiError:class extends Error{}},
+    '../generated/workspace.json':{default:{html:'<head></head><main class="main-content"></main>'}},'../generated/media.json':{default:{}},
+    '../dashboardNotice':{dashboardNotice:()=>'<p>Sign in</p>'},'../dashboardLoading':{dashboardLoading:'<p>Loading</p>'}
+  });
+  const request=new Request('https://guard.example/guard/dashboard/workspace/',{headers:{'sec-fetch-dest':'iframe'}});
+  const response=await route.GET(request);assert.equal(response.status,200);assert.equal(response.headers.get('permissions-policy'),'microphone=(self)');assert.match(response.headers.get('content-security-policy'),/media-src blob:/);assert.equal(response.headers.get('cache-control'),'private, no-store');
+  authenticated=false;assert.equal((await route.GET(request)).status,401);
+  const ParentWorkspace=load('app/guard/dashboard/ParentWorkspace.tsx',{
+    react:{useRef:()=>({current:null}),useState:()=>[true,()=>{}],useEffect(){}},'@clerk/nextjs':{useAuth:()=>({isLoaded:true,getToken:async()=>null})},
+    'next/image':{default:props=>props},'./workspace.module.css':{default:{}}
+  }).default;
+  const frame=ParentWorkspace();assert.equal(frame.type,'iframe');assert.ok(frame.props.allow.includes("microphone 'self'"));assert.equal(frame.props.src,'/guard/dashboard/workspace/');assert.match(frame.props.sandbox,/allow-same-origin/);
+});
 test('remote computer commands require the parent session and same origin, and forward no submitted authority', async () => {
   let authenticated = false; const calls = [];
   const { POST } = load('app/guard/dashboard/bridge/route.ts', {

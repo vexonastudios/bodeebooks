@@ -41,6 +41,6 @@ export default function ParentWorkspace() {
     </div>
   </div>;
   return <iframe ref={frame} title="BodeeGuard Parent Dashboard" src="/guard/dashboard/workspace/" className={styles.frame}
-    allow="autoplay; fullscreen; encrypted-media"
+    allow="autoplay; fullscreen; encrypted-media; microphone 'self'"
     sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-downloads allow-top-navigation-by-user-activation" />;
 }

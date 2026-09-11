@@ -1,4 +1,6 @@
 // Existing Admin conversation layout, with only the cloud transport replaced.
+import { createVoiceRecorder } from './voice-recording.js';
+import { createMessageThread } from './message-thread.js';
 export function setupCloudMessages({ endpoint }) {
   const el = id => document.getElementById(id);
   let students = [];
@@ -10,17 +12,49 @@ export function setupCloudMessages({ endpoint }) {
   let generation = 0;
   let timer = null;
   let loading = false;
-  let live = false, refreshQueued = false;
   let sending = false;
   let failures = 0;
   let error = '';
   const drafts = new Map();
   const pending = new Map();
   const attachments = new Map();
+  const localFiles = new Map(), voices = new Map();
+  const threadRows = createMessageThread(el('messages-thread-content'));
+  let previewFile = null, previewUrl = null, recordingChild = null;
+  const voicePanel = document.createElement('div'); voicePanel.className = 'cloud-chat-voice';
+  voicePanel.innerHTML = '<div class="cloud-chat-voice-actions"><button id="messages-record" class="btn btn-secondary" type="button"><i data-lucide="mic"></i><span>Record voice</span></button><span id="messages-record-status" role="status"></span></div><div id="messages-voice-preview" class="cloud-chat-voice-preview" hidden><audio id="messages-voice-audio" controls preload="metadata" aria-label="Preview your voice message"></audio><span id="messages-voice-duration"></span><button id="messages-voice-discard" class="btn btn-secondary" type="button"><i data-lucide="trash-2"></i>Discard</button></div>';
+  el('messages-reply-box').prepend(voicePanel);
+  document.querySelector('.cloud-messages-panel > .cloud-note').textContent = 'Record a voice message up to 60 seconds, or attach an image, PDF or audio file up to 2 MB. Messages travel over an encrypted connection. Received means delivered to the computer.';
+  const voice = createVoiceRecorder({ onChange: value => {
+    const recording = value.phase === 'recording', label = el('messages-record').querySelector('span');
+    label.textContent = recording ? 'Stop recording' : 'Record voice';
+    el('messages-record').classList.toggle('recording', recording);
+    const mark = document.createElement('i'); mark.dataset.lucide = recording ? 'square' : 'mic';
+    el('messages-record').firstElementChild.replaceWith(mark); window.lucide?.createIcons();
+    el('messages-record-status').textContent = value.error || ({ requesting: 'Opening microphone…', recording: `${Math.floor(value.seconds / 60)}:${String(value.seconds % 60).padStart(2, '0')} / 1:00`, finishing: 'Preparing preview…' }[value.phase] || '');
+    if (value.phase === 'ready' && recordingChild === selected) {
+      const extension = { 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/wav': 'wav', 'audio/mpeg': 'mp3' }[value.blob.type.split(';')[0]];
+      const file = new File([value.blob], `Voice message.${extension}`, { type: value.blob.type });
+      localFiles.set(selected, file); voices.set(selected, { file, seconds: value.seconds });
+      note('Listen to your recording, then press Send.');
+    }
+    controls();
+  } });
+  function recordingBusy() { return ['requesting', 'recording', 'finishing'].includes(voice.state().phase); }
+  function preview() {
+    const value = voices.get(selected), file = value?.file || null;
+    if (previewFile !== file) {
+      const audio = el('messages-voice-audio'); audio.pause(); audio.removeAttribute('src');
+      if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; previewFile = file;
+      if (file) { previewUrl = URL.createObjectURL(file); audio.src = previewUrl; }
+    }
+    el('messages-voice-preview').hidden = !file;
+    el('messages-voice-duration').textContent = value ? `${value.seconds}s · Ready to send` : '';
+  }
   function note(text) { el('messages-cloud-status').textContent = text; }
   async function request(action, input) {
     const response = await fetch(action === 'upload-file' ? endpoint.replace(/bridge\/?$/, 'upload/') : endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(28000),
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
+      redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
     const value = await response.json();
     if (!response.ok) {
       const failure = new Error(response.status === 401 ? 'Sign in again to open messages.' : value.error || 'Messages could not sync.');
@@ -31,12 +65,15 @@ export function setupCloudMessages({ endpoint }) {
   }
   function controls() {
     el('messages-reply-input').disabled = !selected || sending || pending.has(selected);
-    el('messages-reply-btn').disabled = !selected || sending;
-    el('messages-attachment').disabled = !selected || sending || pending.has(selected) || Boolean(attachments.get(selected));
-    el('messages-attachment-clear').disabled = !selected || sending || pending.has(selected);
-    el('messages-attachment-status').textContent = attachments.get(selected)?.name || el('messages-attachment').files[0]?.name || '';
-    el('messages-reply-btn').textContent = pending.has(selected) ? 'Retry same message' : 'Send';
+    el('messages-reply-btn').disabled = !selected || sending || recordingBusy();
+    el('messages-attachment').disabled = !selected || sending || recordingBusy() || pending.has(selected) || Boolean(attachments.get(selected)) || Boolean(voices.get(selected));
+    el('messages-attachment-clear').disabled = !selected || sending || recordingBusy() || pending.has(selected);
+    el('messages-voice-discard').disabled = sending || pending.has(selected);
+    el('messages-record').disabled = !selected || sending || pending.has(selected) || ['requesting', 'finishing'].includes(voice.state().phase) || voice.state().phase !== 'recording' && Boolean(localFiles.get(selected) || attachments.get(selected));
+    el('messages-attachment-status').textContent = attachments.get(selected)?.name || localFiles.get(selected)?.name || '';
+    el('messages-reply-btn').innerHTML = `<i data-lucide="send"></i>${pending.has(selected) ? 'Retry same message' : 'Send'}`;
     el('messages-older').disabled = !selected || loading || !(cursor === undefined ? page?.nextBefore : cursor);
+    preview(); window.lucide?.createIcons();
   }
   function render() {
     const messages = [...older, ...(page?.messages || [])];
@@ -45,20 +82,22 @@ export function setupCloudMessages({ endpoint }) {
     const key = JSON.stringify(unique);
     if (thread.dataset.rendered !== key) {
       const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
-      thread.replaceChildren(...unique.map(message => {
+      threadRows.update(unique, { fingerprint: message => JSON.stringify([selected, message.sender, message.body, message.attachment]), refresh: (row, message) => {
+        row.querySelector('small').textContent = `${message.sender === 'parent' ? 'Parent' : students.find(student => student.id === selected)?.name || 'Child'} · ${new Date(message.createdAt).toLocaleString()} · ${message.receivedAt ? 'Received' : 'Saved online'}`;
+      }, create: message => {
         const row = document.createElement('article'); row.className = `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`;
         const meta = document.createElement('small'); meta.textContent = `${message.sender === 'parent' ? 'Parent' : students.find(student => student.id === selected)?.name || 'Child'} · ${new Date(message.createdAt).toLocaleString()} · ${message.receivedAt ? 'Received' : 'Saved online'}`;
         const body = document.createElement('p'); body.textContent = message.body;
         row.append(meta, body);
         if (message.attachment) row.append(window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })));
-        return row;
-      }));
+        return { node: row };
+      } });
       thread.dataset.rendered = key;
       if (atBottom) thread.scrollTop = thread.scrollHeight;
     }
     const uncertain = pending.get(selected);
     if (uncertain && unique.some(message => message.id === uncertain.id)) {
-      pending.delete(selected); drafts.delete(selected); attachments.delete(selected); el('messages-reply-input').value = ''; el('messages-attachment').value = '';
+      pending.delete(selected); drafts.delete(selected); attachments.delete(selected); localFiles.delete(selected); voices.delete(selected); voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = '';
     }
     controls();
   }
@@ -79,11 +118,12 @@ export function setupCloudMessages({ endpoint }) {
       note(`${error} Showing the last received messages; your draft remains here.`);
     } finally {
       loading = false; controls();
-      if (active && !document.hidden && (refreshQueued || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
-      refreshQueued = false;
+      if (active && !document.hidden) timer = setTimeout(refresh, ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
     }
   }
   function choose(child) {
+    if (selected === child) return;
+    voice.cancel(); threadRows.clear(); delete el('messages-thread-content').dataset.rendered;
     if (selected) drafts.set(selected, el('messages-reply-input').value);
     selected = child; generation++; page = null; older = []; cursor = undefined;
     window.cloudFileTools.close(); el('messages-attachment').value = '';
@@ -98,7 +138,7 @@ export function setupCloudMessages({ endpoint }) {
     }));
   }
   function canChooseAttachment() {
-    return Boolean(selected) && !sending && !pending.has(selected) && !attachments.has(selected);
+    return Boolean(selected) && !sending && !recordingBusy() && !pending.has(selected) && !attachments.has(selected) && !voices.has(selected);
   }
   function stageAttachment(file) {
     if (!canChooseAttachment()) return;
@@ -113,6 +153,7 @@ export function setupCloudMessages({ endpoint }) {
     const transfer = new DataTransfer();
     transfer.items.add(file);
     el('messages-attachment').files = transfer.files;
+    localFiles.set(selected, file);
     controls();
     note(`${file.name} is ready to send.`);
   }
@@ -143,21 +184,29 @@ export function setupCloudMessages({ endpoint }) {
   });
   el('messages-attachment').addEventListener('change', () => {
     if (!selected || attachments.has(selected)) return;
+    const file = el('messages-attachment').files[0]; if (file) localFiles.set(selected, file); else localFiles.delete(selected);
     controls();
   });
-  el('messages-attachment-clear').addEventListener('click', () => {
+  function clearAttachment() {
     if (!selected || sending || pending.has(selected)) return;
-    attachments.delete(selected); el('messages-attachment').value = ''; controls(); note('Attachment selection cleared. Any file already saved online remains in Gradebook → Private files.');
+    attachments.delete(selected); localFiles.delete(selected); voices.delete(selected); voice.cancel(); el('messages-attachment').value = ''; controls(); note('Attachment cleared.');
+  }
+  el('messages-attachment-clear').addEventListener('click', clearAttachment);
+  el('messages-voice-discard').addEventListener('click', clearAttachment);
+  el('messages-record').addEventListener('click', () => {
+    if (voice.state().phase === 'recording') voice.stop();
+    else if (canChooseAttachment() && !localFiles.has(selected)) { recordingChild = selected; void voice.start(); }
   });
   el('messages-reply-box').addEventListener('submit', async event => {
-    event.preventDefault(); if (!selected || sending) return;
+    event.preventDefault(); if (!selected || sending || recordingBusy()) return;
     const child = selected;
-    const body = el('messages-reply-input').value.trim(); if (!body && !attachments.has(child) && !el('messages-attachment').files[0]) return;
+    const file = localFiles.get(child) || el('messages-attachment').files[0];
+    const body = el('messages-reply-input').value.trim() || (voices.has(child) ? `Voice message · ${voices.get(child).seconds}s` : ''); if (!body && !attachments.has(child) && !file) return;
     const message = pending.get(child) || { id: crypto.randomUUID(), body };
     pending.set(child, message); drafts.set(child, message.body); sending = true; controls(); note('Sending…');
     try {
       let attachment = attachments.get(child);
-      if (!attachment && el('messages-attachment').files[0]) { attachment = await window.cloudFileTools.encode(el('messages-attachment').files[0], 'message'); attachments.set(child, attachment); }
+      if (!attachment && file) { attachment = await window.cloudFileTools.encode(file, 'message'); attachments.set(child, attachment); }
       if (attachment && !message.fileId) {
         const saved = await request('upload-file', { ...attachment, studentId: child });
         if (saved.file?.id !== attachment.id || !saved.saved) throw new Error('The attachment receipt did not match. Retry the same message.');
@@ -165,8 +214,8 @@ export function setupCloudMessages({ endpoint }) {
       }
       const receipt = await request('send-message', { studentId: child, ...message });
       if (receipt.id !== message.id || receipt.studentId !== child || receipt.saved !== true) throw new Error('The message receipt did not match.');
-      pending.delete(child); drafts.delete(child); attachments.delete(child);
-      if (selected === child) { el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Saved online. Waiting for the child’s computer to receive it.'); }
+      pending.delete(child); drafts.delete(child); attachments.delete(child); localFiles.delete(child); voices.delete(child);
+      if (selected === child) { voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Message sent.'); }
       void refresh();
     } catch (failure) {
       if ([400, 413, 415].includes(failure.status)) {
@@ -186,13 +235,11 @@ export function setupCloudMessages({ endpoint }) {
     } catch (failure) { if (ticket === generation) note(failure.message); }
     finally { loading = false; controls(); if (active && !document.hidden) timer = setTimeout(refresh, ticket === generation ? 30000 : 0); }
   });
-  document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); });
-  window.addEventListener('pagehide', () => clearTimeout(timer));
+  function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
+  document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
+  window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
-    openStudent(id) { if(students.some(student=>student.id===id))choose(id); },
-    setLive(value) { live=value; clearTimeout(timer); if(active)void refresh(); },
-    notify(studentId) { if(studentId!==selected||!active)return; if(loading)refreshQueued=true;else void refresh(); },
     update(value) { students = value || []; renderStudents(); if (selected && !students.some(student => student.id === selected)) choose(null); },
-    setActive(value) { active = value; clearTimeout(timer); if (active) void refresh(); }
+    setActive(value) { active = value; clearTimeout(timer); if (active) void refresh(); else pauseMedia(); }
   };
 }

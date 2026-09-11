@@ -24,6 +24,10 @@ export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T>
   if (!session.isAuthenticated) throw new CloudApiError("Please sign in to your parent account.", 401);
   const apiBase = process.env.BODEEGUARD_COMMERCIAL_API_URL?.replace(/\/$/, "");
   if (!apiBase) throw new Error("The BodeeGuard account service is not configured.");
+  const apiUrl = new URL(apiBase);
+  if (apiUrl.protocol !== "https:" || apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) {
+    throw new Error("The BodeeGuard account service must use a secure HTTPS address.");
+  }
   const token = await session.getToken();
   if (!token) throw new CloudApiError("Please sign in again to continue.", 401);
   const response = await fetch(`${apiBase}/v1/account/dashboard${path}`, {
