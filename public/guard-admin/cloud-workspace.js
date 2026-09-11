@@ -9,7 +9,7 @@ import { setupParentGuide } from './cloud-parent-setup.js?v=20260910-unified';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
-import { setupCloudMessages } from './cloud-messages.js?v=20260910-voice1';
+import { setupCloudMessages } from './cloud-messages.js?v=20260910-voice2';
 import './cloud-push-client.js';
 import { setupCloudMobile } from './cloud-mobile.js?v=20260910-controls1';
 import { setupCloudCalendar } from './cloud-calendar.js';
