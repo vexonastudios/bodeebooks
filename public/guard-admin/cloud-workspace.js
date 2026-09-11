@@ -1,4 +1,4 @@
-import { setupDailyPlan } from './cloud-daily-plan.js?v=20260910-board2';
+import { setupDailyPlan } from './cloud-daily-plan.js?v=20260911-family-first';
 import { setupMonitoring } from './cloud-monitoring.js?v=20260911-screenshot1';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
@@ -9,7 +9,7 @@ import { setupParentGuide } from './cloud-parent-setup.js?v=20260910-unified';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
-import { setupCloudMessages } from './cloud-messages.js?v=20260910-voice3';
+import { setupCloudMessages } from './cloud-messages.js?v=20260911-compose';
 import './cloud-push-client.js';
 import { setupCloudMobile } from './cloud-mobile.js?v=20260910-controls1';
 import { setupCloudCalendar } from './cloud-calendar.js';

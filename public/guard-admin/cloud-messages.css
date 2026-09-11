@@ -113,9 +113,7 @@
 
 .cloud-chat-compose {
   display: grid;
-  grid-template-columns: minmax(180px, 1.3fr) minmax(180px, 1fr) auto;
   gap: 12px;
-  align-items: end;
   padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, .08);
 }
@@ -126,13 +124,14 @@
   gap: 6px;
 }
 
-.cloud-chat-voice { grid-column: 1 / -1; min-width: 0; }
-.cloud-chat-voice-actions, .cloud-chat-voice-preview { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cloud-chat-compose-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.cloud-chat-voice { display: contents; min-width: 0; }
+.cloud-chat-voice-actions, .cloud-chat-voice-preview { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cloud-chat-voice-preview[hidden] { display: none; }
-.cloud-chat-voice-preview { margin-top: 12px; padding: 12px; border: 1px solid #44547b; border-radius: 12px; background: #18263b; }
+.cloud-chat-voice-preview { flex: 1 0 100%; order: 4; padding: 12px; border: 1px solid #44547b; border-radius: 12px; background: #18263b; }
 .cloud-chat-voice-preview audio { flex: 1 1 240px; min-width: 0; max-width: 100%; }
-.cloud-chat-voice .btn, .cloud-chat-compose-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; }
-.cloud-chat-voice svg, .cloud-chat-compose-actions svg { width: 18px; height: 18px; flex: none; }
+.cloud-chat-voice .btn, .cloud-chat-compose-actions .btn, .cloud-chat-compose .cloud-chat-attachment-field { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; }
+.cloud-chat-voice svg, .cloud-chat-compose-actions svg, .cloud-chat-attachment-field svg { width: 18px; height: 18px; flex: none; }
 .cloud-chat-voice .recording { border-color: #fb7185; color: #ffacbb; background: #422137; }
 #messages-record-status { color: #b9c6e3; font-size: .9rem; font-variant-numeric: tabular-nums; }
 #messages-voice-duration { color: #b9c6e3; font-size: .8rem; }
@@ -151,19 +150,19 @@
   font: inherit;
 }
 
-.cloud-chat-attachment-field input {
-  max-width: 100%;
-  cursor: pointer;
-}
-
 .cloud-chat-attachment-field {
-  min-height: 72px;
-  padding: 10px;
-  border: 1px dashed rgba(130, 138, 255, .55);
-  border-radius: 8px;
+  position: relative;
+  padding: 0 13px;
+  border: 1px solid rgba(130, 138, 255, .55);
+  border-radius: 9px;
+  background: rgba(130, 138, 255, .07);
+  color: var(--text-primary, #f4f7ff);
+  font-size: .875rem;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color .16s ease, background .16s ease;
 }
+.cloud-chat-attachment-field input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
 .cloud-chat-attachment-field:hover,
 .cloud-chat-attachment-field:focus-within,
@@ -172,15 +171,11 @@
   background: rgba(130, 138, 255, .1);
 }
 
-.cloud-chat-drop-hint {
-  color: var(--text-secondary, #b7c8dc);
-  font-size: .8rem;
-}
-
-#messages-attachment-status {
-  min-height: 1.1em;
+.cloud-chat-attachment-status {
+  min-width: 0;
+  max-width: min(300px, 100%);
   overflow-wrap: anywhere;
-  font-size: .8rem;
+  font-size: .825rem;
   color: var(--text-secondary, #b7c8dc);
 }
 
@@ -188,7 +183,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  align-items: end;
+  align-items: center;
+  margin-left: auto;
 }
 
 .cloud-chat-compose-actions .btn {
@@ -196,13 +192,8 @@
 }
 
 @media (max-width: 980px) {
-  .cloud-chat-compose {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
   .cloud-chat-compose-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
+    margin-left: 0;
   }
 }
 
@@ -225,14 +216,11 @@
   #messages-thread-content { max-height: 400px; }
   .cloud-chat-voice-preview audio { flex: 0 0 100%; width: 100%; }
 
-  .cloud-chat-compose {
-    grid-template-columns: 1fr;
-  }
-
   .cloud-chat-compose-actions {
-    grid-column: auto;
     justify-content: flex-start;
   }
+
+  .cloud-chat-attachment-status { flex-basis: 100%; max-width: none; }
 
   .cloud-message {
     max-width: 100%;

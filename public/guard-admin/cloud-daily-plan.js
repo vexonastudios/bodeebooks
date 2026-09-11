@@ -1,9 +1,22 @@
 import { PLAN_GROUPS, dailyPlanCards, saveDailyPlan, familyPlanCards, templateFromCards, applyFamilyPlan } from './cloud-daily-plan-model.js';
 const make = (tag, cls = '', text = '') => { const el = document.createElement(tag); el.className = cls; el.textContent = text; return el; };
-const icon = name => { const el = make('i'); el.dataset.lucide = name; el.setAttribute('aria-hidden', 'true'); return el; };
-const action = (label, symbol, fn, cls = 'btn btn-secondary') => { const el = make('button', cls); el.type = 'button'; el.append(icon(symbol), document.createTextNode(label)); el.onclick = fn; return el; };
+const icon = name => {
+  const el = make('i');
+  el.dataset.lucide = name;
+  el.setAttribute('aria-hidden', 'true');
+  return el;
+};
+const action = (label, symbol, fn, cls = 'btn btn-secondary') => {
+  const el = make('button', cls);
+  const glyph = icon(symbol);
+  glyph.classList.add('nav-icon');
+  el.type = 'button';
+  el.append(glyph, document.createTextNode(label));
+  el.onclick = fn;
+  return el;
+};
 export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/guard/dashboard/bridge/' }) {
-  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260911-family'; document.head.append(stylesheet);
+  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260911-family-first'; document.head.append(stylesheet);
   const nav = action('Daily plan', 'list-checks', () => navigate('daily-plan'), 'nav-item'); nav.dataset.tab = 'daily-plan';
   document.querySelector('.sidebar-nav .nav-item[data-tab="overview"]')?.after(nav);
   const section = make('section', 'tab-content'); section.id = 'tab-daily-plan'; section.setAttribute('aria-label', 'Daily plan');
@@ -28,7 +41,9 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   const layout = make('div', 'daily-plan-layout'), board = make('div', 'daily-plan-board'), available = make('div', 'daily-plan-available');
   layout.append(available, board);
   section.append(head, help, family, controls, layout); document.querySelector('.main-content').append(section);
-  const shortcut = action('Daily plan', 'list-checks', () => navigate('daily-plan')); document.querySelector('#tab-overview .tab-header')?.append(shortcut);
+  const shortcut = action('Daily plan', 'list-checks', () => navigate('daily-plan'));
+  const overviewActions = document.querySelector('#overview-actions');
+  (overviewActions || document.querySelector('#tab-overview .tab-header'))?.append(shortcut);
   let active = false, loadedChild = null, captured = null, details = {}, cards = [], generation = 0, busy = false;
   const changes = new Map(), groups = new Map(), openOptions = new Set();
   const search = make('input', 'admin-input'); search.type = 'search'; search.placeholder = 'Find an activity…'; search.setAttribute('aria-label', 'Find activities without a school requirement'); search.oninput = () => render();
@@ -190,7 +205,22 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
     section.append(dialog); redraw(); dialog.showModal();
   }
   return {
-    update() { const snapshot = getSnapshot(); if (!snapshot) return; const selected = child.value; child.replaceChildren(); for (const student of snapshot.students.filter(s => !s.archived_at)) { const option = make('option', '', student.name); option.value = student.id; child.append(option); } const option = make('option', '', 'Family default · all children'); option.value = 'family'; child.append(option); if ([...child.options].some(o => o.value === selected)) child.value = selected; if (active && !captured && !busy) void load(); },
+    update() {
+      const snapshot = getSnapshot();
+      if (!snapshot) return;
+      const selected = child.value;
+      child.replaceChildren();
+      const defaultOption = make('option', '', 'Family default · all children');
+      defaultOption.value = 'family';
+      child.append(defaultOption);
+      for (const student of snapshot.students.filter(s => !s.archived_at)) {
+        const option = make('option', '', student.name);
+        option.value = student.id;
+        child.append(option);
+      }
+      child.value = [...child.options].some(option => option.value === selected) ? selected : 'family';
+      if (active && !captured && !busy) void load();
+    },
     setActive(value) { active = value; if (active && !changes.size && !busy) void load(); }
   };
 }

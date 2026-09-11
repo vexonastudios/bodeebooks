@@ -152,6 +152,35 @@
 .cloud-day-details .btn { white-space: normal; }
 .cloud-day-details .cloud-calendar-footnote { margin: 16px 0 0; }
 @media (max-width: 1150px) { .cloud-calendar-layout { grid-template-columns: minmax(0, 1fr); } }
+#tab-overview .tab-header .cloud-actions {
+  margin-left: auto;
+  justify-content: flex-end;
+  align-items: center;
+  width: fit-content;
+  flex-wrap: nowrap;
+}
+
+#tab-overview .tab-header .cloud-actions .btn,
+#tab-overview .tab-header .cloud-actions .btn:visited,
+#tab-overview .tab-header .cloud-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+#tab-overview .tab-header .cloud-actions .btn .nav-icon,
+#tab-overview .tab-header .cloud-actions .btn svg,
+#tab-overview .tab-header .cloud-actions a .nav-icon,
+#tab-overview .tab-header .cloud-actions a svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.1;
+  flex-shrink: 0;
+}
 #cloud-recovery p { line-height: 1.6; margin-bottom: 16px; }
 #cloud-recovery code { display: block; overflow-wrap: anywhere; font-size: 22px; padding: 20px 0; }
 #cloud-recovery button { margin: 12px 12px 0 0; }
