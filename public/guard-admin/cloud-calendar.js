@@ -1,6 +1,6 @@
 import { setupCloudAttendance } from './cloud-attendance.js';
 // The preview uses the same calendar decisions as the API and child app.
-const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts } = globalThis.BODEE_CLOUD_SCHEDULE;
+const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts, cloudSubjectAlwaysOpen } = globalThis.BODEE_CLOUD_SCHEDULE;
 const byId = id => document.getElementById(id);
 function node(tag, className = '', text = '') {
   const result = document.createElement(tag); result.className = className; result.textContent = text; return result;
@@ -75,23 +75,23 @@ export function setupCloudCalendar({ getSnapshot, editException, editSubject, se
     const state = cloudSchoolDayState(schedule, selectedDate);
     details.append(node('h3', '', formatDate(selectedDate, { weekday: 'long', month: 'long', day: 'numeric' })),
       node('p', 'cloud-day-status', dayLabel(state)));
-    if (state.allowed) {
+    {
       details.append(node('p', 'cloud-note', schedule.enabled ? `School hours: ${schedule.start}–${schedule.end}` : 'No family calendar restriction.'));
       const subjects = snapshot.rules.subjects.filter(subject => !Array.isArray(subject.assignments) || subject.assignments.length);
       if (!subjects.length) details.append(node('p', 'cloud-note', 'No subjects assigned yet. Add school links and choose children under Subjects.'));
       for (const subject of subjects) {
         const start = [schedule.enabled ? schedule.start : '00:00', subject.scheduleStart || '00:00'].sort().at(-1);
         const end = [schedule.enabled ? schedule.end : '24:00', subject.scheduleEnd || '24:00'].sort()[0];
-        const hours = start >= end ? 'Unavailable: subject hours do not overlap school hours'
+        const hours = cloudSubjectAlwaysOpen(subject) ? 'Always open · no time cutoff' : !state.allowed ? 'Closed by school calendar' : start >= end ? 'Unavailable: subject hours do not overlap school hours'
           : start === '00:00' && end === '24:00' ? 'All day' : `${start}–${end}`;
         const row = node('div', 'cloud-day-subject'); row.append(node('strong', '', subject.title), node('span', '', hours));
         const edit = action(`Edit ${subject.title}`, () => editSubject(subject)); row.append(edit); details.append(row);
       }
-    } else details.append(node('p', 'cloud-note', 'School links are closed on this date. An open-day exception uses the usual family and subject hours.'));
+    }
     if(selectedDate<=today()){const host=node('section');host.id='cloud-calendar-attendance';details.append(host);void attendance.render(host,selectedDate,snapshot);}
     const exception = state.exception;
     details.append(action(exception ? 'Edit this exception' : 'Add exception for this day', () => editException(selectedDate, exception)));
-    details.append(node('p', 'cloud-note cloud-calendar-footnote', 'These are scheduled hours. A parent pause or computer awaiting approval can also keep school closed.'));
+    details.append(node('p', 'cloud-note cloud-calendar-footnote', 'Always-open subjects remain accessible outside the calendar. Parent locks and account approval still apply.'));
   }
   function shiftMonth(amount) {
     if (!month) return;

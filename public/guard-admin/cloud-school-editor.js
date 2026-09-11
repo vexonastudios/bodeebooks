@@ -15,7 +15,9 @@ export function cloudSubjectEdit(captured, subjectId, form) {
     displayOrder: Number(form.get('displayOrder')), unlockAfterSubjectId: form.get('unlockAfterSubjectId') || null, isReward: form.get('isReward') === 'on',
     isSchoolPortal: provider !== 'none', portalProvider: provider, idleMonitoringEnabled: subject?.idleMonitoringEnabled === true,
     gradeCaptureEnabled: kind === 'website' && subject?.gradeCaptureEnabled === true,
-    scheduleStart: form.get('scheduleStart') || null, scheduleEnd: form.get('scheduleEnd') || null,
+    alwaysOpen: form.get('alwaysOpen') === 'on',
+    scheduleStart: form.get('alwaysOpen') === 'on' ? null : form.get('scheduleStart') || null,
+    scheduleEnd: form.get('alwaysOpen') === 'on' ? null : form.get('scheduleEnd') || null,
     allowedDomains: kind === 'website' ? String(form.get('allowedDomains') || '').split(/[,\n\r]+/).map(value => value.trim()).filter(Boolean) : []
   });
 }
@@ -56,10 +58,21 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   kindField.querySelector('select').addEventListener('change', changeKind); changeKind();
   const description = node('label', '', 'Description'), descriptionInput = node('textarea', 'admin-input'); descriptionInput.name = 'description'; descriptionInput.rows = 2; descriptionInput.maxLength = 1000; descriptionInput.value = subject?.description || ''; description.append(descriptionInput);
   const basics = panel('Subject details', 'notebook-pen', field('Name', 'title', subject?.title || ''), kindField, website, activity, provider, description, checkbox('Show this subject', 'active', subject?.active !== false));
+  const alwaysOpen = checkbox('Always open — no school calendar or time cutoff', 'alwaysOpen', globalThis.BODEE_CLOUD_SCHEDULE.cloudSubjectAlwaysOpen(subject));
+  alwaysOpen.querySelector('span').prepend(glyph('clock'));
+  const hours = pair(field('From (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }), field('Until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false }));
+  const hoursHelp = node('p', 'cloud-note');
+  const updateHours = () => {
+    const open = alwaysOpen.querySelector('input').checked;
+    hours.hidden = open; for (const input of hours.querySelectorAll('input')) input.disabled = open;
+    hoursHelp.textContent = open ? 'School stays available after 3 PM, on weekends and during school breaks. Required work and parent locks still apply. Activities placed in Certain days & times follow that Daily Plan.'
+      : 'Uses the school calendar and these optional subject hours in your family time zone.';
+  };
+  alwaysOpen.querySelector('input').addEventListener('change', updateHours); updateHours();
   const availability = panel('Availability', 'calendar-clock',
     selectField('Available as', 'accessTier', [{ value: 'school', label: 'Required schoolwork' }, { value: 'school_optional', label: 'Optional schoolwork' }, { value: 'after_school', label: 'After required schoolwork is complete' }], subject?.accessTier || 'school'),
     selectField('Complete this subject first', 'unlockAfterSubjectId', [{ value: '', label: 'No prerequisite' }, ...captured.rules.subjects.filter(item => item.id !== subjectId).map(item => ({ value: item.id, label: item.title + (item.active === false ? ' (hidden)' : '') }))], subject?.unlockAfterSubjectId || ''),
-    pair(field('From (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }), field('Until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false })),
+    alwaysOpen, hours, hoursHelp,
     checkbox('Place with rewards', 'isReward', subject?.isReward === true),
     node('p', 'cloud-note', 'Uses your family time zone. After-school access also checks required subjects and assigned Spelling, Vocabulary and Poems.'));
   const iconOptions = [['book-open','Book'],['graduation-cap','Graduation cap'],['school','School'],['laptop','Computer'],['notebook-pen','Writing'],['pencil','Pencil'],['calculator','Math'],['flask-conical','Science'],['globe','Geography'],['languages','Languages'],['spell-check','Spelling'],['keyboard','Typing'],['music','Music'],['headphones','Audiobooks'],['palette','Art'],['brain','Thinking'],['star','Star']].map(([value,label]) => ({value,label}));

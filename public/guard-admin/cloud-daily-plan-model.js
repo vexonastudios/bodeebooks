@@ -18,7 +18,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     if (module) seen.add(module);
     const stats = details.media?.[mediaKinds[module]], plan = assignment.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
-    cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url,
+    cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, alwaysOpen: subject.alwaysOpen,
       goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || stats?.days || [0,1,2,3,4,5,6],
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
       limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: details.features?.[module] === false || stats?.enabled === false,
