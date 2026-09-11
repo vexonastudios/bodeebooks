@@ -1,1 +1,38 @@
-.cloud-screenshot-list{display:grid;gap:14px}.cloud-screenshot-card{display:grid;gap:10px}.cloud-screenshot-card h2,.cloud-screenshot-card p{margin:0}.cloud-screenshot-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px;border:1px solid rgba(120,150,180,.3);border-radius:10px}.cloud-screenshot-details{display:grid;gap:5px;align-content:start}.cloud-screenshot-details p{margin:0}.cloud-screenshot-preview{width:180px;max-height:130px;object-fit:cover;border-radius:7px;border:1px solid rgba(120,150,180,.35);background:#10121f}@media(max-width:680px){.cloud-screenshot-row{grid-template-columns:1fr}.cloud-screenshot-preview{width:min(100%,320px)}}
+#cloud-screenshots .tab-header h1{display:flex;align-items:center;gap:12px}
+#cloud-screenshots svg{width:18px;height:18px;flex-shrink:0}
+#cloud-screenshots .tab-header h1 svg{width:26px;height:26px;color:#c4b5fd}
+#cloud-screenshots .btn,.cloud-screenshot-viewer .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;font-size:13px;padding:9px 13px}
+.cloud-screenshot-note{margin:0 0 20px!important;font-size:14px;line-height:1.5}
+.cloud-screenshot-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),360px));gap:18px;align-items:start}
+.cloud-panel.cloud-screenshot-card{display:grid;gap:14px;padding:18px;border:1px solid #333047;border-radius:18px;margin:0;background:linear-gradient(145deg,#1b1a2d,#131320)}
+.cloud-screenshot-card h2,.cloud-screenshot-card p{margin:0}
+.cloud-screenshot-child{display:flex;align-items:center;gap:12px;min-width:0}
+.cloud-screenshot-child h2{font-size:18px;overflow-wrap:anywhere}
+.cloud-screenshot-child .cloud-note{font-size:12px;margin-top:4px}
+.cloud-screenshot-empty{display:grid;place-content:center;justify-items:center;gap:10px;min-height:130px;border:1px dashed #3b384e;border-radius:12px;color:#9692af;font-size:13px}
+.cloud-screenshot-empty svg{width:28px!important;height:28px!important;opacity:.6}
+.cloud-screenshot-row{display:grid;gap:10px;padding-top:12px;border-top:1px solid #343146}
+.cloud-screenshot-details{display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:space-between;font-size:12px;color:#b6b1ca}
+.cloud-screenshot-status{color:#c4b5fd}
+.cloud-screenshot-open{display:block;position:relative;width:100%;height:166px;overflow:hidden;border:1px solid #39354e;border-radius:10px;background:#0d0c19;cursor:zoom-in;color:#c4b5fd}
+.cloud-screenshot-open>svg{position:absolute;right:8px;bottom:8px;background:#151222cc;box-sizing:content-box;padding:6px;border-radius:6px}
+.cloud-screenshot-preview{width:100%;height:100%;object-fit:contain;display:block}
+.cloud-screenshot-actions{display:flex;gap:8px}
+.cloud-screenshot-actions .btn{flex:1}
+.cloud-screenshot-error{font-size:13px;color:#fda4af;line-height:1.5}
+.cloud-screenshot-error:empty{display:none}
+.cloud-screenshot-history{border-top:1px solid #343146;padding-top:12px;font-size:13px}
+.cloud-screenshot-history summary{display:flex;align-items:center;gap:8px;cursor:pointer;color:#c4b5fd;min-height:32px}
+.cloud-screenshot-history summary:after{content:'⌄';margin-left:auto}
+.cloud-screenshot-history[open] summary:after{content:'⌃'}
+.cloud-screenshot-history>div{display:grid;gap:14px;margin-top:12px}
+dialog.cloud-screenshot-viewer{width:calc(100vw - 40px);max-width:1600px;height:calc(100dvh - 40px);max-height:calc(100dvh - 40px);padding:18px;border:1px solid #49405e;border-radius:16px;background:#11101f;color:#ece9f7;box-sizing:border-box}
+dialog.cloud-screenshot-viewer[open]{display:flex;flex-direction:column;gap:16px}
+.cloud-screenshot-viewer::backdrop{background:#05040dde}
+.cloud-screenshot-viewer-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0}
+.cloud-screenshot-viewer-header h2{font-size:16px;margin:0}
+.cloud-screenshot-viewer-header svg{width:18px;height:18px}
+.cloud-screenshot-viewer>img{width:100%;min-height:0;flex:1;object-fit:contain}
+.cloud-screenshot-viewer>img[hidden]{display:none}
+@media(max-width:600px){.cloud-screenshot-list{grid-template-columns:minmax(0,1fr)}dialog.cloud-screenshot-viewer{width:calc(100vw - 16px);height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);padding:12px}.cloud-screenshot-viewer-header h2{font-size:14px}}
+@media(pointer:coarse){#cloud-screenshots .btn,.cloud-screenshot-viewer .btn,.cloud-screenshot-history summary{min-height:44px}}

@@ -137,12 +137,14 @@ test('parent push socket closes when hidden; there are no pings or ticket reques
 test('a screenshot response received after hiding cannot trigger thumbnail downloads', async () => {
   const previous = { window: globalThis.window, document: globalThis.document, fetch: globalThis.fetch };
   const doc = new EventTarget(), win = new EventTarget(); doc.hidden = false;
-  const root = { textContent: '' }; doc.getElementById = () => root;
+  const root = { textContent: '', setAttribute() {} }; doc.getElementById = () => root;
   const response = deferred(); const requests = [];
   globalThis.document = doc; globalThis.window = win;
   globalThis.fetch = async (url, init) => { requests.push(init); await response.promise; return { ok: true, json: async () => ({ screenshots: [{ id: 'synthetic', student_id: 'child', has_image: true }] }) }; };
   try {
-    const { setupCloudScreenshots } = await import('data:text/javascript;base64,' + Buffer.from(fs.readFileSync('public/guard-admin/cloud-screenshots.js')).toString('base64'));
+    const profileUrl = 'data:text/javascript;base64,' + Buffer.from(fs.readFileSync('public/guard-admin/cloud-student-profile.js')).toString('base64');
+    const source = fs.readFileSync('public/guard-admin/cloud-screenshots.js', 'utf8').replace('./cloud-student-profile.js?v=20260910-photos1', profileUrl);
+    const { setupCloudScreenshots } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
     const gallery = setupCloudScreenshots({ endpoint: '/synthetic' });
     gallery.update({ students: [{ id: 'child', name: 'Test Child' }] });
     gallery.setActive(true); await flush();

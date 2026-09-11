@@ -1,4 +1,5 @@
 import { connectionState, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
+import { studentAvatar } from './cloud-student-profile.js?v=20260910-photos1';
 
 const mediaTypes = [['music','Music','music'],['video','Video','video'],['audiobook','Audiobooks','headphones']];
 const colors = ['#a78bfa','#34d399','#38bdf8','#f472b6','#fbbf24','#818cf8'];
@@ -101,7 +102,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     for(const model of models){
       const {student,device}=model;
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
-      const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=node('span','monitor-avatar',student.name.split(/\s+/).map(n=>n[0]).slice(0,2).join('').toUpperCase());avatar.style.setProperty('--child-color',model.color);
+      const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
       const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!device?'No computer connected':device.locked?'Computer locked':model.online?model.current?.title||'Dashboard':'Not connected'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
       const clocks=node('div','monitor-timer-row');

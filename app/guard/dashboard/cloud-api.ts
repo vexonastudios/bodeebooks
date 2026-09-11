@@ -1,7 +1,7 @@
 import "server-only";
 import { auth } from "@clerk/nextjs/server";
 
-export type CloudStudent = { id: string; name: string; grade: string };
+export type CloudStudent = { id: string; name: string; grade: string; photo_version?: string | null };
 export type CloudSubject = { id: string; title: string; url: string };
 export type CloudDevice = {
   id: string; computer_name: string; app_version: string; student_id: string | null;

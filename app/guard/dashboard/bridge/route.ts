@@ -146,7 +146,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
     case "edit-student": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
-      path = `/students/${input.studentId}`; method = "PATCH"; body = { name: input.name, grade: input.grade };
+      path = `/students/${input.studentId}`; method = "PATCH"; body = { name: input.name, grade: input.grade, ...(Object.hasOwn(input, "photo") ? { photo: input.photo } : {}) };
       break;
     }
     case "save-subjects": path = "/school-rules"; method = "PUT"; body = { subjects: input.subjects, schedule: input.schedule, revision: input.revision }; break;
