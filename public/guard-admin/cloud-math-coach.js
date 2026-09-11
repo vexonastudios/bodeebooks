@@ -1,4 +1,4 @@
-export function setupCloudMathCoach({ endpoint }) {
+export function setupCloudMathCoach({ endpoint, navigate }) {
   const root = document.getElementById('cloud-math-coach');
   let active = false, epoch = 0, overview = null;
   const node = (tag, text = '', className = '') => { const value = document.createElement(tag); value.textContent = text; if (className) value.className = className; return value; };
@@ -50,7 +50,7 @@ export function setupCloudMathCoach({ endpoint }) {
   async function reload() {
     const current = ++epoch; if (!active) return; root.textContent = 'Loading Math Coach…';
     try { const value = await call({ action: 'math-coach-overview' }); if (!active || current !== epoch) return; overview = value; render(); }
-    catch (error) { if (active && current === epoch) root.textContent = error.message; }
+    catch (error) { if (active && current === epoch) { root.replaceChildren(node('h1','Math Coach'), node('p','Manage access, daily questions and your family AI allowance here.'), node('p',error.message), button('Try again', reload, { iconName:'refresh-cw' })); window.lucide?.createIcons(); } }
   }
   function transcript(student) {
     const card = node('details', '', 'cloud-math-transcript');
@@ -111,7 +111,7 @@ export function setupCloudMathCoach({ endpoint }) {
     root.replaceChildren();
     const header = node('div', '', 'tab-header'); const title = node('h1'); title.append(icon('sigma'), document.createTextNode(' Math Coach'));
     header.append(title, button('Refresh', reload, { iconName: 'refresh-cw' })); root.append(header);
-    const notice = node('p', 'Enable Math Coach for each child. It opens inside BodeeGuard without another login. Chats are saved for 30 days.', 'cloud-note'); root.append(notice);
+    const notice = node('p', 'Enable Math Coach for each child. It opens inside BodeeGuard without another login. Chats are saved for 30 days.', 'cloud-note'); root.append(notice); const hours = node('div', '', 'cloud-math-family-copy'); hours.append(node('p', 'Use Daily plan to choose required schoolwork, after-school access, and allowed days and hours.'), button('Open Daily plan', () => navigate?.('daily-plan'), { iconName:'calendar-clock' })); root.append(hours);
     const family = node('section', '', 'cloud-math-family');
     const familyTitle = node('h2'); familyTitle.append(icon('wallet-cards'), document.createTextNode(' Family AI limit'));
     const limitCopy = node('p', 'This is the shared monthly allowance for every child. It keeps AI spending predictable.', 'cloud-math-family-copy');
@@ -123,7 +123,7 @@ export function setupCloudMathCoach({ endpoint }) {
     }, { primary: true, iconName: 'save' }));
     family.append(familyTitle, limitCopy, monthly.wrap, familyActions, status); root.append(family);
     const children = node('div', '', 'cloud-math-students'); for (const student of overview.students) children.append(studentCard(student));
-    if (!overview.students.length) children.append(node('p', 'Add a child from Overview before configuring Math Coach.', 'cloud-panel'));
+    if (!overview.students.length) children.append(node('p', 'Add a child from Students before configuring Math Coach.', 'cloud-panel'));
     root.append(children); window.lucide?.createIcons();
   }
   return { setActive(value) { active = value; epoch++; if (value) void reload(); }, update() { if (active) void reload(); } };

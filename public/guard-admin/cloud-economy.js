@@ -1,5 +1,7 @@
-/* global document, fetch, AbortSignal, crypto */
+/* global document, fetch, AbortSignal, crypto, window */
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
+const mediaLabels = { music:'Music', video:'Videos', audiobook:'Audiobooks', family_game:'Family Games' };
+const mediaIcons = { music:'music', video:'video', audiobook:'headphones', family_game:'gamepad-2' };
 export function setupCloudEconomy({ endpoint, mutate, editor, field, node, button }) {
   const el = id => document.getElementById(id), modal = el('reward-catalog-modal');
   let active = false, generation = 0, loading = false, data = null, editing = null, editId = null, saving = false, offset = 0;
@@ -49,7 +51,7 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
       return line;
     }));
     const catalog = el('reward-catalog-list');
-    catalog.innerHTML = value.items.map(item => `<article class="reward-admin-card${item.active ? '' : ' is-hidden'}"><div class="reward-admin-icon">${esc(item.icon)}</div><div class="reward-admin-main"><div class="reward-admin-title-row"><strong>${esc(item.name)}</strong><span class="reward-admin-pill ${item.active ? 'is-live' : 'is-hidden'}">${item.active ? 'IN STORE' : 'HIDDEN'}</span></div><div class="reward-admin-description">${esc(item.description)}</div><div class="reward-admin-meta"><span class="reward-admin-pill">${esc(item.type)}</span><span class="reward-admin-pill">🪙 ${item.price.toLocaleString()}</span><span class="reward-admin-pill">${item.daily_limit} / child / day</span>${item.type === 'time' ? `<span class="reward-admin-pill">${item.time_minutes} minutes · ${esc(item.media_type)}</span>` : ''}</div><div class="reward-admin-actions"><button class="btn btn-secondary" data-reward-edit="${esc(item.id)}">Edit</button><button class="btn btn-secondary" data-reward-toggle="${esc(item.id)}">${item.active ? 'Hide from Store' : 'Show in Store'}</button></div></div></article>`).join('') || '<p class="settings-hint">No cloud rewards yet. Select Add Reward to create one. The old catalog has not been imported.</p>';
+    catalog.innerHTML = value.items.map(item => `<article class="reward-admin-card${item.active ? '' : ' is-hidden'}" data-media="${esc(item.media_type || 'custom')}"><div class="reward-admin-icon"><i data-lucide="${mediaIcons[item.media_type] || 'gift'}" aria-hidden="true"></i></div><div class="reward-admin-main"><div class="reward-admin-title-row"><strong>${esc(item.name)}</strong><span class="reward-admin-pill ${item.active ? 'is-live' : 'is-hidden'}">${item.active ? 'IN STORE' : 'HIDDEN'}</span></div><div class="reward-admin-price"><i data-lucide="coins" aria-hidden="true"></i> ${item.price.toLocaleString()} <small>coins</small></div><div class="reward-admin-description">${esc(item.description)}</div><div class="reward-admin-meta">${item.type === 'time' ? `<span class="reward-admin-pill">${item.time_minutes} minutes · ${esc(mediaLabels[item.media_type] || item.media_type)}</span>` : `<span class="reward-admin-pill">${esc(item.type)}</span>`}<span class="reward-admin-pill">${item.daily_limit} per child / day</span></div><div class="reward-admin-actions"><button class="btn btn-secondary" data-reward-edit="${esc(item.id)}"><i data-lucide="pencil" aria-hidden="true"></i> Edit reward</button><button class="btn btn-secondary" data-reward-toggle="${esc(item.id)}"><i data-lucide="${item.active ? 'eye-off' : 'eye'}" aria-hidden="true"></i> ${item.active ? 'Hide' : 'Show in Store'}</button></div></div></article>`).join('') || '<p class="settings-hint">No rewards yet. Select Add Reward to create one.</p>';
     for (const control of catalog.querySelectorAll('[data-reward-edit]')) control.addEventListener('click', () => open(value.items.find(item => item.id === control.dataset.rewardEdit)));
     for (const control of catalog.querySelectorAll('[data-reward-toggle]')) {
       const item = value.items.find(item => item.id === control.dataset.rewardToggle), requestId = crypto.randomUUID();
@@ -67,21 +69,23 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
       }
       purchases.append(row);
     }
-    if (!value.redemptions.length) purchases.append(node('p', '', 'No cloud reward redemptions.'));
+    if (!value.redemptions.length) purchases.append(node('p', '', 'No rewards purchased yet.'));
     if (offset) purchases.append(button('Newer redemptions', () => { offset = Math.max(0, offset - 50); void load(); }));
     if (value.redemptions.length > 50) purchases.append(button('Older redemptions', () => { offset += 50; void load(); }));
+    window.lucide?.createIcons();
   }
   async function load() {
     if (!active || loading) return;
     const epoch = generation, studentId = el('econ-purchase-sel').value;
-    loading = true;
+    loading = true; el('cloud-economy-refresh').disabled = true; el('reward-catalog-add').disabled = true;
+    el('cloud-economy-status').textContent = 'Loading balances and rewards…';
     try {
       const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list-store', studentId: studentId || null, offset }) });
       const value = await response.json(); if (!response.ok) throw new Error(value.error || 'Economy could not connect.');
       if (!active || generation !== epoch) return;
-      data = value; render(value); el('cloud-economy-status').textContent = 'Earned coins are available right away. Manage rewards and prices below.';
-    } catch (error) { if (active && generation === epoch) { data = null; for (const id of ['econ-balances','econ-purchases','reward-catalog-list']) el(id).replaceChildren(); el('cloud-economy-status').textContent = error.message; } }
-    finally { loading = false; if (active && generation !== epoch) void load(); }
+      data = value; render(value); el('cloud-economy-status').textContent = `Updated ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`;
+    } catch (error) { if (active && generation === epoch) { el('cloud-economy-status').textContent = `${error.name === 'TimeoutError' ? 'Loading took too long.' : error.message} Use Refresh to try again.${data ? ' Showing the last loaded values.' : ''}`; } }
+    finally { loading = false; el('cloud-economy-refresh').disabled = false; el('reward-catalog-add').disabled = !data; if (active && generation !== epoch) void load(); }
   }
   el('reward-catalog-add').addEventListener('click', () => open());
   for (const id of ['reward-catalog-close','reward-catalog-cancel']) el(id).addEventListener('click', close);

@@ -35,7 +35,7 @@ export async function cloudApi<T>(path = "", init: RequestInit = {}): Promise<T>
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new CloudApiError(response.status < 500 && typeof payload.error === "string"
+  if (!response.ok) throw new CloudApiError((response.status < 500 || payload.code === "family_busy") && typeof payload.error === "string"
     ? payload.error.slice(0, 600) : "BodeeGuard is temporarily unavailable. Please try again shortly.", response.status);
   return payload as T;
 }

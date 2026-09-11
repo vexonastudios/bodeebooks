@@ -25,15 +25,15 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260911-screenshot1';
-import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260910b';
+import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260911-controls1';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-prompt1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
 import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudQuizzes } from './cloud-quizzes.js';
 import { setupCloudWorksheets } from './cloud-worksheets.js';
 import { setupCloudReading } from './cloud-reading.js';
-import { setupCloudTyping } from './cloud-typing.js';
-import { setupCloudEconomy } from './cloud-economy.js?v=20260910-wallet1';
+import { setupCloudTyping } from './cloud-typing.js?v=20260911-controls1';
+import { setupCloudEconomy } from './cloud-economy.js?v=20260911-controls1';
 import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
 const endpoint = '/guard/dashboard/bridge/';
@@ -86,7 +86,7 @@ function selectTab(id) {
   poems.setActive(id === 'poems');
   quizzes.setActive(id === 'quizzes');
   worksheets.setActive(id === 'worksheets');
-  economy.setActive(id === 'economy'); typing.setActive(id === 'economy');
+  economy.setActive(id === 'economy'); typing.setActive(id === 'typing');
   legacy.setActive(id === 'settings');
   files.setActive(id === 'grades');
   documents.setActive(id === 'documents');
@@ -383,7 +383,7 @@ const livePush = window.CloudPush.createCloudPushClient({
   onReady: () => screenshots.refresh(),
   onSignal: hint => { if(hint.kind==='messages')messaging.notify(hint.studentId); if(hint.kind==='screenshots')screenshots.refresh(); }
 });
-const mathCoach = setupCloudMathCoach({ endpoint });
+const mathCoach = setupCloudMathCoach({ endpoint, navigate: selectTab });
 const spelling = setupCloudSpelling({ endpoint });
 const vocabulary = setupCloudVocabulary();
 const poems = setupCloudPoems();
