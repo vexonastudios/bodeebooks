@@ -25,3 +25,10 @@
 @media(max-width:1050px){.cloud-game-layout{grid-template-columns:240px minmax(0,1fr)}.cloud-game-people{padding:12px}.cloud-game-banners{gap:10px}.cloud-game-banner h4{font-size:15px}.cloud-game-banner-label{padding:12px}}
 @media(max-width:780px){.cloud-game-layout{grid-template-columns:1fr}.cloud-game-people{grid-template-columns:repeat(2,minmax(0,1fr))}.cloud-game-people>h3,.cloud-game-people>.cloud-note{grid-column:1/-1}.cloud-game-header{padding:18px}.cloud-game-title h2{font-size:24px}.cloud-checkers-panel{grid-column:auto}.cloud-game-toolbar{align-items:flex-start}.cloud-game-status{text-align:left}.cloud-game-settings{padding:20px}.cloud-game-settings-grid{grid-template-columns:1fr}.cloud-game-preview>header{padding:12px}.cloud-game-preview h2{font-size:18px}.cloud-game-preview-info{padding:12px}.cloud-game-preview-nav .btn{padding:9px;font-size:12px}}
 @media(max-width:480px){.cloud-game-people,.cloud-game-banners{grid-template-columns:1fr}.cloud-game-banner h4{font-size:18px}.cloud-game-header{gap:14px}.cloud-game-preview>header .btn{font-size:12px;padding:8px}.cloud-family-room .cloud-game-preview{width:calc(100vw - 12px);height:calc(100dvh - 12px)}.cloud-game-preview-info{font-size:13px}}
+.cloud-game-install-card { min-width: 0; border: 1px solid #32445b; border-radius: 20px; overflow: hidden; background: #11283b; }
+.cloud-game-install-card .cloud-game-banner { width: 100%; border: 0; border-radius: 0; }
+.cloud-game-install-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px; }
+.cloud-game-install-actions .btn { min-height: 44px; display: inline-flex; gap: 8px; align-items: center; }
+.cloud-game-install-actions small, .cloud-game-install-actions progress { width: 100%; }
+.cloud-game-install-actions progress { accent-color: #37d0ac; height: 8px; }
+.cloud-game-gallery[hidden] { display: none; }
