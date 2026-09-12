@@ -50,7 +50,11 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
   if (uploadOnly !== (input.action === "upload-file")) return response({ error: "Use the designated file upload endpoint." }, 400);
   switch (input.action) {
     case "get-retention": path = "/retention"; method = "GET"; break;
-    case "save-retention": path = "/retention"; method = "PUT"; body = { revision: input.revision, enabled: input.enabled, messageDays: input.messageDays }; break;
+    case "save-retention": path = "/retention"; method = "PUT"; body = { revision: input.revision, enabled: input.enabled, messageDays: input.messageDays, schoolEventDays: input.schoolEventDays }; break;
+    case "privacy-status": path = "/privacy"; method = "GET"; break;
+    case "privacy-export": path = "/privacy/export"; method = "POST"; body = { table: input.table, offset: input.offset, chunk: input.chunk, digest: input.digest }; break;
+    case "privacy-delete": path = "/privacy/delete"; method = "POST"; body = { revision: input.revision, confirmation: input.confirmation }; break;
+    case "privacy-cancel": path = "/privacy/cancel"; method = "POST"; body = { revision: input.revision }; break;
     case "push-ticket": path = "/push-ticket"; method = "POST"; body = {}; break;
     case "media": path="/media"; method="POST"; body={path:input.path,method:input.method,body:input.body,requestId:input.requestId,ifNoneMatch:input.ifNoneMatch}; break;
     case "setup-school": {
