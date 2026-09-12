@@ -2,6 +2,7 @@ import { setupDailyPlan } from './cloud-daily-plan.js?v=20260911-family-first';
 import { setupMonitoring } from './cloud-monitoring.js?v=20260911-screenshot1';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
+import { setupCloudRetention } from './cloud-retention.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js?v=20260910-wide1';
 import { setupMainSchool } from './cloud-school-setup.js';
@@ -42,6 +43,7 @@ const byId = id => document.getElementById(id);
 let snapshot = null;
 let usable = false;
 let mutating = false;
+let refreshing = false;
 let editorSave = null;
 let recoveryGeneration = 0;
 let mobile = null;
@@ -88,6 +90,7 @@ function selectTab(id) {
   worksheets.setActive(id === 'worksheets');
   economy.setActive(id === 'economy'); typing.setActive(id === 'typing');
   legacy.setActive(id === 'settings');
+  retention.setActive(id === 'settings');
   files.setActive(id === 'grades');
   documents.setActive(id === 'documents');
   games.setActive(id === 'family-games');
@@ -99,7 +102,7 @@ function selectTab(id) {
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
-    control.disabled = !usable || mutating || control.dataset.requiresDevice === 'false';
+    control.disabled = !usable || mutating || refreshing || control.dataset.requiresDevice === 'false';
   });
 }
 function showSnapshot() {
@@ -128,7 +131,7 @@ async function refresh() {
   return dashboardRefresh.refresh();
 }
 async function mutate(action, data) {
-  if (!usable || mutating) throw new Error('Wait for a successful dashboard connection before making changes.');
+  if (!usable || mutating || refreshing) throw new Error('Wait for a successful dashboard connection before making changes.');
   mutating = true;
   setControls();
   try {
@@ -393,6 +396,7 @@ const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
 const typing = setupCloudTyping({ endpoint, mutate, editor, node, button });
 const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, button });
 const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import'), onApplied: refresh });
+const retention = setupCloudRetention({ endpoint });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true,
   assetBase: new URL('/guard-admin/family-games/v1/', location.href),
   renderAvatar: child => studentAvatar(snapshot?.students?.find(student => student.id === child.id) || child),
@@ -448,6 +452,7 @@ const dashboardRefresh = createDashboardRefresh({
     setControls();
   },
   onBusy: busy => {
+    refreshing = busy;
     const initial = busy && !snapshot;
     const loader = byId('cloud-dashboard-loading');
     if (loader) {

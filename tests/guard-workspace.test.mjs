@@ -86,7 +86,7 @@ test('Spelling photo bridge restricts parent origin and body size and forwards o
   const calls=[],route=load('spelling-scan/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{words:[]};}});
   const input={id:deviceId,data:'a'.repeat(150000),mime:'image/jpeg',householdId:'forged',model:'forged',studentName:'Private',fileUrl:'https://foreign.example'};
   assert.equal((await load('spelling-scan/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);assert.equal((await route.POST(request(input,{contentType:'text/plain'}))).status,415);
-  assert.equal((await route.POST(request({...input,data:'a'.repeat(3*1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,mime:'text/html'}))).status,400);
+  assert.equal((await route.POST(request({...input,data:'a'.repeat(4*1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,mime:'text/html'}))).status,400);
   const result=await route.POST(request(input));assert.equal(result.status,200);assert.match(result.headers.get('cache-control'),/no-store/);assert.deepEqual(calls,[{path:'/spelling/scan',body:{id:deviceId,data:input.data,mime:'image/jpeg'}}]);
   assert.match(fs.readFileSync('app/guard/dashboard/cloud-api.ts','utf8'),/path === "\/spelling\/scan"/);
 });
@@ -102,12 +102,27 @@ test('legacy transfer uses parent-only fixed actions and bounded payloads withou
 });
 function load(relative, { authenticated = true, api = async () => ({}), name = 'Jamie' } = {}) {
   const filename = path.resolve('app/guard/dashboard', relative);
+  const helpers = new Map();
+  function compileHelper(file) {
+    if (helpers.has(file)) return helpers.get(file).exports;
+    const helper = new Module(file); helper.filename = file; helpers.set(file, helper);
+    const requireHere = createRequire(file);
+    helper.require = specifier => {
+      const candidate = path.resolve(path.dirname(file), specifier + '.ts');
+      if (specifier.startsWith('.') && fs.existsSync(candidate)) return compileHelper(candidate);
+      return requireHere(specifier);
+    };
+    helper._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, file);
+    return helper.exports;
+  }
   const localRequire = createRequire(filename);
   const component = new Module(filename);
   component.filename = filename;
   component.require = nameToLoad => {
     if (nameToLoad === '@clerk/nextjs/server') return { auth: async () => ({ isAuthenticated: authenticated }), currentUser: async () => ({ firstName: name }) };
     if (nameToLoad === '../cloud-api') return { cloudApi: api, CloudApiError };
+    const candidate = path.resolve(path.dirname(filename), nameToLoad + '.ts');
+    if (nameToLoad.startsWith('.') && fs.existsSync(candidate)) return compileHelper(candidate);
     return localRequire(nameToLoad);
   };
   component._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
@@ -304,12 +319,25 @@ test('direct workspace navigation returns to the Clerk-managed page for long-liv
   assert.equal(result.status, 307);
   assert.equal(result.headers.get('location'), `${origin}/guard/dashboard/`);
 });
+
+test('workspace uses a lightweight eligibility gate; retention remains parent-scoped', async () => {
+  const calls=[];
+  const route=load('workspace/route.ts',{api:async p=>{calls.push(p);return{ready:true};}});
+  assert.equal((await route.GET(new Request(`${origin}/guard/dashboard/workspace/`))).status,200);
+  assert.deepEqual(calls,['/session']);
+  const writes=[],bridge=load('bridge/route.ts',{api:async(p,init)=>{writes.push({path:p,body:init.body?JSON.parse(init.body):null});return{};}});
+  const input={action:'save-retention',enabled:true,revision:0,messageDays:90,householdId:'forged',mathDays:1};
+  assert.equal((await bridge.POST(request(input))).status,200);
+  assert.deepEqual(writes,[{path:'/retention',body:{enabled:true,revision:0,messageDays:90}}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await bridge.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+});
 test('outage text does not expose internal errors or show an empty household', async () => {
   const route = load('workspace/route.ts', { api: async () => { throw new Error('postgres secret connection detail'); } });
   const result = await route.GET(new Request(`${origin}/guard/dashboard/workspace/`));
   assert.equal(result.status, 503);
   const html = await result.text();
-  assert.match(html, /could not be reached/);
+  assert.match(html, /temporarily unavailable/);
   assert.doesNotMatch(html, /postgres|No cloud test computers/);
 });
 test('both bridge methods require a parent session; missing and foreign origins cannot mutate', async () => {
@@ -423,7 +451,7 @@ test('message bridge preserves retry IDs but strips household, sender and device
 });
 
 test('private file upload has bounded dedicated parsing, sign-in, origin checks and no submitted authority', async () => {
-  assert.match(fs.readFileSync('app/guard/dashboard/page.tsx', 'utf8'), /sandbox="[^"]*allow-downloads/);
+  assert.match(fs.readFileSync('app/guard/dashboard/ParentWorkspace.tsx', 'utf8'), /sandbox="[^"]*allow-downloads/);
   const calls = [], api = async (...args) => { calls.push(args); return { saved: true }; };
   const upload = load('upload/route.ts', { api });
   const input = { action: 'upload-file', id: deviceId, studentId: deviceId, purpose: 'paper', name: 'Work.pdf', mime: 'application/pdf', data: 'a'.repeat(100000), householdId: 'foreign', storage_path: '/other', token: 'secret' };
@@ -463,7 +491,7 @@ test('Coloring Studio bridge keeps page controls family-scoped and strips submit
   await route.POST(request({action:'coloring-student-settings',studentId:deviceId,enabled:true,daily_limit:4,custom_prompts_enabled:true,allow_people:false,require_parent_approval:true,require_image_approval:false,householdId:'forged',image:'forged'}));
   assert.deepEqual(calls[1],{path:'/coloring-studio/settings',body:{scope:'student',studentId:deviceId,enabled:true,daily_limit:4,custom_prompts_enabled:true,allow_people:false,require_parent_approval:true,require_image_approval:false}});
   await route.POST(request({action:'coloring-image',requestId:deviceId,householdId:'forged',data:'forged'}));
-  assert.deepEqual(calls[2],{path:'/coloring-studio/image',body:{requestId:deviceId}});
+  assert.deepEqual(calls[2],{path:'/coloring-studio/image',body:{requestId:deviceId,delivery:'url',thumbnail:false}});
   assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });

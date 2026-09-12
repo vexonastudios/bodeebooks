@@ -6,6 +6,7 @@ import test from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
+import { loadTsModule } from './guard-ts-module.mjs';
 
 const filename = path.resolve('app/guard/dashboard/page.tsx');
 const localRequire = createRequire(filename);
@@ -31,6 +32,10 @@ async function render({ authenticated = true, unavailable = false } = {}) {
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { type: 'submit' }, props.children) };
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     if (name === 'next/link') return { __esModule: true, default: props => React.createElement('a', props, props.children) };
+    if (['./ParentPwa', './ParentWorkspace'].includes(name)) return loadTsModule(path.resolve(path.dirname(filename), name + '.tsx'), dependency => {
+      if (dependency === '@clerk/nextjs') return { useAuth: () => ({ isLoaded: true, getToken: async () => null }) };
+      if (dependency.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
+    });
     return localRequire(name);
   };
   component._compile(compiled, filename);
@@ -43,14 +48,16 @@ test('cloud dashboard requires parent sign-in before fetching or rendering famil
 
 test('cloud dashboard hosts the shared Admin workspace without rebuilding its sidebar', async () => {
   const html = await render();
-  assert.match(html, /<iframe/);
-  assert.match(html, /\/guard\/dashboard\/workspace\//);
-  assert.match(html, /BodeeGuard Parent Dashboard/);
+  assert.match(html, /Opening your dashboard/);
+  const frame = fs.readFileSync('app/guard/dashboard/ParentWorkspace.tsx', 'utf8');
+  assert.match(frame, /<iframe/);
+  assert.match(frame, /\/guard\/dashboard\/workspace\//);
+  assert.match(frame, /BodeeGuard Parent Dashboard/);
   assert.doesNotMatch(html, /<aside|bodeeguard\.local|3737/);
 });
 
 test('the outer frame does not turn an API outage into an empty family snapshot', async () => {
-  assert.match(await render({ unavailable: true }), /\/guard\/dashboard\/workspace\//);
+  assert.match(await render({ unavailable: true }), /Opening your dashboard/);
 });
 
 function loadDashboardModule(relative, overrides = {}) {
@@ -81,7 +88,7 @@ test('live computer cards clearly distinguish pilot school pause, recovery, and 
     activity: [{ student_id: 'student', subject_id: 'subject', date_utc: '2026-09-05', seconds: 90 }],
   } }));
   assert.match(html, /Pause cloud school/);
-  assert.match(html, /Offline parent recovery/);
+  assert.match(html, /Parent password/);
   assert.match(html, /1m 30s/);
   assert.match(html, /not verified lesson completion/);
   assert.doesNotMatch(html, /Lock computer/);

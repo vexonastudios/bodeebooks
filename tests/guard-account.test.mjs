@@ -7,6 +7,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
 import { cloudReleaseModule, cloudReleaseFixture, legacyReleaseFixture } from './guard-release-fixtures.mjs';
+import { loadTsModule } from './guard-ts-module.mjs';
 
 // Render the real account component with isolated test identities and API data.
 // No authentication bypass or fixture endpoint is added to the running website.
@@ -33,6 +34,15 @@ async function render(account) {
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { className: props.className, type: 'submit' }, props.children) };
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     if (name === 'next/link') return { __esModule: true, default: props => React.createElement('a', props, props.children) };
+    if (name === 'next/headers') return { cookies: async () => ({ get: () => undefined }) };
+    if (name.startsWith('.')) for (const suffix of ['.ts', '.tsx']) {
+      const candidate = path.resolve(path.dirname(filename), name + suffix);
+      if (fs.existsSync(candidate)) return loadTsModule(candidate, dependency => {
+        if (dependency.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
+        if (dependency === '@clerk/nextjs') return { useAuth: () => ({ isLoaded: true, getToken: async () => null }) };
+        if (dependency === 'next/navigation') return { useRouter: () => ({ refresh() {} }) };
+      });
+    }
     return localRequire(name);
   };
   try {
@@ -55,7 +65,7 @@ function fixture(overrides = {}) {
 
 test('account outage is explicit, not an empty household or not-subscribed claim', async () => {
   const html = await render(null);
-  assert.match(html, /cannot load your family account/);
+  assert.match(html, /family account is temporarily unavailable/);
   assert.doesNotMatch(html, /No child computers connected yet|Not subscribed/);
 });
 
@@ -91,9 +101,9 @@ test('ended subscription does not pretend it can be resumed before a past date',
 test('external Beta requires deliberate consent; owner invite controls are restricted', async () => {
   const html = await render(fixture({ enrollment: { betaInvited: true, canChooseBeta: true, canStartTrial: false } }));
   assert.match(html, /name="betaConsent"/);
-  assert.doesNotMatch(html, /Owner-only release controls/);
+  assert.doesNotMatch(html, /Save Beta invitation|Open product dashboard/);
   const owner = await render(fixture({ billingMode: 'complimentary', entitlementStatus: 'active', releaseChannel: 'beta', releaseOperator: true }));
-  assert.match(owner, /Owner-only release controls/);
+  assert.match(owner, /Open product dashboard/);
   assert.match(owner, /Save Beta invitation/);
   assert.doesNotMatch(owner, /Cancel at the end of my billing period/);
 });
@@ -133,7 +143,7 @@ test('all account states describe cloud setup without parent installation or net
 test('an old installer neither enables cloud downloads nor appears as a cloud update', async () => {
   const html = await render(fixture({ billingMode: 'complimentary', entitlementStatus: 'active', release: legacyReleaseFixture }));
   assert.match(html, /Cloud installer not released yet/);
-  assert.match(html, /App already installed\? Approve its code/);
+  assert.match(html, /href="\/guard\/activate\/"/);
   assert.doesNotMatch(html, /href="\/guard\/download\/windows"|What changed in 1\.2\.157|Version 1\.2\.157/);
 });
 
@@ -147,7 +157,7 @@ test('the verified account catalog must select a cloud artifact before enabling 
   const html = await render(fixture({ entitlementStatus: 'trial', release: cloudReleaseFixture() }));
   assert.match(html, /href="\/guard\/download\/windows"/);
   assert.match(html, /Download child app for Windows/);
-  assert.match(html, /Assign a child and save recovery/);
+  assert.match(html, /Assign a child and choose Abeka/);
   assert.doesNotMatch(html, /Cloud installer not released yet/);
 });
 
@@ -159,9 +169,9 @@ test('browser sessions and old parent installations are not child-device slots',
     { ...device, id: 'child-1', deviceRole: 'child', computerName: 'Learning laptop' },
     { ...device, id: 'revoked-child', deviceRole: 'child', computerName: 'Removed laptop', revokedAt: '2030-01-01T10:00:00Z' },
   ] }));
-  assert.match(html, /1 of 10 child computers/);
+  assert.match(html, /1 of 10 computers connected/);
   assert.match(html, /Learning laptop/);
-  assert.match(html, /Parent browser sessions do not use child device slots/);
+  assert.equal((html.match(/name="deviceId" value="child-1"/g) || []).length, 2);
   assert.doesNotMatch(html, /Old parent|Old default-role installation|Removed laptop|Parent \/ admin/);
 });
 

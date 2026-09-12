@@ -16,6 +16,11 @@ export async function POST(request: Request) {
     input = JSON.parse(new TextDecoder().decode(bytes));
     if (input?.prompt !== undefined && (typeof input.prompt !== "string" || input.prompt.length > 500)) return reply({ error: "Keep scan instructions to 500 characters or fewer." }, 400);
     if (!input || typeof input.id !== "string" || (input.images !== undefined ? !Array.isArray(input.images) || input.images.length < 1 || input.images.length > 6 : typeof input.data !== "string")) return reply({ error: "Choose a supported spelling photo." }, 400);
+    const images = input.images !== undefined ? input.images as unknown[] : [input];
+    for (const value of images) {
+      if (!value || typeof value !== 'object' || !('mime' in value) || !['image/jpeg', 'image/png', 'image/webp'].includes(String(value.mime)) || !('data' in value) || typeof value.data !== 'string') return reply({ error: "Choose JPEG, PNG or WebP spelling photos." }, 400);
+    }
+    if (Array.isArray(input.images)) input.images = input.images.map(value => ({ mime: value.mime, data: value.data }));
   } catch { return reply({ error: "The spelling photo request is invalid." }, 400); }
   finally { reader.releaseLock(); }
   try { return reply(await cloudApi("/spelling/scan", { method: "POST", body: JSON.stringify({ id: input.id, prompt: input.prompt, ...(input.images !== undefined ? { images: input.images } : { mime: input.mime, data: input.data }) }) })); }

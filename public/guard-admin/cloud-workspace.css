@@ -1,4 +1,12 @@
 /* Browser transport additions only; base.css and monitoring.css remain shared. */
+#cloud-history-retention { margin-top: 24px; max-width: 900px; }
+#cloud-history-retention h2, #cloud-history-retention label { display: flex; align-items: center; gap: 10px; }
+#cloud-history-retention h2 svg, #cloud-history-retention button svg { width: 20px; height: 20px; flex-shrink: 0; }
+#cloud-history-retention form { display: grid; gap: 16px; }
+#cloud-history-retention select { width: auto; min-height: 44px; }
+#cloud-history-retention button { justify-self: start; min-height: 44px; }
+#cloud-history-retention p { max-width: 72ch; }
+@media (max-width: 520px) { #cloud-history-retention label { flex-wrap: wrap; } }
 
 /* Shared controls from the original Admin stylesheet (outside its imports). */
 .cloud-workspace {

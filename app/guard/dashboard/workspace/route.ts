@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   }
   try {
     // Server-side household/complimentary Beta gate before serving the shell.
-    await cloudApi();
+    await cloudApi('/session');
     const user = await currentUser();
     const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
     const html = Object.entries(mediaPanels).reduce((html,[id,panel]) => html.replace(new RegExp(`<section class="tab-content" id="tab-${id}"[\\s\\S]*?<\\/section>`),panel),workspace.html)
