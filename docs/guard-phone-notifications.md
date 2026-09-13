@@ -41,3 +41,26 @@ daily visible-only renewal, account switching, offline unsubscribe, generic
 payloads, safe navigation and no reload of open drafts. Full website tests and
 the production build are required before deployment. Phone lock-screen delivery
 still needs an actual parent's opt-in and test notification.
+
+## Production receipt — September 13, 2026
+
+Website source `6496ed8` was pushed on `codex/parent-message-notifications` and
+deployed as `dpl_3EkSCZJQaYenoCNcQcjXgyyyAbBA`
+(`bodeebooks-qi26zzy1x-vexonastudios-3984s-projects.vercel.app`). Parent app version
+starts `408df72d5226`. Companion API source is `61482c5`, final deployment
+`dpl_7U2LCjZWLqafy4pYNjfVq6gu4n5S`.
+
+All 126 website tests passed. The seven notification tests passed again after
+the final VAPID rebinding refinement. Final local Webpack and hosted production
+builds passed. Live worker, version JSON and workspace match source with the
+intended no-store/revalidation headers. The signed-in Messages launcher opens
+the notification dialog with successful API configuration. At 390×844 it fits
+without horizontal overflow; Enable is 44 pixels high. The temporary viewport
+override was reset. No live subscription or test alert was sent by the agent.
+
+The API deployment initially omitted shared backup modules, was rolled back to
+the healthy previous version, then repackaged with tracked shared dependencies
+and checked before final promotion. Final public health is 200, the unauthenticated
+notification endpoint is 401/no-store, and authenticated configuration succeeds.
+See the API receipt for exact deployment/rollback details. An actual parent's
+phone notification and tap check remains pending. Installer remains 1.2.222.
