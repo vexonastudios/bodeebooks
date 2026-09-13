@@ -12,6 +12,15 @@
 .installCard h2 { font-size: 22px; margin-bottom: 12px; }
 .installCard p { color: #b4bfd2; line-height: 1.6; }
 .installCard button { min-height: 44px; margin: 18px 10px 0 0; padding: 10px 16px; border: 1px solid #64748b; border-radius: 10px; background: #29284f; color: white; cursor: pointer; }
+.notificationCard { width: min(100%, 460px); max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; }
+.notificationHeading { display: flex; align-items: center; gap: 12px; color: #c4b5fd; }
+.notificationHeading h2 { margin: 0; color: #f8fafc; }
+.notificationCard button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px system-ui; }
+.notificationCard button:disabled { opacity: .55; cursor: wait; }
+.notificationActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.notificationActions button { margin: 0; }
+.notificationCard .notificationStatus { color: #d4caff; font-weight: 700; }
+.notificationCard .notificationHint { font-size: 13px; }
 /* Hide the book navigation so keyboard users don't tab behind the workspace. */
 :global(body):has(.workspace) > :global(nav),
 :global(body):has(.workspace) > :global(footer) { display: none; }

@@ -32,7 +32,7 @@ async function render({ authenticated = true, unavailable = false } = {}) {
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { type: 'submit' }, props.children) };
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     if (name === 'next/link') return { __esModule: true, default: props => React.createElement('a', props, props.children) };
-    if (['./ParentPwa', './ParentWorkspace'].includes(name)) return loadTsModule(path.resolve(path.dirname(filename), name + '.tsx'), dependency => {
+    if (['./ParentPwa', './ParentWorkspace', './ParentNotifications'].includes(name)) return loadTsModule(path.resolve(path.dirname(filename), name + '.tsx'), dependency => {
       if (dependency === '@clerk/nextjs') return { useAuth: () => ({ isLoaded: true, getToken: async () => null }) };
       if (dependency.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     });

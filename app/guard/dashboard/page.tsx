@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import styles from "./workspace.module.css";
 import ParentPwa from "./ParentPwa";
 import ParentWorkspace from "./ParentWorkspace";
+import ParentNotifications from "./ParentNotifications";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://guard.bodeebooks.com"),
@@ -21,6 +22,7 @@ export default async function FamilyDashboard() {
   // It is not a LAN iframe and never calls the parent's desktop.
   return <div className={styles.workspace} data-guard-workspace="true">
     <ParentPwa />
+    <ParentNotifications />
     <ParentWorkspace />
   </div>;
 }

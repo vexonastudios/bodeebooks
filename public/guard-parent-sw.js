@@ -1,6 +1,34 @@
 // Online family data and commands are never put in an offline cache.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data?.json() || {}; } catch { /* Always show a visible generic alert, including empty payloads. */ }
+  const studentId = typeof data.studentId === 'string' && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(data.studentId) ? data.studentId : '';
+  event.waitUntil(self.registration.showNotification('BodeeGuard', {
+    body: data.type === 'test' ? 'Notifications are working on this device.' : 'New message from your child. Tap to open Messages.',
+    icon: '/guard-icons/bodeeguard-parent-192.png',
+    tag: data.type === 'test' ? 'bodeeguard-test' : 'bodeeguard-messages',
+    renotify: true,
+    data: { studentId },
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const id = event.notification.data?.studentId;
+  const studentId = typeof id === 'string' && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id) ? id : '';
+  event.waitUntil((async () => {
+    const tabs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = tabs.find(client => {
+      const url = new URL(client.url);
+      return url.origin === self.location.origin && /^\/(?:guard\/)?dashboard\/?$/.test(url.pathname);
+    });
+    if (existing) {
+      existing.postMessage({ type: 'bodeeguard-open-messages', studentId });
+      await existing.focus();
+    } else await self.clients.openWindow('/dashboard/#messages' + (studentId ? '/' + studentId : ''));
+  })());
+});
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin || event.request.method !== 'GET' || event.request.mode !== 'navigate') return;

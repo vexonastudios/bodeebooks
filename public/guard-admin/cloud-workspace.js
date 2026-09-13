@@ -49,6 +49,8 @@ let editorSave = null;
 let recoveryGeneration = 0;
 let mobile = null;
 let parentGuide = null;
+let notificationTarget = null;
+let initialNotificationHandled = false;
 
 function node(tag, className = '', text = '') {
   const element = document.createElement(tag);
@@ -126,6 +128,16 @@ function showSnapshot() {
   renderSchoolCalendar();
   screenshots.update(snapshot);
   messaging.update(snapshot.students);
+  if (!initialNotificationHandled) {
+    initialNotificationHandled = true;
+    const match = /^#messages(?:\/([a-f0-9-]{36}))?$/.exec(window.parent.location.hash);
+    if (match) notificationTarget = match[1] || '';
+  }
+  if (notificationTarget !== null) {
+    const target = notificationTarget; notificationTarget = null;
+    if (snapshot.students.some(child => child.id === target)) messaging.openStudent(target);
+    selectTab('messages');
+  }
   setControls();
 }
 async function refresh() {
@@ -501,11 +513,24 @@ byId('cloud-recovery-close').addEventListener('click', () => byId('cloud-recover
 byId('cloud-recovery').addEventListener('close', clearRecovery);
 window.addEventListener('message', event => {
   if (!usable && event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-session-ready') refresh();
+  if (event.origin === location.origin && event.source === window.parent && event.data?.type === 'bodeeguard-open-messages') {
+    const id = typeof event.data.studentId === 'string' && /^[a-f0-9-]{36}$/.test(event.data.studentId) ? event.data.studentId : '';
+    if (snapshot) { if (snapshot.students.some(child => child.id === id)) messaging.openStudent(id); selectTab('messages'); }
+    else notificationTarget = id;
+    window.parent.postMessage({type:'bodeeguard-message-opened'},location.origin);
+  }
 });
+for (const tabId of ['tab-messages', 'tab-settings']) {
+  const panel = byId(tabId); if (!panel) continue;
+  const action = button('Phone notifications', () => window.parent.postMessage({type:'bodeeguard-phone-notifications'}, location.origin), 'btn btn-secondary');
+  const bell = node('i'); bell.dataset.lucide = 'bell'; action.prepend(bell);
+  (panel.querySelector('.tab-header') || panel).append(action);
+}
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers, openSpelling:()=>spelling.openScanner(), getSnapshot:()=>snapshot, mutate, feedback });
 mobile.setActive('overview');
 parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
 window.lucide?.createIcons();
 setControls();
+window.parent.postMessage({type:'bodeeguard-messages-ready'},location.origin);
 dashboardRefresh.start();
