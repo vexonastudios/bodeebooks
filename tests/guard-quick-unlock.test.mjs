@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
 import { monitoringChildren } from '../public/guard-admin/cloud-monitoring.js';
 import { applyFamilyPlan } from '../public/guard-admin/cloud-daily-plan-model.js';
+import { updateQuickUnlockSnapshot } from '../public/guard-admin/cloud-quick-unlock.js';
 
 const ids = model => model.quickUnlockSubjects.map(subject => subject.id);
 function snapshot(subjects) {
@@ -46,4 +49,32 @@ test('an applied family default is honored while a later child customization win
   assert.deepEqual(monitoringChildren(state).map(ids),[[],[]]);
   state.rules.subjects[0].assignments.find(a=>a.studentId==='b').dailyPlan.placement='scheduled';
   assert.deepEqual(monitoringChildren(state).map(ids),[[],['music']]);
+});
+
+test('confirmed unlock responses update only the target child; stale dates and invalid responses require refresh', () => {
+  const state=snapshot([]);state.activityDate='2026-09-13';
+  const input={kind:'quick-unlock',studentId:'a'},result={quickUnlock:{date:state.activityDate,subjectIds:['music']}};
+  assert.equal(updateQuickUnlockSnapshot(state,input,result),true);
+  assert.deepEqual(state.students[0].quick_unlock,result.quickUnlock);assert.equal(state.students[1].quick_unlock,undefined);
+  result.quickUnlock.subjectIds.push('other');assert.deepEqual(state.students[0].quick_unlock.subjectIds,['music']);
+  const before=structuredClone(state);
+  for(const [request,response]of [[{...input,studentId:'missing'},result],[{...input,kind:'close'},result],[input,{}],[input,{quickUnlock:{date:'2026-09-14',subjectIds:[]}}],[input,{quickUnlock:{date:state.activityDate,subjectIds:[{}]}}]]){
+    assert.equal(updateQuickUnlockSnapshot(state,request,response),false);assert.deepEqual(state,before);
+  }
+});
+
+test('the real workspace mutation uses confirmed unlocks without an overview request and preserves normal refresh/error handling', async () => {
+  const state=snapshot([]);state.activityDate='2026-09-13';let reads=0,posts=0,ok=true;
+  let result={quickUnlock:{date:state.activityDate,subjectIds:['music']}};
+  const context=vm.createContext({snapshot:state,usable:true,mutating:false,refreshing:false,endpoint:'/fixture',AbortSignal,updateQuickUnlockSnapshot,
+    setControls(){},feedback(){},refresh:async()=>{reads++;},fetch:async()=>{posts++;return {ok,json:async()=>result};}});
+  const source=fs.readFileSync('public/guard-admin/cloud-workspace.js','utf8');
+  vm.runInContext(source.slice(source.indexOf('async function mutate('),source.indexOf('function mutationButton(')),context);
+  const input={kind:'quick-unlock',studentId:'a',subjectId:'music',unlocked:true};
+  await context.mutate('computer-command',input);assert.equal(posts,1);assert.equal(reads,0);assert.equal(context.mutating,false);
+  assert.deepEqual(state.students[0].quick_unlock.subjectIds,['music']);
+  result={quickUnlock:{date:'2026-09-14',subjectIds:[]}};await context.mutate('computer-command',input);assert.equal(reads,1);
+  result={saved:true};await context.mutate('save-rules',{});assert.equal(reads,2);
+  ok=false;result={error:'Not authorized'};await assert.rejects(context.mutate('computer-command',input),/Not authorized/);
+  assert.equal(reads,2);assert.equal(context.mutating,false);assert.deepEqual(state.students[0].quick_unlock.subjectIds,['music']);
 });

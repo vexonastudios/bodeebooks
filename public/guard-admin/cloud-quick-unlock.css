@@ -1,0 +1,22 @@
+.quick-unlock-dialog{box-sizing:border-box;width:min(840px,calc(100vw - 32px));max-width:none;max-height:min(740px,calc(100dvh - 32px));margin:auto;padding:0;border:1px solid #615173;border-radius:20px;background:#151323;color:#eeecfa;box-shadow:0 24px 80px #0009;font-family:inherit;overflow:hidden}
+.quick-unlock-dialog[open]{display:flex;flex-direction:column}
+.quick-unlock-dialog::backdrop{background:#080713b8;backdrop-filter:blur(4px)}
+.quick-unlock-header{display:flex;align-items:flex-start;gap:20px;padding:24px 24px 16px;background:linear-gradient(115deg,#32203c,#1c192e);border-bottom:1px solid #ffffff12}
+.quick-unlock-header>div{flex:1;min-width:0}.quick-unlock-header h2{font-size:22px;line-height:1.3;margin:0 0 8px}.quick-unlock-header p{font-size:14px;line-height:1.5;color:#bdb8d2;margin:0;max-width:590px}
+.quick-unlock-dialog button{font-family:inherit;cursor:pointer;touch-action:manipulation}.quick-unlock-dialog button:disabled{cursor:default;opacity:.65}.quick-unlock-dialog button:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
+.quick-unlock-dialog svg,.quick-unlock-dialog i{width:20px;height:20px;flex:none;pointer-events:none}
+.quick-unlock-close{display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid #6b5c78;border-radius:12px;background:#ffffff08;color:#d7d0e8}
+.quick-unlock-tools{display:flex;gap:10px;flex-wrap:wrap;padding:16px 24px 10px}.quick-unlock-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;font-size:14px;font-weight:600;border:1px solid #554967;border-radius:11px;color:#d8d2e7;background:#242034}
+.quick-unlock-action[aria-pressed=true]{color:#eed8fa;border-color:#bd80dc;background:#492b59}.quick-unlock-action:hover:not(:disabled){background:#383047}
+.quick-unlock-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:12px;padding:12px 24px 24px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.quick-unlock-tile{display:flex;align-items:center;gap:10px;min-width:0;min-height:90px;padding:14px;border:1px solid #454056;border-radius:13px;background:#211e32;color:#e7e2f2;text-align:left}
+.quick-unlock-copy{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;overflow-wrap:anywhere}.quick-unlock-copy strong{font-size:14px;line-height:1.3;font-weight:650}.quick-unlock-copy small{font-size:11px;line-height:1.35;color:#aaa3bd}
+.quick-unlock-tile>svg:last-child{width:17px;height:17px;color:#8f829f}.quick-unlock-tile:hover:not(:disabled){border-color:#a18bbd;background:#2a253d}
+.quick-unlock-tile.is-selected{border-color:#c084fc;background:#382447}.quick-unlock-tile.is-selected>svg:last-child{color:#e0bbfa}
+.quick-unlock-tile.is-unlocked{border-color:#25b991;background:#12332e;color:#5fe3b7}.quick-unlock-tile.is-unlocked>svg:last-child,.quick-unlock-tile.is-unlocked small{color:#5fe3b7}.quick-unlock-tile.is-unlocked:disabled{opacity:1}
+.quick-unlock-tile.has-error{border-color:#e9879d}.quick-unlock-tile.has-error small{color:#ffabbc}
+.quick-unlock-footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 24px;border-top:1px solid #ffffff12;background:#191627;flex:none}
+.quick-unlock-status{flex:1;min-width:140px;color:#aca5c2;font-size:12px;line-height:1.4;margin:0}.quick-unlock-status.has-error{color:#ffabbc}.quick-unlock-apply{background:#7c3f9e;border-color:#ac6dcd;color:white}.quick-unlock-apply:hover:not(:disabled){background:#9250b6}
+.quick-unlock-dialog [hidden]{display:none!important}
+@media(max-width:700px){.quick-unlock-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 16px 16px}.quick-unlock-header{padding:18px 16px 14px;gap:10px}.quick-unlock-header h2{font-size:19px}.quick-unlock-tools,.quick-unlock-footer{padding:12px 16px}.quick-unlock-footer .quick-unlock-status{flex-basis:100%}.quick-unlock-tile{padding:12px;gap:8px}.quick-unlock-tile>svg:first-child{display:none}.quick-unlock-header p{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.quick-unlock-dialog::backdrop{backdrop-filter:none}}

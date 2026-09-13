@@ -1,5 +1,6 @@
 import { connectionState, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
 import { dailyPlanCards } from './cloud-daily-plan-model.js';
+import { setupQuickUnlock } from './cloud-quick-unlock.js?v=20260913-popup1';
 import { studentAvatar } from './cloud-student-profile.js?v=20260910-photos1';
 
 const mediaTypes = [['music','Music','music'],['video','Video','video'],['audiobook','Audiobooks','headphones']];
@@ -39,7 +40,7 @@ export function monitoringChildren(snapshot) {
     }
     activity.sort((a,b)=>b.seconds-a.seconds);
     const required=goals.filter(g=>g.required);
-    return {student,devices,device,online,current,media,activity,goals,quickUnlockSubjects,color:colors[index%colors.length],
+    return {student,devices,device,online,current,media,activity,goals,quickUnlockSubjects,activityDate:snapshot.activityDate,color:colors[index%colors.length],
       total:todaySeconds(snapshot,student.id),currentSeconds:current?goals.find(g=>g.id===current.id)?.seconds:null,
       done:required.filter(g=>g.complete).length,required:required.length,
       courses:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).flatMap(p=>p.courses)};
@@ -61,6 +62,7 @@ function ring(model){
 }
 export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showError,mobile}){
   let screenshotExpiry = null;
+  const quickUnlock=setupQuickUnlock({getModel:id=>{const snapshot=getSnapshot();return snapshot&&monitoringChildren(snapshot).find(model=>model.student.id===id);},save:data=>mutate('computer-command',data)});
   const canScreenshot = studentId => { const state=getSnapshot()?.screenshotAvailability;return state?.known===true&&state.availableStudentIds?.includes(studentId)&&Date.now()-Date.parse(state.checkedAt)<75000; };
   const grid=document.getElementById('overview-grid');
   const header=grid.closest('section').querySelector('.tab-header');
@@ -139,17 +141,15 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';actions.append(close);
       if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       if(model.quickUnlockSubjects.length){
-      const quick=node('details','monitor-quick-unlock'),summary=node('summary');summary.append(icon('key-round'),document.createTextNode('Quick Unlock…'));quick.append(summary);
-      const options=node('div','monitor-quick-options');options.append(node('strong','','Unlock for today'),node('p','','Bypass hours and prerequisites. Daily media limits still apply.'));
-      for(const subject of model.quickUnlockSubjects){const unlocked=student.quick_unlock?.date===snapshot.activityDate&&student.quick_unlock.subjectIds.includes(subject.id);
-        const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>run(el,()=>mutate('computer-command',{kind:'quick-unlock',studentId:student.id,subjectId:subject.id,unlocked:!unlocked}),'Saved for today.'),'btn btn-secondary');choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';options.append(choice);}
-      quick.append(options);actions.append(quick);
+        const quick=button('Quick Unlock…','key-round',()=>quickUnlock.open(student.id),'monitor-control monitor-quick-unlock');
+        quick.dataset.quickUnlockStudent=student.id;quick.setAttribute('aria-haspopup','dialog');actions.append(quick);
       }
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
       mobile()?.decorateCard(card,student.id,model);grid.append(card);
     }
     if(!models.length)grid.append(node('p','cloud-panel','Add your children in Students to see them here.'));
     window.lucide?.createIcons();
+    quickUnlock.sync();
     const expires=Date.parse(snapshot.screenshotAvailability?.checkedAt)+75000-Date.now();
     if(expires>0)screenshotExpiry=setTimeout(()=>{grid.querySelectorAll('.monitor-control--screenshot').forEach(control=>{control.disabled=true;control.dataset.requiresDevice='false';control.title='Refresh to check the child app’s connection.';});},expires+20);
   }
