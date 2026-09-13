@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./workspace.module.css";
+import * as parentVersion from "./generated/parent-version.json";
 
 type InstallEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -15,19 +16,39 @@ export default function ParentPwa() {
   useEffect(() => { if (open) dialog.current?.showModal(); }, [open]);
   useEffect(() => {
     if (location.hostname !== "guard.bodeebooks.com") return;
-    setIos(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
-    setInstalled(matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-    if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/guard-parent-sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
+    const registration = "serviceWorker" in navigator
+      ? navigator.serviceWorker.register("/guard-parent-sw.js", { scope: "/", updateViaCache: "none" }).catch(() => null)
+      : Promise.resolve(null);
+    let lastWorkerCheck = 0;
+    const frameWindow = () => document.querySelector<HTMLIFrameElement>('iframe[title="BodeeGuard Parent Dashboard"]')?.contentWindow;
+    const workerChanged = () => frameWindow()?.postMessage({ type: "bodeeguard-check-update" }, location.origin);
     const capture = (event: Event) => { event.preventDefault(); installEvent.current = event as InstallEvent; setAvailable(true); };
     const done = () => { installEvent.current = null; setAvailable(false); setInstalled(true); setOpen(false); };
     const request = (event: MessageEvent) => {
-      const frame = document.querySelector<HTMLIFrameElement>('iframe[title="BodeeGuard Parent Dashboard"]');
-      if (event.origin === location.origin && event.source === frame?.contentWindow && event.data?.type === "bodeeguard-install") setOpen(true);
+      const frame = frameWindow();
+      if (!frame || event.origin !== location.origin || event.source !== frame) return;
+      if (event.data?.type === "bodeeguard-install") {
+        setIos(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+        setInstalled(matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+        setOpen(true);
+      }
+      if (event.data?.type === "bodeeguard-check-worker" && !document.hidden) {
+        frame.postMessage({ type: "bodeeguard-shell-version", version: parentVersion.version }, location.origin);
+        if (Date.now() - lastWorkerCheck >= 5 * 60 * 1000) {
+          lastWorkerCheck = Date.now();
+          void registration.then(worker => { if (!document.hidden) return worker?.update(); }).catch(() => {});
+        }
+      }
+      if (event.data?.type === "bodeeguard-reload-app") {
+        if (document.hidden || dialog.current?.open) frame.postMessage({ type: "bodeeguard-update-deferred" }, location.origin);
+        else window.location.reload();
+      }
     };
     window.addEventListener("beforeinstallprompt", capture);
     window.addEventListener("appinstalled", done);
     window.addEventListener("message", request);
-    return () => { window.removeEventListener("beforeinstallprompt", capture); window.removeEventListener("appinstalled", done); window.removeEventListener("message", request); };
+    navigator.serviceWorker?.addEventListener("controllerchange", workerChanged);
+    return () => { window.removeEventListener("beforeinstallprompt", capture); window.removeEventListener("appinstalled", done); window.removeEventListener("message", request); navigator.serviceWorker?.removeEventListener("controllerchange", workerChanged); };
   }, []);
   if (!open) return null;
   return <dialog ref={dialog} className={styles.installBackdrop} aria-labelledby="parent-install-title" onCancel={() => setOpen(false)}>

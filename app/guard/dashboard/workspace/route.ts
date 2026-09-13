@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { cloudApi, CloudApiError } from "../cloud-api";
 import workspace from "../generated/workspace.json";
 import mediaPanels from "../generated/media.json";
+import * as parentVersion from "../generated/parent-version.json";
 import { dashboardNotice } from "../dashboardNotice";
 import { dashboardLoading } from "../dashboardLoading";
 
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
     const user = await currentUser();
     const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
     const html = Object.entries(mediaPanels).reduce((html,[id,panel]) => html.replace(new RegExp(`<section class="tab-content" id="tab-${id}"[\\s\\S]*?<\\/section>`),panel),workspace.html)
+      .replace('</head>', `<meta name="bodeeguard-app-version" content="${parentVersion.version}"><link rel="stylesheet" href="/guard-admin/cloud-app-updates.css"><script type="module" src="/guard-admin/cloud-app-updates.js"></script></head>`)
       .replace('<main class="main-content">', `<main class="main-content cloud-startup-loading" aria-busy="true">${dashboardLoading}`)
       .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-economy-controls.css?v=20260911-controls1"><link rel="stylesheet" href="/guard-admin/cloud-dashboard-loading.css?v=20260910-loading1"></head>')
       .replace('</head>', '<link id="cloud-subject-editor-style" rel="stylesheet" href="/guard-admin/cloud-school-editor.css?v=20260910-wide1"></head>')

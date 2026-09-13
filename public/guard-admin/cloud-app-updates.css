@@ -1,0 +1,36 @@
+#cloud-app-update[hidden] { display: none; }
+#cloud-app-update {
+  position: fixed;
+  z-index: 10000;
+  inset: auto max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(540px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid #8b83d7;
+  border-radius: 16px;
+  background: #211d3b;
+  color: #f5f3ff;
+  box-shadow: 0 8px 32px #0006;
+  font: 500 14px/1.5 system-ui, sans-serif;
+}
+#cloud-app-update p { margin: 0; }
+#cloud-app-update a {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #e1dcff;
+  color: #211d3b;
+  font-weight: 750;
+  text-decoration: none;
+}
+#cloud-app-update a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@media (max-width: 480px) {
+  #cloud-app-update { inset: auto 12px max(88px, calc(env(safe-area-inset-bottom) + 72px)) 12px; max-width: none; gap: 10px; padding: 12px; }
+}

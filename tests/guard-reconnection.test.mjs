@@ -34,6 +34,10 @@ test('parent workspace delegates microphone access only to its own authenticated
   });
   const request=new Request('https://guard.example/guard/dashboard/workspace/',{headers:{'sec-fetch-dest':'iframe'}});
   const response=await route.GET(request);assert.equal(response.status,200);assert.equal(response.headers.get('permissions-policy'),'microphone=(self)');assert.match(response.headers.get('content-security-policy'),/media-src blob:/);assert.equal(response.headers.get('cache-control'),'private, no-store');
+  const html = await response.text();
+  const version = JSON.parse(fs.readFileSync('app/guard/dashboard/generated/parent-version.json', 'utf8')).version;
+  assert.ok(html.includes(`<meta name="bodeeguard-app-version" content="${version}">`));
+  assert.ok(html.includes('/guard-admin/cloud-app-updates.js'));
   authenticated=false;assert.equal((await route.GET(request)).status,401);
   const ParentWorkspace=load('app/guard/dashboard/ParentWorkspace.tsx',{
     react:{useRef:()=>({current:null}),useState:()=>[true,()=>{}],useEffect(){}},'@clerk/nextjs':{useAuth:()=>({isLoaded:true,getToken:async()=>null})},

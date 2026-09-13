@@ -431,6 +431,7 @@ const dashboardRefresh = createDashboardRefresh({
     if (!response.ok) throw new Error('Computer refresh unavailable');
   },
   refreshSnapshot: async signal => {
+    window.dispatchEvent(new Event('bodeeguard-check-update'));
     const response = await fetch(endpoint, {cache:'no-store',credentials:'same-origin',signal:AbortSignal.any([signal,AbortSignal.timeout(12000)])});
     const data = await response.json();
     signal.throwIfAborted();

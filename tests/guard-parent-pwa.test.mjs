@@ -13,7 +13,7 @@ function worker(fetch) {
 }
 test('parent navigation uses the network, retaining authentication failures without caching them', async () => {
   const response = new Response('Sign in', { status: 401 }); let sent;
-  const handle = worker(async request => { sent = request; return response; });
+  const handle = worker(async (request, options) => { sent = request; assert.equal(options.cache, 'no-store'); return response; });
   const request = { url: 'https://guard.bodeebooks.com/dashboard/', method: 'GET', mode: 'navigate' };
   assert.equal(await handle(request), response); assert.equal(sent, request);
 });
