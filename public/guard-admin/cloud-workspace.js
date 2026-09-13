@@ -1,5 +1,5 @@
 import { setupDailyPlan } from './cloud-daily-plan.js?v=20260911-family-first';
-import { setupMonitoring } from './cloud-monitoring.js?v=20260911-screenshot1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260913-quick-unlock';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { setupCloudRetention } from './cloud-retention.js';
