@@ -11,6 +11,7 @@ import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
 import styles from "../portal.module.css";
 import AccountRetry from "../AccountRetry";
+import GuardSignOut from '@/components/GuardSignOut';
 
 export const metadata: Metadata = { title: "BodeeGuard Parent Account" };
 
@@ -320,6 +321,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <h2>Parent identity</h2>
             <p className={styles.identity}>{user?.primaryEmailAddress?.emailAddress || "Signed in with Clerk"}</p>
             <p>Your sign-in stays with Clerk. BodeeGuard child computers never receive or store this password.</p>
+            <GuardSignOut className={styles.portalButton}/>
           </section>
         </div>
         <section className={styles.setupSection}>

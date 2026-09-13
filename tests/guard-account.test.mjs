@@ -30,6 +30,10 @@ async function render(account) {
       currentUser: async () => ({ fullName: 'Jamie Test', publicMetadata: {}, unsafeMetadata: {}, externalAccounts: [], primaryEmailAddress: { emailAddress: 'parent@example.com' } }),
     };
     if (name === '../actions') return new Proxy({}, { get: () => async () => {} });
+    if (name === '@/components/GuardSignOut') return loadTsModule(path.resolve('components/GuardSignOut.tsx'),dependency=>{
+      if(dependency==='@clerk/nextjs')return {useAuth:()=>({userId:'fixture-parent'}),useClerk:()=>({signOut:async()=>{}})};
+      if(dependency.includes('parent-notifications-client'))return {stopParentPhoneNotifications:async()=>{}};
+    });
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { className: props.className, type: 'submit' }, props.children) };
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
