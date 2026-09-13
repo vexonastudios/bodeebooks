@@ -46,7 +46,7 @@ export function setupQuickUnlock({getModel,save}) {
         if(!current?.quickUnlockSubjects.some(item=>item.id===id))throw Error('This activity changed. Review the Daily Plan.');
         await save({kind:'quick-unlock',studentId:work.studentId,subjectId:id,unlocked:value});
         work.selected.delete(id);work.saved++;
-      }catch(error){work.failed.set(id,error.message||'Could not save. Try again.');}
+      }catch(error){work.failed.set(id,{message:error.message||'Could not save. Try again.',unlocked:value});}
       finally{work.pending.delete(id);if(state===work)sync();}
     });
   }
@@ -54,11 +54,12 @@ export function setupQuickUnlock({getModel,save}) {
     if(!state||!dialog.open)return;
     const model=getModel(state.studentId);if(!model){dialog.close();return;}
     const items=model.quickUnlockSubjects,allowed=new Set(items.map(item=>item.id));
+    for(const [id,failure]of state.failed)if(!allowed.has(id)||unlocked(id,model)===failure.unlocked)state.failed.delete(id);
     title.textContent=`Quick Unlock · ${model.student.name}`;
     for(const id of state.selected)if(!allowed.has(id)||unlocked(id,model))state.selected.delete(id);
     for(const [id,el]of state.rows)if(!allowed.has(id)){el.remove();state.rows.delete(id);}
     for(const item of items){
-      const isUnlocked=unlocked(item.id,model),pending=state.pending.has(item.id),failure=state.failed.get(item.id);
+      const isUnlocked=unlocked(item.id,model),pending=state.pending.has(item.id),failure=state.failed.get(item.id)?.message;
       let tile=state.rows.get(item.id);
       if(!tile){
         tile=node('button','quick-unlock-tile');tile.type='button';tile.dataset.subjectId=item.id;

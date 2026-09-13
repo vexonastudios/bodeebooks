@@ -25,13 +25,15 @@ const server=http.createServer((req,res)=>{
   if(url.pathname==='/fixture.js'){
     res.setHeader('Content-Type','text/javascript');
     return res.end(`import {setupMonitoring} from '/guard-admin/cloud-monitoring.js';import {updateQuickUnlockSnapshot} from '/guard-admin/cloud-quick-unlock.js';
-      window.data=${JSON.stringify(snapshot)};window.calls=[];window.errors=[];window.failures=new Set();window.hold=false;
+      window.data=${JSON.stringify(snapshot)};window.calls=[];window.errors=[];window.failures=new Set();window.lostReplies=new Set();window.serverUnlocks={};window.hold=false;
       window.ui=setupMonitoring({getSnapshot:()=>window.data,mutate:async(action,body)=>{
         window.calls.push({action,body});if(window.hold){window.hold=false;await new Promise(resolve=>window.releaseSave=resolve);}
         if(window.failures.has(body.subjectId))throw Error('Synthetic save failure. Try again.');
-        const child=data.students.find(s=>s.id===body.studentId),ids=new Set(child.quick_unlock?.subjectIds||[]);
+        const ids=new Set(window.serverUnlocks[body.studentId]||[]);
         if(body.unlocked)ids.add(body.subjectId);else ids.delete(body.subjectId);
         const result={quickUnlock:{date:data.activityDate,subjectIds:[...ids]}};
+        window.serverUnlocks[body.studentId]=[...ids];
+        if(window.lostReplies.has(body.subjectId)){window.lostReplies.delete(body.subjectId);throw Error('Synthetic lost reply.');}
         updateQuickUnlockSnapshot(data,body,result);ui.render();return result;
       },navigate:()=>{},openMessages:()=>{},showError:(message,error)=>{if(error)window.errors.push(message);},mobile:()=>null});
       ui.render();window.ready=true;`);
@@ -77,6 +79,12 @@ const server=http.createServer((req,res)=>{
   await js('window.failures.clear();document.querySelector(".quick-unlock-apply").click()');await waitFor('document.querySelectorAll(".quick-unlock-tile[aria-busy=true]").length===0');
   assert.equal(await js('window.calls.length'),attempts+1,'retry submits only the failed selection');
   assert.equal(await js('document.querySelectorAll(".quick-unlock-tile.is-unlocked").length'),3);
+  await js('document.querySelector(".quick-unlock-tools button").click();document.querySelector(".quick-unlock-tile[data-subject-id=games]").click();document.querySelector(".quick-unlock-tile[data-subject-id=art]").click()');
+  await waitFor('document.querySelectorAll(".quick-unlock-tile[aria-busy=true]").length===0');
+  await js('window.lostReplies.add("games");document.querySelector(".quick-unlock-tools button").click();document.querySelector(".quick-unlock-tools button:last-child").click();document.querySelector(".quick-unlock-apply").click()');
+  await waitFor('document.querySelectorAll(".quick-unlock-tile[aria-busy=true]").length===0');
+  assert.equal(await js('document.querySelectorAll(".quick-unlock-tile.is-unlocked").length'),3);
+  assert.equal(await js('document.querySelectorAll(".quick-unlock-tile.has-error").length'),0,'a later authoritative response reconciles a lost acknowledgement');
   // Populate a realistically long list and verify scrolling stays within the
   // dialog while its title and actions remain reachable on desktop and phone.
   await js('for(let i=0;i<21;i++)data.rules.subjects.push({id:"extra-"+i,title:"Practice activity "+(i+1),icon:"book-open",assignments:[{studentId:"b",dailyGoalMinutes:15,dailyPlan:{placement:"after_school"}}]});ui.render()');
