@@ -3,6 +3,7 @@ import { setupMonitoring } from './cloud-monitoring.js?v=20260913-popup1';
 import { updateQuickUnlockSnapshot } from './cloud-quick-unlock.js?v=20260913-popup1';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
+import { setupMessageUnread } from './cloud-message-unread.js';
 import { setupCloudRetention } from './cloud-retention.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { editCloudSubject } from './cloud-school-editor.js?v=20260910-wide1';
@@ -132,6 +133,8 @@ function showSnapshot() {
     initialNotificationHandled = true;
     const match = /^#messages(?:\/([a-f0-9-]{36}))?$/.exec(window.parent.location.hash);
     if (match) notificationTarget = match[1] || '';
+    const conversation=new URL(window.parent.location.href).searchParams.get('conversation');
+    if(conversation&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(conversation))notificationTarget=conversation;
   }
   if (notificationTarget !== null) {
     const target = notificationTarget; notificationTarget = null;
@@ -397,7 +400,7 @@ const livePush = window.CloudPush.createCloudPushClient({
   },
   onConnection: connected => { byId('live-indicator').dataset.messagesConnected=String(connected); messaging.setLive(connected); },
   onReady: () => screenshots.refresh(),
-  onSignal: hint => { if(hint.kind==='messages')messaging.notify(hint.studentId); if(hint.kind==='screenshots')screenshots.refresh(); }
+  onSignal: hint => { if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);} if(hint.kind==='screenshots')screenshots.refresh(); }
 });
 const mathCoach = setupCloudMathCoach({ endpoint, navigate: selectTab });
 const spelling = setupCloudSpelling({ endpoint });
@@ -529,6 +532,7 @@ for (const tabId of ['tab-messages', 'tab-settings']) {
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh:refreshComputers, openSpelling:()=>spelling.openScanner(), getSnapshot:()=>snapshot, mutate, feedback });
 mobile.setActive('overview');
+setupMessageUnread(messaging);
 parentGuide = setupParentGuide({ endpoint, getSnapshot: () => snapshot, navigate: selectTab, mutate });
 window.lucide?.createIcons();
 setControls();

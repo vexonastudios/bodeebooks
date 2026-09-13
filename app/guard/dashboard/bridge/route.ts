@@ -57,7 +57,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "privacy-delete": path = "/privacy/delete"; method = "POST"; body = { revision: input.revision, confirmation: input.confirmation }; break;
     case "privacy-cancel": path = "/privacy/cancel"; method = "POST"; body = { revision: input.revision }; break;
     case "push-ticket": path = "/push-ticket"; method = "POST"; body = {}; break;
-    case "phone-notifications": path = "/notifications"; method = "POST"; body = { operation: input.operation, subscription: input.subscription, accountUserId: input.accountUserId }; break;
+    case "phone-notifications": path = "/notifications"; method = "POST"; body = { operation: input.operation, subscription: input.subscription, accountUserId: input.accountUserId, deviceId:input.deviceId, label:input.label, studentId:input.studentId, messageId:input.messageId }; break;
     case "media": path="/media"; method="POST"; body={path:input.path,method:input.method,body:input.body,requestId:input.requestId,ifNoneMatch:input.ifNoneMatch}; break;
     case "setup-school": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);

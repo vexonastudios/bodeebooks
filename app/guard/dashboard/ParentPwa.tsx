@@ -40,7 +40,7 @@ export default function ParentPwa() {
         }
       }
       if (event.data?.type === "bodeeguard-reload-app") {
-        if (document.hidden || dialog.current?.open) frame.postMessage({ type: "bodeeguard-update-deferred" }, location.origin);
+        if (document.hidden || document.querySelector('dialog[open]')) frame.postMessage({ type: "bodeeguard-update-deferred" }, location.origin);
         else window.location.reload();
       }
     };

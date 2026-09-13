@@ -4,6 +4,7 @@ import { createMessageThread } from './message-thread.js';
 export function setupCloudMessages({ endpoint }) {
   const el = id => document.getElementById(id);
   let students = [];
+  let unread = new Map();
   let selected = null;
   let active = false;
   let page = null;
@@ -101,7 +102,15 @@ export function setupCloudMessages({ endpoint }) {
       pending.delete(selected); drafts.delete(selected); attachments.delete(selected); localFiles.delete(selected); voices.delete(selected); voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = '';
     }
     controls();
+    markVisibleConversation();
   }
+  function markVisibleConversation() {
+    const thread=el('messages-thread-content');
+    if(!active||document.hidden||!selected||thread.scrollHeight-thread.scrollTop-thread.clientHeight>=40)return;
+    const latest=page?.messages.filter(message=>message.sender==='child').at(-1);
+    if(latest)window.parent.postMessage({type:'bodeeguard-conversation-read',studentId:selected,messageId:latest.id},location.origin);
+  }
+  el('messages-thread-content').addEventListener('scroll',markVisibleConversation,{passive:true});
   async function refresh() {
     if (!active || document.hidden || !selected) return;
     if (loading) { refreshQueued = true; return; }
@@ -137,6 +146,8 @@ export function setupCloudMessages({ endpoint }) {
   function renderStudents() {
     el('messages-student-list').replaceChildren(...students.map(student => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.textContent = student.name;
+      const count=unread.get(student.id)||0;
+      if(count){const badge=document.createElement('span');badge.className='cloud-unread-badge';badge.textContent=String(Math.min(count,999));button.append(badge);button.setAttribute('aria-label',student.name+', '+count+' unread messages');}
       button.setAttribute('aria-pressed', String(student.id === selected)); button.addEventListener('click', () => choose(student.id)); return button;
     }));
   }
@@ -242,6 +253,7 @@ export function setupCloudMessages({ endpoint }) {
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
+    setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));renderStudents();},
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if (studentId === selected && active) return refresh(); },

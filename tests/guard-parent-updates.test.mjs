@@ -121,7 +121,7 @@ test('build metadata changes with shipped imports/styles/wrapper but not generat
 test('only the authenticated same-origin workspace can request outer reloads/worker updates', async () => {
   const win = new EventTarget(), sw = new EventTarget(), effects = []; let reloads = 0, updates = 0;
   const frame = { postMessage(message) { frame.message = message; } };
-  const doc = { hidden: false, querySelector: () => ({ contentWindow: frame }) };
+  const doc = { hidden: false,dialogOpen:false, querySelector: selector => selector==='dialog[open]'?(doc.dialogOpen?{}:null):({contentWindow:frame}) };
   sw.register = async (url, options) => { assert.equal(url, '/guard-parent-sw.js'); assert.equal(options.updateViaCache, 'none'); return { update: async () => updates++ }; };
   win.location = { reload: () => reloads++ };
   const context = { exports: {}, window: win, document: doc, location: { hostname: 'guard.bodeebooks.com', origin: 'https://guard.bodeebooks.com' },
@@ -137,6 +137,7 @@ test('only the authenticated same-origin workspace can request outer reloads/wor
   assert.equal(updates, 1); assert.equal(frame.message.version, a);
   doc.hidden = true; send('bodeeguard-reload-app'); send('bodeeguard-check-worker'); await flush(); assert.equal(reloads, 0); assert.equal(updates, 1);
   doc.hidden = false; send('bodeeguard-reload-app'); assert.equal(reloads, 1);
+  doc.dialogOpen=true;send('bodeeguard-reload-app');assert.equal(reloads,1,'notification device forms must survive automatic update requests');
   sw.dispatchEvent(new Event('controllerchange')); assert.equal(frame.message.type, 'bodeeguard-check-update');
   for (const cleanup of cleanups) cleanup?.();
 });

@@ -1,5 +1,8 @@
 # Parent phone notifications
 
+See [notification reliability](guard-notification-reliability.md) for the follow-up.
+The behavior and rollout receipt below describe the initial release.
+
 Messages and Settings now offer **Phone notifications**. The top-level PWA owns
 notification permission and enrollment because a permission prompt must follow
 the parent's click in the top-level page. The embedded workspace opens this
