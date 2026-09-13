@@ -12,6 +12,7 @@ test('privacy bridge authenticates same-origin parents, strips submitted authori
   assert.equal((await POST(request({action:'privacy-delete'},'https://foreign.example'))).status,403);assert.equal(calls.length,0);
   for(const [action,route,body] of [
     ['privacy-export','/privacy/export',{table:2,offset:25,chunk:1,digest:'synthetic-digest'}],
+    ['recovery-backups','/backups',{operation:'restore',id:'synthetic-backup',deviceId:'synthetic-child'}],
     ['privacy-delete','/privacy/delete',{revision:3,confirmation:'DELETE FAMILY DATA'}],
     ['privacy-cancel','/privacy/cancel',{revision:4}],
     ['save-retention','/retention',{revision:5,enabled:true,messageDays:90,schoolEventDays:180}]

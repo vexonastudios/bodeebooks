@@ -57,5 +57,72 @@ export function setupCloudRetention({ endpoint }) {
       if(bytes>=32*1024*1024&&(!page.next?.chunk)&&!page.done)await savePart(true);if(page.done){await savePart();break;}cursor=page.next;
     }note.textContent=`Export ready. Download the remaining part above and keep all ${part} parts. The files contain private family records.`;}catch(error){note.textContent=`Export incomplete: ${error.message} Previously completed parts remain available.`;}finally{exporting=false;download.disabled=false;}
   });
-  return { setActive(value) { active = value; if (active){void load();void loadPrivacy();} } };
+  const backups = setupRecoveryBackups({ endpoint, root });
+  return { setActive(value) { active = value; backups.setActive(value); if (active){void load();void loadPrivacy();} } };
+}
+
+function setupRecoveryBackups({ endpoint, root }) {
+  const section = document.createElement('section'); section.className = 'cloud-panel'; section.id = 'cloud-recovery-backups';
+  section.innerHTML = `<h3><i data-lucide="hard-drive-download"></i> Computer backups &amp; recovery</h3>
+    <p>Keep private recovery copies of your children’s writing and planners in Cloudflare. Saving and reminders still work locally. Backups do not submit papers for grading.</p>
+    <p>Parent settings and profiles are already saved with your family account and apply again when you connect a replacement computer. School logins, Windows passwords, device credentials and playback positions are excluded.</p>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label><input type="checkbox" data-enabled disabled> Back up writing and planners</label>
+    <button type="button" class="btn btn-primary" data-save disabled><i data-lucide="save"></i> Save</button>
+    <button type="button" class="btn btn-secondary" data-refresh><i data-lucide="refresh-cw"></i> Refresh backups</button></div>
+    <p>Changed work backs up about every 15 minutes while BodeeGuard is open and connected. Keep up to seven recent versions and one from each of seven saved dates. The last good copy stays until you remove it. Family allowance: 256 MB.</p>
+    <p role="status" data-status></p><div data-list style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px"></div>`;
+  root.append(section);
+  const note = section.querySelector('[data-status]'), enabled = section.querySelector('[data-enabled]'), save = section.querySelector('[data-save]'), refresh = section.querySelector('[data-refresh]'), list = section.querySelector('[data-list]');
+  let state = null, busy = false, active = false;
+  const request = async (operation, data = {}) => {
+    const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(20000),
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'recovery-backups', operation, ...data }) });
+    const result = await response.json(); if (!response.ok) throw Error(result.error || 'Recovery could not finish.'); return result;
+  };
+  const text = (tag, value, parent) => { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; };
+  async function perform(operation, data, message) {
+    if (busy) return; busy = true; save.disabled = true; refresh.disabled = true;
+    try { state = await request(operation, data); render(); note.textContent = message || ''; }
+    catch (error) { note.textContent = error.message; }
+    finally { busy = false; enabled.disabled = !state; save.disabled = !state; refresh.disabled = false; }
+  }
+  function render() {
+    enabled.checked = state.settings.enabled; list.replaceChildren();
+    if (!state.backups.length) text('p', state.settings.enabled ? 'No successful backup yet. Leave the child’s updated BodeeGuard open and connected. Local work is not protected by a cloud copy until a backup appears here.' : 'Backups are off. Turn them on above to protect local writing and planners.', list);
+    for (const backup of state.backups) {
+      const devices = state.devices.filter(device => device.student_id === backup.studentId);
+      const card = document.createElement('article'); card.className = 'cloud-panel'; list.append(card);
+      text('h4', backup.studentName || devices[0]?.student_name || 'Saved child work', card);
+      text('p', `${new Date(backup.createdAt).toLocaleString()} · ${backup.documents} notes · ${backup.assignments} assignments · ${(backup.size / 1024).toFixed(0)} KB`, card);
+      const target = document.createElement('select'); target.className = 'admin-input'; target.setAttribute('aria-label', 'Computer to restore onto'); card.append(target);
+      for (const device of devices) { const option = document.createElement('option'); option.value = device.id; option.textContent = device.name; target.append(option); }
+      if (!devices.length) text('p', 'Connect a computer to this child before restoring.', card);
+      const buttons = document.createElement('div'); buttons.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'; card.append(buttons);
+      const restore = text('button', 'Restore copies', buttons); restore.type = 'button'; restore.className = 'btn btn-primary'; restore.disabled = !devices.length;
+      restore.addEventListener('click', () => { if (busy || !confirm('Restore this writing and planner as copies on the selected child’s computer? Existing work and current parent controls stay in place.')) return; void perform('restore', { id: backup.id, deviceId: target.value }, 'Recovery requested. It will run when the child returns to the dashboard and closes Writing and the planner. Refresh here to check completion.'); });
+      const download = text('button', 'Download backup', buttons); download.type = 'button'; download.className = 'btn btn-secondary';
+      download.addEventListener('click', async () => {
+        if (busy) return; download.disabled = true;
+        try {
+          const result = await request('download', { id: backup.id });
+          const response = await fetch(result.url, { credentials: 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(30000) });
+          if (!response.ok) throw Error('Backup download could not finish.');
+          const data = await response.arrayBuffer();
+          if (data.byteLength !== backup.size || data.byteLength > 2 * 1024 * 1024) throw Error('Backup size did not match.');
+          const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', data)), byte => byte.toString(16).padStart(2, '0')).join('');
+          if (digest !== result.sha256) throw Error('Backup verification failed.');
+          const url = URL.createObjectURL(new Blob([data], { type: 'application/gzip' })), link = document.createElement('a');
+          link.href = url; link.download = `BodeeGuard-work-${backup.id}.json.gz`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+          note.textContent = 'Backup download started. Keep this file private; it contains the child’s writing and planner.';
+        } catch (error) { note.textContent = error.message; } finally { download.disabled = false; }
+      });
+      const remove = text('button', 'Remove', buttons); remove.type = 'button'; remove.className = 'btn btn-secondary';
+      remove.addEventListener('click', () => { if (busy || !confirm('Permanently remove this cloud recovery copy? Local work is unchanged.')) return; void perform('remove', { id: backup.id }, 'Recovery copy removed.'); });
+    }
+    for (const restore of state.restores) text('p', `${state.devices.find(device => device.id === restore.device_id)?.student_name || 'Child'}: ${restore.state === 'applied' ? `recovered ${new Date(restore.completed_at).toLocaleString()}` : 'recovery waiting for the selected computer’s dashboard'}.`, list);
+    window.lucide?.createIcons?.();
+  }
+  save.addEventListener('click', () => state && perform('settings', { revision: state.settings.revision, enabled: enabled.checked }, enabled.checked ? 'Recovery backups enabled. The next connected child session will prepare a backup.' : 'Automatic backups disabled. Existing recovery copies remain available.'));
+  refresh.addEventListener('click', () => perform('list'));
+  return { setActive(value) { active = value; if (active && !document.hidden && !state) void perform('list'); } };
 }
