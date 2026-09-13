@@ -68,3 +68,20 @@ Offline devices receive changes once they reconnect and open/resume the app.
 
 Physical home-screen iOS/Android acceptance remains a device check; the browser
 fixture does not claim to simulate all mobile OS lifecycle behavior.
+
+## Deployment receipt
+
+Source `b125dcc`, deployment `dpl_D7wvmGZ52DDTxp1XxDVTFpfk9wfW`, was built with
+the hosted production settings and then promoted to the existing domains,
+including `guard.bodeebooks.com`. The hosted production build passed.
+
+App identifier:
+`31f5550e46345e39e944ff2ede13b94d34e7c5c521feaeee5b19c29e3509cd0b`.
+
+Live checks confirmed exact deployed source contents and revalidation headers for
+the version document, service worker, manifest, update module, update stylesheet
+and main workspace module. The signed-in live dashboard iframe reports the same
+identifier, has exactly one update control targeting the outer page, and correctly
+keeps the banner hidden because it is current. No update-module errors were found.
+No family settings or commands were changed during verification. This deployment
+does not publish a Windows child update; the installer/feed remain 1.2.222.
