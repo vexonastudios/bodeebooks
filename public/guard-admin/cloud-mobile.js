@@ -52,7 +52,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   for(const id of ['grades','spelling','vocabulary','poems']){
     const back=button('',()=>navigate('mobile-papers'),'text-button cloud-mobile-only mobile-paper-back');back.append(icon('arrow-left'),document.createTextNode('Paper center'));byId('tab-'+id).prepend(back);
   }
-  const addTabs = ['music', 'videos', 'audiobooks', 'coloring-studio'];
+  const addTabs = ['music', 'videos', 'audiobooks', 'coloring-studio', 'white-noise'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-') || id === 'daily-plan') continue;
@@ -107,6 +107,11 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
       }
     }
   }
+  const noiseChoice = make('div', 'mobile-media-choice'); noiseChoice.dataset.mediaKind = 'white-noise';
+  const noiseOpen = button('', () => navigate('white-noise'), 'mobile-media-open'), noiseMark = make('span', 'mobile-media-symbol'), noiseCopy = make('span', 'mobile-media-copy');
+  noiseMark.append(icon('waves')); noiseCopy.append(make('strong', '', 'White Noise'), make('small', '', 'Upload calm MP3 tracks for school and study'));
+  noiseOpen.append(noiseMark, noiseCopy, icon('chevron-right')); noiseChoice.append(noiseOpen); menus['mobile-add'].append(noiseChoice);
+  const noiseBack = button('', () => navigate('mobile-add'), 'text-button cloud-mobile-only');noiseBack.append(icon('arrow-left'), document.createTextNode('Add media'));byId('tab-white-noise')?.prepend(noiseBack);
   const coloringChoice = make('div', 'mobile-media-choice'); coloringChoice.dataset.mediaKind = 'coloring-studio';
   const coloringOpen = button('', () => navigate('coloring-studio'), 'mobile-media-open');
   const coloringMark = make('span', 'mobile-media-symbol'); coloringMark.append(icon('paintbrush'));
