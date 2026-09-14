@@ -9,7 +9,7 @@ export function setupMessageUnread(messaging) {
     for(const nav of document.querySelectorAll('[data-tab="messages"],[data-mobile-tab="messages"]')){
       let badge=nav.querySelector('.cloud-unread-badge');
       if(!badge){badge=document.createElement('span');badge.className='cloud-unread-badge';nav.append(badge);}
-      badge.hidden=!total;badge.textContent=String(Math.min(999,total));nav.setAttribute('aria-label',total?'Messages, '+total+' unread':'Messages');
+      badge.hidden=!total;badge.textContent=total>99?'99+':String(total);badge.setAttribute('aria-hidden','true');nav.setAttribute('aria-label',total?'Messages, '+total+' unread':'Messages');
     }
   });
 }

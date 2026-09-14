@@ -15,7 +15,11 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   const brand = make('div', '');
   brand.append(make('p', 'eyebrow', 'Parent dashboard'), make('h1', '', 'BodeeGuard'));
   const actions = make('div', 'header-actions');
-  const reload = button('', () => void refresh(), 'icon-button'); reload.setAttribute('aria-label', 'Refresh dashboard');reload.append(icon('refresh-cw'));
+  const reload = button('', async () => {
+    if (reload.disabled) return;
+    reload.disabled = true; reload.setAttribute('aria-busy', 'true');
+    try { await refresh(); } finally { reload.disabled = false; reload.removeAttribute('aria-busy'); }
+  }, 'icon-button'); reload.setAttribute('aria-label', 'Refresh dashboard');reload.append(icon('refresh-cw'));
   const account = make('a', 'text-button', 'Account'); account.href = '/guard/account/'; account.target = '_top';
   actions.append(reload, account); header.append(brand, actions); root.prepend(header);
 
@@ -51,7 +55,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   const addTabs = ['learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
-    if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
+    if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-') || id === 'daily-plan') continue;
     const label = nav.textContent.trim();
     const menuButton = () => button(label + '  ›', () => navigate(id));
     menus['mobile-more'].append(menuButton());

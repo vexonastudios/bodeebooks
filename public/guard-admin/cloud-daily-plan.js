@@ -42,6 +42,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   layout.append(available, board);
   section.append(head, help, family, controls, layout); document.querySelector('.main-content').append(section);
   const shortcut = action('Daily plan', 'list-checks', () => navigate('daily-plan'));
+  shortcut.classList.add('cloud-daily-plan-shortcut');
   const overviewActions = document.querySelector('#overview-actions');
   (overviewActions || document.querySelector('#tab-overview .tab-header'))?.append(shortcut);
   let active = false, loadedChild = null, captured = null, details = {}, cards = [], generation = 0, busy = false;

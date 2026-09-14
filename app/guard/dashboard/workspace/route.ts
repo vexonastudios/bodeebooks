@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-student-profile.css?v=20260910-photos1"><link rel="stylesheet" href="/guard-admin/cloud-screenshots.css?v=20260911-screenshot1"></head>')
       .replace('/guard-admin/cloud-games.css"', '/guard-admin/cloud-games.css?v=20260910-tabletop1"')
       .replace('/guard-admin/cloud-workspace.css"', '/guard-admin/cloud-workspace.css?v=20260911-parent-polish"')
-      .replace('/guard-admin/cloud-messages.css"', '/guard-admin/cloud-messages.css?v=20260911-compose"')
+      .replace('/guard-admin/cloud-messages.css"', '/guard-admin/cloud-messages.css?v=20260913-chat"')
       .replace(/<section class="tab-content" id="tab-family-games"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-family-games" aria-label="Family Games"><div id="cloud-family-games"></div></section>')
       .replace(/<button\b(?=[^>]*data-tab="science-spelling")[\s\S]*?<\/button>/, '')
       .replace(/<section class="tab-content" id="tab-science-spelling"[\s\S]*?<\/section>/, '')

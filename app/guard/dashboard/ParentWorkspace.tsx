@@ -8,6 +8,22 @@ export default function ParentWorkspace() {
   const { getToken, isLoaded } = useAuth();
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  // The phone keyboard resizes the outer visual viewport, not the iframe's viewport.
+  useEffect(() => {
+    if (!ready || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const resize = () => {
+      const element = frame.current;
+      if (!element) return;
+      if (viewport.scale !== 1) return; // Preserve normal pinch zoom.
+      element.style.setProperty('--parent-visible-height', `${viewport.height}px`);
+      element.style.setProperty('--parent-visible-top', `${viewport.offsetTop}px`);
+    };
+    resize();
+    viewport.addEventListener('resize', resize);
+    viewport.addEventListener('scroll', resize);
+    return () => { viewport.removeEventListener('resize', resize); viewport.removeEventListener('scroll', resize); };
+  }, [ready]);
   useEffect(() => {
     if (!isLoaded) return;
     let disposed = false, pending = false, opened = false, lastAttempt = 0;
