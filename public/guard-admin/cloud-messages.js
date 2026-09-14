@@ -122,8 +122,9 @@ export function setupCloudMessages({ endpoint }) {
         const meta = document.createElement('small'); meta.textContent = `${message.sender === 'parent' ? 'Parent' : students.find(student => student.id === selected)?.name || 'Child'} · ${new Date(message.createdAt).toLocaleString()} · ${message.receivedAt ? 'Received' : 'Saved online'}`;
         const body = document.createElement('p'); body.textContent = message.body;
         row.append(meta, body);
-        if (message.attachment) row.append(window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })));
-        return { node: row };
+        const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
+        if (attachment) row.append(attachment);
+        return { node: row, dispose: () => attachment?.dispose?.() };
       } });
       thread.dataset.rendered = key;
       if (atBottom) thread.scrollTop = thread.scrollHeight;

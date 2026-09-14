@@ -16,6 +16,9 @@ const students = [{ id: '11111111-1111-4111-8111-111111111111', name: 'Avery' },
 const requests = [], sends = [];
 let loseReceipt = false;
 const messages = [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', sender: 'child', body: 'I finished my reading! Can you unlock music?', createdAt: '2026-09-13T15:23:00Z', receivedAt: null }, { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', sender: 'parent', body: 'Of course. Nice work finishing your schoolwork.', createdAt: '2026-09-13T15:24:00Z', receivedAt: '2026-09-13T15:24:01Z' }];
+const wav=Buffer.alloc(44+24000,128);wav.write('RIFF',0);wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(8000,24);wav.writeUInt32LE(8000,28);wav.writeUInt16LE(1,32);wav.writeUInt16LE(8,34);wav.write('data',36);wav.writeUInt32LE(24000,40);
+const voiceFile={id:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',name:'Voice message.wav',mime:'audio/wav',size:wav.length};
+messages[0].attachment=voiceFile;
 const fixtureJs = `
 import { setupCloudMessages } from '/guard-admin/cloud-messages.js';
 import { setupCloudMobile } from '/guard-admin/cloud-mobile.js';
@@ -24,7 +27,6 @@ import { setupDailyPlan } from '/guard-admin/cloud-daily-plan.js';
 window.reads=[]; window.refreshes=0;
 document.querySelector('.cloud-feedback').textContent='';
 addEventListener('message',e=>{if(e.data?.type==='bodeeguard-conversation-read')reads.push(e.data)});
-window.cloudFileTools={close(){},attachment(){const a=document.createElement('audio');a.controls=true;return a;}};
 window.chat=setupCloudMessages({endpoint:'/guard/dashboard/bridge/'});
 let mobile;
 window.navigate=id=>{for(const tab of document.querySelectorAll('.tab-content'))tab.classList.toggle('active',tab.id==='tab-'+id); chat.setActive(id==='messages');mobile?.setActive(id);};
@@ -42,7 +44,7 @@ navigate('overview'); unread(2);window.lucide?.createIcons();window.ready=true;`
 const template = JSON.parse(fs.readFileSync(path.join(root, 'app/guard/dashboard/generated/workspace.json'), 'utf8')).html;
 const html = template.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
   .replace('</head>', '<link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width:900px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"></head>')
-  .replace('</body>', '<button id="parent-assistant-launcher">Ask BodeeGuard</button><script src="/guard-admin/lucide.min.js"></script><script type="module" src="/fixture.js"></script></body>');
+  .replace('</body>', '<button id="parent-assistant-launcher">Ask BodeeGuard</button><script src="/guard-admin/cloud-file-tools.js"></script><script src="/guard-admin/lucide.min.js"></script><script type="module" src="/fixture.js"></script></body>');
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, 'http://fixture.local'); response.setHeader('Cache-Control', 'no-store');
   if (url.pathname === '/') { response.setHeader('Content-Type', 'text/html'); return response.end(html); }
@@ -51,6 +53,7 @@ const server = http.createServer(async (request, response) => {
     let raw='';for await(const chunk of request)raw+=chunk;const body=JSON.parse(raw);requests.push(body);
     response.setHeader('Content-Type','application/json');
     if(body.action==='list-messages')return response.end(JSON.stringify({studentId:body.studentId,messages,version:messages.length}));
+    if(body.action==='read-file')return response.end(JSON.stringify({file:voiceFile,data:wav.toString('base64')}));
     if(body.action==='send-message'){
       sends.push(body); if(loseReceipt){loseReceipt=false;response.writeHead(503);return response.end(JSON.stringify({error:'Synthetic lost response'}));}
       messages.push({...body,sender:'parent',createdAt:new Date().toISOString()});
@@ -71,6 +74,7 @@ const server = http.createServer(async (request, response) => {
   session.defaultSession.setPermissionRequestHandler((_contents, permission, callback) => callback(permission === 'media'));
   session.defaultSession.setPermissionCheckHandler((_contents, permission) => permission === 'media');
   const win = new BrowserWindow({ show: false, width: 390, height: 780, useContentSize: true, webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, backgroundThrottling: false } });
+  win.webContents.setAudioMuted(true);
   const errors=[];win.webContents.on('console-message',(_event,level,message)=>{if(level===3)errors.push(message)});
   const js = async code => {try{return await win.webContents.executeJavaScript(code, true);}catch(error){throw Error(code+'\n'+error.message+'\n'+errors.join('\n'));}};
   const wait = async code => { for(let n=0;n<100;n++){if(await js(code))return;await new Promise(r=>setTimeout(r,30));}assert.fail('Timed out: '+code+' '+errors.join('\n')); };
@@ -92,6 +96,13 @@ const server = http.createServer(async (request, response) => {
   await wait('window.reads.length>0');
   const composerFits = `(()=>{const r=document.querySelector('#messages-reply-box').getBoundingClientRect(),nav=document.querySelector('.bottom-nav').getBoundingClientRect();return r.bottom<=nav.top+1&&r.top>0&&r.height<90&&document.documentElement.scrollWidth<=innerWidth;})()`;
   assert.equal(await js(composerFits),true);await shot('parent-mobile-chat');
+  assert.equal(requests.filter(r=>r.action==='read-file').length,0);
+  await js('document.querySelector(".cloud-inline-audio-play").click()');
+  await wait('document.querySelector(".cloud-inline-audio audio").currentTime>1.2');
+  assert.equal(await visible('.cloud-file-dialog'),false);
+  assert.equal(await js('document.querySelector(".cloud-inline-audio audio").getBoundingClientRect().right<=innerWidth'),true);
+  await shot('parent-mobile-inline-voice');
+  assert.equal(requests.filter(r=>r.action==='read-file').length,1);
   // Drafts survive Back, another child and returning. Hidden conversations aren't fetched/read.
   await js(`document.querySelector('#messages-reply-input').value='Draft for Avery';document.querySelector('.cloud-chat-back').click();`);
   const before=requests.length,readBefore=await js('window.reads.length');
