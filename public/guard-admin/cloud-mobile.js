@@ -24,7 +24,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   actions.append(reload, account); header.append(brand, actions); root.prepend(header);
 
   const menus = {};
-  for (const [id, title] of [['mobile-add', 'Add media & schoolwork'], ['mobile-more', 'More']]) {
+  for (const [id, title] of [['mobile-add', 'Add media'], ['mobile-more', 'More']]) {
     const nav = button(title, () => navigate(id), 'nav-item'); nav.dataset.tab = id; nav.hidden = true;
     root.querySelector('.sidebar-nav').append(nav);
     const section = make('section', 'tab-content cloud-mobile-menu'); section.id = `tab-${id}`;
@@ -52,14 +52,54 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   for(const id of ['grades','spelling','vocabulary','poems']){
     const back=button('',()=>navigate('mobile-papers'),'text-button cloud-mobile-only mobile-paper-back');back.append(icon('arrow-left'),document.createTextNode('Paper center'));byId('tab-'+id).prepend(back);
   }
-  const addTabs = ['learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
+  const addTabs = ['music', 'videos', 'audiobooks'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-') || id === 'daily-plan') continue;
     const label = nav.textContent.trim();
     const menuButton = () => button(label + '  ›', () => navigate(id));
     menus['mobile-more'].append(menuButton());
-    if (addTabs.includes(id)) menus['mobile-add'].append(menuButton());
+  }
+  setupMediaHub();
+  function setupMediaHub() {
+    const hub = byId('tab-mobile-add'); hub.classList.add('mobile-media-hub');
+    const intro = make('p', 'mobile-media-intro', 'Choose what you’d like to add to your family’s library.');
+    menus['mobile-add'].before(intro); menus['mobile-add'].className = 'mobile-media-choices';
+    for (const [id, title, glyph, caption, inputId, subtab] of [
+      ['music', 'Music', 'music', 'Add a song from YouTube', 'music-yt-url', '[data-stab="mlib"]'],
+      ['videos', 'Videos', 'video', 'Add a video for your children', 'video-yt-url', '[data-vstab="vlib"]'],
+      ['audiobooks', 'Audiobooks', 'headphones', 'Add an audiobook or read-aloud', 'ab-youtube-url', '[data-abtab="ab-library"]']
+    ]) {
+      const card = make('div', 'mobile-media-choice'); card.dataset.mediaKind = id;
+      const open = button('', () => openMedia(true), 'mobile-media-open');
+      const mark = make('span', 'mobile-media-symbol'); mark.append(icon(glyph));
+      const copy = make('span', 'mobile-media-copy'); copy.append(make('strong', '', title), make('small', '', caption));
+      open.append(mark, copy, icon('chevron-right')); open.setAttribute('aria-label', 'Add ' + title.toLowerCase());
+      const library = button('Manage library & playlists', () => openMedia(false), 'mobile-media-library');
+      library.prepend(icon('library')); card.append(open, library); menus['mobile-add'].append(card);
+      function openMedia(add) {
+        paperContext = false;
+        const panel = byId('tab-' + id), input = byId(inputId), form = input?.closest('.settings-section');
+        if (!panel) return;
+        if (!panel.querySelector('.mobile-media-toolbar')) {
+          const toolbar = make('div', 'mobile-media-toolbar cloud-mobile-only');
+          const back = button('', () => navigate('mobile-add'), 'text-button'); back.append(icon('arrow-left'), document.createTextNode('Add media'));
+          const heading = make('h1', '', title), manage = button('View library', () => openMedia(false), 'btn btn-secondary mobile-media-manage'); manage.prepend(icon('library'));
+          toolbar.append(back, heading, manage); panel.prepend(toolbar);
+        }
+        panel.classList.add('mobile-media-page');
+        panel.classList.toggle('mobile-media-add', Boolean(add && form));
+        panel.querySelector('.mobile-media-toolbar h1').textContent = (add && form ? 'Add ' : '') + title.toLowerCase();
+        if (form) {
+          form.classList.add('mobile-media-add-form'); input.parentElement.classList.add('mobile-media-link-row');
+          for (let parent = form.parentElement; parent && parent !== panel; parent = parent.parentElement) parent.classList.add('mobile-media-add-path');
+          form.querySelector('[id$="preview"]')?.classList.add('mobile-media-preview');
+        }
+        // Keep the existing form nodes, approval controls, handlers and in-progress drafts.
+        if (!add) panel.querySelector(subtab)?.click();
+        navigate(id); window.lucide?.createIcons();
+      }
+    }
   }
   const install = button('Add to Home Screen', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin));
   menus['mobile-more'].prepend(install);
@@ -120,6 +160,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   media.addEventListener('change', resize); resize();
   return {
     setActive(id) {
+      document.body.classList.toggle('cloud-media-form-active', Boolean(byId('tab-' + id)?.classList.contains('mobile-media-add')));
       if(id==='mobile-papers')paperContext=true;
       const selected = paperContext&&['grades','spelling','vocabulary','poems'].includes(id)?'mobile-papers':tabs.some(([tab]) => tab === id) ? id : addTabs.includes(id) ? 'mobile-add' : 'mobile-more';
       for (const nav of bottom.children) {
