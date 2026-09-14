@@ -56,3 +56,17 @@ cache regression, its focused tests passed (1,749 total cases in source). All
 the parent fixture was updated to classify the new count request as a read.
 Website tests passed 133 cases and its production build passed. Logs and the
 deployment receipt are retained in the ignored `.tmp/song-*` files.
+
+## Published parent workflow
+
+The API and parent website were promoted on September 14, 2026:
+
+- API source `8722c6b`; deployment `dpl_5FeB45NeU8hWCz4m6nMo4f7jDPnZ`.
+- Website source `1f16623`; deployment `dpl_EmCA5pqDABaD2iUrGAwPJ9oEEDnf`.
+- PWA fingerprint `ea7b250248cade1fc5b47da01dc74abd9b04f7f8d4d0afb2f50517669d1b8f6a`.
+
+All eight changed public assets matched their source and use
+`max-age=0, must-revalidate`. Live API health returned 200, unsigned parent media
+access returned 401, and the unsigned dashboard redirected to sign-in. No real
+family requests, messages or notifications were created during verification.
+The Windows installer/feed was not changed by this deployment.
