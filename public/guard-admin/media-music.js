@@ -5,6 +5,7 @@ let _allStudents = [];
 let _assignments = {}; // { student_id: [track_id,...] }
 let _youtubePlaylists = [];
 let _youtubePlaylistAssignments = {};
+document.addEventListener('cloud-music-library-changed', () => { if (_musicInited) void loadMusicTracks(); });
 const MUSIC_DEFAULT_MINUTES = window.BODEE_MEDIA_DEFAULTS.music.dailyMinutes;
 
 // ── Helpers ──────────────────────────────────────────
@@ -619,59 +620,8 @@ async function saveStudentMusicSettings() {
 }
 
 // ── Song Requests Tab ────────────────────────────────
-async function loadMusicRequests() {
-  const list = document.getElementById('mreq-list');
-  list.innerHTML = '<p style="color:var(--text-muted);font-size:14px;">Loading…</p>';
-  try {
-    const requests = await mget('/api/music/requests');
-    const badge = document.getElementById('mreq-badge');
-    badge.textContent = requests.length || '';
-    badge.style.display = requests.length ? 'inline' : 'none';
-
-    if (!requests.length) {
-      list.innerHTML = '<p style="color:var(--text-muted);font-size:14px;display:flex;align-items:center;"><i data-lucide="party-popper" style="width:16px;height:16px;margin-right:6px;"></i> No pending song requests.</p>';
-      if (window.lucide) setTimeout(() => window.lucide.createIcons(), 0);
-      return;
-    }
-    list.innerHTML = requests.map(r => {
-      const rawTime = r.timestamp || r.created_at || '';
-      const when = rawTime ? new Date(rawTime + (rawTime.endsWith('Z') ? '' : 'Z')).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Just now';
-      return `
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;
-        background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:12px;">
-        <span>${renderAvatarBadge(r.student_avatar, 28, '🙋')}</span>
-        <div style="flex:1;">
-          <div style="font-weight:700;font-size:14px;">${r.student_name}</div>
-          <div style="font-size:14px;margin-top:2px;">${r.details}</div>
-          <div style="display:flex;align-items:center;font-size:11px;color:var(--text-muted);margin-top:3px;"><i data-lucide="calendar" style="width:12px;height:12px;margin-right:4px;"></i> ${when}</div>
-        </div>
-        <button onclick="dismissMusicRequest('${r.id}',this)"
-          style="display:flex;align-items:center;padding:6px 14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);
-            color:#34d399;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">
-          <i data-lucide="check" style="width:12px;height:12px;margin-right:4px;"></i> Dismiss
-        </button>
-      </div>`;
-    }).join('');
-    if (window.lucide) { setTimeout(() => window.lucide.createIcons(), 0); }
-  } catch(e) { list.innerHTML = '<p style="color:var(--text-muted);">Failed to load.</p>'; }
-}
-
-async function loadMusicRequestsBadge() {
-  try {
-    const requests = await mget('/api/music/requests');
-    const badge = document.getElementById('mreq-badge');
-    if (badge) {
-      badge.textContent = requests.length || '';
-      badge.style.display = requests.length ? 'inline' : 'none';
-    }
-  } catch(e) {}
-}
-
-window.dismissMusicRequest = async function(id, btn) {
-  btn.disabled = true;
-  await mpost(`/api/music/requests/${id}/resolve`, {}, 'PATCH');
-  loadMusicRequests();
-};
+async function loadMusicRequests() { return window.loadCloudSongRequests?.(); }
+async function loadMusicRequestsBadge() { return window.refreshMusicRequestsCount?.(); }
 
 // ── Music Listening History ─────────────────────────
 async function refreshMusicHistory() {

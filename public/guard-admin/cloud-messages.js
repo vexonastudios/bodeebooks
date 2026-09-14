@@ -122,6 +122,10 @@ export function setupCloudMessages({ endpoint }) {
         const meta = document.createElement('small'); meta.textContent = `${message.sender === 'parent' ? 'Parent' : students.find(student => student.id === selected)?.name || 'Child'} · ${new Date(message.createdAt).toLocaleString()} · ${message.receivedAt ? 'Received' : 'Saved online'}`;
         const body = document.createElement('p'); body.textContent = message.body;
         row.append(meta, body);
+        if(message.sender==='child' && message.body.startsWith('🎵 Song request:')) {
+          const review=document.createElement('button');review.type='button';review.className='btn btn-secondary';review.textContent='Review song requests';
+          review.onclick=()=>document.dispatchEvent(new CustomEvent('cloud-open-song-requests'));row.append(review);
+        }
         const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
         if (attachment) row.append(attachment);
         return { node: row, dispose: () => attachment?.dispose?.() };

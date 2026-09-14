@@ -1,3 +1,4 @@
+import { setupSongRequests } from './cloud-song-requests.js';
 import { setupDailyPlan } from './cloud-daily-plan.js?v=20260911-family-first';
 import { setupMonitoring } from './cloud-monitoring.js?v=20260913-popup1';
 import { updateQuickUnlockSnapshot } from './cloud-quick-unlock.js?v=20260913-popup1';
@@ -388,6 +389,7 @@ const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
 const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
 const spanish = setupCloudSpanish({ endpoint, getSnapshot: () => snapshot });
 const coloringStudio = setupCloudColoringStudio({ endpoint });
+const songRequests = setupSongRequests({ endpoint, navigate: selectTab });
 const screenshots = setupCloudScreenshots({ endpoint });
 let pushTicketController = null;
 const livePush = window.CloudPush.createCloudPushClient({
@@ -399,8 +401,8 @@ const livePush = window.CloudPush.createCloudPushClient({
     return response.json();
   },
   onConnection: connected => { byId('live-indicator').dataset.messagesConnected=String(connected); messaging.setLive(connected); },
-  onReady: () => { screenshots.refresh(); void coloringStudio.refreshPending(); },
-  onSignal: hint => { if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);} if(hint.kind==='screenshots')screenshots.refresh(); if(hint.kind==='media')void coloringStudio.refreshPending(true); }
+  onReady: () => { screenshots.refresh(); void coloringStudio.refreshPending(); void songRequests.refreshPending(); },
+  onSignal: hint => { if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);} if(hint.kind==='screenshots')screenshots.refresh(); if(hint.kind==='media'){void coloringStudio.refreshPending(true);void songRequests.refreshPending(true);} }
 });
 const mathCoach = setupCloudMathCoach({ endpoint, navigate: selectTab });
 const spelling = setupCloudSpelling({ endpoint });
@@ -454,7 +456,7 @@ const dashboardRefresh = createDashboardRefresh({
       if (response.status === 401) window.parent.postMessage({type:'bodeeguard-renew-session'}, location.origin);
       throw new Error(response.status === 401 ? 'Reconnecting your account…' : data.error || 'The cloud service could not be reached.');
     }
-    void coloringStudio.refreshPending();
+    void coloringStudio.refreshPending(); void songRequests.refreshPending();
     snapshot = data;
     usable = true;
     byId('live-text').textContent = 'Refreshes on opening · Every 30 min while visible';

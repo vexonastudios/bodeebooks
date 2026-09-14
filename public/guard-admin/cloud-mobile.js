@@ -132,10 +132,28 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
     nav.append(icon(glyph), make('small', '', label)); bottom.append(nav);
   }
   root.append(bottom);
+  let coloringPending = 0, musicPending = 0;
+  function mediaBadge(nav, count, title) {
+    let badge = nav.querySelector('.cloud-media-badge');
+    if (!badge) { badge = make('span', 'cloud-unread-badge cloud-media-badge'); badge.setAttribute('aria-hidden', 'true'); nav.append(badge); }
+    badge.hidden = count === 0; badge.textContent = count > 99 ? '99+' : String(count);
+    nav.setAttribute('aria-label', count ? title + ', ' + count + ' requests awaiting review' : title);
+  }
+  function updateMediaTotal() { mediaBadge(bottom.querySelector('[data-mobile-tab="mobile-add"]'), coloringPending + musicPending, 'Add media'); }
+  const musicChoice = menus['mobile-add'].querySelector('[data-media-kind="music"]');
+  const musicReview = button('', () => document.dispatchEvent(new CustomEvent('cloud-open-song-requests')), 'mobile-media-library');
+  musicReview.append(icon('list-music'), make('span', '', 'Song requests')); musicChoice.append(musicReview);
+  document.addEventListener('cloud-music-pending', event => {
+    const count = event.detail?.pending; if (!Number.isSafeInteger(count) || count < 0) return;
+    musicPending = count; mediaBadge(musicReview, count, 'Song requests'); updateMediaTotal();
+    musicChoice.classList.toggle('has-reviews', count > 0);
+    if (count > 0) menus['mobile-add'].prepend(musicChoice);
+  });
   document.addEventListener('cloud-coloring-pending', event => {
     const count = event.detail?.pending;
     if (!Number.isSafeInteger(count) || count < 0) return;
-    for (const nav of [bottom.querySelector('[data-mobile-tab="mobile-add"]'), coloringOpen]) {
+    coloringPending = count; updateMediaTotal();
+    for (const nav of [coloringOpen]) {
       let badge = nav.querySelector('.cloud-media-badge');
       if (!badge) { badge = make('span', 'cloud-unread-badge cloud-media-badge'); badge.setAttribute('aria-hidden', 'true'); nav.append(badge); }
       badge.hidden = count === 0; badge.textContent = count > 99 ? '99+' : String(count);

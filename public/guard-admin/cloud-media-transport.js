@@ -1,5 +1,6 @@
 import './cloud-media-response-cache.js';
 const cache=globalThis.CloudMediaResponseCache.createMediaResponseCache();
+document.addEventListener('cloud-music-library-changed', () => cache.clear());
 let retryAt=0;
 export async function mediaFetch(raw,options={}){
   const url=new URL(raw,location.href);
