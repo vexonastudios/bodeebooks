@@ -69,4 +69,10 @@ All eight changed public assets matched their source and use
 `max-age=0, must-revalidate`. Live API health returned 200, unsigned parent media
 access returned 401, and the unsigned dashboard redirected to sign-in. No real
 family requests, messages or notifications were created during verification.
-The Windows installer/feed was not changed by this deployment.
+The Windows installer/feed was not changed by this deployment. The student
+changes were subsequently published in
+[Windows 1.2.223](https://github.com/vexonastudios/bodee-guard/releases/tag/private-validation-197a0275)
+on September 14. Website deployment `dpl_FM5ArbLpmVKSXSDBh2gxZZGAUeyk` updates
+the authenticated account download to that version; its source is `872a749`.
+The live account version, signed feed and full installer download were verified.
+Physical child installation and acceptance remain to be confirmed.
