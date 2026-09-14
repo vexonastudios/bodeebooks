@@ -48,3 +48,5 @@
   .cloud-subject-panel { padding: 14px; }
 }
 @media(pointer: coarse) { #cloud-editor .cloud-subject-grid .admin-input { min-height: 44px; font-size: 16px; } #cloud-editor .cloud-subject-grid .cloud-schedule-toggle,#cloud-editor .cloud-subject-grid .cloud-subject-child,.cloud-subject-retained summary,#cloud-editor:has(.cloud-subject-grid) .modal-actions .btn { min-height: 44px; } }
+.cloud-handwriting-fields { display:grid;gap:12px;padding:14px;border:1px solid #34d39966;border-radius:12px;background:#34d3990a; }
+.cloud-handwriting-fields[hidden] { display:none; }

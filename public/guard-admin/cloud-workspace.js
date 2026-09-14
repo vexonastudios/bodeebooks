@@ -337,9 +337,9 @@ function editor(title, fields, save) {
   byId('cloud-editor').showModal();
   byId('cloud-editor').scrollTop = 0;
 }
-function editSubject(subject = null) {
+function editSubject(subject = null, options = {}) {
   editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate,
-    close: () => byId('cloud-editor').close(), showError: message => { byId('cloud-editor-error').textContent = message; } }, subject);
+    close: () => byId('cloud-editor').close(), showError: message => { byId('cloud-editor-error').textContent = message; } }, subject, options);
 }
 
 function clearRecovery() {
@@ -505,6 +505,9 @@ byId('add-student-btn').addEventListener('click', () => editor('Add Student', [f
   byId('cloud-editor').addEventListener('close', () => parentGuide?.openChild(student.id), { once: true });
 }));
 byId('add-subject-btn').addEventListener('click', () => editSubject());
+const handwritingShortcut = button('Add Handwriting', () => editSubject(null, {preset:'handwriting'}));
+const handwritingIcon = node('i'); handwritingIcon.dataset.lucide = 'pencil'; handwritingIcon.setAttribute('aria-hidden','true'); handwritingShortcut.prepend(handwritingIcon);
+byId('add-subject-btn').before(handwritingShortcut);
 byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
 byId('add-school-break').addEventListener('click', () => addSchoolBreak());
 byId('add-day-exception').addEventListener('click', () => addDayException());
