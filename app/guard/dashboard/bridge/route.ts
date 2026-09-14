@@ -80,10 +80,11 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "list-practice": path = "/practice/list"; method = "POST"; body = { studentId: input.studentId, module: input.module, offset: input.offset }; break;
     case "list-geography": path = "/geography/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
     case "list-spanish": path = "/spanish/list"; method = "POST"; body = { studentId: input.studentId }; break;
+    case "coloring-pending": path = "/coloring-studio/pending"; method = "POST"; body = {}; break;
     case "coloring-overview": path = "/coloring-studio/overview"; method = "POST"; body = {}; break;
-    case "coloring-global-settings": path = "/coloring-studio/settings"; method = "POST"; body = { scope: "global", family_daily_limit: input.family_daily_limit, family_monthly_limit: input.family_monthly_limit, reuse_matching_pages: input.reuse_matching_pages }; break;
+    case "coloring-global-settings": path = "/coloring-studio/settings"; method = "POST"; body = { scope: "global", family_daily_limit: input.family_daily_limit, family_monthly_limit: input.family_monthly_limit, reuse_matching_pages: input.reuse_matching_pages, auto_share_with_family: input.auto_share_with_family }; break;
     case "coloring-student-settings": path = "/coloring-studio/settings"; method = "POST"; body = { scope: "student", studentId: input.studentId, enabled: input.enabled, daily_limit: input.daily_limit, custom_prompts_enabled: input.custom_prompts_enabled, allow_people: input.allow_people, require_parent_approval: input.require_parent_approval, require_image_approval: input.require_image_approval }; break;
-    case "coloring-request-action": path = "/coloring-studio/action"; method = "POST"; body = { requestId: input.requestId, action: input.requestAction }; break;
+    case "coloring-request-action": path = "/coloring-studio/action"; method = "POST"; body = { requestId: input.requestId, action: input.requestAction, shareWithFamily: input.shareWithFamily }; break;
     case "coloring-image": path = "/coloring-studio/image"; method = "POST"; body = { requestId: input.requestId, delivery: "url", thumbnail: input.thumbnail === true }; break;
     case "computer-command": path = "/computers/command"; method = "POST"; body = { kind: input.kind, locked: input.locked, deviceId: input.deviceId, studentId: input.studentId, subjectId: input.subjectId, unlocked: input.unlocked, revision: input.revision, requestId: input.requestId }; break;
     case "refresh-computers": path = "/refresh"; method = "POST"; body = {}; break;

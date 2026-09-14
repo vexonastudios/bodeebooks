@@ -52,12 +52,18 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   for(const id of ['grades','spelling','vocabulary','poems']){
     const back=button('',()=>navigate('mobile-papers'),'text-button cloud-mobile-only mobile-paper-back');back.append(icon('arrow-left'),document.createTextNode('Paper center'));byId('tab-'+id).prepend(back);
   }
-  const addTabs = ['music', 'videos', 'audiobooks'];
+  const addTabs = ['music', 'videos', 'audiobooks', 'coloring-studio'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-') || id === 'daily-plan') continue;
     const label = nav.textContent.trim();
-    const menuButton = () => button(label + '  ›', () => navigate(id));
+    const menuButton = () => {
+      const item = button('', () => navigate(id), 'mobile-more-item');
+      const mark = make('span', 'mobile-more-symbol');
+      mark.append(icon(nav.querySelector('[data-lucide]')?.dataset.lucide || 'layout-grid'));
+      item.append(mark, make('span', 'mobile-more-label', label), icon('chevron-right'));
+      return item;
+    };
     menus['mobile-more'].append(menuButton());
   }
   setupMediaHub();
@@ -101,7 +107,23 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
       }
     }
   }
+  const coloringChoice = make('div', 'mobile-media-choice'); coloringChoice.dataset.mediaKind = 'coloring-studio';
+  const coloringOpen = button('', () => navigate('coloring-studio'), 'mobile-media-open');
+  const coloringMark = make('span', 'mobile-media-symbol'); coloringMark.append(icon('paintbrush'));
+  const coloringCopy = make('span', 'mobile-media-copy');
+  const coloringCaption = make('small', '', 'Review images and share pages with siblings');
+  coloringCopy.append(make('strong', '', 'Coloring Studio'), coloringCaption);
+  coloringOpen.append(coloringMark, coloringCopy, icon('chevron-right'));
+  coloringChoice.append(coloringOpen); menus['mobile-add'].append(coloringChoice);
+  const coloringPanel = byId('tab-coloring-studio');
+  if (coloringPanel) {
+    const back = button('', () => navigate('mobile-add'), 'text-button cloud-mobile-only mobile-coloring-back');
+    back.append(icon('arrow-left'), document.createTextNode('Add media')); coloringPanel.prepend(back);
+  }
   const install = button('Add to Home Screen', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin));
+  install.className = 'mobile-more-item';
+  const installMark = make('span', 'mobile-more-symbol'); installMark.append(icon('smartphone'));
+  install.replaceChildren(installMark, make('span', 'mobile-more-label', 'Add to Home Screen'), icon('chevron-right'));
   menus['mobile-more'].prepend(install);
   const bottom = make('nav', 'bottom-nav cloud-mobile-only'); bottom.setAttribute('aria-label', 'BodeeGuard navigation');
   const tabs = [['overview', 'house', 'Controls'], ['mobile-papers', 'camera', 'Papers'], ['messages', 'mail', 'Messages'], ['mobile-add', 'plus', 'Add media'], ['mobile-more', 'ellipsis', 'More']];
@@ -110,6 +132,20 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
     nav.append(icon(glyph), make('small', '', label)); bottom.append(nav);
   }
   root.append(bottom);
+  document.addEventListener('cloud-coloring-pending', event => {
+    const count = event.detail?.pending;
+    if (!Number.isSafeInteger(count) || count < 0) return;
+    for (const nav of [bottom.querySelector('[data-mobile-tab="mobile-add"]'), coloringOpen]) {
+      let badge = nav.querySelector('.cloud-media-badge');
+      if (!badge) { badge = make('span', 'cloud-unread-badge cloud-media-badge'); badge.setAttribute('aria-hidden', 'true'); nav.append(badge); }
+      badge.hidden = count === 0; badge.textContent = count > 99 ? '99+' : String(count);
+      const title = nav === coloringOpen ? 'Coloring Studio' : 'Add media';
+      nav.setAttribute('aria-label', count ? title + ', ' + count + ' coloring requests awaiting approval' : title);
+    }
+    coloringCaption.textContent = count ? count + (count === 1 ? ' request' : ' requests') + ' awaiting your approval' : 'Review images and share pages with siblings';
+    coloringChoice.classList.toggle('has-reviews', count > 0);
+    if (count > 0) menus['mobile-add'].prepend(coloringChoice);
+  });
   const shortcut = button('', () => navigate('mobile-papers'), 'mobile-paper-shortcut cloud-mobile-only');
   const shortcutIcon=make('span','mobile-paper-shortcut-icon');shortcutIcon.append(icon('camera'));
   const shortcutCopy=make('span','');shortcutCopy.append(make('strong','','Photograph school papers'),make('small','','Student work, word lists and answer keys'));

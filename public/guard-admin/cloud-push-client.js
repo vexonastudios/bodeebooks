@@ -46,7 +46,8 @@
           if (!current()) return;
           if (event.data === 'pong') { lastPong = now(); return; }
           if (typeof event.data !== 'string' || event.data.length > 512) return;
-          try { const hint = JSON.parse(event.data); if (['messages', 'screenshots'].includes(hint.kind) && /^[a-f0-9-]{36}$/i.test(hint.studentId)) onSignal(hint); } catch (_) { /* Ignore malformed hints. */ }
+          try { const hint = JSON.parse(event.data); if (['messages', 'screenshots','settings','media','refresh'].includes(hint.kind) &&
+            (/^[a-f0-9-]{36}$/i.test(hint.studentId)||hint.studentId===null&&['settings','media','refresh'].includes(hint.kind))) onSignal(hint); } catch (_) { /* Ignore malformed hints. */ }
         };
         ws.onerror = ws.onclose = () => { if (current()) retry(); };
       } catch (_) { if (!stopped && ticketGeneration === generation) retry(); }

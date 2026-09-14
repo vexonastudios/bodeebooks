@@ -56,7 +56,7 @@ const server=http.createServer(async(req,res)=>{
   const shot=async name=>{fs.mkdirSync(path.join(root,'.tmp'),{recursive:true});fs.writeFileSync(path.join(root,'.tmp',name+'.png'),(await win.webContents.capturePage()).toPNG());};
   await win.loadURL(origin);await wait('window.ready');
   await js('document.querySelector("[data-mobile-tab=mobile-add]").click()');
-  assert.deepEqual(await js(`Array.from(document.querySelectorAll('.mobile-media-copy strong'),e=>e.textContent)`),['Music','Videos','Audiobooks']);
+  assert.deepEqual(await js(`Array.from(document.querySelectorAll('.mobile-media-copy strong'),e=>e.textContent)`),['Music','Videos','Audiobooks','Coloring Studio']);
   assert.equal(calls.length,0,'Opening the hub does not download unused libraries');
   await shot('mobile-add-media-hub');
   for(const [kind,input,title,lookup,approve,save,route,subtab]of [

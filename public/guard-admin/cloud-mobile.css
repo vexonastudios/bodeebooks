@@ -160,3 +160,22 @@
 .cloud-mobile .mobile-media-add-form > p, .cloud-mobile .mobile-media-preview label { color: #acb9d0 !important; }
 .cloud-mobile.cloud-media-form-active #parent-assistant-launcher { display: none !important; }
 .cloud-mobile .mobile-media-add-form[aria-busy="true"]::before { content: 'Opening music…'; display: block; margin-bottom: 14px; color: #c4b5fd; font-size: 14px; }
+
+/* Mobile More and Coloring Studio entry use the same icon language as the tabs. */
+.cloud-mobile #tab-mobile-more .more-list { display: grid; gap: 9px; }
+.cloud-mobile #tab-mobile-more .mobile-more-item { display: grid; grid-template-columns: 42px minmax(0,1fr) 18px; gap: 12px; align-items: center; padding: 12px 14px; min-height: 64px; width: 100%; text-align: left; border: 1px solid #ffffff18; border-radius: 16px; background: #131629; color: #ececf7; }
+.cloud-mobile .mobile-more-symbol { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #a78bfa15; color: #c4b5fd; }
+.cloud-mobile .mobile-more-symbol svg { width: 22px; height: 22px; }
+.cloud-mobile .mobile-more-label { font-size: 15px; font-weight: 600; line-height: 1.35; }
+.cloud-mobile .mobile-more-item > svg { width: 18px; height: 18px; color: #a1a1bc; }
+.cloud-mobile .mobile-media-choice[data-media-kind="coloring-studio"] .mobile-media-symbol { color: #f9b5d8; background: #ec48991c; }
+.cloud-mobile .mobile-media-choice.has-reviews { border-color: #f59e0b77; }
+.cloud-mobile .mobile-media-open { position: relative; }
+.cloud-mobile .mobile-media-open .cloud-media-badge { position: absolute; top: 6px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; display: grid; place-items: center; background: #fbbf24; color: #271800; font-size: 11px; font-weight: 800; }
+.cloud-mobile .bottom-nav .cloud-media-badge { background: #fbbf24; color: #271800; }
+.cloud-mobile .mobile-coloring-back { display: flex; gap: 8px; align-items: center; min-height: 44px; padding: 0; margin-bottom: 12px; color: #c4b5fd; font-size: 14px; }
+.cloud-mobile .mobile-coloring-back svg { width: 18px; height: 18px; }
+.cloud-mobile #cloud-coloring-studio .cloud-coloring-actions .btn { min-height: 46px; font-size: 14px; }
+.cloud-mobile #cloud-coloring-studio .cloud-coloring-preview { aspect-ratio: 4/3; max-height: 240px; }
+
+.cloud-mobile.cloud-coloring-active #parent-assistant-launcher { display: none !important; }

@@ -399,8 +399,8 @@ const livePush = window.CloudPush.createCloudPushClient({
     return response.json();
   },
   onConnection: connected => { byId('live-indicator').dataset.messagesConnected=String(connected); messaging.setLive(connected); },
-  onReady: () => screenshots.refresh(),
-  onSignal: hint => { if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);} if(hint.kind==='screenshots')screenshots.refresh(); }
+  onReady: () => { screenshots.refresh(); void coloringStudio.refreshPending(); },
+  onSignal: hint => { if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);} if(hint.kind==='screenshots')screenshots.refresh(); if(hint.kind==='media')void coloringStudio.refreshPending(true); }
 });
 const mathCoach = setupCloudMathCoach({ endpoint, navigate: selectTab });
 const spelling = setupCloudSpelling({ endpoint });
@@ -454,6 +454,7 @@ const dashboardRefresh = createDashboardRefresh({
       if (response.status === 401) window.parent.postMessage({type:'bodeeguard-renew-session'}, location.origin);
       throw new Error(response.status === 401 ? 'Reconnecting your account…' : data.error || 'The cloud service could not be reached.');
     }
+    void coloringStudio.refreshPending();
     snapshot = data;
     usable = true;
     byId('live-text').textContent = 'Refreshes on opening · Every 30 min while visible';
