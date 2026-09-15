@@ -28,6 +28,7 @@ import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupWhiteNoise } from './cloud-white-noise.js';
+import { setupApprovedApps } from './cloud-approved-apps.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260911-screenshot1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260911-controls1';
@@ -89,6 +90,7 @@ function selectTab(id) {
   reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports'); geography.setActive(id === 'reports'); spanish.setActive(id === 'reports'); spelling.setActive(id === 'spelling');
   coloringStudio.setActive(id === 'coloring-studio');
   whiteNoise.setActive(id === 'white-noise');
+  approvedApps.setActive(id === 'apps');
   screenshots.setActive(id === 'screenshots');
   mathCoach.setActive(id === 'math-coach');
   vocabulary.setActive(id === 'vocabulary');
@@ -392,6 +394,7 @@ const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot })
 const spanish = setupCloudSpanish({ endpoint, getSnapshot: () => snapshot });
 const coloringStudio = setupCloudColoringStudio({ endpoint });
 const whiteNoise = setupWhiteNoise({ endpoint });
+const approvedApps = setupApprovedApps({ endpoint });
 const songRequests = setupSongRequests({ endpoint, navigate: selectTab });
 const screenshots = setupCloudScreenshots({ endpoint });
 let pushTicketController = null;
