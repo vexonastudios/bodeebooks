@@ -5,8 +5,10 @@ const byId = id => document.getElementById(id);
 function node(tag, className = '', text = '') {
   const result = document.createElement(tag); result.className = className; result.textContent = text; return result;
 }
-function action(text, callback) {
-  const result = node('button', 'btn btn-secondary', text); result.type = 'button';
+function action(text, callback, { className = '', icon = null, label = null } = {}) {
+  const result = node('button', `btn btn-secondary ${className}`.trim()); result.type = 'button';
+  if (icon) { const mark = node('i'); mark.dataset.lucide = icon; result.replaceChildren(mark, node('span', '', text)); }
+  if (label) result.setAttribute('aria-label', label);
   result.dataset.cloudMutation = 'true'; result.addEventListener('click', callback); return result;
 }
 function formatDate(date, options) {
@@ -73,25 +75,34 @@ export function setupCloudCalendar({ getSnapshot, editException, editSubject, se
   function renderDetails(snapshot, schedule) {
     const details = byId('cloud-calendar-day-details'); details.replaceChildren();
     const state = cloudSchoolDayState(schedule, selectedDate);
-    details.append(node('h3', '', formatDate(selectedDate, { weekday: 'long', month: 'long', day: 'numeric' })),
-      node('p', 'cloud-day-status', dayLabel(state)));
+    const summary = node('header', 'cloud-day-summary'), summaryCopy = node('div');
+    summaryCopy.append(node('h3', '', formatDate(selectedDate, { weekday: 'long', month: 'long', day: 'numeric' })),
+      node('p', 'cloud-day-status', dayLabel(state)),
+      node('p', 'cloud-note', schedule.enabled ? `School hours: ${schedule.start}–${schedule.end}` : 'No family calendar restriction.'));
+    const exception = state.exception;
+    summary.append(summaryCopy, action(exception ? 'Edit exception' : 'Add day off or exception', () => editException(selectedDate, exception),
+      { className: 'cloud-calendar-exception-action', icon: exception ? 'calendar-cog' : 'calendar-plus' }));
+    details.append(summary);
+    if(selectedDate<=today()){const host=node('section','cloud-calendar-checkin');host.id='cloud-calendar-attendance';details.append(host);void attendance.render(host,selectedDate,snapshot);}
     {
-      details.append(node('p', 'cloud-note', schedule.enabled ? `School hours: ${schedule.start}–${schedule.end}` : 'No family calendar restriction.'));
       const subjects = snapshot.rules.subjects.filter(subject => !Array.isArray(subject.assignments) || subject.assignments.length);
-      if (!subjects.length) details.append(node('p', 'cloud-note', 'No subjects assigned yet. Add school links and choose children under Subjects.'));
+      const section = node('section', 'cloud-calendar-subjects'), heading = node('div', 'cloud-calendar-section-heading');
+      heading.append(node('h4', '', 'Subject availability'), node('span', '', String(subjects.length))); section.append(heading);
+      const list = node('div', 'cloud-day-subject-list'); section.append(list); details.append(section);
+      if (!subjects.length) list.append(node('p', 'cloud-note', 'No subjects assigned yet. Add school links and choose children under Subjects.'));
       for (const subject of subjects) {
         const start = [schedule.enabled ? schedule.start : '00:00', subject.scheduleStart || '00:00'].sort().at(-1);
         const end = [schedule.enabled ? schedule.end : '24:00', subject.scheduleEnd || '24:00'].sort()[0];
         const hours = cloudSubjectAlwaysOpen(subject) ? 'Always open · no time cutoff' : !state.allowed ? 'Closed by school calendar' : start >= end ? 'Unavailable: subject hours do not overlap school hours'
           : start === '00:00' && end === '24:00' ? 'All day' : `${start}–${end}`;
-        const row = node('div', 'cloud-day-subject'); row.append(node('strong', '', subject.title), node('span', '', hours));
-        const edit = action(`Edit ${subject.title}`, () => editSubject(subject)); row.append(edit); details.append(row);
+        const row = node('div', 'cloud-day-subject'), copy = node('div', 'cloud-day-subject-copy');
+        copy.append(node('strong', '', subject.title), node('span', '', hours));
+        const edit = action('Edit', () => editSubject(subject), { className: 'cloud-subject-edit', icon: 'pencil', label: `Edit ${subject.title}` });
+        row.append(copy, edit); list.append(row);
       }
     }
-    if(selectedDate<=today()){const host=node('section');host.id='cloud-calendar-attendance';details.append(host);void attendance.render(host,selectedDate,snapshot);}
-    const exception = state.exception;
-    details.append(action(exception ? 'Edit this exception' : 'Add exception for this day', () => editException(selectedDate, exception)));
     details.append(node('p', 'cloud-note cloud-calendar-footnote', 'Always-open subjects remain accessible outside the calendar. Parent locks and account approval still apply.'));
+    window.lucide?.createIcons();
   }
   function shiftMonth(amount) {
     if (!month) return;

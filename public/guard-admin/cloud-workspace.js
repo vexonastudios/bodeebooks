@@ -16,7 +16,7 @@ import { connectionState, deliveryState, editSchedule, assignmentFor } from './c
 import { setupCloudMessages } from './cloud-messages.js?v=20260913-chat';
 import './cloud-push-client.js';
 import { setupCloudMobile } from './cloud-mobile.js?v=20260913-chat';
-import { setupCloudCalendar } from './cloud-calendar.js';
+import { setupCloudCalendar } from './cloud-calendar.js?v=20260914-layout1';
 import { setupCloudRecords } from './cloud-records.js?v=20260910-documents1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1';
 import { setupCloudFiles } from './cloud-files.js?v=20260910-mobile1';
