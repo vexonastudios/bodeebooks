@@ -184,13 +184,18 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   // Camera input feeds the existing upload form and its normal validation.
   const file = byId('cloud-paper-file');
   if (file) {
+    const fileField = file.closest('label');
+    const fieldText = [...(fileField?.childNodes || [])].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+    if (fieldText) fieldText.replaceWith(make('span', 'mobile-paper-field-label', fieldText.textContent.trim()));
+    fileField?.classList.add('mobile-paper-file-field');
     const camera = make('input', ''); camera.type = 'file'; camera.accept = 'image/*'; camera.setAttribute('capture', 'environment'); camera.hidden = true;
-    const takePhoto = button('Take a photo', () => camera.click(), 'btn btn-primary cloud-mobile-only');
-    const choose=button('Choose a file',()=>file.click(),'btn btn-secondary cloud-mobile-only');choose.prepend(icon('image-plus'));
+    const takePhoto = button('Take a photo', event => { event.preventDefault(); camera.click(); }, 'btn btn-primary cloud-mobile-only');
+    const choose=button('Choose a file',event=>{event.preventDefault();file.click();},'btn btn-secondary cloud-mobile-only');choose.prepend(icon('image-plus'));
+    const actions=make('span','mobile-paper-actions cloud-mobile-only');actions.append(takePhoto,choose);
     const selectedName=make('span','mobile-selected-file cloud-mobile-only','No photo selected');
     file.classList.add('mobile-native-file');
     file.addEventListener('invalid',event=>{if(media.matches){event.preventDefault();byId('cloud-files-status').textContent='Take a photo or choose a file first.';takePhoto.focus();}});
-    file.before(takePhoto,choose,camera);file.after(selectedName);
+    if(fileField)fileField.after(actions,camera,selectedName);else file.before(actions,camera,selectedName);
     file.addEventListener('change',()=>{selectedName.textContent=file.files?.[0]?.name||'No photo selected';});
     takePhoto.prepend(icon('camera'));
     camera.addEventListener('change', async () => {
@@ -220,6 +225,7 @@ export function setupCloudMobile({ navigate, refresh, openSpelling }) {
   return {
     setActive(id) {
       document.body.classList.toggle('cloud-media-form-active', Boolean(byId('tab-' + id)?.classList.contains('mobile-media-add')));
+      document.body.classList.toggle('cloud-papers-active', id === 'grades');
       if(id==='mobile-papers')paperContext=true;
       const selected = paperContext&&['grades','spelling','vocabulary','poems'].includes(id)?'mobile-papers':tabs.some(([tab]) => tab === id) ? id : addTabs.includes(id) ? 'mobile-add' : 'mobile-more';
       for (const nav of bottom.children) {

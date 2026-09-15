@@ -179,3 +179,141 @@
 .cloud-mobile #cloud-coloring-studio .cloud-coloring-preview { aspect-ratio: 4/3; max-height: 240px; }
 
 .cloud-mobile.cloud-coloring-active #parent-assistant-launcher { display: none !important; }
++
+
+/* Keep the School Papers camera workflow compact and fully reachable above phone navigation. */
+.cloud-mobile.cloud-papers-active .main-content { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+.cloud-mobile.cloud-papers-active #parent-assistant-launcher { display: none !important; }
+.cloud-mobile #tab-grades .cloud-papers {
+  min-width: 0;
+  margin: 0 0 22px;
+  padding: 16px;
+  border-color: rgba(148, 163, 184, .2);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(17, 21, 43, .98), rgba(10, 14, 30, .98));
+  box-shadow: 0 16px 36px rgba(2, 6, 23, .22);
+}
+.cloud-mobile #tab-grades .cloud-papers > h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  line-height: 1.2;
+}
+.cloud-mobile #tab-grades .cloud-papers > h2 + p {
+  margin: 0 0 16px;
+  color: #a7b2c8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.cloud-mobile #cloud-paper-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 11px;
+  margin: 0 0 14px;
+}
+.cloud-mobile #cloud-paper-form > label {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  margin: 0;
+  color: #d6dbea;
+  font-size: 12px;
+  font-weight: 800;
+}
+.cloud-mobile #cloud-paper-student {
+  width: 100%;
+  min-height: 48px;
+  border-color: rgba(148, 163, 184, .2);
+  border-radius: 13px;
+  background: rgba(2, 6, 23, .58);
+}
+.cloud-mobile .mobile-native-file { display: none; }
+.cloud-mobile .mobile-paper-file-field { margin-top: 2px !important; }
+.cloud-mobile .mobile-paper-field-label { display: block; }
+.cloud-mobile .mobile-paper-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+.cloud-mobile #cloud-paper-form .mobile-paper-actions .btn {
+  display: inline-flex !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 10px;
+  font-size: 13px;
+}
+.cloud-mobile #cloud-paper-form svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.cloud-mobile .mobile-selected-file {
+  display: block !important;
+  min-width: 0;
+  min-height: 34px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow-wrap: anywhere;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, .32);
+  color: #a7b2c8;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.cloud-mobile #cloud-paper-upload {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 0 !important;
+}
+.cloud-mobile #cloud-paper-reset {
+  justify-self: start;
+  min-height: 36px;
+  margin: -2px 0 0 !important;
+  padding: 5px 2px;
+  border-color: transparent;
+  background: transparent;
+  color: #aeb8cd;
+  font-size: 11px;
+}
+.cloud-mobile #cloud-files-refresh {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.cloud-mobile #cloud-files-status {
+  max-width: 100%;
+  margin: 0 0 14px;
+  color: #a7b2c8;
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.cloud-mobile #cloud-files-status:empty { display: none; }
+.cloud-mobile #cloud-files-list { display: grid; gap: 10px; min-width: 0; }
+.cloud-mobile #cloud-files-list .cloud-file-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border-color: rgba(148, 163, 184, .18);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, .3);
+}
+.cloud-mobile #cloud-files-list .cloud-file-row > span { grid-column: 1 / -1; min-width: 0; font-size: 11px; line-height: 1.5; }
+.cloud-mobile #cloud-files-list .cloud-file-row > button { width: 100%; min-width: 0; margin: 0; font-size: 11px; }
+@media (max-width: 350px) {
+  .cloud-mobile .mobile-paper-actions,
+  .cloud-mobile #cloud-files-list .cloud-file-row { grid-template-columns: minmax(0, 1fr); }
+  .cloud-mobile #cloud-files-list .cloud-file-row > span { grid-column: 1; }
+}

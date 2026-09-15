@@ -34,7 +34,7 @@ export function setupCloudFiles({ endpoint, gradePaper }) {
   el('cloud-files-refresh').addEventListener('click', refresh);
   el('cloud-paper-reset').addEventListener('click', () => {
     if (uploading || (pending && !confirm('Stop retrying this upload? It may already be saved online. Check the file list before uploading another copy. Your original file is unchanged.'))) return;
-    pending = null; el('cloud-paper-file').value = ''; el('cloud-paper-file').disabled = false; el('cloud-paper-student').disabled = false; el('cloud-paper-upload').textContent = 'Upload paper';
+    pending = null; el('cloud-paper-file').value = ''; el('cloud-paper-file').dispatchEvent(new Event('change', { bubbles: true })); el('cloud-paper-file').disabled = false; el('cloud-paper-student').disabled = false; el('cloud-paper-upload').textContent = 'Upload paper';
     el('cloud-files-status').textContent = 'Choose a new paper. Previous saved files and incomplete reservations remain in the file list.'; void refresh();
   });
   el('cloud-paper-form').addEventListener('submit', async event => {
@@ -46,7 +46,7 @@ export function setupCloudFiles({ endpoint, gradePaper }) {
       el('cloud-files-status').textContent = 'Saving private paper…';
       const receipt = await request('upload-file', pending);
       if (receipt.file?.id !== pending.id || !receipt.saved) throw new Error('Upload receipt did not match. Retry the same upload.');
-      pending = null; el('cloud-paper-file').value = ''; el('cloud-files-status').textContent = 'Paper saved. Open it to review, rotate or download; use Add Grade for its score.';
+      pending = null; el('cloud-paper-file').value = ''; el('cloud-paper-file').dispatchEvent(new Event('change', { bubbles: true })); el('cloud-files-status').textContent = 'Paper saved. Open it to review, rotate or download; use Add Grade for its score.';
       void refresh();
     } catch (error) { el('cloud-files-status').textContent = `${error.message} Your original file is unchanged. Keep this page open and retry with the same upload ID.`; }
     finally { uploading = false; submit.disabled = false; submit.textContent = pending ? 'Retry same paper' : 'Upload paper'; el('cloud-paper-file').disabled = Boolean(pending); el('cloud-paper-student').disabled = Boolean(pending); }
