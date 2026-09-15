@@ -179,7 +179,18 @@
 .cloud-mobile #cloud-coloring-studio .cloud-coloring-preview { aspect-ratio: 4/3; max-height: 240px; }
 
 .cloud-mobile.cloud-coloring-active #parent-assistant-launcher { display: none !important; }
-+
+
+/* On phones, lead with the spelling work instead of long desktop-only explanations. */
+.cloud-mobile #tab-spelling .spelling-policy-note,
+.cloud-mobile #tab-spelling .spelling-coach-panel {
+  display: none !important;
+}
+.cloud-mobile #tab-spelling .spelling-tab-header {
+  margin-bottom: 8px;
+}
+.cloud-mobile #tab-spelling .spelling-view-tabs {
+  margin-top: 8px;
+}
 
 /* Keep the School Papers camera workflow compact and fully reachable above phone navigation. */
 .cloud-mobile.cloud-papers-active .main-content { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }

@@ -81,8 +81,20 @@ const server = http.createServer((request, response) => {
   win.setContentSize(320, 568);
   await wait('innerWidth === 320');
   assert.equal(await js('document.documentElement.scrollWidth <= innerWidth'), true);
+  await js('navigate("spelling")');
+  assert.equal(await js(`(() => {
+    const policy = document.querySelector('#tab-spelling .spelling-policy-note');
+    const coach = document.querySelector('#tab-spelling .spelling-coach-panel');
+    const add = document.querySelector('#spelling-add-list').getBoundingClientRect();
+    return getComputedStyle(policy).display === 'none'
+      && getComputedStyle(coach).display === 'none'
+      && add.left >= 0
+      && add.right <= innerWidth
+      && document.documentElement.scrollWidth <= innerWidth;
+  })()`), true);
+  fs.writeFileSync(path.join(root, '.tmp', 'parent-mobile-spelling.png'), (await win.webContents.capturePage()).toPNG());
   win.destroy(); server.close();
-  console.log('PASS: compact School Papers form, camera/file controls, reachable status and narrow phone layout');
+  console.log('PASS: compact School Papers controls and mobile Spelling starts at useful list controls');
   app.exit(0);
 } catch (error) {
   console.error(error?.stack || error);
