@@ -1227,6 +1227,124 @@
     ]
   },
   {
+    "slug": "ted-scott-first-stop-honolulu",
+    "title": "First Stop Honolulu: Clearing My Father's Name",
+    "author": "Franklin W. Dixon",
+    "seriesSlug": "ted-scott-flying-stories",
+    "seriesTitle": "Ted Scott Flying Stories",
+    "seriesNumber": 4,
+    "youtubeVideoId": "yolRzjLm-mU",
+    "paperbackUrl": "https://www.amazon.com/dp/B0HHV87NJR",
+    "description": "Ted Scott races nonstop across the Pacific to Honolulu, battling storms, mechanical failures, and danger as he searches for the truth that can clear his father's name.",
+    "duration": "",
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Clearing the Clouds",
+        "timestamp": 17
+      },
+      {
+        "title": "2 - Plunging Earthward",
+        "timestamp": 671
+      },
+      {
+        "title": "3 - From the Jaws of Death",
+        "timestamp": 1487
+      },
+      {
+        "title": "4 - A Close Call",
+        "timestamp": 2570
+      },
+      {
+        "title": "5 - A Startling Revelation",
+        "timestamp": 3233
+      },
+      {
+        "title": "6 - A Thunderbolt",
+        "timestamp": 3950
+      },
+      {
+        "title": "7 - Three Against One",
+        "timestamp": 4806
+      },
+      {
+        "title": "8 - On The Trail",
+        "timestamp": 5597
+      },
+      {
+        "title": "9 - Was He Guilty?",
+        "timestamp": 6627
+      },
+      {
+        "title": "10 - Old Enemies",
+        "timestamp": 7312
+      },
+      {
+        "title": "11 - A Merited Thrashing",
+        "timestamp": 8076
+      },
+      {
+        "title": "12 - A Happy Slogan",
+        "timestamp": 8838
+      },
+      {
+        "title": "13 - Preparations",
+        "timestamp": 9512
+      },
+      {
+        "title": "14 - As One from the Dead",
+        "timestamp": 10215
+      },
+      {
+        "title": "15 - On The Wing",
+        "timestamp": 11161
+      },
+      {
+        "title": "16 - The Edge of Peril",
+        "timestamp": 11774
+      },
+      {
+        "title": "17 - A Narrow Escape",
+        "timestamp": 12338
+      },
+      {
+        "title": "18 - Just In Time",
+        "timestamp": 12710
+      },
+      {
+        "title": "19 - The Burning Ship",
+        "timestamp": 13157
+      },
+      {
+        "title": "20 - Racing with Death",
+        "timestamp": 13572
+      },
+      {
+        "title": "21 - The Castaway",
+        "timestamp": 14040
+      },
+      {
+        "title": "22 - Land Ho!",
+        "timestamp": 14601
+      },
+      {
+        "title": "23 - Winning the Prize",
+        "timestamp": 15036
+      },
+      {
+        "title": "24 - In Hot Pursuit",
+        "timestamp": 15615
+      },
+      {
+        "title": "25 - Captured",
+        "timestamp": 16148
+      }
+    ]
+  },
+  {
     "slug": "penny-parker-danger-at-the-drawbridge",
     "title": "Danger at the Drawbridge",
     "author": "Mildred A. Wirt",
@@ -2906,6 +3024,63 @@
       {
         "title": "22 — Conclusion",
         "timestamp": 16223
+      }
+    ]
+  },
+  {
+    "slug": "lazy-robert",
+    "title": "Lazy Robert",
+    "author": "Madeline Leslie",
+    "seriesSlug": null,
+    "seriesTitle": null,
+    "seriesNumber": null,
+    "youtubeVideoId": "6PYqzW_TOdk",
+    "description": "Robert Weeks is a clever but idle boy whose avoidance of study and growing dishonesty lead him from small acts of disobedience into deception and running away to join the army. What first appears to be an exciting adventure becomes a sobering lesson in the consequences of laziness, selfishness, and sin.",
+    "duration": "",
+    "chapters": [
+      {
+        "title": "Introduction",
+        "timestamp": 0
+      },
+      {
+        "title": "1 - Robert and the Major",
+        "timestamp": 14
+      },
+      {
+        "title": "2 - Robert and the Regiment",
+        "timestamp": 486
+      },
+      {
+        "title": "3 - Robert's Lesson",
+        "timestamp": 823
+      },
+      {
+        "title": "4 - Robert's Deceit",
+        "timestamp": 1204
+      },
+      {
+        "title": "5 - Robert's Confession",
+        "timestamp": 1637
+      },
+      {
+        "title": "6 - Robert's Spelling",
+        "timestamp": 2056
+      },
+      {
+        "title": "7 - Robert's Letter",
+        "timestamp": 2472
+      },
+      {
+        "title": "8 - Robert, the Runaway",
+        "timestamp": 2866
+      },
+      {
+        "title": "9 - Robert's Mother",
+        "timestamp": 3264
+      },
+      {
+        "title": "10 - Robert's Death",
+        "timestamp": 3643
       }
     ]
   }

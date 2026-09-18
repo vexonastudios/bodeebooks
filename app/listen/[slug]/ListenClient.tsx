@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, BookOpen, User, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, User, ExternalLink } from "lucide-react";
 import YoutubePlayer, { type YoutubePlayerHandle } from "@/components/YoutubePlayer";
 import ChapterList from "@/components/ChapterList";
 import styles from "./ListenClient.module.css";
@@ -20,6 +20,7 @@ interface Book {
   seriesTitle: string | null;
   seriesNumber: number | null;
   youtubeVideoId: string;
+  paperbackUrl?: string;
   description: string;
   chapters: Chapter[];
 }
@@ -121,6 +122,17 @@ export default function ListenClient({ book, prevBook, nextBook }: ListenClientP
                 <span>About this book</span>
               </div>
               <p>{book.description}</p>
+              {book.paperbackUrl && (
+                <a
+                  href={book.paperbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.paperbackLink}
+                >
+                  Get the paperback on Amazon
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              )}
             </div>
 
             {/* Episode navigation */}
