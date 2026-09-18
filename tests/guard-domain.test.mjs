@@ -87,6 +87,21 @@ test('Clerk forms use the actual parent host paths, returning sign-in to dashboa
   }
 });
 
+test('public registration is marked coming soon without advertising a signup path', () => {
+  const actions = fs.readFileSync(path.resolve('components/GuardAuthActions.tsx'), 'utf8');
+  assert.match(actions, /Parent accounts coming soon/);
+  assert.doesNotMatch(actions, /href="\/guard\/sign-up"/);
+
+  const landing = fs.readFileSync(path.resolve('app/guard/page.tsx'), 'utf8');
+  assert.match(landing, /Coming soon for families/);
+  assert.doesNotMatch(landing, /Create the parent account that will manage/);
+
+  const entry = fs.readFileSync(path.resolve('components/GuardAccountEntry.tsx'), 'utf8');
+  assert.match(entry, /New family registration is coming soon/);
+  assert.match(entry, /Public parent registration is coming soon/);
+  assert.doesNotMatch(entry, /First visit to the parent website\? Create your account|Create my parent web account/);
+});
+
 test('bookstore analytics are never mounted on parent domains or old parent paths', () => {
   const previous = globalThis.window;
   try {

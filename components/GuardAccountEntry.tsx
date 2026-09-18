@@ -49,6 +49,7 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
   const onGuard = isGuardHost((await headers()).get("host"));
   const base = onGuard ? "" : "/guard";
   const signIn = `${base}/sign-in`, signUp = `${base}/sign-up`;
+  const publicGuard = `${BOOKS_ORIGIN}/guard/`;
 
   return (
     <div className={styles.authPage}>
@@ -59,10 +60,11 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
           <Link href={onGuard ? `${BOOKS_ORIGIN}/guard/` : "/guard"} className={styles.backLink}>
             <ArrowLeft size={16} /> Back to BodeeGuard
           </Link>
-          <Link href={isSignUp ? signIn : signUp} className={styles.switchLink}>
-            {isSignUp ? "Already created your web account? Sign in" : "First visit to the parent website? Create your account"}
-            <ArrowRight size={15} />
-          </Link>
+          {isSignUp ? (
+            <Link href={signIn} className={styles.switchLink}>Already created your web account? Sign in <ArrowRight size={15} /></Link>
+          ) : (
+            <span className={styles.switchLink}>New family registration is coming soon</span>
+          )}
         </header>
 
         {isSignUp && (
@@ -119,9 +121,9 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
               <aside className={styles.firstWebAccountNote}>
                 <ShieldCheck size={18} />
                 <div>
-                  <strong>First time here?</strong>
-                  <p>Create and verify your parent account before signing in. Children use the Windows app, not this parent login.</p>
-                  <Link href={signUp}>Create my parent web account <ArrowRight size={14} /></Link>
+                  <strong>New to BodeeGuard?</strong>
+                  <p>Public parent registration is coming soon. This sign-in is for existing family test accounts.</p>
+                  <Link href={publicGuard}>Learn about BodeeGuard <ArrowRight size={14} /></Link>
                 </div>
               </aside>
             )}
@@ -140,7 +142,7 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
                 fallbackRedirectUrl={`${base}/dashboard/`}
                 path={signIn}
                 routing="path"
-                signUpUrl={signUp}
+                signUpUrl={publicGuard}
               />
             )}
 

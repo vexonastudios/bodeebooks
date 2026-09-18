@@ -33,9 +33,11 @@
 .platformPills span { padding: 7px 11px; border: 1px solid #ccdfdf; border-radius: 999px; color: #31536a; background: rgba(255,255,255,.72); font-size: .76rem; font-weight: 750; }
 .authActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .accountNote { flex-basis: 100%; max-width: 540px; color: #557084; font-size: .78rem; line-height: 1.5; }
-.primaryButton, .secondaryButton { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 20px; border-radius: 10px; font-size: .94rem; font-weight: 750; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; }
+.primaryButton, .secondaryButton, .comingSoonButton { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 20px; border-radius: 10px; font-size: .94rem; font-weight: 750; }
 .primaryButton { color: white; background: linear-gradient(135deg, #0878d8, #0a9ea6); box-shadow: 0 8px 24px rgba(9,116,170,.22); }
 .secondaryButton { color: #17304d; background: white; border: 1px solid #cddcde; }
+.comingSoonButton { color: #68480a; border: 1px solid #e2c36d; background: linear-gradient(135deg, #fff8dc, #f9e7aa); box-shadow: 0 8px 22px rgba(120,87,18,.12); }
+.primaryButton, .secondaryButton { transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; }
 .primaryButton:hover, .secondaryButton:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(9,40,65,.16); }
 .reassurance { display: flex; align-items: center; gap: 7px; margin-top: 20px; color: #567084; font-size: .85rem; }
 .reassurance svg { color: #199872; }
@@ -160,6 +162,6 @@
   .dayGrid article { padding: 24px; }
   .setupSection { padding: 70px 0; }
   .finalCta { margin-top: 64px; padding: 31px 24px; }
-  .primaryButton, .secondaryButton { width: 100%; }
+  .primaryButton, .secondaryButton, .comingSoonButton { width: 100%; }
   .authActions { width: 100%; }
 }

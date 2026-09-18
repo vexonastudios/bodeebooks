@@ -3,7 +3,7 @@
 import { Show, UserButton } from "@clerk/nextjs";
 import { useGuardSignOut } from './GuardSignOut';
 import Link from "next/link";
-import { ArrowRight, LogIn, LogOut } from "lucide-react";
+import { ArrowRight, Clock3, LogIn, LogOut } from "lucide-react";
 import styles from "@/app/guard/guard.module.css";
 
 export default function GuardAuthActions() {
@@ -11,13 +11,13 @@ export default function GuardAuthActions() {
   return (
     <div className={styles.authActions}>
       <Show when="signed-out">
-        <Link className={styles.primaryButton} href="/guard/sign-up">
-          Create parent account <ArrowRight size={17} />
-        </Link>
+        <span className={styles.comingSoonButton}>
+          <Clock3 size={17} /> Parent accounts coming soon
+        </span>
         <Link className={styles.secondaryButton} href="/guard/sign-in">
           <LogIn size={17} /> Parent sign in
         </Link>
-        <span className={styles.accountNote}>Creating an account is free. The 30-day trial requires no card and creates no automatic charge; subscribe afterward only if you choose.</span>
+        <span className={styles.accountNote}>BodeeGuard is in private family testing. New parent registration and the public Windows download are not open yet.</span>
       </Show>
       <Show when="signed-in">
         <Link className={styles.primaryButton} href="/guard/account">

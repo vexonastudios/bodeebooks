@@ -72,7 +72,7 @@ const schoolDay = [
 ];
 
 const steps = [
-  "Create and verify your parent account. Start the 30-day trial when your Windows download is ready—no card required.",
+  "When public enrollment opens, create and verify the parent account that will manage your family’s computers.",
   "Install BodeeGuard Cloud on each child’s Windows computer. Approve the code it shows from your parent account—no website sign-in is needed on the child computer.",
   "Assign a child and save an offline recovery code in your online dashboard. Confirm recovery in the child app, then begin school. Parents manage everything from a phone or browser, with nothing to install.",
 ];
@@ -198,9 +198,9 @@ export default function GuardPage() {
 
       <section className={`container ${styles.finalCta}`}>
         <div>
-          <span>A Windows computer with a purpose</span>
+          <span>Coming soon for families</span>
           <h2>Give children freedom inside a space built for school.</h2>
-          <p>Create the parent account that will manage your family’s BodeeGuard computers, then try the complete system free for 30 days—no trial code or card is needed. The trial ends without a charge. Afterward, subscribe for $19.99 per month only if BodeeGuard is right for your family. The public Windows installer is the next release step.</p>
+          <p>BodeeGuard is currently in private family testing. New parent accounts and the public Windows download are not open yet while we finish real-computer testing and prepare the family release.</p>
         </div>
         <GuardAuthActions />
       </section>
