@@ -150,11 +150,11 @@ export default function HomePage() {
         <SeriesShelf
           title="Newest Audiobooks"
           books={[
+            "ted-scott-first-stop-honolulu",
+            "lazy-robert",
             "falsely-accused-out-of-the-depths",
             "alone-in-london",
             "toby-tyler",
-            "penny-parker-the-wishing-well",
-            "george-washington-making-of-americas-first-president",
           ].map(slug => booksData.find(b => b.slug === slug)).filter(Boolean) as Book[]}
         />
 

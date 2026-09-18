@@ -110,6 +110,22 @@
   line-height: 1.7;
 }
 
+.paperbackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  color: var(--green);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: color var(--transition);
+}
+
+.paperbackLink:hover {
+  color: var(--green-dark);
+  text-decoration: underline;
+}
+
 /* Episode navigation */
 .episodeNav {
   display: flex;
