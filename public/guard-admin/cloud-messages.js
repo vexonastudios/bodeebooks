@@ -24,7 +24,7 @@ export function setupCloudMessages({ endpoint }) {
   let previewFile = null, previewUrl = null, recordingChild = null;
   const voicePanel = document.createElement('div'); voicePanel.className = 'cloud-chat-voice';
   voicePanel.innerHTML = '<div class="cloud-chat-voice-actions"><button id="messages-record" class="btn btn-secondary" type="button" disabled><i data-lucide="mic"></i><span>Record voice</span></button><span id="messages-record-status" role="status"></span></div><div id="messages-voice-preview" class="cloud-chat-voice-preview" hidden><audio id="messages-voice-audio" controls preload="metadata" aria-label="Preview your voice message"></audio><span id="messages-voice-duration"></span><button id="messages-voice-discard" class="btn btn-secondary" type="button"><i data-lucide="trash-2"></i>Discard</button></div>';
-  el('messages-reply-box').prepend(voicePanel);
+  el('messages-compose-tools').prepend(voicePanel);
   document.querySelector('.cloud-messages-panel > .cloud-note').textContent = 'Record a voice message up to 60 seconds, or attach an image, PDF or audio file up to 2 MB. Messages travel over an encrypted connection. Received means delivered to the computer.';
   const voice = createVoiceRecorder({ onChange: value => {
     const recording = value.phase === 'recording', label = el('messages-record').querySelector('span');

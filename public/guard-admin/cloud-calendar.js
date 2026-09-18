@@ -1,4 +1,3 @@
-import { setupCloudAttendance } from './cloud-attendance.js';
 // The preview uses the same calendar decisions as the API and child app.
 const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts, cloudSubjectAlwaysOpen } = globalThis.BODEE_CLOUD_SCHEDULE;
 const byId = id => document.getElementById(id);
@@ -20,7 +19,6 @@ function dayLabel(state) {
 }
 
 export function setupCloudCalendar({ getSnapshot, editException, editSubject, setControls }) {
-  const attendance=setupCloudAttendance();
   let month = null;
   let selectedDate = null;
   let renderedKey = null;
@@ -36,12 +34,12 @@ export function setupCloudCalendar({ getSnapshot, editException, editSubject, se
     selectedDate ||= currentDate;
     month ||= selectedDate.slice(0, 7);
     const key = JSON.stringify([snapshot.rules, currentDate, month, selectedDate]);
-    if (!force && key === renderedKey) { const host=byId('cloud-calendar-attendance');if(host&&selectedDate<=currentDate)void attendance.render(host,selectedDate,snapshot);return; }
+    if (!force && key === renderedKey) return;
     renderedKey = key;
     const focusedDate = byId('cloud-calendar-days').contains(document.activeElement) ? document.activeElement.dataset.date : null;
     byId('cloud-calendar-enabled-note').textContent = schedule.enabled
-      ? `Select a date to view hours or add a day off. Times use ${schedule.timeZone.replaceAll('_', ' ')}.`
-      : 'Calendar is off. Enable it in Calendar & school hours.';
+      ? `Dates and subject hours below use ${schedule.timeZone.replaceAll('_', ' ')}. Select a day to see its hours or add an exception.`
+      : `Calendar is off. Saved school-year dates, holidays, and exceptions do not restrict access until you enable the school calendar. Individual subject hours still apply in ${schedule.timeZone.replaceAll('_', ' ')}.`;
     byId('cloud-calendar-month').textContent = formatDate(`${month}-01`, { month: 'long', year: 'numeric' });
     const first = new Date(`${month}-01T00:00:00Z`);
     const offset = first.getUTCDay();
@@ -88,7 +86,6 @@ export function setupCloudCalendar({ getSnapshot, editException, editSubject, se
         const edit = action(`Edit ${subject.title}`, () => editSubject(subject)); row.append(edit); details.append(row);
       }
     }
-    if(selectedDate<=today()){const host=node('section');host.id='cloud-calendar-attendance';details.append(host);void attendance.render(host,selectedDate,snapshot);}
     const exception = state.exception;
     details.append(action(exception ? 'Edit this exception' : 'Add exception for this day', () => editException(selectedDate, exception)));
     details.append(node('p', 'cloud-note cloud-calendar-footnote', 'Always-open subjects remain accessible outside the calendar. Parent locks and account approval still apply.'));
