@@ -1,9 +1,17 @@
 import { connectionState, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
 import { dailyPlanCards } from './cloud-daily-plan-model.js';
-import { setupQuickUnlock } from './cloud-quick-unlock.js?v=20260913-popup1';
+import { setupQuickUnlock } from './cloud-quick-unlock.js?v=20260919-media1';
 import { studentAvatar } from './cloud-student-profile.js?v=20260910-photos1';
 
 const mediaTypes = [['music','Music','music'],['video','Video','video'],['audiobook','Audiobooks','headphones']];
+const mediaSubjectUrls = {music:'app://music',video:'app://videos',audiobook:'app://audiobooks'};
+export function mediaUnlockState(model,kind) {
+  const quickSubject=model?.quickUnlockSubjects?.find(subject=>subject.url===mediaSubjectUrls[kind])||null;
+  const quick=model?.student?.quick_unlock;
+  const quickUnlocked=Boolean(quickSubject&&model.activityDate&&quick?.date===model.activityDate&&Array.isArray(quick.subjectIds)&&quick.subjectIds.includes(quickSubject.id));
+  const mediaUnlocked=Boolean(model?.media?.[kind]?.unlocked);
+  return {unlocked:quickUnlocked||mediaUnlocked,quickUnlocked,mediaUnlocked,quickSubject};
+}
 const colors = ['#a78bfa','#34d399','#38bdf8','#f472b6','#fbbf24','#818cf8'];
 const seconds = value => Math.max(0, Math.floor(Number(value) || 0));
 export function clockTime(value) {
@@ -84,16 +92,26 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     try{await callback();if(notice)showError(notice,false);}catch(error){showError(error.message,true);}
     finally{if(control.isConnected)control.disabled=control.dataset.requiresDevice==='false';}
   }
+  const changeMedia=(model,kind,extra)=>mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:model.student.id,...extra}});
+  async function setMediaUnlocked(model,kind,value) {
+    const state=mediaUnlockState(model,kind);
+    if(value){
+      if(state.quickSubject)await mutate('computer-command',{kind:'quick-unlock',studentId:model.student.id,subjectId:state.quickSubject.id,unlocked:true});
+      else await changeMedia(model,kind,{operation:'override',unlocked:true});
+      return;
+    }
+    if(state.quickUnlocked)await mutate('computer-command',{kind:'quick-unlock',studentId:model.student.id,subjectId:state.quickSubject.id,unlocked:false});
+    if(state.mediaUnlocked)await changeMedia(model,kind,{operation:'override',unlocked:false});
+  }
   function mediaControl(model,kind,label,glyph){
     const row=node('div','monitor-media-action');row.dataset.media=kind;
-    const unlocked=model.media[kind].unlocked;
-    const change=extra=>mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:model.student.id,...extra}});
+    const unlocked=mediaUnlockState(model,kind).unlocked;
     const main=button(unlocked?`${label} unlocked`:kind==='audiobook'?'Bypass Audiobooks':`Unlock ${label}`,unlocked?'lock-open':glyph,
-      el=>run(el,()=>change({operation:'override',unlocked:!unlocked}),'Saved. The child receives the change when connected.'),'monitor-media-main');
+      el=>run(el,()=>setMediaUnlocked(model,kind,!unlocked),'Saved. The child receives the change when connected.'),'monitor-media-main');
     main.dataset.cloudMutation='true';main.title=unlocked?'Restore the usual school and schedule requirements':'Bypass school and schedule requirements for today. The daily time limit still applies.';
     const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));summary.setAttribute('aria-label',`Add ${label.toLowerCase()} time for ${model.student.name}`);
     const options=node('div','monitor-media-time-popover');options.append(node('strong','',`Extra ${label.toLowerCase()} time today`));
-    for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await change({operation:'extra-time',minutes});menu.open=false;}),'btn btn-secondary');add.dataset.cloudMutation='true';options.append(add);}
+    for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await changeMedia(model,kind,{operation:'extra-time',minutes});menu.open=false;}),'btn btn-secondary');add.dataset.cloudMutation='true';options.append(add);}
     menu.append(summary,options);row.append(main,menu);return row;
   }
   function render(){
@@ -126,9 +144,9 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       const actions=node('div','cloud-monitor-actions');
       const shot=button('Snap Screen','camera',el=>run(el,async()=>{if(!canScreenshot(student.id)){el.dataset.requiresDevice='false';throw Error('The child app must be online. Refresh to check its connection.');}await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');}),'monitor-control monitor-control--screenshot');shot.disabled=!canScreenshot(student.id);shot.dataset.requiresDevice=String(!shot.disabled);shot.dataset.cloudMutation='true';shot.title=shot.disabled?'Open the child app, then refresh to check its connection.':'Capture the child’s BodeeGuard screen';actions.append(shot);
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
-      if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
+      if(mediaTypes.some(([kind])=>mediaUnlockState(model,kind).unlocked)){
         const lockMedia=button('Lock Media','lock-keyhole',el=>run(el,async()=>{
-          for(const [kind] of mediaTypes)if(model.media[kind].unlocked)await mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:student.id,operation:'override',unlocked:false}});
+          for(const [kind] of mediaTypes)if(mediaUnlockState(model,kind).unlocked)await setMediaUnlocked(model,kind,false);
         },'Normal media rules restored.'),'monitor-control monitor-control--lock-media');
         lockMedia.title='Remove today’s media bypasses and restore your usual rules.';lockMedia.dataset.cloudMutation='true';actions.append(lockMedia);
       }

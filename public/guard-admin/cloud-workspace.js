@@ -1,7 +1,7 @@
 import { setupSongRequests } from './cloud-song-requests.js';
 import { setupDailyPlan } from './cloud-daily-plan.js?v=20260911-family-first';
-import { setupMonitoring } from './cloud-monitoring.js?v=20260913-popup1';
-import { updateQuickUnlockSnapshot } from './cloud-quick-unlock.js?v=20260913-popup1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260919-media1';
+import { updateQuickUnlockSnapshot } from './cloud-quick-unlock.js?v=20260919-media1';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { createDashboardRefresh } from './cloud-dashboard-refresh.js';
 import { setupMessageUnread } from './cloud-message-unread.js';
@@ -160,7 +160,9 @@ async function mutate(action, data) {
       signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...data }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'That change could not be saved.');
-    if(action!=='computer-command'||!updateQuickUnlockSnapshot(snapshot,data,result))await refresh();
+    if(action==='computer-command'&&updateQuickUnlockSnapshot(snapshot,data,result)){
+      monitoring.render();
+    }else await refresh();
     feedback('');
     return result;
   } catch (error) {
