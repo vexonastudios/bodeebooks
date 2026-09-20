@@ -328,3 +328,27 @@
   .cloud-mobile #cloud-files-list .cloud-file-row { grid-template-columns: minmax(0, 1fr); }
   .cloud-mobile #cloud-files-list .cloud-file-row > span { grid-column: 1; }
 }
+
+
+/* The spelling scanner opens as a compact phone sheet with the child first. */
+.cloud-mobile #spelling-list-modal.active{align-items:stretch;justify-content:stretch;padding:0}
+.cloud-mobile #spelling-list-modal .spelling-list-modal-card{box-sizing:border-box;width:100%;max-width:none;height:100dvh;max-height:100dvh;padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));border-radius:0}
+.cloud-mobile #spelling-list-modal h2{margin:0 0 10px;font-size:22px}
+.cloud-mobile #spelling-list-modal .spelling-form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 9px}
+.cloud-mobile #spelling-list-modal .spelling-form-grid>.form-group{min-width:0;margin:0}
+.cloud-mobile #spelling-list-modal .spelling-form-grid>.form-group:first-child,.cloud-mobile #spelling-list-modal .spelling-form-grid>.form-group:nth-of-type(2),.cloud-mobile #spelling-list-modal .spelling-form-grid>.form-group:last-child{grid-column:1/-1}
+.cloud-mobile #spelling-list-modal .spelling-form-grid label{font-size:12px}
+.cloud-mobile #spelling-list-modal .admin-input{min-height:44px;margin-top:4px}
+.cloud-mobile #spelling-list-modal .spelling-photo-tray{padding:11px;margin:2px 0;border-radius:14px}
+.cloud-mobile #spelling-list-modal .spelling-photo-tray>strong{font-size:15px}
+.cloud-mobile #spelling-list-modal .spelling-photo-tray>p{margin:3px 0 9px;font-size:11px;line-height:1.35}
+.cloud-mobile #spelling-list-modal .spelling-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cloud-mobile #spelling-list-modal .spelling-photo-actions .btn{justify-content:center;min-width:0;padding:8px;font-size:12px}
+.cloud-mobile #spelling-list-modal .spelling-scan-prompt-label{margin:9px 0 5px;font-size:11px}
+.cloud-mobile #spelling-list-modal #spelling-scan-prompt{min-height:52px;margin-bottom:9px;padding:8px 10px;font-size:13px}
+.cloud-mobile #spelling-list-modal .spelling-photo-tray>.btn-primary{width:100%;justify-content:center;min-height:42px}
+.cloud-mobile #spelling-list-modal .spelling-scan-status{min-height:0;margin:4px 0;font-size:11px}
+.cloud-mobile #spelling-list-modal .spelling-words-input{min-height:130px}
+.cloud-mobile #spelling-list-modal .settings-hint{font-size:10px;line-height:1.35}
+.cloud-mobile #spelling-list-modal .modal-actions{position:sticky;z-index:3;bottom:calc(-18px - env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin:10px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(8,11,24,.97)}
+.cloud-mobile #spelling-list-modal .modal-actions .btn-danger[hidden]{display:none}

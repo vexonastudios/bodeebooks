@@ -15,7 +15,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js?v=20260913-chat';
 import './cloud-push-client.js';
-import { setupCloudMobile } from './cloud-mobile.js?v=20260913-chat';
+import { setupCloudMobile } from './cloud-mobile.js?v=20260919-paper2';
 import { setupCloudCalendar } from './cloud-calendar.js?v=20260914-layout1';
 import { setupCloudRecords } from './cloud-records.js?v=20260910-documents1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20260910-documents1';
@@ -32,9 +32,9 @@ import { setupApprovedApps } from './cloud-approved-apps.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js?v=20260911-screenshot1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20260911-controls1';
-import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-prompt1';
+import { setupCloudSpelling } from './cloud-spelling.js?v=20260919-paper2';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
-import { setupCloudPoems } from './cloud-poems.js';
+import { setupCloudPoems } from './cloud-poems.js?v=20260919-paper2';
 import { setupCloudQuizzes } from './cloud-quizzes.js';
 import { setupCloudWorksheets } from './cloud-worksheets.js';
 import { setupCloudReading } from './cloud-reading.js';
@@ -413,7 +413,7 @@ const livePush = window.CloudPush.createCloudPushClient({
   onSignal: hint => { if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);} if(hint.kind==='screenshots')screenshots.refresh(); if(hint.kind==='media'){void coloringStudio.refreshPending(true);void songRequests.refreshPending(true);} }
 });
 const mathCoach = setupCloudMathCoach({ endpoint, navigate: selectTab });
-const spelling = setupCloudSpelling({ endpoint });
+const spelling = setupCloudSpelling({ endpoint, getStudents:()=>snapshot?.students||[], getActivityDate:()=>snapshot?.activityDate||'' });
 const vocabulary = setupCloudVocabulary();
 const poems = setupCloudPoems();
 const quizzes = setupCloudQuizzes();
