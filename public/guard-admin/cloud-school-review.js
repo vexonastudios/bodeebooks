@@ -28,7 +28,9 @@ export function setupCloudSchoolReview({ before, endpoint, getSnapshot, onApplie
   function render() {
     rows.replaceChildren();
     status.textContent = `${loaded.student.name} · ${loaded.date} · ${loaded.timeZone}. ${loaded.completion.completed} of ${loaded.completion.total} required items complete.${loaded.completion.isSchoolDay ? '' : ' This is a day off.'}`;
-    for (const subject of loaded.subjects) {
+    const requiredIds = new Set(loaded.completion.subjects.filter(item => item.required).map(item => item.subjectId));
+    const requiredSubjects = loaded.subjects.filter(subject => requiredIds.has(subject.id));
+    for (const subject of requiredSubjects) {
       const row = node('article'); row.className = 'cloud-school-review-row';
       row.append(node('h4', subject.title), node('p', `${subject.completed ? 'Complete' : 'Still needs work'} · ${Math.floor(subject.seconds / 60)}m ${subject.seconds % 60}s received · ${subject.dailyGoalMinutes}m goal · saved result: ${subject.source}`));
       row.append(node('p', subject.isSchoolPortal ? 'Review the provider lesson before marking it complete.' : subject.dailyGoalMinutes > 0 ? 'The original time rule still applies: a saved completion counts after 80% of the goal, or study time completes the goal at 100%.' : 'This subject has no time goal. Completion needs an explicit review or the child’s Finish action.'));
@@ -58,7 +60,7 @@ export function setupCloudSchoolReview({ before, endpoint, getSnapshot, onApplie
       row.append(decision, notesLabel, save); rows.append(row);
     }
     for (const requirement of loaded.completion.requirements) rows.append(node('p', `${requirement.module}: ${requirement.completed ? 'complete' : 'still required'}. Review its work in the original learning module.`));
-    if (!loaded.subjects.length) rows.append(node('p', 'No active School subjects are assigned to this child.'));
+    if (!requiredSubjects.length) rows.append(node('p', 'No assigned subjects count toward school completion on this date.'));
   }
   async function load() { loaded = await request('list-school', { studentId: student.value, date: date.value }); render(); }
   refresh.onclick = () => void run(load);

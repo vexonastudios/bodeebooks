@@ -274,11 +274,13 @@ function renderSubjects() {
     heading.append(icon, node('span', 'subject-card-admin-name', subject.title));
     const assignments = snapshot.students.filter(student => !student.archived_at).map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment && item.assignment.active !== false);
     const assignmentText = assignments.length
-      ? assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
+      ? subject.accessTier === 'school_optional' && assignments.every(item => item.assignment.dailyGoalMinutes === 0)
+        ? `No daily goal · ${assignments.map(item => item.student.name).join(', ')}`
+        : assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
       : 'Not assigned to a child';
     const hours = globalThis.BODEE_CLOUD_SCHEDULE.cloudSubjectAlwaysOpen(subject) ? 'Always open · no time cutoff' : subject.scheduleStart ? `Available ${subject.scheduleStart}–${subject.scheduleEnd} in the family time zone` : 'Uses the family school calendar';
     card.append(heading, node('div', 'subject-card-admin-url', subject.kind === 'offline' ? 'Offline schoolwork' : subject.url), node('div', 'cloud-note', hours), node('div', 'cloud-note', assignmentText));
-    if (subject.kind) card.append(node('div', 'cloud-note', `${subject.active === false ? 'Hidden · ' : ''}${({ school: 'Required school', school_optional: 'Optional school', after_school: 'After school' })[subject.accessTier || 'school']}${subject.unlockAfterSubjectId ? ' · Has a prerequisite' : ''}`));
+    if (subject.kind) card.append(node('div', 'cloud-note', `${subject.active === false ? 'Hidden · ' : ''}${({ school: 'Required school', school_optional: 'No school requirement', after_school: 'After school' })[subject.accessTier || 'school']}${subject.unlockAfterSubjectId ? ' · Has a prerequisite' : ''}`));
     grid.append(card);
   }
   if (!snapshot.rules.subjects.length) grid.append(node('p', 'cloud-panel', 'No school links added yet. Add the curriculum websites your children use.'));
