@@ -4,6 +4,7 @@ import path from 'node:path';
 import Module, { createRequire } from 'node:module';
 import test from 'node:test';
 import ts from 'typescript';
+import vm from 'node:vm';
 
 class CloudApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
 const origin = 'https://www.bodeebooks.com';
@@ -30,7 +31,29 @@ test('full media panels do not crash dashboard initialization when the compact l
   const library = setupCloudLearningVideos({ root: null, parent: true, request: () => { calls++; } });
   library.setActive(true); library.setCategory('music'); library.clear();
   assert.equal(calls, 0);
-  assert.match(html, /cloud-workspace.js\?v=20260922-apps1/);
+  assert.match(html, /cloud-workspace.js\?v=20260922-apps2/);
+});
+
+test('dashboard removes its initial loading cover after success or a visible connection failure', async () => {
+  const source = fs.readFileSync('public/guard-admin/cloud-workspace.js', 'utf8');
+  const refresh = source.slice(source.indexOf('async function refresh()'), source.indexOf('async function mutate('));
+  for (const ok of [true, false]) {
+    const classes = new Set(['cloud-startup-loading']), attributes = {}, messages = [];
+    let removed = false, rendered = false;
+    const loader = { parentElement: { classList: { remove: name => classes.delete(name) }, setAttribute: (name, value) => { attributes[name] = value; } }, remove: () => { removed = true; } };
+    const elements = { 'cloud-dashboard-loading': loader, 'live-text': {}, 'live-indicator': { dataset: {} } };
+    await vm.runInNewContext(`${refresh}; refresh()`, {
+      document: { hidden: false }, inFlight: null, timer: null, endpoint: '/synthetic', snapshot: null, usable: false, failures: 0,
+      AbortController, setTimeout: () => 1, clearTimeout() {}, byId: id => elements[id], setControls() {},
+      feedback: (message, error) => messages.push({ message, error }), showSnapshot: () => { rendered = true; },
+      fetch: async () => ({ ok, status: ok ? 200 : 503, json: async () => ok ? { serverTime: '2026-09-22T14:00:00Z' } : { error: 'Synthetic connection failure' } }),
+    });
+    assert.equal(removed, true);
+    assert.equal(classes.has('cloud-startup-loading'), false);
+    assert.equal(attributes['aria-busy'], 'false');
+    assert.equal(rendered, ok);
+    if (!ok) assert.equal(messages.at(-1).error, true);
+  }
 });
 
 test('School completion proxy strips submitted household, provider and reward authority', async () => {

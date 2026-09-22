@@ -140,6 +140,12 @@ async function refresh() {
     } finally {
       clearTimeout(timeout);
       inFlight = null;
+      const loader = byId('cloud-dashboard-loading');
+      if (loader) {
+        loader.parentElement.classList.remove('cloud-startup-loading');
+        loader.parentElement.setAttribute('aria-busy', 'false');
+        loader.remove();
+      }
       if (!document.hidden) timer = setTimeout(refresh, Math.min(300000, 30000 * (2 ** Math.min(failures, 4))));
     }
   })();
