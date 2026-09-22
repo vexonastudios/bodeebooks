@@ -8,6 +8,7 @@ const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'C
 const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
 icons.games = 'gamepad-2';
 const mediaKinds = { music: 'music', videos: 'video', audiobooks: 'audiobook', games:'family_game' };
+const defaultDays = placement => placement === 'school' ? [1,2,3,4,5] : [0,1,2,3,4,5,6];
 export function dailyPlanCards(snapshot, details, studentId) {
   const activities = snapshot.schoolActivities || [], cards = [], seen = new Set();
   for (const subject of snapshot.rules.subjects) {
@@ -19,7 +20,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     const stats = details.media?.[mediaKinds[module]], plan = assignment.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
     cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, alwaysOpen: subject.alwaysOpen,
-      goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || stats?.days || [0,1,2,3,4,5,6],
+      goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
       limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: details.features?.[module] === false || stats?.enabled === false,
       assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow: details.requirements?.find(r => r.module === module)?.required === true });
@@ -29,8 +30,9 @@ export function dailyPlanCards(snapshot, details, studentId) {
     if (!activity.ready || seen.has(module)) continue;
     seen.add(module);
     const stats = details.media?.[mediaKinds[module]], requiredNow = details.requirements?.find(r => r.module === module)?.required === true;
+    const placement = stats?.requireCompletion ? 'after_school' : requiredNow ? 'school' : 'anytime';
     cards.push({ key: `module:${module}`, module, title: names[module] || module.charAt(0).toUpperCase() + module.slice(1), icon: icons[module] || 'sparkles', url: activity.url,
-      goal: module === 'typing' ? 15 : 0, placement: stats?.requireCompletion ? 'after_school' : requiredNow ? 'school' : 'anytime', days: stats?.days || [0,1,2,3,4,5,6],
+      goal: module === 'typing' ? 15 : 0, placement, days: stats?.days || defaultDays(placement),
       start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? null,
       disabled: details.features?.[module] === false || stats?.enabled === false, assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow });
   }
@@ -71,7 +73,7 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
     if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120, games:60 }[card.module]; card.placement = 'after_school'; }
   }
   baseline.unshift({ key: 'school', title: 'Each child’s school', icon: 'graduation-cap', portal: true, goal: 0,
-    placement: 'school', days: [0,1,2,3,4,5,6], start: null, end: null, limitMinutes: null });
+    placement: 'school', days: defaultDays('school'), start: null, end: null, limitMinutes: null });
   for (const subject of snapshot.rules.subjects) {
     if (subject.active === false || subject.isSchoolPortal || snapshot.schoolActivities.some(a => a.url === subject.url)) continue;
     const owner = snapshot.students.find(s => !s.archived_at && (!subject.assignments || subject.assignments.some(a => a.studentId === s.id && a.active !== false)));
