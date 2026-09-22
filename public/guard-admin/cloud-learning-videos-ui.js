@@ -1,6 +1,8 @@
 function node(tag,text = '') { const el = document.createElement(tag); el.textContent = text; return el; }
 function button(text,callback) { const el = node('button',text); el.type = 'button'; el.addEventListener('click',callback); return el; }
 export function setupCloudLearningVideos({ root, parent = false, request: transport, libraryKind = null }) {
+  // Hosted parents can replace this compact library with the full media panel.
+  if (!root) return { setCategory() {}, setActive() {}, clear() {} };
   let category=libraryKind || 'learning-videos';
   const request=(kind,input={})=>transport(kind,{...input,category,libraryKind:category});
   root.classList.add('bg-learning-library');

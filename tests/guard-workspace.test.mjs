@@ -9,6 +9,30 @@ class CloudApiError extends Error { constructor(message, status) { super(message
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
 
+test('App Launcher bridge restores per-computer approvals with parent authentication and fixed authority', async () => {
+  const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { computers: [], apps: [] }; } });
+  assert.equal((await route.POST(request({ action: 'approved-apps', operation: 'list', householdId: 'forged' }))).status, 200);
+  assert.deepEqual(calls[0], { path: '/apps', body: { action: 'list' } });
+  const input = { action: 'approved-apps', operation: 'approve', id: deviceId, deviceId: 'synthetic-device', studentId: deviceId, sha256: 'a'.repeat(64), revision: 3, approved: true, householdId: 'forged', executable: 'forged.exe', signature_valid: true };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(calls[1], { path: '/apps', body: { action: 'approve', id: input.id, deviceId: input.deviceId, studentId: input.studentId, sha256: input.sha256, revision: 3, approved: true } });
+  assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+});
+
+test('full media panels do not crash dashboard initialization when the compact library is absent', async () => {
+  const response = await load('workspace/route.ts').GET(new Request(`${origin}/guard/dashboard/workspace/`));
+  const html = await response.text();
+  assert.doesNotMatch(html, /id="cloud-learning-videos"/);
+  const source = fs.readFileSync('public/guard-admin/cloud-learning-videos-ui.js', 'utf8');
+  const { setupCloudLearningVideos } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+  let calls = 0;
+  const library = setupCloudLearningVideos({ root: null, parent: true, request: () => { calls++; } });
+  library.setActive(true); library.setCategory('music'); library.clear();
+  assert.equal(calls, 0);
+  assert.match(html, /cloud-workspace.js\?v=20260922-apps1/);
+});
+
 test('School completion proxy strips submitted household, provider and reward authority', async () => {
   const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { saved: true }; } });
   const input = { action: 'review-school', id: deviceId, studentId: deviceId, subjectId: deviceId, date: '2026-09-08', revision: 0, rulesRevision: 1,
@@ -83,10 +107,10 @@ test('Science parent route bounds lists and excludes device, household, answer a
   await route.POST(request({action:'list',view:'history',studentId:deviceId,offset:200,householdId:'forged'}));assert.deepEqual(calls[1],{path:'/science-spelling/list',body:{studentId:deviceId,view:'history',offset:200}});
 });
 test('Spelling photo bridge restricts parent origin and body size and forwards only the exact scan',async()=>{
-  const calls=[],route=load('spelling-scan/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{words:[]};}});
+  const calls=[],route=load('spelling-scan/route.ts',{api:async(path,init)=>{const body=JSON.parse(init.body);if(body.mime==='text/html')throw new CloudApiError('Unsupported photo',400);calls.push({path,body});return{words:[]};}});
   const input={id:deviceId,data:'a'.repeat(150000),mime:'image/jpeg',householdId:'forged',model:'forged',studentName:'Private',fileUrl:'https://foreign.example'};
   assert.equal((await load('spelling-scan/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);assert.equal((await route.POST(request(input,{contentType:'text/plain'}))).status,415);
-  assert.equal((await route.POST(request({...input,data:'a'.repeat(3*1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,mime:'text/html'}))).status,400);
+  assert.equal((await route.POST(request({...input,data:'a'.repeat(5*1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,mime:'text/html'}))).status,400);
   const result=await route.POST(request(input));assert.equal(result.status,200);assert.match(result.headers.get('cache-control'),/no-store/);assert.deepEqual(calls,[{path:'/spelling/scan',body:{id:deviceId,data:input.data,mime:'image/jpeg'}}]);
   assert.match(fs.readFileSync('app/guard/dashboard/cloud-api.ts','utf8'),/path === "\/spelling\/scan"/);
 });
@@ -107,8 +131,12 @@ function load(relative, { authenticated = true, api = async () => ({}), name = '
   component.filename = filename;
   component.require = nameToLoad => {
     if (nameToLoad === '@clerk/nextjs/server') return { auth: async () => ({ isAuthenticated: authenticated }), currentUser: async () => ({ firstName: name }) };
-    if (nameToLoad === '../cloud-api') return { cloudApi: api, CloudApiError };
-    return localRequire(nameToLoad);
+      if (nameToLoad === '../cloud-api') return { cloudApi: api, CloudApiError };
+      const relativeTypeScript = path.resolve(path.dirname(filename), `${nameToLoad}.ts`);
+      if (nameToLoad.startsWith('.') && fs.existsSync(relativeTypeScript)) {
+        return load(path.relative(path.resolve('app/guard/dashboard'), relativeTypeScript), { authenticated, api, name });
+      }
+      return localRequire(nameToLoad);
   };
   component._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
@@ -309,7 +337,7 @@ test('outage text does not expose internal errors or show an empty household', a
   const result = await route.GET(new Request(`${origin}/guard/dashboard/workspace/`));
   assert.equal(result.status, 503);
   const html = await result.text();
-  assert.match(html, /could not be reached/);
+  assert.match(html, /temporarily unavailable/);
   assert.doesNotMatch(html, /postgres|No cloud test computers/);
 });
 test('both bridge methods require a parent session; missing and foreign origins cannot mutate', async () => {
@@ -423,7 +451,7 @@ test('message bridge preserves retry IDs but strips household, sender and device
 });
 
 test('private file upload has bounded dedicated parsing, sign-in, origin checks and no submitted authority', async () => {
-  assert.match(fs.readFileSync('app/guard/dashboard/page.tsx', 'utf8'), /sandbox="[^"]*allow-downloads/);
+  assert.match(fs.readFileSync('app/guard/dashboard/ParentWorkspace.tsx', 'utf8'), /sandbox="[^"]*allow-downloads/);
   const calls = [], api = async (...args) => { calls.push(args); return { saved: true }; };
   const upload = load('upload/route.ts', { api });
   const input = { action: 'upload-file', id: deviceId, studentId: deviceId, purpose: 'paper', name: 'Work.pdf', mime: 'application/pdf', data: 'a'.repeat(100000), householdId: 'foreign', storage_path: '/other', token: 'secret' };
@@ -463,7 +491,7 @@ test('Coloring Studio bridge keeps page controls family-scoped and strips submit
   await route.POST(request({action:'coloring-student-settings',studentId:deviceId,enabled:true,daily_limit:4,custom_prompts_enabled:true,allow_people:false,require_parent_approval:true,require_image_approval:false,householdId:'forged',image:'forged'}));
   assert.deepEqual(calls[1],{path:'/coloring-studio/settings',body:{scope:'student',studentId:deviceId,enabled:true,daily_limit:4,custom_prompts_enabled:true,allow_people:false,require_parent_approval:true,require_image_approval:false}});
   await route.POST(request({action:'coloring-image',requestId:deviceId,householdId:'forged',data:'forged'}));
-  assert.deepEqual(calls[2],{path:'/coloring-studio/image',body:{requestId:deviceId}});
+  assert.deepEqual(calls[2],{path:'/coloring-studio/image',body:{requestId:deviceId,delivery:'url',thumbnail:false}});
   assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });

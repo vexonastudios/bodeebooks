@@ -1,4 +1,5 @@
 import { setupDailyPlan } from './cloud-daily-plan.js';
+import { setupApprovedApps } from './cloud-approved-apps.js';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
@@ -59,6 +60,7 @@ function feedback(text, error = false) {
   byId('cloud-feedback').dataset.error = String(error);
 }
 function selectTab(id) {
+  approvedApps.setActive(id === 'apps');
   dailyPlan.setActive(id === 'daily-plan');
   if(id==='science-spelling')id='spelling';
   const item = document.querySelector(`.nav-item[data-tab="${id}"]`);
@@ -424,6 +426,7 @@ function showRecovery(device) {
 }
 
 setupSidebarGroups();
+const approvedApps = setupApprovedApps({ endpoint });
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });
 const schoolReview = setupCloudSchoolReview({ before: byId('subjects-grid-admin'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
