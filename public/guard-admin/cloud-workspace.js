@@ -4,7 +4,7 @@ import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, receivedTime, deliveryState, todaySeconds, activityDayLabel, editSchedule, assignmentFor, subjectProgress } from './cloud-workspace-model.js';
+import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
@@ -19,6 +19,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
+import { setupMonitoring } from './cloud-monitoring.js?v=20260923';
 import { setupCloudMathCoach } from './cloud-math-coach.js';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-unified2';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
@@ -97,8 +98,9 @@ function setControls() {
 }
 function showSnapshot() {
   if (!snapshot) return;
-  // Do not destroy a selector the parent is using during background refresh.
-  if (!byId('overview-grid').contains(document.activeElement)) renderComputers();
+  // Refresh action labels immediately; monitoring restores any open action menu.
+  monitoring.render();
+  if (!byId('cloud-computer-settings').contains(document.activeElement)) renderComputers();
   renderStudents();
   renderSubjects();
   dailyPlan.update();
@@ -128,7 +130,7 @@ async function refresh() {
       failures = 0;
       byId('live-text').textContent = 'Connected · 30s refresh';
       byId('live-indicator').dataset.connected = 'true';
-      feedback(`Updated ${new Date(data.serverTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`);
+      feedback('');
       showSnapshot();
     } catch (error) {
       usable = false;
@@ -176,45 +178,22 @@ function mutationButton(text, action, data, className) {
   return result;
 }
 function renderComputers() {
-  const grid = byId('overview-grid');
+  const setup = byId('cloud-computer-settings');
   const clients = byId('clients-panel');
-  grid.replaceChildren();
+  setup.replaceChildren();
   clients.replaceChildren();
   if (!snapshot.devices.length) {
-    grid.append(node('p', 'cloud-panel', 'No cloud test computers connected yet. Your current LAN computers and records are unchanged.'));
+    setup.append(node('p', 'cloud-note', 'No child computers paired yet. Approve a computer to assign it to a child.'));
     clients.append(node('p', 'clients-empty', 'No cloud computers yet'));
   }
   for (const device of snapshot.devices) {
     const student = snapshot.students.find(item => item.id === device.student_id);
     const connected = connectionState(device, Date.parse(snapshot.serverTime));
-    const subject = snapshot.rules.subjects.find(item => item.id === device.current_subject);
-    const card = node('article', `monitor-card ${connected === 'Connected' ? 'monitor-card--active' : 'monitor-card--idle'}`);
-    const top = node('div', 'monitor-card-top');
-    const identity = node('div', 'monitor-card-identity');
-    const names = node('div', 'monitor-name-status');
-    names.append(node('h2', 'monitor-name', student?.name || device.computer_name), node('p', `monitor-status-badge ${connected === 'Connected' ? 'active' : 'idle'}`, connected));
-    identity.append(node('span', 'monitor-avatar', '👤'), names);
-    top.append(identity);
-    const timerRow = node('div', 'monitor-timer-row');
-    const total = node('div', 'monitor-timer-box');
-    total.append(node('span', 'monitor-timer-label', activityDayLabel(snapshot)), node('span', 'monitor-timer-value', receivedTime(todaySeconds(snapshot, student?.id))));
-    timerRow.append(total);
-    const lessonGroups=[];
-    const lessons=(snapshot.portalProgress||[]).filter(row=>row.student_id===student?.id);
-    for(const lesson of lessons) {
-      const group=node('div','cloud-abeka-courses'); group.setAttribute('aria-label',"Today's Abeka lessons");
-      for(const course of lesson.courses) { const chip=node('span',course.completed?'cloud-abeka-course complete':'cloud-abeka-course',(course.completed?'✓ ':'○ ')+course.courseName); chip.title=course.lessonLabel; group.append(chip); }
-      lessonGroups.push(group);
-    }
-    const goals = node('details', 'cloud-subject-goals');
-    const goalRows = [];
-    if (student) for (const subject of snapshot.rules.subjects) {
-      const progress = subjectProgress(snapshot, student.id, subject.id);
-      if (progress) goalRows.push(node('p', 'cloud-note', progress.seconds === null
-        ? `${subject.title}: received time unavailable · ${progress.goalMinutes}m goal`
-        : `${subject.title}: ${receivedTime(progress.seconds)} of ${progress.goalMinutes}m · ${progress.percent}%`));
-    }
-    if (goalRows.length) goals.append(node('summary', '', `${goalRows.length} subject goal${goalRows.length === 1 ? '' : 's'} today`), ...goalRows);
+    const row = node('div', 'cloud-computer-setting');
+    const info = node('div');
+    info.append(node('strong', '', device.computer_name),
+      node('p', '', `${connected} · ${device.app_version || 'Version unavailable'} · ${deliveryState(device)}`),
+      node('p', '', device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study'));
     const assignment = node('select', 'admin-input');
     assignment.dataset.cloudMutation = 'true';
     assignment.setAttribute('aria-label', `Student for ${device.computer_name}`);
@@ -229,13 +208,15 @@ function renderComputers() {
     const recovery = button('Offline recovery', () => showRecovery(device));
     recovery.dataset.cloudMutation = 'true';
     actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'), recovery);
-    card.append(top, node('p', 'cloud-note', `${device.computer_name} · ${device.app_version || 'Version unavailable'}`),
-      node('p', 'cloud-note', deliveryState(device)), node('p', 'cloud-note', connected === 'Connected' && subject ? subject.title : 'No current school session reported'), timerRow, ...lessonGroups,
-      ...(goalRows.length ? [goals] : []), assignment, actions,
-      node('p', 'cloud-note', device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study'));
-    mobile?.decorateCard(card, device.id);
-    grid.append(card);
-    clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => { selectTab('overview'); card.scrollIntoView({ block: 'nearest' }); }, 'nav-item'));
+    const controls = node('div', 'cloud-computer-controls');
+    controls.append(assignment, actions);
+    row.append(info, controls); setup.append(row);
+    clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => {
+      selectTab('overview');
+      const card = student && [...byId('overview-grid').children].find(item => item.dataset.studentId === student.id);
+      if (!card) setup.closest('details').open = true;
+      (card || row).scrollIntoView({ block: 'nearest' });
+    }, 'nav-item'));
   }
 }
 function renderStudents() {
@@ -434,6 +415,14 @@ function showRecovery(device) {
 }
 
 setupSidebarGroups();
+const monitoring = setupMonitoring({
+  getSnapshot: () => snapshot,
+  mutate,
+  navigate: selectTab,
+  openMessages: studentId => { selectTab('messages'); messaging.openStudent(studentId); },
+  showError: feedback,
+  mobile: () => mobile
+});
 const approvedApps = setupApprovedApps({ endpoint });
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls });

@@ -1,5 +1,5 @@
 .cloud-workspace #tab-overview{padding-top:8px}
-.cloud-workspace #tab-overview .monitor-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));align-items:start;gap:16px}
+.cloud-workspace #tab-overview .monitor-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));align-items:start;gap:16px}
 .cloud-workspace .cloud-monitor-card{min-width:0;padding:16px;gap:12px}
 .cloud-workspace .cloud-monitor-card.monitor-card--idle{opacity:1;filter:none;border-color:var(--border)}
 .cloud-monitor-card.monitor-card--idle .monitor-status-badge{color:var(--text-secondary)}
@@ -37,6 +37,11 @@
 .cloud-computer-setting{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr);align-items:center;gap:10px;padding:16px;border:1px solid var(--border);border-radius:12px}
 .cloud-computer-setting p{margin:4px 0;font-size:12px}
 .cloud-computer-setting select{width:100%}
+.cloud-computer-setup{margin-top:18px}
+.cloud-computer-setup>summary{cursor:pointer;font-weight:700}
+.cloud-computer-settings{margin-top:14px}
+.cloud-computer-controls{display:grid;gap:8px;min-width:0}
+.cloud-computer-controls .cloud-actions{margin:0}
 @media(min-width:769px){.cloud-monitor-card .mobile-card-body{display:flex;flex-direction:column;gap:12px}}
 @media(max-width:768px){.cloud-workspace #tab-overview .monitor-grid{grid-template-columns:1fr}.cloud-overview-assistant{flex-wrap:wrap}.cloud-overview-assistant-title{width:100%}.cloud-monitor-stats{padding:14px 10px;gap:14px}.cloud-monitor-stats .cc-stat{min-width:100px;padding:0;border:0;gap:8px}.cloud-monitor-stats .cc-stat-value{font-size:19px}.cloud-monitor-asof{width:100%;flex-direction:row;justify-content:flex-end;align-items:center}.cloud-computer-setting{grid-template-columns:1fr}}
 /* Overview controls share the same placement on phones and desktop. */
@@ -63,4 +68,10 @@
   #tab-overview #cloud-lock-all { font-size:13px; padding:10px; }
   .cloud-overview-refresh { gap:7px; flex-wrap:wrap; }
   .cloud-overview-updated { font-size:11px; }
+}
+@media(max-width:600px) {
+  #tab-overview > .tab-header .cloud-actions { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:stretch; }
+  #tab-overview #cloud-lock-all, #tab-overview .cloud-actions > a { min-height:44px; white-space:normal; text-align:center; }
+  #tab-overview .cloud-overview-refresh { grid-column:1/-1; justify-content:flex-end; }
+  .cloud-overview-assistant { display:none; }
 }

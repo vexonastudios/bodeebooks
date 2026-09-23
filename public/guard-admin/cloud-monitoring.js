@@ -1,5 +1,5 @@
 import { connectionState, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
-import { studentAvatar } from './cloud-student-profile.js?v=20260910-photos1';
+import { studentAvatar } from './cloud-student-profile.js';
 
 const mediaTypes = [['music','Music','music'],['video','Video','video'],['audiobook','Audiobooks','headphones']];
 const colors = ['#a78bfa','#34d399','#38bdf8','#f472b6','#fbbf24','#818cf8'];
@@ -92,7 +92,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
   function render(){
     clearTimeout(screenshotExpiry);
     const snapshot=getSnapshot();if(!snapshot)return;
-    mobile()?.update(snapshot);
+    const openMenus=[...grid.querySelectorAll('details[open]')].map(detail=>({
+      studentId:detail.closest('[data-student-id]')?.dataset.studentId,
+      kind:detail.classList.contains('monitor-quick-unlock')?'quick':detail.closest('[data-media]')?.dataset.media
+    }));
     const models=monitoringChildren(snapshot);grid.replaceChildren();stats.replaceChildren();
     const online=snapshot.devices.filter(d=>connectionState(d,Date.parse(snapshot.serverTime))==='Connected').length;
     for(const [glyph,value,total,label]of [['activity',models.filter(m=>m.online&&m.current&&!m.device.locked).length,models.length,'Studying'],['laptop',online,snapshot.devices.length,'Computers connected'],['circle-check',models.reduce((n,m)=>n+m.done,0),models.reduce((n,m)=>n+m.required,0),'Subject goals done']]){
@@ -135,7 +138,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       const quick=node('details','monitor-quick-unlock'),summary=node('summary');summary.append(icon('key-round'),document.createTextNode('Quick Unlock…'));quick.append(summary);
       const options=node('div','monitor-quick-options');options.append(node('strong','','Unlock for today'),node('p','','Bypass hours and prerequisites. Daily media limits still apply.'));
-      for(const subject of model.goals){const unlocked=student.quick_unlock?.date===snapshot.activityDate&&student.quick_unlock.subjectIds.includes(subject.id);
+      for(const subject of model.goals){const unlocked=!!snapshot.activityDate&&student.quick_unlock?.date===snapshot.activityDate&&Array.isArray(student.quick_unlock.subjectIds)&&student.quick_unlock.subjectIds.includes(subject.id);
         const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>run(el,()=>mutate('computer-command',{kind:'quick-unlock',studentId:student.id,subjectId:subject.id,unlocked:!unlocked}),'Saved for today.'),'btn btn-secondary');choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';options.append(choice);}
       if(!model.goals.length)options.append(node('p','','Assign school subjects in Settings to unlock them here.'));
       quick.append(options);actions.append(quick);
@@ -143,6 +146,12 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       mobile()?.decorateCard(card,student.id,model);grid.append(card);
     }
     if(!models.length)grid.append(node('p','cloud-panel','Add your children in Students to see them here.'));
+    for(const {studentId,kind} of openMenus){
+      const card=[...grid.children].find(item=>item.dataset.studentId===studentId);
+      const detail=kind==='quick'?card?.querySelector('.monitor-quick-unlock')
+        :[...(card?.querySelectorAll('.monitor-media-action')||[])].find(item=>item.dataset.media===kind)?.querySelector('details');
+      if(detail)detail.open=true;
+    }
     window.lucide?.createIcons();
     const expires=Date.parse(snapshot.screenshotAvailability?.checkedAt)+75000-Date.now();
     if(expires>0)screenshotExpiry=setTimeout(()=>{grid.querySelectorAll('.monitor-control--screenshot').forEach(control=>{control.disabled=true;control.dataset.requiresDevice='false';control.title='Refresh to check the child app’s connection.';});},expires+20);
