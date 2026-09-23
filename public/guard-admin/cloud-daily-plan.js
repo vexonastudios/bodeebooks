@@ -1,4 +1,5 @@
 import { PLAN_GROUPS, dailyPlanCards, saveDailyPlan, familyPlanCards, templateFromCards, applyFamilyPlan } from './cloud-daily-plan-model.js';
+import { activityAccent } from './cloud-activity-colors.js';
 const make = (tag, cls = '', text = '') => { const el = document.createElement(tag); el.className = cls; el.textContent = text; return el; };
 const icon = name => {
   const el = make('i');
@@ -16,7 +17,7 @@ const action = (label, symbol, fn, cls = 'btn btn-secondary') => {
   return el;
 };
 export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/guard/dashboard/bridge/' }) {
-  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260911-family'; document.head.append(stylesheet);
+  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260923-activity-colors'; document.head.append(stylesheet);
   const nav = action('Daily plan', 'list-checks', () => navigate('daily-plan'), 'nav-item'); nav.dataset.tab = 'daily-plan';
   document.querySelector('.sidebar-nav .nav-item[data-tab="overview"]')?.after(nav);
   const section = make('section', 'tab-content'); section.id = 'tab-daily-plan'; section.setAttribute('aria-label', 'Daily plan');
@@ -90,6 +91,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   function cardView(card) {
     const alwaysOpen = card.placement !== 'scheduled' && (card.alwaysOpen ?? card.placement === 'school');
     const el = make('article', 'daily-plan-card'); el.dataset.planKey = card.key; el.draggable = !busy;
+    el.style.setProperty('--plan-accent', activityAccent(card));
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);

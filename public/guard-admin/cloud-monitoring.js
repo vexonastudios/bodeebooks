@@ -1,23 +1,9 @@
 import { connectionState, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
 import { studentAvatar } from './cloud-student-profile.js';
+import { cardColor, activityAccent } from './cloud-activity-colors.js';
 
 const mediaTypes = [['music','Music','music'],['video','Video','video'],['audiobook','Audiobooks','headphones']];
 const colors = ['#a78bfa','#34d399','#38bdf8','#f472b6','#fbbf24','#818cf8'];
-// Match the built-in student dashboard cards when a subject has no saved color.
-const activityColors = {
-  'app://audiobooks':'#fb923c','app://music':'#c084fc','app://videos':'#fbbf24',
-  'app://writing':'#ec4899','app://word-processor':'#ec4899','app://journal':'#ec4899','app://notebook':'#ec4899',
-  'app://reading':'#22c55e','app://typing':'#38bdf8','app://logic':'#a78bfa','app://words':'#f472b6',
-  'app://spelling':'#f97316','app://vocabulary':'#70cbb5','app://poems':'#f7c948',
-  'app://quizzes':'#818cf8','app://worksheets':'#38bdf8','app://geography':'#22c55e',
-  'app://learning-videos':'#22d3ee','app://spanish':'#fb923c','app://coloring':'#f472b6',
-  'app://coloring-studio':'#34d399','app://piano':'#a78bfa','app://math-coach':'#38bdf8','app://games':'#f7c948'
-};
-const cardColor = subject => /^#[\da-f]{3,8}$/i.test(subject.color || '') ? subject.color : '#38bdf8';
-const activityAccent = subject => {
-  const color = cardColor(subject);
-  return color.toLowerCase() === '#38bdf8' ? activityColors[subject.url] || color : color;
-};
 const seconds = value => Math.max(0, Math.floor(Number(value) || 0));
 export function clockTime(value) {
   if (value == null) return '—';

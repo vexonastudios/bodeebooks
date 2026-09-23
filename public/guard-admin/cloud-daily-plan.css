@@ -45,11 +45,11 @@
 .daily-plan-count { margin-left: auto; border-radius: 30px; background: #26243a; padding: 3px 7px; font-size: 11px; flex-shrink: 0; }
 .daily-plan-column > .cloud-note { font-size: 12px; line-height: 1.5; margin: 8px 4px 12px; }
 .daily-plan-list { flex: 1; min-height: 90px; overflow-y: auto; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #595272 transparent; padding: 3px 4px 8px; border-radius: 10px; }
-.daily-plan-card { padding: 11px; margin-bottom: 10px; border: 1px solid #39374e; border-radius: 11px; background: #1d1c30; box-shadow: 0 3px 10px #0002; cursor: grab; min-width: 0; }
+.daily-plan-card { --plan-accent: #38bdf8; padding: 11px; margin-bottom: 10px; border: 1px solid color-mix(in srgb,var(--plan-accent) 36%,#39374e); border-left: 4px solid var(--plan-accent); border-radius: 11px; background: linear-gradient(110deg,color-mix(in srgb,var(--plan-accent) 13%,#1d1c30),#1d1c30); box-shadow: 0 3px 10px #0002; cursor: grab; min-width: 0; }
 .daily-plan-card:last-child { margin-bottom: 0; }
 .daily-plan-card-title { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.4; }
 .daily-plan-card-title > strong { overflow-wrap: anywhere; }
-.daily-plan-card-title > svg:first-child { color: #c4b5fd; }
+.daily-plan-card-title > svg:first-child { color: var(--plan-accent); }
 .daily-plan-card-title > svg:last-child { margin-left: auto; color: #88849d; width: 14px; }
 .daily-plan-card-summary,.daily-plan-hours { font-size: 12px; color: #b9b6cf; line-height: 1.4; margin: 6px 0; }
 .daily-plan-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c9c6df; margin-top: 12px; }
@@ -58,12 +58,12 @@
 .daily-plan-move select { cursor: pointer; }
 .daily-plan-off { font-size: 11px; color: #facc88; margin: 6px 0; }
 .daily-plan-card-settings { margin-top: 7px; }
-.daily-plan-card-settings summary { font-size: 12px; min-height: 30px; cursor: pointer; color: #c4b5fd; display: flex; align-items: center; gap: 7px; }
+.daily-plan-card-settings summary { font-size: 12px; min-height: 30px; cursor: pointer; color: color-mix(in srgb,var(--plan-accent) 65%,#fff); display: flex; align-items: center; gap: 7px; }
 .daily-plan-card-settings[open] summary { border-bottom: 1px solid #38344d; padding-bottom: 6px; }
 .daily-plan-days { display: flex; gap: 8px; flex-wrap: wrap; border: 0; padding: 0; margin: 14px 0; }
 .daily-plan-days legend { font-size: 12px; margin-bottom: 8px; }
 .daily-plan-days label { align-items: center; gap: 5px; margin: 0; }
-.daily-plan-days input { width: 18px; height: 18px; accent-color: #a78bfa; }
+.daily-plan-days input { width: 18px; height: 18px; accent-color: var(--plan-accent); }
 .daily-plan-hours-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .daily-plan-card-settings .btn { font-size: 12px; margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; }
 .daily-plan-card-settings .cloud-note { font-size: 12px; line-height: 1.5; }

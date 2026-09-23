@@ -19,7 +19,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     if (module) seen.add(module);
     const stats = details.media?.[mediaKinds[module]], plan = assignment.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
-    cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, alwaysOpen: subject.alwaysOpen,
+    cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
       goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
       limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: details.features?.[module] === false || stats?.enabled === false,
@@ -81,6 +81,9 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
     if (card) baseline.push({ ...card, key: `subject:${subject.id}` });
   }
   for (const card of baseline) {
+    // Color describes the activity, not its placement or family plan settings.
+    const subject = snapshot.rules.subjects.find(s => s.active !== false && s.url === card.url);
+    if (subject?.color) card.color = subject.color;
     const saved = template?.activities?.find(entry => entry.key === card.key);
     if (saved) Object.assign(card, structuredClone(saved));
   }
