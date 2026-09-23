@@ -72,10 +72,11 @@ export function setupParentStart({ endpoint, getSnapshot, mutate, navigate }) {
     extras.append(node('summary','More learning, media & creative activities'));const extraGrid=node('div','','parent-start-activities');extras.append(extraGrid);
     const notice=node('p','Changes here apply to all your children when you continue or save. Customize individual children afterward in Daily Plan.','setup-copy');
     for(const card of cards.filter(card=>!card.portal)){
+      if(state.features[card.module]===false && card.placement!=='blocked'){card.previousPlacement=card.placement;card.placement='blocked';}
       const row=node('label','','parent-start-activity'),input=node('input'),words=node('span');input.type='checkbox';input.checked=card.placement!=='blocked';input.disabled=card.globallyDisabled===true;
       row.style.setProperty('--activity-accent',activityAccent(card));words.append(node('strong',card.title));
       if(card.preset==='quizlet')words.append(node('small','Optional · sign in on the child’s computer'));
-      input.onchange=()=>{if(card.placement!=='blocked')card.previousPlacement=card.placement;card.placement=input.checked?card.previousPlacement||'anytime':'blocked';card.accessChanged=true;dirty=true;};
+      input.onchange=()=>{if(card.placement!=='blocked')card.previousPlacement=card.placement;card.placement=input.checked?card.previousPlacement||'anytime':'blocked';card.accessChanged=true;if(input.checked&&state.features[card.module]===false)state.features[card.module]=true;dirty=true;};
       row.append(input,words);(common.has(card.module)?grid:extraGrid).append(row);
     }
     body.append(grid,extras,notice);
