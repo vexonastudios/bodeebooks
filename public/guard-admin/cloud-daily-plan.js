@@ -1,6 +1,7 @@
-import { PLAN_GROUPS, dailyPlanCards, saveDailyPlan, familyPlanCards, templateFromCards, applyFamilyPlan, differsFromFamily } from './cloud-daily-plan-model.js';
+import { PLAN_GROUPS, dailyPlanCards, saveDailyPlan, familyPlanCards, templateFromCards, applyFamilyPlan, differsFromFamily, movePlanCard, useSchoolWeekdays, isSchoolWeekdays } from './cloud-daily-plan-model.js';
 import { activityAccent } from './cloud-activity-colors.js';
 const make = (tag, cls = '', text = '') => { const el = document.createElement(tag); el.className = cls; el.textContent = text; return el; };
+const requiredDaysText = card => isSchoolWeekdays(card.days) ? 'Required Mon–Fri · weekends optional' : `Required ${card.days.length === 7 ? 'every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')}`;
 const icon = name => {
   const el = make('i');
   el.dataset.lucide = name;
@@ -54,7 +55,6 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
   }));
   section.append(head, help, family, controls, catalog, layout); document.querySelector('.main-content').append(section);
   const shortcut = action('Daily plan', 'list-checks', () => navigate('daily-plan'));
-
   const overviewActions = document.querySelector('#overview-actions');
   (overviewActions || document.querySelector('#tab-overview .tab-header'))?.append(shortcut);
   let active = false, loadedChild = null, captured = null, details = {}, cards = [], generation = 0, busy = false;
@@ -65,8 +65,16 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     const column = make('div', 'daily-plan-column'); column.dataset.planGroup = id;
     const heading = make('h2'), count = make('span', 'daily-plan-count'); heading.id = `daily-plan-heading-${id}`;
     heading.append(icon(symbol), document.createTextNode(title), count); column.append(heading, make('p', 'cloud-note', description));
+    const weekdays = id === 'school' ? action('Use Mon–Fri for school', 'calendar-days', () => {
+      if (busy) return;
+      const updated = useSchoolWeekdays(cards);
+      for (const card of updated) changed(card);
+      render();
+      notify('School is required Monday–Friday in this draft. Save to keep this change.');
+    }, 'btn btn-secondary daily-plan-weekdays') : null;
+    if (weekdays) column.append(weekdays);
     const list = make('div', 'daily-plan-list'); list.setAttribute('role', 'region'); list.setAttribute('aria-labelledby', heading.id); list.tabIndex = 0;
-    column.append(list); groups.set(id, { column, list, count });
+    column.append(list); groups.set(id, { column, list, count, weekdays });
     column.ondragover = e => { if (!busy && e.dataTransfer.types.includes('text/plain')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; column.classList.add('drag-over'); } };
     column.ondragleave = e => { if (!column.contains(e.relatedTarget)) column.classList.remove('drag-over'); };
     column.ondrop = e => { e.preventDefault(); clearDrag(); const card = cards.find(c => c.key === e.dataTransfer.getData('text/plain')); if (card && !busy) move(card, id); };
@@ -87,6 +95,8 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     differencesLabel.hidden = isFamily || !hasDefault;
     preview.disabled = busy || !captured;
     preview.hidden = isFamily;
+    const weekdays = groups.get('school')?.weekdays;
+    if (weekdays) weekdays.disabled = busy || !cards.some(card => card.placement === 'school' && !isSchoolWeekdays(card.days));
     if (!isFamily && hasDefault) {
       const count = cards.filter(card => differsFromFamily(card, captured.rules.dailyPlanTemplate)).length;
       familyTitle.replaceChildren(icon('users-round'), document.createTextNode(count ? `${count} ${count === 1 ? 'activity differs' : 'activities differ'} from family plan` : 'Matches family plan'));
@@ -96,11 +106,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
   function changed(card) { changes.set(card.key, structuredClone(card)); notify('Unsaved changes'); updateControls(); }
   function move(card, placement, focus = false) {
     if (busy || card.placement === placement) return;
-    if (card.placement !== 'blocked') card.previousPlacement = card.placement;
-    card.placement = placement; card.accessChanged = true;
-    card.disabled = false;
-    if (placement === 'scheduled' && !card.start) { card.start = '15:00'; card.end = '18:00'; }
-    if (placement === 'school' && !card.portal && !card.assignedWork && !card.goal) card.goal = 15;
+    movePlanCard(card, placement);
     changed(card); render();
     notify(`${card.title} moved to ${PLAN_GROUPS.find(group => group[0] === placement)[1]}. Unsaved changes.`);
     if (focus) {
@@ -120,6 +126,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
     const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'Uses each child’s assigned school and lesson goals' : card.portal ? 'Finish school lessons' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
+    if (card.placement === 'school') el.append(make('p', 'daily-plan-required-days', requiredDaysText(card)));
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
     else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
@@ -139,22 +146,23 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
       const limit = make('input', 'admin-input'); limit.type = 'number'; limit.min = '1'; limit.max = '480'; limit.value = card.limitMinutes; limit.onchange = () => { card.limitMinutes = Number(limit.value); changed(card); }; settings.append(field('Daily media minutes', limit));
     }
     const days = make('fieldset', 'daily-plan-days'); days.append(make('legend', '', card.placement === 'school' ? 'Required work days' : 'Days'));
-    for (const [d, name] of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].entries()) { const input = make('input'); input.type = 'checkbox'; input.checked = card.days.includes(d); input.onchange = () => { card.days = input.checked ? [...card.days, d].sort() : card.days.filter(n => n !== d); changed(card); }; days.append(field(name, input)); }
+    for (const [d, name] of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].entries()) { const input = make('input'); input.type = 'checkbox'; input.checked = card.days.includes(d); input.onchange = () => { card.days = input.checked ? [...card.days, d].sort() : card.days.filter(n => n !== d); const summary = el.querySelector('.daily-plan-required-days'); if (summary) summary.textContent = requiredDaysText(card); changed(card); }; days.append(field(name, input)); }
     settings.append(days);
     const hours = make('div', 'daily-plan-hours-inputs');
     for (const [key, text] of [['start','From'],['end','Until']]) { const input = make('input', 'admin-input'); input.type = 'time'; input.value = card[key] || ''; input.onchange = () => { card[key] = input.value || null; changed(card); }; hours.append(field(text, input)); }
     if (!alwaysOpen) settings.append(hours);
     if (!alwaysOpen && card.placement !== 'scheduled') settings.append(action('No time window', 'clock', () => { card.start = card.end = null; changed(card); render(); }));
-    settings.append(make('p', 'cloud-note', alwaysOpen ? 'Always open. School days decide when work is required, not when it can be opened. Change Always open in Edit Subject to use a time window.' : card.placement === 'school' ? 'School calendar hours also apply.' : card.placement === 'after_school' ? 'Required work must finish, even during these hours.' : 'These hours work independently of the school calendar.'));
+    settings.append(make('p', 'cloud-note', alwaysOpen ? 'School remains available on days off. These days only decide when work is required; after-school activities do not wait for optional work.' : card.placement === 'school' ? 'School calendar hours also apply.' : card.placement === 'after_school' ? 'Waits for required work on school days. On days off, only your activity hours and daily limits apply.' : 'These hours work independently of the school calendar.'));
     if (card.module) settings.append(action('Activity settings', 'settings', () => { if (!changes.size || confirm('Keep this draft and open activity settings? Return to Daily plan to save it.')) navigate(card.module === 'games' ? 'family-games' : card.module === 'art-studio' || card.module === 'typing' ? 'students' : card.module); }));
     el.append(settings); el.querySelectorAll('input,button').forEach(n => { n.disabled = busy; }); return el;
   }
   function render() {
     for (const el of section.querySelectorAll('.daily-plan-card-settings')) { const key = el.closest('[data-plan-key]').dataset.planKey; if (el.open) openOptions.add(key); else openOptions.delete(key); }
-    for (const [id, { list, count }] of groups) {
+    for (const [id, { list, count, weekdays }] of groups) {
       const scrollTop = list.scrollTop, entries = cards.filter(c => c.placement === id), query = search.value.trim().toLocaleLowerCase();
       const visible = entries.filter(card => card.title.toLocaleLowerCase().includes(query) && (child.value === 'family' || !differences.checked || !captured?.rules.dailyPlanTemplate || differsFromFamily(card, captured.rules.dailyPlanTemplate)));
       count.textContent = query ? `${visible.length}/${entries.length}` : String(entries.length);
+      if (weekdays) weekdays.disabled = busy || !entries.some(card => !isSchoolWeekdays(card.days));
       list.replaceChildren(...visible.map(cardView));
       if (!visible.length) list.append(make('p', 'daily-plan-empty', differences.checked && child.value !== 'family' ? 'No differences in this group.' : query ? 'No matching activities. Try another name.' : 'Drop an activity here'));
       list.scrollTop = scrollTop;

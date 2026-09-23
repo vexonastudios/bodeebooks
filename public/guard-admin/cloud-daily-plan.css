@@ -59,6 +59,8 @@
 .daily-plan-card-title > svg:first-child { color: var(--plan-accent); }
 .daily-plan-card-title > svg:last-child { margin-left: auto; color: #88849d; width: 14px; }
 .daily-plan-card-summary,.daily-plan-hours { font-size: 12px; color: #b9b6cf; line-height: 1.4; margin: 6px 0; }
+.daily-plan-required-days { font-size: 12px; color: #ddd4ff; line-height: 1.4; margin: 6px 0; }
+.daily-plan-weekdays { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 12px; min-height: 36px; margin: 0 4px 10px; white-space: normal; flex-shrink: 0; }
 .daily-plan-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c9c6df; margin-top: 12px; }
 .daily-plan-field input,.daily-plan-field select { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-size: 13px; padding: 8px; border: 1px solid #48435e; border-radius: 7px; background: #111120; color: #f3f1ff; }
 .daily-plan-move { margin-top: 8px; }
@@ -104,6 +106,7 @@
   .daily-plan-card { cursor: auto; }
 }
 @media(pointer: coarse) {
+  .daily-plan-weekdays { min-height: 44px; }
   .daily-plan-field input,.daily-plan-field select,.daily-plan-search .admin-input { min-height: 44px; font-size: 16px; }
   .daily-plan-card-settings summary { min-height: 44px; }
   .daily-plan-days label { min-width: 36px; min-height: 44px; }

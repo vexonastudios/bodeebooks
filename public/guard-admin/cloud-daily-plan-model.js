@@ -1,6 +1,6 @@
 export const PLAN_GROUPS = [
-  ['school', 'School', 'Finish these to open after-school activities.', 'graduation-cap'],
-  ['after_school', 'Open after school', 'Opens automatically when required work is done.', 'party-popper'],
+  ['school', 'School', 'Required on selected days. Other days are optional.', 'graduation-cap'],
+  ['after_school', 'Open after school', 'Opens when today’s required work is done, or on days off.', 'party-popper'],
   ['scheduled', 'Certain days & times', 'Available during the hours you choose.', 'calendar-clock'],
   ['anytime', 'No school requirement', 'Activities without a school-completion requirement.', 'sun'],
   ['blocked', 'Not allowed', 'Hidden from this child. Drag an activity out to allow it again.', 'lock-keyhole']
@@ -13,6 +13,29 @@ const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typin
 icons.games = 'gamepad-2';
 const mediaKinds = { music: 'music', videos: 'video', audiobooks: 'audiobook', games:'family_game' };
 const defaultDays = placement => placement === 'school' ? [1,2,3,4,5] : [0,1,2,3,4,5,6];
+export function movePlanCard(card, placement) {
+  if (card.placement === placement) return;
+  const previous = card.placement === 'blocked' ? card.previousPlacement || 'anytime' : card.placement;
+  // Required work days and allowed activity days have different meanings.
+  // Keep draft choices when moving back, but never carry an all-day catalog
+  // default into School (or weekday requirements into after-school access).
+  card.daysByPlacement = { ...card.daysByPlacement, [previous]: [...card.days] };
+  if (placement !== 'blocked') card.days = [...(card.daysByPlacement[placement] || defaultDays(placement))];
+  card.previousPlacement = previous;
+  card.placement = placement;
+  card.accessChanged = true;
+  card.disabled = false;
+  if (placement === 'scheduled' && !card.start) { card.start = '15:00'; card.end = '18:00'; }
+  if (placement === 'school' && !card.portal && !card.assignedWork && !card.goal) card.goal = 15;
+}
+export function useSchoolWeekdays(cards) {
+  const changed = cards.filter(card => card.placement === 'school' && !isSchoolWeekdays(card.days));
+  for (const card of changed) card.days = defaultDays('school');
+  return changed;
+}
+export function isSchoolWeekdays(days) {
+  return days.length === 5 && defaultDays('school').every(day => days.includes(day));
+}
 export function dailyPlanCards(snapshot, details, studentId) {
   const activities = snapshot.schoolActivities || [], cards = [], seen = new Set();
   for (const subject of snapshot.rules.subjects) {
