@@ -50,6 +50,7 @@ test('successful approval explains the next step and offers the family dashboard
     '../actions': { approveComputer: async () => {} },
   });
   const html = renderToStaticMarkup(React.createElement(Form));
-  assert.match(html, /Child computer approved/); assert.match(html, /href="\/guard\/dashboard\/"/);
+  assert.match(html, /Child computer approved/); assert.match(html, /href="\/guard\/dashboard\/\?setup=connect"/);
+  assert.match(html, /Assign child &amp; check readiness/);
   assert.match(html, /type="submit" disabled=""/);
 });

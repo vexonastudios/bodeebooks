@@ -464,7 +464,7 @@ const learningVideos = setupCloudLearningVideos({ root: byId('cloud-learning-vid
 } });
 const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, editSubject, endpoint });
 const mainSchool = setupMainSchool({getSnapshot:()=>snapshot,editor,field,selectField,node,button,mutate});
-const parentStart = setupParentStart({endpoint,getSnapshot:()=>snapshot,navigate:selectTab,mutate});
+const parentStart = setupParentStart({endpoint,getSnapshot:()=>snapshot,navigate:selectTab,mutate,refresh});
 
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();

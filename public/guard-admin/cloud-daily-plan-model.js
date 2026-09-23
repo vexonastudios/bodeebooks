@@ -30,7 +30,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
       placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false,
       days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
-      limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: details.features?.[module] === false || stats?.enabled === false,
+      limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: plan?.enabled !== true && (details.features?.[module] === false || stats?.enabled === false),
       assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow: details.requirements?.find(r => r.module === module)?.required === true });
   }
   for (const activity of activities) {
@@ -45,7 +45,21 @@ export function dailyPlanCards(snapshot, details, studentId) {
       disabled: details.features?.[module] === false || stats?.enabled === false, assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow });
   }
   if (!snapshot.rules.subjects.some(s => s.portalProvider === 'quizlet' || /^https:\/\/(www\.)?quizlet\.com\//i.test(s.url || ''))) cards.push(quizlet());
+  for (const card of cards) if (card.disabled && card.placement !== 'blocked') { card.previousPlacement = card.placement; card.placement = 'blocked'; }
   return cards;
+}
+export function planCardKey(card) {
+  return card.portal ? 'school' : card.preset ? `preset:${card.preset}` : card.module ? `module:${card.module}` : `subject:${card.subjectId}`;
+}
+export function differsFromFamily(card, template) {
+  const entry = template?.activities?.find(item => item.key === planCardKey(card));
+  if (!entry) return true;
+  if ((card.placement !== 'blocked') !== (entry.enabled !== false)) return true;
+  if (card.placement === 'blocked') return false;
+  return card.placement !== entry.placement || (!card.portal && !card.assignedWork && card.goal !== entry.goal)
+    || JSON.stringify([...card.days].sort()) !== JSON.stringify([...entry.days].sort())
+    || (card.start || null) !== (entry.start || null) || (card.end || null) !== (entry.end || null)
+    || (card.limitMinutes ?? null) !== (entry.limitMinutes ?? null);
 }
 export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto.randomUUID()) {
   const subjects = structuredClone(snapshot.rules.subjects);
@@ -60,7 +74,12 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
         ...(card.preset === 'quizlet' ? { portalProvider:'quizlet', isSchoolPortal:false, alwaysOpen:true, color:'#4255ff', allowedDomains:['quizlet.com','accounts.google.com'] } : {}) };
       subjects.push(subject);
     }
-    if (subject.active === false && card.placement !== 'blocked') throw Error(`${card.title} is turned off for the whole family. Enable it in Subjects first.`);
+    if (subject.active === false && card.placement !== 'blocked') {
+      // Enable only the chosen child. Previously global-off siblings must stay off.
+      if (!card.accessChanged) throw Error(`${card.title} is turned off. Move it to an allowed group to enable it for this child.`);
+      subject.assignments = snapshot.students.map(student => ({ ...(subject.assignments?.find(a => a.studentId === student.id) || { studentId:student.id, dailyGoalMinutes:0 }), active:false }));
+      subject.active = true;
+    }
     if (!subject.assignments) subject.assignments = snapshot.students.map(s => ({ studentId: s.id, dailyGoalMinutes: 30 }));
     let assignment = subject.assignments.find(a => a.studentId === studentId);
     if (!assignment) { assignment = { studentId, dailyGoalMinutes: 0 }; subject.assignments.push(assignment); }
@@ -72,7 +91,8 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     if ((!!card.start !== !!card.end) || card.start && card.start >= card.end || card.placement === 'scheduled' && !card.start) throw Error(`Choose valid hours for ${card.title}.`);
     const blocked = card.placement === 'blocked';
     assignment.dailyGoalMinutes = card.portal || card.assignedWork ? 0 : card.goal; assignment.active = !blocked;
-    assignment.dailyPlan = { placement: blocked ? card.previousPlacement || 'anytime' : card.placement, days: card.days, start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes };
+    assignment.dailyPlan = { placement: blocked ? card.previousPlacement || 'anytime' : card.placement, days: card.days, start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes,
+      ...(card.accessChanged ? {enabled:!blocked} : typeof assignment.dailyPlan?.enabled === 'boolean' ? {enabled:assignment.dailyPlan.enabled} : {}) };
   }
   if (subjects.length > 30) throw Error('Your plan supports up to 30 distinct subjects. Remove unused subjects first.');
   return { revision: snapshot.rules.revision, subjects, schedule: structuredClone(snapshot.rules.schedule) };
@@ -130,7 +150,7 @@ export function applyFamilyPlan(snapshot, template, studentIds, newId = () => cr
       // A fallback module card must not reactivate an explicitly hidden subject.
       if (entry.enabled !== true && !card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
         && (subject.active === false || subject.assignments?.some(a => a.studentId === studentId && a.active === false)))) continue;
-      changes.push({ ...card, ...structuredClone(entry), key: card.key, placement:entry.enabled === false ? 'blocked' : entry.placement, previousPlacement:entry.placement, goal: card.portal || card.assignedWork ? 0 : entry.goal });
+      changes.push({ ...card, ...structuredClone(entry), key: card.key, accessChanged:typeof entry.enabled === 'boolean', placement:entry.enabled === false ? 'blocked' : entry.placement, previousPlacement:entry.placement, goal: card.portal || card.assignedWork ? 0 : entry.goal });
     }
     current = { ...current, rules: { ...current.rules, ...saveDailyPlan(current, studentId, changes, newId) } };
   }

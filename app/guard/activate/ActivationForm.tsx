@@ -30,7 +30,7 @@ export default function ActivationForm({ initialCode = "" }: { initialCode?: str
         {pending ? "Approving…" : state.status === "success" ? "Child computer approved" : "Approve child computer"}
       </button>
       {state.message && <p className={state.status === "success" ? styles.successMessage : styles.errorMessage} role="status">{state.status === "success" && <CheckCircle2 size={17} />}{state.message}</p>}
-      {state.status === "success" && <Link className={styles.portalButton} href="/guard/dashboard/">Open family dashboard →</Link>}
+      {state.status === "success" && <Link className={styles.portalButton} href="/guard/dashboard/?setup=connect">Assign child & check readiness →</Link>}
     </form>
   );
 }

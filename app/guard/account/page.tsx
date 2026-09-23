@@ -170,7 +170,7 @@ async function loadBodeeGuardAccount(token: string): Promise<BodeeGuardAccount |
   }
 }
 
-export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; computerRenamed?: string; download?: string; subscription?: string; trial?: string; channel?: string; invitation?: string }> }) {
+export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; computerRenamed?: string; download?: string; subscription?: string; trial?: string; channel?: string; invitation?: string; setup?: string }> }) {
   const session = await auth.protect();
   const user = await currentUser();
   const name = parentDisplayName(user);
@@ -249,8 +249,9 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               : "The cloud student installer is not released on your account’s channel yet. Nothing was downloaded or installed. This page will offer it after release approval."}
           </aside>
         )}
-        <ChildSetup initiallyCollapsed={setupCollapsed} highlightDownload={canConnectComputers && installerAvailable}>
+        <ChildSetup initiallyCollapsed={setupCollapsed && params.setup !== 'connect'} highlightDownload={canConnectComputers && installerAvailable}>
           {canConnectComputers ? <>
+            <p className={styles.channelExplanation}>Start with children → school → activities → connect a computer. <Link href="/guard/dashboard/?setup=1">Continue your saved family setup</Link>. Use the steps below when you reach Connect.</p>
             <div className={styles.setupDownload}>
               {installerAvailable ? (
                 <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
@@ -269,7 +270,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>3</span>
-                <div><strong>Choose their school</strong><p>Assign a child and choose Abeka, Bob Jones, another website, or no online school.</p><Link className={styles.stepAction} href="/guard/dashboard/">Finish setup <ArrowRight size={15} /></Link></div>
+                <div><strong>Check readiness</strong><p>Return to family setup to assign this computer, check its connection and review the child’s activities.</p><Link className={styles.stepAction} href="/guard/dashboard/?setup=connect">Continue setup <ArrowRight size={15} /></Link></div>
               </li>
             </ol>
           </> : <p className={styles.channelExplanation}>{canStartTrial ? "Start your trial below, then download and connect your child’s computer here." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}

@@ -1,4 +1,4 @@
-import { PLAN_GROUPS, dailyPlanCards, saveDailyPlan, familyPlanCards, templateFromCards, applyFamilyPlan } from './cloud-daily-plan-model.js';
+import { PLAN_GROUPS, dailyPlanCards, saveDailyPlan, familyPlanCards, templateFromCards, applyFamilyPlan, differsFromFamily } from './cloud-daily-plan-model.js';
 import { activityAccent } from './cloud-activity-colors.js';
 const make = (tag, cls = '', text = '') => { const el = document.createElement(tag); el.className = cls; el.textContent = text; return el; };
 const icon = name => {
@@ -42,6 +42,10 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
   const layout = make('div', 'daily-plan-layout'), board = make('div', 'daily-plan-board'), available = make('div', 'daily-plan-available'), blocked = make('div', 'daily-plan-blocked');
   layout.append(available, board);
   const catalog = make('div', 'daily-plan-catalog-tools');
+  const differences = make('input'); differences.type = 'checkbox'; differences.onchange = () => render();
+  const differencesLabel = make('label', 'daily-plan-differences', 'Show only differences from family plan'); differencesLabel.prepend(differences);
+  const preview = action('Preview child activities', 'eye', () => showPlanPreview(cards, getSnapshot().students.find(s => s.id === loadedChild)?.name || 'Family'));
+  catalog.append(differencesLabel, preview);
   const school = action('Choose school', 'school', () => navigate('students'));
   catalog.append(school);
   if (editSubject) catalog.append(action('Add school website or subject', 'plus', () => {
@@ -79,7 +83,14 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     applyDefault.disabled = busy || !hasDefault || changes.size > 0 || !getSnapshot()?.students.some(s => !s.archived_at);
     familyText.textContent = isFamily
       ? 'Save a reusable plan, then apply it to all or selected children. Changes here leave their current plans in place until you apply them.'
-      : 'Start with the family default, then adjust this child. Each child keeps their own school websites, assigned work and activity switches.';
+      : 'Apply the family plan to this child, then change only what they need. Applying is a saved copy; later family edits do not overwrite their choices.';
+    differencesLabel.hidden = isFamily || !hasDefault;
+    preview.disabled = busy || !captured;
+    preview.hidden = isFamily;
+    if (!isFamily && hasDefault) {
+      const count = cards.filter(card => differsFromFamily(card, captured.rules.dailyPlanTemplate)).length;
+      familyTitle.replaceChildren(icon('users-round'), document.createTextNode(count ? `${count} ${count === 1 ? 'activity differs' : 'activities differ'} from family plan` : 'Matches family plan'));
+    } else familyTitle.replaceChildren(icon('users-round'), document.createTextNode('Family default'));
     window.lucide?.createIcons();
   }
   function changed(card) { changes.set(card.key, structuredClone(card)); notify('Unsaved changes'); updateControls(); }
@@ -87,6 +98,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     if (busy || card.placement === placement) return;
     if (card.placement !== 'blocked') card.previousPlacement = card.placement;
     card.placement = placement; card.accessChanged = true;
+    card.disabled = false;
     if (placement === 'scheduled' && !card.start) { card.start = '15:00'; card.end = '18:00'; }
     if (placement === 'school' && !card.portal && !card.assignedWork && !card.goal) card.goal = 15;
     changed(card); render();
@@ -108,10 +120,10 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
     const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'Uses each child’s assigned school and lesson goals' : card.portal ? 'Finish school lessons' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
+    if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
     else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
-    if (!isBlocked && card.disabled) el.append(make('p', 'daily-plan-off', 'Also turned off in activity settings. Enable it there to use this plan.'));
-    if (card.globallyDisabled) el.append(make('p', 'daily-plan-off', 'Turned off for the whole family in Subjects.'));
+    if (isBlocked && (card.disabled || card.globallyDisabled)) el.append(make('p', 'daily-plan-off', 'Move to an allowed group to enable it for this child.'));
     const select = make('select', 'admin-select'); select.setAttribute('aria-label', `Move ${card.title} to`);
     const prompt = make('option', '', 'Move to…'); prompt.value = ''; prompt.disabled = true; select.append(prompt);
     for (const [id, name] of PLAN_GROUPS) { const option = make('option', '', name); option.value = id; option.disabled = id === card.placement; select.append(option); } select.value = ''; select.onchange = () => move(card, select.value, true); select.disabled = busy;
@@ -141,10 +153,10 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     for (const el of section.querySelectorAll('.daily-plan-card-settings')) { const key = el.closest('[data-plan-key]').dataset.planKey; if (el.open) openOptions.add(key); else openOptions.delete(key); }
     for (const [id, { list, count }] of groups) {
       const scrollTop = list.scrollTop, entries = cards.filter(c => c.placement === id), query = search.value.trim().toLocaleLowerCase();
-      const visible = entries.filter(card => card.title.toLocaleLowerCase().includes(query));
+      const visible = entries.filter(card => card.title.toLocaleLowerCase().includes(query) && (child.value === 'family' || !differences.checked || !captured?.rules.dailyPlanTemplate || differsFromFamily(card, captured.rules.dailyPlanTemplate)));
       count.textContent = query ? `${visible.length}/${entries.length}` : String(entries.length);
       list.replaceChildren(...visible.map(cardView));
-      if (!visible.length) list.append(make('p', 'daily-plan-empty', query ? 'No matching activities. Try another name.' : 'Drop an activity here'));
+      if (!visible.length) list.append(make('p', 'daily-plan-empty', differences.checked && child.value !== 'family' ? 'No differences in this group.' : query ? 'No matching activities. Try another name.' : 'Drop an activity here'));
       list.scrollTop = scrollTop;
     }
     updateControls(); window.lucide?.createIcons();
@@ -178,7 +190,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
   }
   function selectPlan(value) {
     if (changes.size && !confirm('Discard this plan’s unsaved changes?')) { child.value = loadedChild; return; }
-    child.value = value; changes.clear(); cards = []; openOptions.clear(); search.value = ''; void load();
+    child.value = value; changes.clear(); cards = []; openOptions.clear(); search.value = ''; differences.checked = false; void load();
   }
   child.onchange = () => selectPlan(child.value);
   function reviewApply() {
@@ -238,4 +250,36 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     },
     setActive(value) { active = value; if (active && !changes.size && !busy) void load(); }
   };
+}
+
+// A read-only plan preview: never launches school, consumes time or changes a child.
+export function showPlanPreview(cards, name, host = document.body) {
+  const previous = document.activeElement, dialog = make('dialog', 'daily-plan-preview');
+  dialog.setAttribute('aria-label', `${name}’s activity preview`);
+  const heading = make('h2', '', `${name}’s activities`);
+  const close = action('Close preview', 'x', () => dialog.close());
+  const header = make('header'); header.append(heading, close);
+  const content = make('div', 'daily-plan-preview-body');
+  content.append(make('p', 'cloud-note', 'Plan preview. School progress, hours, daily limits and assigned content determine what opens right now. This does not sign into school or start an activity.'));
+  for (const [id, label, description] of PLAN_GROUPS) {
+    const entries = cards.filter(card => card.placement === id); if (!entries.length) continue;
+    const group = make(id === 'blocked' ? 'details' : 'section');
+    group.append(make(id === 'blocked' ? 'summary' : 'h3', '', `${label} · ${entries.length}`), make('p', 'cloud-note', description));
+    const grid = make('div', 'daily-plan-preview-grid');
+    for (const card of entries) {
+      const tile = make('article', 'daily-plan-preview-card'); tile.style.setProperty('--plan-accent', activityAccent(card));
+      const title = make('strong', '', card.title); title.prepend(icon(card.icon)); tile.append(title);
+      if (id === 'school') tile.append(make('p', '', card.portal ? 'School lessons' : card.assignedWork ? 'Assigned work' : `${card.goal} minutes of practice`));
+      if (id === 'blocked') tile.append(make('p', '', 'Hidden from the child'));
+      else {
+        if (card.start) tile.append(make('p', '', `${card.start}–${card.end}`));
+        if (card.limitMinutes) tile.append(make('p', '', `${card.limitMinutes} minutes per day`));
+        if (card.days?.length < 7) tile.append(make('p', '', card.days.map(day => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][day]).join(', ')));
+      }
+      grid.append(tile);
+    }
+    group.append(grid); content.append(group);
+  }
+  dialog.append(header, content); host.append(dialog); dialog.onclose = () => { dialog.remove(); if (previous?.isConnected) previous.focus(); };
+  dialog.showModal(); window.lucide?.createIcons();
 }

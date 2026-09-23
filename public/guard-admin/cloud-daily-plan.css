@@ -109,3 +109,20 @@
   .daily-plan-days label { min-width: 36px; min-height: 44px; }
   .daily-plan-days input { width: 22px; height: 22px; min-height: 22px; }
 }
+.daily-plan-differences { display:flex; align-items:center; gap:8px; font-size:13px; }
+.daily-plan-differences[hidden] { display:none; }
+.daily-plan-preview { position:fixed; inset:0; margin:auto; width:min(860px,calc(100vw - 24px)); max-height:90dvh; padding:0; color:#f1edff; background:#151325; border:1px solid #675a81; border-radius:16px; }
+.daily-plan-preview::backdrop { background:#050410bb; }
+.daily-plan-preview[open] { display:flex; flex-direction:column; }
+.daily-plan-preview header { display:flex; flex-shrink:0; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; border-bottom:1px solid #ffffff20; }
+.daily-plan-preview h2 { font-size:21px; margin:0; }
+.daily-plan-preview-body { padding:16px 20px; overflow:auto; min-height:0; }
+.daily-plan-preview-body .cloud-note { font-size:14px; line-height:1.6; color:#c8c0dc; margin:6px 0 14px; }
+.daily-plan-preview-body h3 { font-size:16px; margin:18px 0 6px; }
+.daily-plan-preview-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0 22px; }
+.daily-plan-preview-card { min-width:0; padding:14px; border:1px solid #ffffff20; border-left:4px solid var(--plan-accent); background:color-mix(in srgb,var(--plan-accent) 10%,#181629); border-radius:12px; }
+.daily-plan-preview-card strong { display:flex; align-items:center; gap:8px; overflow-wrap:anywhere; }
+.daily-plan-preview-card svg { width:20px; height:20px; flex-shrink:0; color:var(--plan-accent); }
+.daily-plan-preview-card p { margin:7px 0 0; color:#c8c0dc; font-size:13px; }
+.daily-plan-preview summary { cursor:pointer; }
+@media(max-width:480px) { .daily-plan-preview-grid { grid-template-columns:1fr; } }
