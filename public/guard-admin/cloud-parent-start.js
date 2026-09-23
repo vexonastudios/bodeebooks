@@ -85,7 +85,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate,navigate,refresh=a
         if(!reviewing){reviewing=true;render();return;}
         await savePlan();
       }
-      if(index===3&&direction>0){await persist(index,true);dialog.close();navigate('overview');return;}
+      if(index===3&&direction>0){await persist(index,children().length>0&&familyReadiness(getSnapshot(),state).every(row=>row.ready));dialog.close();navigate('overview');return;}
       const target=Math.max(0,Math.min(3,index+direction));await persist(target);index=target;render();
     }catch(failure){error.textContent=failure.message;}
     finally{busy=false;unlock();status();}

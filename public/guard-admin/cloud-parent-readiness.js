@@ -26,7 +26,10 @@ export function familyReadiness(snapshot, setup) {
 export function nextSetupStep(snapshot, setup) {
   const rows = familyReadiness(snapshot, setup);
   if (!rows.length) return {step:0,label:'Add your children'};
-  const unfinished = rows.find(row => row.next);
+  // Once setup has been confirmed, a computer being off or intentionally paused
+  // is an everyday status, not a reason to send the parent through setup again.
+  const unfinished = rows.find(row => row.next && !(setup?.completed && row.checks.slice(0,3).every(check => check.done)
+    && row.devices.some(device => device.recovery_configured && Number(device.acknowledged_revision) > 0)));
   if (unfinished) return {step:unfinished.next.step,label:`${unfinished.child.name}: ${unfinished.next.label.toLowerCase()}`};
   return setup?.completed ? null : {step:3,label:'Review your family’s readiness'};
 }
