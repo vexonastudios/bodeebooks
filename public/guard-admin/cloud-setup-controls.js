@@ -88,7 +88,7 @@ export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
 }
 // Reuse working dashboard controls in a guide substep; keep the guide and its
 // exact DOM (including drafts and scroll position) mounted for the return.
-export function setupSections({ dialog, body, footer, navigate }) {
+export function setupSections({ dialog, body, footer, navigate, onReturn }) {
   let restore = null;
   dialog.addEventListener('cancel', event => { if (restore) { event.preventDefault(); event.stopImmediatePropagation(); restore(); } }, true);
   return { active: () => !!restore, open(tab, callback) {
@@ -101,7 +101,7 @@ export function setupSections({ dialog, body, footer, navigate }) {
     footer.hidden=true; footer.after(controls); dialog.classList.add('setup-section-open'); dialog.dataset.setupSection=tab;
     restore=()=>{
       placeholder.replaceWith(panel); body.replaceChildren(saved); controls.remove(); footer.hidden=false; dialog.classList.remove('setup-section-open'); delete dialog.dataset.setupSection; restore=null;
-      navigate(previousTab); body.scrollTop=scroll; footer.querySelector('button:not(:disabled)')?.focus();
+      navigate(previousTab); onReturn?.(); body.scrollTop=scroll; footer.querySelector('button:not(:disabled)')?.focus();
     };
     back.onclick=restore;
     try { navigate(tab); panel.classList.add('setup-embedded-panel'); body.append(panel); body.scrollTop=0; callback?.(); decorateSetup(controls); }

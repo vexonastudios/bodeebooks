@@ -2,8 +2,12 @@ export const PLAN_GROUPS = [
   ['school', 'School', 'Finish these to open after-school activities.', 'graduation-cap'],
   ['after_school', 'Open after school', 'Opens automatically when required work is done.', 'party-popper'],
   ['scheduled', 'Certain days & times', 'Available during the hours you choose.', 'calendar-clock'],
-  ['anytime', 'No school requirement', 'Activities without a school-completion requirement.', 'sun']
+  ['anytime', 'No school requirement', 'Activities without a school-completion requirement.', 'sun'],
+  ['blocked', 'Not allowed', 'Hidden from this child. Drag an activity out to allow it again.', 'lock-keyhole']
 ];
+// A catalog entry, not an assignment. Quizlet stays off until a parent allows it.
+const quizlet = () => ({ key:'preset:quizlet', preset:'quizlet', title:'Quizlet Study', icon:'layers', color:'#4255ff',
+  url:'https://quizlet.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
 const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'learning-videos': 'Learning Videos', poems: 'Poems' };
 const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
 icons.games = 'gamepad-2';
@@ -12,15 +16,19 @@ const defaultDays = placement => placement === 'school' ? [1,2,3,4,5] : [0,1,2,3
 export function dailyPlanCards(snapshot, details, studentId) {
   const activities = snapshot.schoolActivities || [], cards = [], seen = new Set();
   for (const subject of snapshot.rules.subjects) {
-    if (subject.active === false) continue;
-    const assignment = Array.isArray(subject.assignments) ? subject.assignments.find(a => a.studentId === studentId && a.active !== false) : { dailyGoalMinutes: 30 };
-    if (!assignment) continue;
+    const assignment = Array.isArray(subject.assignments) ? subject.assignments.find(a => a.studentId === studentId) : { dailyGoalMinutes: 30 };
+    // Main schools belong to their assigned children; optional websites belong
+    // in the catalog even before they have an assignment.
+    if (!assignment && subject.isSchoolPortal) continue;
     const module = activities.find(a => a.url === subject.url)?.module;
+    if (!assignment && module && subject.planOnly) continue;
     if (module) seen.add(module);
-    const stats = details.media?.[mediaKinds[module]], plan = assignment.dailyPlan;
+    const stats = details.media?.[mediaKinds[module]], plan = assignment?.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
     cards.push({ key: subject.id, subjectId: subject.id, module, title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
-      goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment.dailyGoalMinutes, portal: subject.isSchoolPortal, placement, days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
+      goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment?.dailyGoalMinutes ?? 0, portal: subject.isSchoolPortal,
+      placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false,
+      days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
       limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: details.features?.[module] === false || stats?.enabled === false,
       assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow: details.requirements?.find(r => r.module === module)?.required === true });
@@ -36,19 +44,23 @@ export function dailyPlanCards(snapshot, details, studentId) {
       start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? null,
       disabled: details.features?.[module] === false || stats?.enabled === false, assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow });
   }
+  if (!snapshot.rules.subjects.some(s => s.portalProvider === 'quizlet' || /^https:\/\/(www\.)?quizlet\.com\//i.test(s.url || ''))) cards.push(quizlet());
   return cards;
 }
 export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto.randomUUID()) {
   const subjects = structuredClone(snapshot.rules.subjects);
   if (!snapshot.students.some(s => s.id === studentId && !s.archived_at)) throw Error('Choose a child.');
   for (const card of changes) {
+    if (card.preset === 'quizlet' && card.placement === 'blocked' && !card.subjectId) continue;
     // Reuse the family activity row; only its child assignment changes. Ten
     // children with the same twenty activities must not need 200 subjects.
     let subject = subjects.find(s => s.id === card.subjectId) || subjects.find(s => s.planOnly && s.url === card.url && s.active !== false);
     if (!subject) {
-      subject = { id: newId(), title: card.title, kind: 'activity', url: card.url, icon: card.icon, active: true, accessTier: 'school_optional', planOnly: true, assignments: [] };
+      subject = { id: newId(), title: card.title, kind: card.preset === 'quizlet' ? 'website' : 'activity', url: card.url, icon: card.icon, active: true, accessTier: 'school_optional', planOnly: true, assignments: [],
+        ...(card.preset === 'quizlet' ? { portalProvider:'quizlet', isSchoolPortal:false, alwaysOpen:true, color:'#4255ff', allowedDomains:['quizlet.com','accounts.google.com'] } : {}) };
       subjects.push(subject);
     }
+    if (subject.active === false && card.placement !== 'blocked') throw Error(`${card.title} is turned off for the whole family. Enable it in Subjects first.`);
     if (!subject.assignments) subject.assignments = snapshot.students.map(s => ({ studentId: s.id, dailyGoalMinutes: 30 }));
     let assignment = subject.assignments.find(a => a.studentId === studentId);
     if (!assignment) { assignment = { studentId, dailyGoalMinutes: 0 }; subject.assignments.push(assignment); }
@@ -58,8 +70,9 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     if (card.placement === 'school' && !card.portal && !card.assignedWork && card.module && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
     if (!card.days.length) throw Error(`Choose at least one day for ${card.title}.`);
     if ((!!card.start !== !!card.end) || card.start && card.start >= card.end || card.placement === 'scheduled' && !card.start) throw Error(`Choose valid hours for ${card.title}.`);
-    assignment.dailyGoalMinutes = card.portal || card.assignedWork ? 0 : card.goal; assignment.active = true;
-    assignment.dailyPlan = { placement: card.placement, days: card.days, start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes };
+    const blocked = card.placement === 'blocked';
+    assignment.dailyGoalMinutes = card.portal || card.assignedWork ? 0 : card.goal; assignment.active = !blocked;
+    assignment.dailyPlan = { placement: blocked ? card.previousPlacement || 'anytime' : card.placement, days: card.days, start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes };
   }
   if (subjects.length > 30) throw Error('Your plan supports up to 30 distinct subjects. Remove unused subjects first.');
   return { revision: snapshot.rules.revision, subjects, schedule: structuredClone(snapshot.rules.schedule) };
@@ -75,17 +88,18 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
   baseline.unshift({ key: 'school', title: 'Each child’s school', icon: 'graduation-cap', portal: true, goal: 0,
     placement: 'school', days: defaultDays('school'), start: null, end: null, limitMinutes: null });
   for (const subject of snapshot.rules.subjects) {
-    if (subject.active === false || subject.isSchoolPortal || snapshot.schoolActivities.some(a => a.url === subject.url)) continue;
+    if (subject.isSchoolPortal || snapshot.schoolActivities.some(a => a.url === subject.url)) continue;
     const owner = snapshot.students.find(s => !s.archived_at && (!subject.assignments || subject.assignments.some(a => a.studentId === s.id && a.active !== false)));
-    const card = owner && dailyPlanCards(snapshot, {}, owner.id).find(c => c.subjectId === subject.id);
+    const card = dailyPlanCards(snapshot, {}, owner?.id || 'family').find(c => c.subjectId === subject.id);
     if (card) baseline.push({ ...card, key: `subject:${subject.id}` });
   }
+  if (baseline.some(c => c.subjectId && (snapshot.rules.subjects.find(s => s.id === c.subjectId)?.portalProvider === 'quizlet' || /^https:\/\/(www\.)?quizlet\.com\//i.test(c.url || '')))) baseline.splice(baseline.findIndex(c => c.preset === 'quizlet'), 1);
   for (const card of baseline) {
     // Color describes the activity, not its placement or family plan settings.
     const subject = snapshot.rules.subjects.find(s => s.active !== false && s.url === card.url);
     if (subject?.color) card.color = subject.color;
     const saved = template?.activities?.find(entry => entry.key === card.key);
-    if (saved) Object.assign(card, structuredClone(saved));
+    if (saved) { Object.assign(card, structuredClone(saved)); if (saved.enabled === false) { card.previousPlacement = saved.placement; card.placement = 'blocked'; } }
   }
   return baseline;
 }
@@ -93,8 +107,9 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
 export function templateFromCards(cards) {
   const entries = new Map();
   for (const card of cards) {
-    const key = card.portal ? 'school' : card.module ? `module:${card.module}` : card.key.startsWith('subject:') ? card.key : `subject:${card.subjectId}`;
-    if (!entries.has(key)) entries.set(key, { key, goal: card.portal ? 0 : card.goal, placement: card.placement,
+    const key = card.portal ? 'school' : card.preset ? `preset:${card.preset}` : card.module ? `module:${card.module}` : card.key.startsWith('subject:') ? card.key : `subject:${card.subjectId}`;
+    if (!entries.has(key)) entries.set(key, { key, goal: card.portal ? 0 : card.goal, placement: card.placement === 'blocked' ? card.previousPlacement || 'anytime' : card.placement,
+      ...(card.placement === 'blocked' || card.accessChanged || typeof card.enabled === 'boolean' ? { enabled:card.placement !== 'blocked' } : {}),
       days: [...card.days], start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes ?? null });
   }
   return { version: 1, activities: [...entries.values()] };
@@ -108,13 +123,14 @@ export function applyFamilyPlan(snapshot, template, studentIds, newId = () => cr
   for (const studentId of studentIds) {
     const changes = [];
     for (const card of dailyPlanCards(current, {}, studentId)) {
-      const key = card.portal ? 'school' : card.module ? `module:${card.module}` : `subject:${card.subjectId}`;
-      const entry = template.activities.find(item => item.key === key);
+      const key = card.portal ? 'school' : card.preset ? `preset:${card.preset}` : card.module ? `module:${card.module}` : `subject:${card.subjectId}`;
+      const entry = template.activities.find(item => item.key === key || item.key === 'preset:quizlet' && (card.preset === 'quizlet' || current.rules.subjects.find(s => s.id === card.subjectId)?.portalProvider === 'quizlet'));
       if (!entry) continue;
+      if (card.placement === 'blocked' && entry.enabled !== true && entry.enabled !== false) continue;
       // A fallback module card must not reactivate an explicitly hidden subject.
-      if (!card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
+      if (entry.enabled !== true && !card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
         && (subject.active === false || subject.assignments?.some(a => a.studentId === studentId && a.active === false)))) continue;
-      changes.push({ ...card, ...structuredClone(entry), key: card.key, goal: card.portal || card.assignedWork ? 0 : entry.goal });
+      changes.push({ ...card, ...structuredClone(entry), key: card.key, placement:entry.enabled === false ? 'blocked' : entry.placement, previousPlacement:entry.placement, goal: card.portal || card.assignedWork ? 0 : entry.goal });
     }
     current = { ...current, rules: { ...current.rules, ...saveDailyPlan(current, studentId, changes, newId) } };
   }

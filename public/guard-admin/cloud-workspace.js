@@ -1,4 +1,6 @@
 import { setupDailyPlan } from './cloud-daily-plan.js';
+import { setupParentStart } from './cloud-parent-start.js';
+import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { editCloudSubject } from './cloud-school-editor.js';
@@ -104,6 +106,8 @@ function showSnapshot() {
   renderStudents();
   renderSubjects();
   dailyPlan.update();
+  mainSchool.render();
+  parentStart.update();
   records.update();
   schoolReview.update();
   reading.update(); dailyQuestions.update(); practice.update(); geography.update(); spanish.update();
@@ -458,7 +462,9 @@ const learningVideos = setupCloudLearningVideos({ root: byId('cloud-learning-vid
   if (!response.ok) throw new Error(value.error || 'Learning videos could not connect.');
   return value;
 } });
-const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, endpoint });
+const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, editSubject, endpoint });
+const mainSchool = setupMainSchool({getSnapshot:()=>snapshot,editor,field,selectField,node,button,mutate});
+const parentStart = setupParentStart({endpoint,getSnapshot:()=>snapshot,navigate:selectTab,mutate});
 
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();

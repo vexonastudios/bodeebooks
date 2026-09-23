@@ -16,8 +16,8 @@ const action = (label, symbol, fn, cls = 'btn btn-secondary') => {
   el.onclick = fn;
   return el;
 };
-export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/guard/dashboard/bridge/' }) {
-  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260923-activity-colors'; document.head.append(stylesheet);
+export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, endpoint = '/guard/dashboard/bridge/' }) {
+  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260923-parent-setup'; document.head.append(stylesheet);
   const nav = action('Daily plan', 'list-checks', () => navigate('daily-plan'), 'nav-item'); nav.dataset.tab = 'daily-plan';
   document.querySelector('.sidebar-nav .nav-item[data-tab="overview"]')?.after(nav);
   const section = make('section', 'tab-content'); section.id = 'tab-daily-plan'; section.setAttribute('aria-label', 'Daily plan');
@@ -27,7 +27,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   const status = make('p', 'daily-plan-status'); status.setAttribute('role', 'status');
   const retry = action('Reload plan', 'refresh-cw', () => void load());
   controls.append(label, status, retry, discard, save);
-  const help = make('p', 'cloud-note', 'Drag an activity to a column, or choose “Move to.” Set up your family default once, then customize each child.');
+  const help = make('p', 'cloud-note', 'Choose what your children can use here. Drag activities, or use “Move to.” Put anything you do not want them using in Not allowed.');
   const family = make('div', 'daily-plan-family'), familyCopy = make('div'), familyTitle = make('strong'), familyText = make('p');
   familyTitle.append(icon('users-round'), document.createTextNode('Family default')); familyCopy.append(familyTitle, familyText);
   const editDefault = action('Edit family default', 'layout-template', () => selectPlan('family'));
@@ -39,27 +39,36 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   });
   const applyDefault = action('Apply default…', 'users-round', () => reviewApply(), 'btn btn-primary');
   const familyActions = make('div', 'daily-plan-family-actions'); familyActions.append(editDefault, copyDefault, applyDefault); family.append(familyCopy, familyActions);
-  const layout = make('div', 'daily-plan-layout'), board = make('div', 'daily-plan-board'), available = make('div', 'daily-plan-available');
+  const layout = make('div', 'daily-plan-layout'), board = make('div', 'daily-plan-board'), available = make('div', 'daily-plan-available'), blocked = make('div', 'daily-plan-blocked');
   layout.append(available, board);
-  section.append(head, help, family, controls, layout); document.querySelector('.main-content').append(section);
+  const catalog = make('div', 'daily-plan-catalog-tools');
+  const school = action('Choose school', 'school', () => navigate('students'));
+  catalog.append(school);
+  if (editSubject) catalog.append(action('Add school website or subject', 'plus', () => {
+    if (changes.size) { notify('Save or discard your plan before adding a subject.', true); return; }
+    editSubject();
+  }));
+  section.append(head, help, family, controls, catalog, layout); document.querySelector('.main-content').append(section);
   const shortcut = action('Daily plan', 'list-checks', () => navigate('daily-plan'));
+
   const overviewActions = document.querySelector('#overview-actions');
   (overviewActions || document.querySelector('#tab-overview .tab-header'))?.append(shortcut);
   let active = false, loadedChild = null, captured = null, details = {}, cards = [], generation = 0, busy = false;
   const changes = new Map(), groups = new Map(), openOptions = new Set();
-  const search = make('input', 'admin-input'); search.type = 'search'; search.placeholder = 'Find an activity…'; search.setAttribute('aria-label', 'Find activities without a school requirement'); search.oninput = () => render();
+  const search = make('input', 'admin-input'); search.type = 'search'; search.placeholder = 'Find any activity, including Quizlet…'; search.setAttribute('aria-label', 'Find an activity in any column'); search.oninput = () => render();
+  const find = make('label', 'daily-plan-search'); find.append(icon('search'), search); catalog.prepend(find);
   for (const [id, title, description, symbol] of PLAN_GROUPS) {
     const column = make('div', 'daily-plan-column'); column.dataset.planGroup = id;
     const heading = make('h2'), count = make('span', 'daily-plan-count'); heading.id = `daily-plan-heading-${id}`;
     heading.append(icon(symbol), document.createTextNode(title), count); column.append(heading, make('p', 'cloud-note', description));
-    if (id === 'anytime') { const find = make('label', 'daily-plan-search'); find.append(icon('search'), search); column.append(find); }
     const list = make('div', 'daily-plan-list'); list.setAttribute('role', 'region'); list.setAttribute('aria-labelledby', heading.id); list.tabIndex = 0;
     column.append(list); groups.set(id, { column, list, count });
     column.ondragover = e => { if (!busy && e.dataTransfer.types.includes('text/plain')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; column.classList.add('drag-over'); } };
     column.ondragleave = e => { if (!column.contains(e.relatedTarget)) column.classList.remove('drag-over'); };
     column.ondrop = e => { e.preventDefault(); clearDrag(); const card = cards.find(c => c.key === e.dataTransfer.getData('text/plain')); if (card && !busy) move(card, id); };
-    (id === 'anytime' ? available : board).append(column);
+    (id === 'anytime' ? available : id === 'blocked' ? blocked : board).append(column);
   }
+  available.append(blocked);
   function clearDrag() { layout.querySelectorAll('.drag-over,.dragging').forEach(n => n.classList.remove('drag-over', 'dragging')); }
   function notify(text, error = false) { status.textContent = text; status.dataset.error = String(error); }
   function updateControls() {
@@ -76,7 +85,8 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   function changed(card) { changes.set(card.key, structuredClone(card)); notify('Unsaved changes'); updateControls(); }
   function move(card, placement, focus = false) {
     if (busy || card.placement === placement) return;
-    card.placement = placement;
+    if (card.placement !== 'blocked') card.previousPlacement = card.placement;
+    card.placement = placement; card.accessChanged = true;
     if (placement === 'scheduled' && !card.start) { card.start = '15:00'; card.end = '18:00'; }
     if (placement === 'school' && !card.portal && !card.assignedWork && !card.goal) card.goal = 15;
     changed(card); render();
@@ -89,21 +99,24 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   }
   function field(text, input) { const label = make('label', 'daily-plan-field', text); label.append(input); return label; }
   function cardView(card) {
-    const alwaysOpen = card.placement !== 'scheduled' && (card.alwaysOpen ?? card.placement === 'school');
+    const isBlocked = card.placement === 'blocked';
+    const alwaysOpen = !isBlocked && card.placement !== 'scheduled' && (card.alwaysOpen ?? card.placement === 'school');
     const el = make('article', 'daily-plan-card'); el.dataset.planKey = card.key; el.draggable = !busy;
     el.style.setProperty('--plan-accent', activityAccent(card));
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
-    const summary = card.key === 'school' ? 'Uses each child’s assigned school and lesson goals' : card.portal ? 'Finish school lessons' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
+    const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'Uses each child’s assigned school and lesson goals' : card.portal ? 'Finish school lessons' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
-    else if (card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
-    if (card.disabled) el.append(make('p', 'daily-plan-off', 'Turned off in child or activity settings'));
+    else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
+    if (!isBlocked && card.disabled) el.append(make('p', 'daily-plan-off', 'Also turned off in activity settings. Enable it there to use this plan.'));
+    if (card.globallyDisabled) el.append(make('p', 'daily-plan-off', 'Turned off for the whole family in Subjects.'));
     const select = make('select', 'admin-select'); select.setAttribute('aria-label', `Move ${card.title} to`);
     const prompt = make('option', '', 'Move to…'); prompt.value = ''; prompt.disabled = true; select.append(prompt);
     for (const [id, name] of PLAN_GROUPS) { const option = make('option', '', name); option.value = id; option.disabled = id === card.placement; select.append(option); } select.value = ''; select.onchange = () => move(card, select.value, true); select.disabled = busy;
     const moveField = field('', select); moveField.classList.add('daily-plan-move'); el.append(moveField);
+    if (isBlocked) return el;
     const settings = make('details', 'daily-plan-card-settings'), toggle = make('summary'); toggle.append(icon('sliders-horizontal'), document.createTextNode('Times & options')); settings.append(toggle);
     settings.open = openOptions.has(card.key);
     settings.ontoggle = () => { if (settings.isConnected) { if (settings.open) openOptions.add(card.key); else openOptions.delete(card.key); } };
@@ -127,7 +140,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
   function render() {
     for (const el of section.querySelectorAll('.daily-plan-card-settings')) { const key = el.closest('[data-plan-key]').dataset.planKey; if (el.open) openOptions.add(key); else openOptions.delete(key); }
     for (const [id, { list, count }] of groups) {
-      const scrollTop = list.scrollTop, entries = cards.filter(c => c.placement === id), query = id === 'anytime' ? search.value.trim().toLocaleLowerCase() : '';
+      const scrollTop = list.scrollTop, entries = cards.filter(c => c.placement === id), query = search.value.trim().toLocaleLowerCase();
       const visible = entries.filter(card => card.title.toLocaleLowerCase().includes(query));
       count.textContent = query ? `${visible.length}/${entries.length}` : String(entries.length);
       list.replaceChildren(...visible.map(cardView));
@@ -174,7 +187,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
     const selected = new Set(loadedChild === 'family' ? students.map(s => s.id) : [loadedChild]);
     const dialog = make('dialog', 'daily-plan-apply'); dialog.setAttribute('aria-labelledby', 'daily-plan-apply-title');
     const title = make('h2', '', 'Apply family default'); title.id = 'daily-plan-apply-title'; title.prepend(icon('users-round'));
-    const description = make('p', '', 'This replaces daily-plan choices for the selected children. Their school websites, assignments, activity switches and earned time stay as they are. You can customize each child afterward.');
+    const description = make('p', '', 'This applies the family plan, including activities marked Not allowed, to the selected children. Activities you explicitly allowed can be added to their plans. Their own school websites, saved work and earned time are kept.');
     const choices = make('div', 'daily-plan-children'), info = make('p', 'daily-plan-status'); info.setAttribute('role', 'status');
     const buttons = make('div', 'daily-plan-apply-actions'), cancel = action('Cancel', 'x', () => dialog.close()), accept = action('Apply', 'check', () => void apply(), 'btn btn-primary');
     const all = action('Select all', 'check-check', () => { students.forEach(s => selected.add(s.id)); redraw(); });
@@ -221,7 +234,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, endpoint = '/gua
         child.append(option);
       }
       child.value = [...child.options].some(option => option.value === selected) ? selected : 'family';
-      if (active && !captured && !busy) void load();
+      if (active && !busy && !changes.size && (!captured || captured.rules.revision !== snapshot.rules.revision)) void load();
     },
     setActive(value) { active = value; if (active && !changes.size && !busy) void load(); }
   };
