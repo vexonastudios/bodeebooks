@@ -56,8 +56,13 @@ function ring(model){
 }
 export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showError,mobile}){
   let screenshotExpiry = null;
+  let quickStudentId = null;
   const canScreenshot = studentId => { const state=getSnapshot()?.screenshotAvailability;return state?.known===true&&state.availableStudentIds?.includes(studentId)&&Date.now()-Date.parse(state.checkedAt)<75000; };
   const grid=document.getElementById('overview-grid');
+  const quickDialog=node('dialog','cloud-quick-dialog');quickDialog.id='cloud-quick-unlock-dialog';quickDialog.setAttribute('aria-labelledby','cloud-quick-unlock-title');
+  document.getElementById('admin-dashboard').append(quickDialog);
+  quickDialog.addEventListener('close',()=>{quickStudentId=null;});
+  quickDialog.addEventListener('click',event=>{if(event.target===quickDialog)quickDialog.close();});
   const header=grid.closest('section').querySelector('.tab-header');
   const refresh=document.getElementById('cloud-refresh');
   const updated=node('time','cloud-overview-updated');updated.id='cloud-overview-updated';updated.setAttribute('aria-live','polite');
@@ -89,13 +94,47 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await change({operation:'extra-time',minutes});menu.open=false;}),'btn btn-secondary');add.dataset.cloudMutation='true';options.append(add);}
     menu.append(summary,options);row.append(main,menu);return row;
   }
+  function renderQuickDialog(model){
+    const priorStatus=quickDialog.querySelector('.cloud-quick-status')?.textContent||'';
+    quickDialog.replaceChildren();
+    const shell=node('div','cloud-quick-dialog-shell'),head=node('header','cloud-quick-dialog-header');
+    const heading=node('div');heading.append(node('h2','','Quick Unlock · '+model.student.name),
+      node('p','','Tap an activity to unlock it for today. Daily media limits still apply.'));
+    heading.querySelector('h2').id='cloud-quick-unlock-title';
+    const close=button('Close','x',()=>quickDialog.close(),'cloud-quick-close');close.setAttribute('aria-label','Close Quick Unlock');
+    head.append(heading,close);
+    const choices=node('div','cloud-quick-dialog-choices');
+    for(const subject of model.goals){
+      const unlocked=!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
+        &&Array.isArray(model.student.quick_unlock.subjectIds)&&model.student.quick_unlock.subjectIds.includes(subject.id);
+      const choice=button(subject.label,unlocked?'circle-check':subject.icon,async el=>{
+        el.disabled=true;
+        quickDialog.querySelector('.cloud-quick-status').textContent='Saving…';
+        try{
+          await mutate('computer-command',{kind:'quick-unlock',studentId:model.student.id,subjectId:subject.id,unlocked:!unlocked});
+          const status=quickDialog.querySelector('.cloud-quick-status');if(status){status.textContent=unlocked?'Usual rule restored.':'Saved for today.';status.setAttribute('role','status');}
+        }catch(error){
+          const status=quickDialog.querySelector('.cloud-quick-status');if(status){status.textContent=error.message;status.setAttribute('role','alert');}
+        }finally{if(el.isConnected)el.disabled=false;}
+      },`cloud-quick-choice${unlocked?' is-unlocked':''}`);
+      choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';
+      choice.append(node('small','',unlocked?'Unlocked today':'Tap to unlock'));choices.append(choice);
+    }
+    if(!model.goals.length)choices.append(node('p','cloud-quick-empty','Assign school subjects before using Quick Unlock.'));
+    const foot=node('footer','cloud-quick-dialog-footer'),status=node('p','cloud-quick-status',priorStatus),done=button('Done','check',()=>quickDialog.close(),'btn btn-secondary');
+    status.setAttribute('role','status');foot.append(status,done);shell.append(head,choices,foot);quickDialog.append(shell);window.lucide?.createIcons();
+  }
+  function openQuickDialog(studentId){
+    const model=monitoringChildren(getSnapshot()).find(item=>item.student.id===studentId);if(!model)return;
+    quickStudentId=studentId;renderQuickDialog(model);if(!quickDialog.open)quickDialog.showModal();
+  }
   function render(){
     clearTimeout(screenshotExpiry);
     const snapshot=getSnapshot();if(!snapshot)return;
     const openMenus=[...grid.querySelectorAll('details[open]')].map(detail=>({
       studentId:detail.closest('[data-student-id]')?.dataset.studentId,
-      kind:detail.classList.contains('monitor-quick-unlock')?'quick':detail.closest('[data-media]')?.dataset.media
-    }));
+      kind:detail.closest('[data-media]')?.dataset.media
+    })).filter(item=>item.kind);
     const models=monitoringChildren(snapshot);grid.replaceChildren();stats.replaceChildren();
     const online=snapshot.devices.filter(d=>connectionState(d,Date.parse(snapshot.serverTime))==='Connected').length;
     for(const [glyph,value,total,label]of [['activity',models.filter(m=>m.online&&m.current&&!m.device.locked).length,models.length,'Studying'],['laptop',online,snapshot.devices.length,'Computers connected'],['circle-check',models.reduce((n,m)=>n+m.done,0),models.reduce((n,m)=>n+m.required,0),'Subject goals done']]){
@@ -136,22 +175,17 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       close.disabled=!supportsClose;close.dataset.requiresDevice=String(supportsClose);close.dataset.cloudMutation='true';
       close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';actions.append(close);
       if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
-      const quick=node('details','monitor-quick-unlock'),summary=node('summary');summary.append(icon('key-round'),document.createTextNode('Quick Unlock…'));quick.append(summary);
-      const options=node('div','monitor-quick-options');options.append(node('strong','','Unlock for today'),node('p','','Bypass hours and prerequisites. Daily media limits still apply.'));
-      for(const subject of model.goals){const unlocked=!!snapshot.activityDate&&student.quick_unlock?.date===snapshot.activityDate&&Array.isArray(student.quick_unlock.subjectIds)&&student.quick_unlock.subjectIds.includes(subject.id);
-        const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>run(el,()=>mutate('computer-command',{kind:'quick-unlock',studentId:student.id,subjectId:subject.id,unlocked:!unlocked}),'Saved for today.'),'btn btn-secondary');choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';options.append(choice);}
-      if(!model.goals.length)options.append(node('p','','Assign school subjects in Settings to unlock them here.'));
-      quick.append(options);actions.append(quick);
+      actions.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
       mobile()?.decorateCard(card,student.id,model);grid.append(card);
     }
     if(!models.length)grid.append(node('p','cloud-panel','Add your children in Students to see them here.'));
     for(const {studentId,kind} of openMenus){
       const card=[...grid.children].find(item=>item.dataset.studentId===studentId);
-      const detail=kind==='quick'?card?.querySelector('.monitor-quick-unlock')
-        :[...(card?.querySelectorAll('.monitor-media-action')||[])].find(item=>item.dataset.media===kind)?.querySelector('details');
+      const detail=[...(card?.querySelectorAll('.monitor-media-action')||[])].find(item=>item.dataset.media===kind)?.querySelector('details');
       if(detail)detail.open=true;
     }
+    if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model)renderQuickDialog(model);else quickDialog.close();}
     window.lucide?.createIcons();
     const expires=Date.parse(snapshot.screenshotAvailability?.checkedAt)+75000-Date.now();
     if(expires>0)screenshotExpiry=setTimeout(()=>{grid.querySelectorAll('.monitor-control--screenshot').forEach(control=>{control.disabled=true;control.dataset.requiresDevice='false';control.title='Refresh to check the child app’s connection.';});},expires+20);

@@ -55,14 +55,33 @@
 .monitor-control--close { color:#ffba66; background:#281c18; border-color:#664026; }
 .monitor-control--lock-media { color:#ff6969; background:#27131b; border-color:#63303c; }
 .monitor-control-note { color:var(--text-muted,#9996b7); font-size:11px; text-align:center; }
-.monitor-quick-unlock { border:1px solid #603359; border-radius:8px; background:#26162b; color:#f472b6; }
-.monitor-quick-unlock > summary { display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; cursor:pointer; list-style:none; font-weight:600; font-size:13px; }
-.monitor-quick-unlock > summary::-webkit-details-marker { display:none; }
+.monitor-quick-unlock { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; padding:9px; border:1px solid #603359; border-radius:8px; background:#26162b; color:#f472b6; cursor:pointer; font-weight:600; font-size:13px; }
 .monitor-quick-unlock svg { width:15px; height:15px; flex-shrink:0; }
-.monitor-quick-options { display:flex; flex-direction:column; gap:8px; padding:12px; background:#141322; color:#e9e7f6; border-radius:0 0 8px 8px; }
-.monitor-quick-options p { margin:0; font-size:12px; color:#aaa7c2; }
-.monitor-quick-options button { display:flex; align-items:center; gap:8px; text-align:left; }
-.monitor-quick-options button[aria-pressed="true"] { border-color:#34d399; color:#34d399; }
+#cloud-quick-unlock-dialog { margin:auto; width:min(680px,calc(100vw - 28px)); max-width:none; max-height:calc(100dvh - 28px); padding:0; overflow:hidden; border:1px solid #5d536d; border-radius:20px; background:#171827; color:#eeeefa; box-shadow:0 24px 80px #000a; }
+#cloud-quick-unlock-dialog::backdrop { background:rgba(5,6,15,.78); }
+.cloud-quick-dialog-shell { display:flex; flex-direction:column; max-height:calc(100dvh - 28px); }
+.cloud-quick-dialog-header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; padding:24px 24px 18px; background:linear-gradient(110deg,#33243a,#202236); }
+.cloud-quick-dialog-header h2 { margin:0 0 8px; font-size:22px; }
+.cloud-quick-dialog-header p { margin:0; color:#bcb9cc; line-height:1.45; }
+.cloud-quick-close { display:flex; align-items:center; justify-content:center; flex-shrink:0; width:42px; height:42px; border:1px solid #6c6278; border-radius:12px; background:#ffffff0d; color:#eeeefa; cursor:pointer; }
+.cloud-quick-close span { display:none; }
+.cloud-quick-close svg { width:20px; height:20px; }
+.cloud-quick-dialog-choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:18px 24px; overflow-y:auto; min-height:0; }
+.cloud-quick-choice { display:grid; grid-template-columns:22px minmax(0,1fr); align-items:center; gap:4px 10px; min-height:82px; padding:14px; border:1px solid #514a60; border-radius:14px; background:#242331; color:#eeeefa; text-align:left; cursor:pointer; font:inherit; }
+.cloud-quick-choice:hover { border-color:#ae80bd; }
+.cloud-quick-choice.is-unlocked { border-color:#35b99b; background:#16352f; color:#adf1db; }
+.cloud-quick-choice:disabled { opacity:.6; cursor:wait; }
+.cloud-quick-choice svg { grid-row:span 2; width:20px; height:20px; }
+.cloud-quick-choice span { min-width:0; font-weight:700; }
+.cloud-quick-choice small { grid-column:2; color:#bcb9cc; }
+.cloud-quick-choice.is-unlocked small { color:#8ce0c5; }
+.cloud-quick-empty { grid-column:1/-1; margin:8px 0; color:#bcb9cc; }
+.cloud-quick-dialog-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 24px 20px; border-top:1px solid #3c394d; }
+.cloud-quick-status { margin:0; min-height:20px; color:#bcb9cc; font-size:13px; }
+.cloud-quick-status[role="alert"] { color:#fca5a5; }
+.cloud-quick-dialog-footer .btn { display:flex; align-items:center; gap:8px; }
+.cloud-quick-dialog-footer svg { width:17px; height:17px; }
+@media(max-width:600px) { .cloud-quick-dialog-header { padding:18px 18px 14px; } .cloud-quick-dialog-header h2 { font-size:19px; } .cloud-quick-dialog-choices { padding:14px 18px; gap:8px; } .cloud-quick-choice { padding:10px; min-height:80px; font-size:13px; } .cloud-quick-dialog-footer { padding:12px 18px 16px; } }
 @media(max-width:900px) {
   #tab-overview > .tab-header .cloud-actions { width:100%; justify-content:space-between; gap:8px; }
   #tab-overview #cloud-lock-all { font-size:13px; padding:10px; }
