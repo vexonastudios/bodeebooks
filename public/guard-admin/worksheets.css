@@ -16,12 +16,12 @@
 .worksheet-upload-drop > span strong { color: var(--text-primary); }
 .worksheet-upload-drop > span small { font-size: 11px; }
 .worksheet-upload-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); align-content: start; gap: 13px; }
-.worksheet-upload-fields label:not(.worksheet-visible-toggle), .worksheet-edit-fields label { display: grid; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 800; }
-.worksheet-upload-fields input[type="text"], .worksheet-upload-fields textarea, .worksheet-edit-fields input, .worksheet-edit-fields textarea { width: 100%; padding: 11px 12px; color: var(--text-primary); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; outline: none; background: rgba(4, 10, 24, .72); resize: vertical; }
+.worksheet-upload-fields label:not(.worksheet-visible-toggle), .worksheet-edit-fields label:not(.worksheet-visible-toggle) { display: grid; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 800; }
+.worksheet-upload-fields input[type="text"], .worksheet-upload-fields textarea, .worksheet-edit-fields input:not([type="checkbox"]), .worksheet-edit-fields textarea { width: 100%; padding: 11px 12px; color: var(--text-primary); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; outline: none; background: rgba(4, 10, 24, .72); resize: vertical; }
 .worksheet-upload-fields input:focus, .worksheet-upload-fields textarea:focus, .worksheet-edit-fields input:focus, .worksheet-edit-fields textarea:focus { border-color: #22d3ee; box-shadow: 0 0 0 3px rgba(34,211,238,.09); }
 .worksheet-description-field { grid-column: 1 / -1; }
-.worksheet-visible-toggle { display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 12px; font-weight: 700; }
-.worksheet-visible-toggle input { accent-color: #22d3ee; }
+#tab-worksheets .worksheet-visible-toggle { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; min-height: 32px; color: var(--text-primary); font-size: 12px; font-weight: 700; cursor: pointer; }
+#tab-worksheets .worksheet-visible-toggle input[type="checkbox"] { flex: 0 0 18px; width: 18px; height: 18px; min-height: 0; padding: 0; margin: 0; accent-color: #22d3ee; }
 #worksheet-upload-submit { justify-self: end; display: inline-flex; align-items: center; gap: 7px; }
 #worksheet-upload-submit svg { width: 16px; height: 16px; }
 .worksheet-upload-status { grid-column: 1 / -1; min-height: 17px; margin: 0; color: var(--text-muted); font-size: 12px; }
@@ -32,6 +32,16 @@
 .worksheet-admin-card.is-hidden { opacity: .67; }
 .worksheet-admin-preview { height: 210px; display: grid; place-items: center; background: #e8edf2; }
 .worksheet-admin-preview img { width: 100%; height: 100%; object-fit: contain; }
+.worksheet-admin-preview { position: relative; color: #334155; }
+.worksheet-preview-open { position: relative; display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; color: #334155; cursor: zoom-in; }
+.worksheet-preview-open:focus-visible { outline: 3px solid #0891b2; outline-offset: -3px; }
+.worksheet-preview-hint { position: absolute; bottom: 8px; right: 8px; padding: 4px 8px; border-radius: 6px; background: #0f172ae6; color: #fff; font-size: 11px; }
+.worksheet-preview-retry { position: absolute; left: 8px; bottom: 8px; padding: 4px 8px; border: 1px solid #64748b; border-radius: 6px; background: #fff; color: #334155; cursor: pointer; }
+.worksheet-full-dialog { box-sizing: border-box; width: min(1000px, 94vw); max-height: 94dvh; padding: 20px; border: 1px solid #334155; border-radius: 16px; background: #11152b; color: #f8fafc; overflow: auto; }
+.worksheet-full-dialog::backdrop { background: #000b; }
+.worksheet-full-dialog h2 { margin: 0 0 12px; }
+.worksheet-full-content { margin-top: 16px; }
+.worksheet-full-content img { display: block; width: 100%; height: auto; background: #fff; }
 .worksheet-admin-card-body { padding: 13px; }
 .worksheet-admin-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .worksheet-admin-source { color: #67e8f9; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .09em; }
