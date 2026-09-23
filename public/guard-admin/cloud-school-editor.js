@@ -40,15 +40,15 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   const panel = (title, symbol, ...fields) => { const el = node('section', 'cloud-subject-panel'), heading = node('h3', '', title); heading.prepend(glyph(symbol)); el.append(heading, ...fields); return el; };
   const pair = (...fields) => { const el = node('div', 'cloud-subject-pair'); el.append(...fields); return el; };
   const captured = structuredClone(snapshot), subjectId = subject?.id || crypto.randomUUID();
-  const kind = subject?.kind || (subject?.url?.startsWith('app://') ? 'activity' : subject && !subject.url ? 'offline' : 'website');
+  const kind = subject?.kind || (['activity', 'offline'].includes(preset) ? preset : null) || (subject?.url?.startsWith('app://') ? 'activity' : subject && !subject.url ? 'offline' : 'website');
   const checkbox = (label, name, checked) => { const wrapper = node('label', 'cloud-schedule-toggle'), input = node('input'); input.type = 'checkbox'; input.name = name; input.checked = checked; wrapper.append(input, node('span', '', label)); return wrapper; };
   const numberField = (label, name, value, max = 100000) => { const wrapper = field(label, name, value, { type: 'number' }), input = wrapper.querySelector('input'); input.min = '0'; input.max = String(max); input.step = '1'; return wrapper; };
-  const kindField = selectField('Subject type', 'kind', [{ value: 'website', label: 'School website' }, { value: 'activity', label: 'Learning activity' }, { value: 'offline', label: 'Offline schoolwork' }], kind);
+  const kindField = selectField('Activity type', 'kind', [{ value: 'website', label: 'School website' }, { value: 'activity', label: 'Learning activity' }, { value: 'offline', label: 'Offline schoolwork' }], kind);
   const website = field('School website', 'url', kind === 'website' ? subject?.url || '' : '', { type: 'url', maxLength: 2048 });
   const choices = (captured.schoolActivities || []).filter(activity => activity.ready && activity.url === `app://${activity.module}` || activity.url === subject?.url)
     .map(activity => ({ value: activity.url, label: `${activity.module.replaceAll('-', ' ')}${activity.ready ? '' : ' (still connecting)'}` }));
-  if (kind === 'activity' && !choices.some(choice => choice.value === subject.url)) choices.push({ value: subject.url, label: 'Retained original activity' });
-  const activity = selectField('Learning activity', 'activityUrl', choices, kind === 'activity' ? subject.url : choices[0]?.value || '');
+  if (kind === 'activity' && subject?.url && !choices.some(choice => choice.value === subject.url)) choices.push({ value: subject.url, label: 'Retained original activity' });
+  const activity = selectField('Learning activity', 'activityUrl', choices, kind === 'activity' && subject?.url ? subject.url : choices[0]?.value || '');
   const domainsLabel = node('label', '', 'Additional allowed domains (optional)'), domains = node('textarea', 'admin-input'); domains.name = 'allowedDomains'; domains.rows = 3; domains.maxLength = 5100;
   domains.value = (subject?.allowedDomains || []).join('\n'); domains.placeholder = 'quizzes.example.com\nlogin.example.com'; domainsLabel.append(domains);
   const provider = selectField('School provider', 'portalProvider', ['none', 'abeka', 'bju', 'quizlet', 'custom'].map(value => ({ value, label: ({ none: 'No provider completion', abeka: 'Abeka', bju: 'BJU', quizlet: 'Quizlet', custom: 'Other school portal' })[value] })),
@@ -69,7 +69,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   }
   kindField.querySelector('select').addEventListener('change', changeKind); changeKind();
   const description = node('label', '', 'Description'), descriptionInput = node('textarea', 'admin-input'); descriptionInput.name = 'description'; descriptionInput.rows = 2; descriptionInput.maxLength = 1000; descriptionInput.value = subject?.description || ''; description.append(descriptionInput);
-  const basics = panel('Subject details', 'notebook-pen', field('Name', 'title', subject?.title || ''), kindField, website, activity, provider, description, checkbox('Show this subject', 'active', subject?.active !== false));
+  const basics = panel('Activity details', 'notebook-pen', field('Name', 'title', subject?.title || ''), kindField, website, activity, provider, description, checkbox('Show this activity', 'active', subject?.active !== false));
   const alwaysOpen = checkbox('Always open — no school calendar or time cutoff', 'alwaysOpen', globalThis.BODEE_CLOUD_SCHEDULE.cloudSubjectAlwaysOpen(subject));
   alwaysOpen.querySelector('span').prepend(glyph('clock'));
   const hours = pair(field('From (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }), field('Until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false }));
@@ -118,7 +118,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
     try { await mutate('save-subjects', editSubjects(captured, subject.id, '', '', true)); close(); } catch (error) { showError(error.message); }
   }, 'btn btn-danger cloud-subject-remove'); remove.prepend(glyph('trash-2')); remove.title = 'Remove subject'; }
   changeKind();
-  editor(isNew ? preset === 'quizlet' ? 'Add Quizlet Study' : 'Add Subject' : 'Edit Subject', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
+  editor(isNew ? preset === 'quizlet' ? 'Add Quizlet Study' : 'Add activity' : 'Edit activity details', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
   document.getElementById('cloud-editor-title')?.prepend(glyph(isNew ? 'plus' : 'notebook-pen'));
   const dialog = document.getElementById('cloud-editor');
   if (remove && dialog?.open) { dialog.querySelector('.modal-actions')?.prepend(remove); dialog.addEventListener('close', () => remove.remove(), { once: true }); }

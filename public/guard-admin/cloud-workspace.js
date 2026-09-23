@@ -4,9 +4,10 @@ import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { editCloudSubject } from './cloud-school-editor.js';
+import { setupActivityLibrary } from './cloud-activity-library.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, deliveryState, editSchedule, assignmentFor } from './cloud-workspace-model.js';
+import { connectionState, deliveryState, editSchedule } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
@@ -248,32 +249,8 @@ function renderStudents() {
 function editStudent(student) {
   editStudentProfile({ student, editor, field, mutate });
 }
-function renderSubjects() {
-  const grid = byId('subjects-grid-admin');
-  grid.replaceChildren();
-  for (const subject of snapshot.rules.subjects) {
-    const card = button('', () => editSubject(subject), 'subject-card-admin');
-    card.dataset.cloudMutation = 'true';
-    const heading = node('div', 'subject-card-admin-header');
-    const icon = node('span', 'subject-card-admin-icon');
-    const iconName = String(subject.icon || '').split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
-    if (/^[a-z][a-z-]{0,79}$/.test(subject.icon || '') && window.lucide?.icons?.[iconName]) { const glyph = node('i'); glyph.setAttribute('data-lucide', subject.icon); icon.append(glyph); }
-    else icon.textContent = subject.icon || '📚';
-    heading.append(icon, node('span', 'subject-card-admin-name', subject.title));
-    const assignments = snapshot.students.filter(student => !student.archived_at).map(student => ({ student, assignment: assignmentFor(subject, student.id) })).filter(item => item.assignment && item.assignment.active !== false);
-    const assignmentText = assignments.length
-      ? subject.accessTier === 'school_optional' && assignments.every(item => item.assignment.dailyGoalMinutes === 0)
-        ? `No daily goal · ${assignments.map(item => item.student.name).join(', ')}`
-        : assignments.map(item => `${item.student.name}: ${item.assignment.dailyGoalMinutes}m`).join(' · ')
-      : 'Not assigned to a child';
-    const hours = globalThis.BODEE_CLOUD_SCHEDULE.cloudSubjectAlwaysOpen(subject) ? 'Always open · no time cutoff' : subject.scheduleStart ? `Available ${subject.scheduleStart}–${subject.scheduleEnd} in the family time zone` : 'Uses the family school calendar';
-    card.append(heading, node('div', 'subject-card-admin-url', subject.kind === 'offline' ? 'Offline schoolwork' : subject.url), node('div', 'cloud-note', hours), node('div', 'cloud-note', assignmentText));
-    if (subject.kind) card.append(node('div', 'cloud-note', `${subject.active === false ? 'Hidden · ' : ''}${({ school: 'Required school', school_optional: 'No school requirement', after_school: 'After school' })[subject.accessTier || 'school']}${subject.unlockAfterSubjectId ? ' · Has a prerequisite' : ''}`));
-    grid.append(card);
-  }
-  if (!snapshot.rules.subjects.length) grid.append(node('p', 'cloud-panel', 'No school links added yet. Add the curriculum websites your children use.'));
-  window.lucide?.createIcons();
-}
+function renderSubjects() { activityLibrary.render(); }
+
 function renderSchedule() {
   const output = byId('cloud-school-schedule-summary');
   if (!output) return;
@@ -433,7 +410,8 @@ const monitoring = setupMonitoring({
 const approvedApps = setupApprovedApps({ endpoint });
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange: id => files.setStudent(id), onGradeSaved: () => files.refresh() });
-const schoolReview = setupCloudSchoolReview({ before: byId('subjects-grid-admin'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
+const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, editSubject, canEdit: () => usable && !mutating });
+const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
@@ -476,11 +454,7 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
 document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => selectTab(item.dataset.openTab)));
 byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
-byId('add-subject-btn').addEventListener('click', () => editSubject());
-const quizletShortcut = button('Add Quizlet', () => editSubject(null, {preset:'quizlet'}));
-quizletShortcut.dataset.cloudMutation = 'true';
-const quizletIcon = node('i'); quizletIcon.dataset.lucide = 'layers'; quizletIcon.setAttribute('aria-hidden','true'); quizletShortcut.prepend(quizletIcon);
-byId('add-subject-btn').before(quizletShortcut);
+
 byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
 byId('add-school-break').addEventListener('click', () => addSchoolBreak());
 byId('add-day-exception').addEventListener('click', () => addDayException());

@@ -13,7 +13,7 @@ const learning = [
 ];
 const tour = [
   ['overview','Overview','See connected computers and current activity.'],['messages','Messages','Send a note, image or voice message.'],['screenshots','Screenshots','Request a screenshot when you need one. Unkept images expire after three days.'],
-  ['students','Students','Add children and choose their school.'],['subjects','Subjects','Assign activities, school links and time goals to each child.'],['grades','Grades','Review work and save grades.'],
+  ['students','Students','Add children and choose their school.'],['subjects','Activity library','Add and edit school websites, activities and offline work.'],['grades','Grades','Review work and save grades.'],
   ['calendar','Calendar / Schedule','Set school hours, days off and vacations.'],['math-coach','Math Coach','Approve access and set question limits.'],['learning-videos','Learning Videos','Review and arrange your lesson library.'],
   ['spelling','Spelling','Set weekly words.'],['vocabulary','Vocabulary','Choose word lists.'],['poems','Poems','Assign poems and review recordings.'],['quizzes','Quizzes','Create and assign quizzes.'],['worksheets','Worksheets','Approve, upload and organize printable pages.'],
   ['music','Music','Review your approved music.'],['videos','Videos','Review your approved entertainment.'],['audiobooks','Audiobooks','Manage the listening library.'],['family-games','Family Games','Choose when children can play together.'],
@@ -99,7 +99,7 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
     }else if(state.step===1){text('Abeka, BJU, another website, or no online school. Choose separately for each child.');
       children.forEach(student=>pendingFields.push(inlineSchool({host:body,student,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}})));
       if(!children.length)body.append(action('Add a child first',()=>move(-1)));
-      body.append(link('Assign subjects and time goals','subjects'));
+      body.append(link('Manage activities & websites','subjects'));
     }else if(state.step===2){text('Set the calendar for your family. These settings apply to all children.');
       pendingFields.push(inlineSchoolHours({host:body,getSnapshot,mutate}));
       body.append(link('View calendar & add days off','calendar'));
