@@ -67,14 +67,15 @@
 .cloud-quick-close span { display:none; }
 .cloud-quick-close svg { width:20px; height:20px; }
 .cloud-quick-dialog-choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:18px 24px; overflow-y:auto; min-height:0; }
-.cloud-quick-choice { display:grid; grid-template-columns:22px minmax(0,1fr); align-items:center; gap:4px 10px; min-height:82px; padding:14px; border:1px solid #514a60; border-radius:14px; background:#242331; color:#eeeefa; text-align:left; cursor:pointer; font:inherit; }
-.cloud-quick-choice:hover { border-color:#ae80bd; }
-.cloud-quick-choice.is-unlocked { border-color:#35b99b; background:#16352f; color:#adf1db; }
+.cloud-quick-choice { display:grid; grid-template-columns:22px minmax(0,1fr); align-items:center; gap:4px 10px; min-height:82px; padding:12px 14px 14px; border:1px solid color-mix(in srgb,var(--quick-accent,#38bdf8) 46%,#514a60); border-top:4px solid var(--quick-color,#38bdf8); border-radius:14px; background:color-mix(in srgb,var(--quick-accent,#38bdf8) 18%,#242331); color:#eeeefa; text-align:left; cursor:pointer; font:inherit; }
+.cloud-quick-choice:hover { border-color:var(--quick-accent,#38bdf8); }
+.cloud-quick-choice.is-unlocked { border-color:var(--quick-accent,#38bdf8); background:color-mix(in srgb,var(--quick-accent,#38bdf8) 27%,#171827); }
 .cloud-quick-choice:disabled { opacity:.6; cursor:wait; }
-.cloud-quick-choice svg { grid-row:span 2; width:20px; height:20px; }
+.cloud-quick-choice svg { grid-row:span 2; width:20px; height:20px; color:var(--quick-accent,#38bdf8); }
+.cloud-quick-choice.is-unlocked svg { color:#a7f3d0; }
 .cloud-quick-choice span { min-width:0; font-weight:700; }
 .cloud-quick-choice small { grid-column:2; color:#bcb9cc; }
-.cloud-quick-choice.is-unlocked small { color:#8ce0c5; }
+.cloud-quick-choice.is-unlocked small { color:#a7f3d0; }
 .cloud-quick-empty { grid-column:1/-1; margin:8px 0; color:#bcb9cc; }
 .cloud-quick-dialog-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 24px 20px; border-top:1px solid #3c394d; }
 .cloud-quick-status { margin:0; min-height:20px; color:#bcb9cc; font-size:13px; }
