@@ -1,11 +1,17 @@
 import { schoolReportCsv, localDate, reportDefaults } from './cloud-records-model.js';
+import { createGradeEditor, gradebookIcon, gradebookIcons, gradebookButton } from './cloud-grade-editor.js';
+import { addGradeScan } from './cloud-grade-scan.js';
 
-export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field, selectField, node, button, setControls }) {
+export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange = () => {}, onGradeSaved = () => {} }) {
   const byId = id => document.getElementById(id);
   let active = '', report = null, gradePage = null, generation = 0, controller = null, initialized = false;
   const formData = kind => Object.fromEntries(new FormData(byId(`cloud-${kind}-filters`)));
   function status(kind, message) { byId(`cloud-${kind}-status`).textContent = message; }
   async function load(kind, before = null) {
+    if (kind === 'grades') {
+      const filters = formData(kind);
+      if (Boolean(filters.start) !== Boolean(filters.end)) { status(kind, 'Choose both a From and Through date, or clear the dates to see all grades.'); return; }
+    }
     controller?.abort(); controller = new AbortController();
     const currentController = controller;
     const turn = ++generation, timeout = setTimeout(() => currentController.abort(), 15000);
@@ -44,21 +50,30 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
       const student = students.find(item => item.id === grade.studentId);
       const details = node('details'); details.append(node('summary', '', grade.title));
       details.append(node('p', 'cloud-record-text', `Child feedback: ${grade.childFeedback || 'None'}`), node('p', 'cloud-record-text', `Private parent notes: ${grade.parentNotes || 'None'}`));
+      const assignment = node('div'); assignment.append(details, node('p', 'gradebook-cell-meta', `${grade.course} · ${grade.date}`), node('span', 'gradebook-category', grade.category));
       const actions = node('div', 'cloud-actions');
       if (!student?.archived_at) {
-        const edit = button('Edit', () => editGrade(grade)); edit.dataset.cloudMutation = 'true'; actions.append(edit);
+        const edit = gradebookButton('Edit', 'pencil', () => editGrade(grade)); edit.dataset.cloudMutation = 'true'; actions.append(edit);
       }
       const remove = button('Remove', async () => {
         if (!confirm(`Remove “${grade.title}” from the gradebook? Its revision history will be retained.`)) return;
         try { await mutate('remove-grade', { id: grade.id, revision: grade.revision }); await load('grades'); }
         catch (error) { status('grades', error.message); }
-      }); remove.dataset.cloudMutation = 'true'; actions.append(remove);
-      return [grade.date, `${student?.name || 'Student'}${student?.archived_at ? ' (archived)' : ''}`, grade.course, details, grade.category,
-        `${grade.scoreEarned}/${grade.scorePossible} · ${grade.percentage}% (${grade.letterGrade})`, actions];
+      }); remove.dataset.cloudMutation = 'true'; remove.classList.add('gradebook-remove'); remove.prepend(gradebookIcon('trash-2')); actions.append(remove);
+      const score = node('div', 'gradebook-score'); score.dataset.letter = grade.letterGrade;
+      score.append(node('strong', '', `${grade.percentage}% · ${grade.letterGrade}`), node('span', '', `${grade.scoreEarned}/${grade.scorePossible} points`));
+      return [assignment, `${student?.name || 'Student'}${student?.archived_at ? ' (archived)' : ''}`, score, actions];
     });
-    byId('cloud-grades-results').replaceChildren(rows.length ? table(['Date', 'Student', 'Course', 'Assignment / notes', 'Category', 'Grade', 'Actions'], rows) : node('p', 'cloud-panel', 'No grades match these filters. Add a manually reviewed grade to begin.'));
+    const empty = node('div', 'gradebook-empty');
+    empty.append(gradebookIcon('notebook-pen'), node('h3', '', 'Ready for your first grade'), node('p', '', 'Scan a school paper or enter a score yourself. Each grade stays organized by student, subject and date.'));
+    const filtered = Boolean(formData('grades').studentId || formData('grades').start || formData('grades').end);
+    if (filtered) { empty.querySelector('h3').textContent = 'No grades for these filters'; empty.querySelector('p').textContent = 'Choose another student or date range, or add a grade for this student.'; }
+    const emptyActions = node('div', 'cloud-actions'); emptyActions.append(gradebookButton('Add grade', 'plus', () => editGrade()), gradebookButton('Scan a paper', 'scan-line', () => byId('cloud-scan-paper').click())); empty.append(emptyActions);
+    byId('cloud-grades-results').replaceChildren(rows.length ? table(['Assignment', 'Student', 'Grade', ''], rows) : empty);
+    if (byId('cloud-grade-count')) byId('cloud-grade-count').textContent = `${rows.length}${gradePage.hasOlder ? '+' : ''} on this page`;
     byId('cloud-grades-older').disabled = !gradePage.hasOlder;
-    status('grades', `${rows.length} grades on this page, newest entries first. Saved grades and child feedback are visible to the assigned child; private parent notes are never sent to child computers.`);
+    status('grades', `${rows.length} grades on this page · Newest first. Private parent notes stay private.`);
+    gradebookIcons(byId('tab-grades'));
     setControls();
   }
   function editGrade(existing = null, paper = null) {
@@ -66,25 +81,25 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
     const students = snapshot.students.filter(student => !student.archived_at);
     if (!students.length) { status('grades', 'Add or restore a student before entering grades.'); return; }
     const id = existing?.id || crypto.randomUUID();
-    const studentField = selectField('Student', 'studentId', students.map(student => ({ value: student.id, label: student.name })), existing?.studentId || paper?.studentId || students[0].id);
-    // Grade ownership is immutable. Corrections for the wrong student are a new
-    // record, not a reassignment of another child's history.
-    if (existing || paper) studentField.querySelector('select').disabled = true;
-    const earned = field('Points earned (or percentage)', 'scoreEarned', existing?.scoreEarned ?? '', { type: 'number' });
-    const possible = field('Points possible (100 for percentage)', 'scorePossible', existing?.scorePossible ?? 100, { type: 'number' });
-    for (const wrapper of [earned, possible]) { const input = wrapper.querySelector('input'); input.step = '0.1'; input.min = wrapper === possible ? '0.1' : '0'; input.max = wrapper === possible ? '10000' : '20000'; }
-    const textArea = (label, name, value) => { const wrapper = node('label', '', label), input = node('textarea', 'admin-input'); input.name = name; input.maxLength = 2000; input.rows = 3; input.value = value || ''; wrapper.append(input); return wrapper; };
-    editor(existing ? 'Edit Grade' : 'Add Grade', [studentField,
-      field('Course name', 'course', existing?.course || '', { maxLength: 120 }),
-      field('Assignment title', 'title', existing?.title || paper?.name || '', { maxLength: 160 }),
-      field('Date', 'date', existing?.date || localDate(snapshot.rules.schedule.timeZone), { type: 'date' }),
-      selectField('Category', 'category', ['Test', 'Quiz', 'Homework', 'Project', 'Classwork', 'Other'].map(value => ({ value, label: value })), existing?.category || 'Test'),
-      earned, possible, textArea('Feedback visible to the child', 'childFeedback', existing?.childFeedback), textArea('Private parent notes', 'parentNotes', existing?.parentNotes),
-      node('p', 'cloud-note', 'Saving publishes this manually reviewed grade to the child. Automated grading, quiz capture, course weighting, and existing LAN grade history have not been transferred yet.')], async form => {
-      await mutate('save-grade', { ...Object.fromEntries(form), id, revision: existing?.revision || 0, studentId: existing?.studentId || paper?.studentId || form.get('studentId'), scoreEarned: Number(form.get('scoreEarned')), scorePossible: Number(form.get('scorePossible')) });
-      if (paper) await mutate('review-file', { id: paper.id, rotation: paper.rotation || 0, reviewed: true, gradeId: id });
-      await load('grades');
+    const view = createGradeEditor({ existing, paper, snapshot, selectedStudent: formData('grades').studentId, node, field, selectField, date: localDate(snapshot.rules.schedule.timeZone), endpoint });
+    if (paper) addGradeScan({ ...view, paper, endpoint, node });
+    let revision = existing?.revision || 0, savedPayload = null;
+    editor(existing ? 'Edit grade' : paper ? 'Review paper & grade' : 'Add grade', [view.root], async form => {
+      const payload = { ...Object.fromEntries(form), id, revision, studentId: existing?.studentId || paper?.studentId || form.get('studentId'), scoreEarned: Number(form.get('scoreEarned')), scorePossible: Number(form.get('scorePossible')) };
+      // A saved grade is not lost if its paper link needs a retry. Keep the
+      // returned revision so a parent can correct their draft and retry safely.
+      if (JSON.stringify(payload) !== savedPayload) {
+        const saved = await mutate('save-grade', payload); revision = saved.revision;
+        savedPayload = JSON.stringify({ ...payload, revision });
+      }
+      if (paper) {
+        try { await mutate('review-file', { id: paper.id, rotation: paper.rotation || 0, reviewed: true, gradeId: id }); }
+        catch { throw new Error('Your grade was saved. The paper link could not finish; select Save again to retry without creating a duplicate grade.'); }
+      }
+      await load('grades'); onGradeSaved();
     });
+    byId('cloud-editor').addEventListener('close', view.dispose, { once: true });
+    gradebookIcons(view.root);
   }
   function fillSelect(select, choices) {
     const old = select.value;
@@ -116,6 +131,8 @@ export function setupCloudRecords({ endpoint, getSnapshot, mutate, editor, field
     });
   }
   byId('cloud-add-grade').addEventListener('click', () => editGrade());
+  byId('cloud-grades-filters').elements.studentId.addEventListener('change', () => { onStudentChange(formData('grades').studentId); load('grades'); });
+  byId('cloud-grades-clear')?.addEventListener('click', () => { for (const name of ['start','end']) byId('cloud-grades-filters').elements[name].value = ''; load('grades'); });
   byId('cloud-grades-older').addEventListener('click', () => load('grades', gradePage?.nextBefore));
   byId('cloud-report-export').addEventListener('click', () => {
     if (!report || report.truncated) return;

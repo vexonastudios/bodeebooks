@@ -49,7 +49,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   byId('overview-grid').before(shortcut);
   // Camera input feeds the existing upload form and its normal validation.
   const file = byId('cloud-paper-file');
-  if (file) {
+  if (file && !file.dataset.gradebookCamera) {
     const camera = make('input', ''); camera.type = 'file'; camera.accept = 'image/*'; camera.setAttribute('capture', 'environment'); camera.hidden = true;
     const takePhoto = button('Take a photo', () => camera.click(), 'btn btn-primary cloud-mobile-only');
     file.before(takePhoto, camera);
