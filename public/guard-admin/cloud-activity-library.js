@@ -31,19 +31,38 @@ export function setupActivityLibrary({ getSnapshot, editSubject, canEdit, handwr
   const picker = byId('activity-library-picker'), choices = byId('activity-library-choices');
   const presets = [
     ['website', 'globe', 'School or study website', 'Add Abeka, BJU, a math website or another approved link.'],
-    ['quizlet', 'layers', 'Add Quizlet', 'A ready-to-use study website. Choose which children may use it.'],
     ...(handwriting ? [['handwriting', 'pencil', 'Add Handwriting', 'Choose letters and paper practice for each child.']] : []),
     ['activity', 'blocks', 'Built-in activity', 'Add another entry for an included learning activity.'],
     ['offline', 'notebook-pen', 'Offline work', 'Track a workbook, reading assignment or other paper work.'],
   ];
-  for (const [preset, glyph, title, description] of presets) {
-    const choice = element('button', 'activity-library-choice'); choice.type = 'button'; choice.dataset.activityPreset = preset; choice.dataset.cloudMutation = 'true';
+  const websites = [
+    ['abeka', 'school', 'Abeka Academy', 'Start with the Abeka school website.'],
+    ['bju', 'school', 'Bob Jones / BJU Press', 'Start with the BJU Homeschool Hub website.'],
+    ['quizlet', 'layers', 'Quizlet', 'Flashcards, practice tests and study sets.'],
+    ['custom-website', 'globe', 'Another website', 'Enter any other school or study website.'],
+  ];
+  function showChoices(websiteStep = false) {
+    choices.replaceChildren();
+    byId('activity-library-picker-title').textContent = websiteStep ? 'School or study website' : 'Add an activity';
+    byId('activity-library-picker-help').textContent = websiteStep ? 'Choose a starting link, then select the children who may use it.' : 'Choose what to add. You can organize it in Daily Plan after saving.';
+    if (websiteStep) {
+      const back = element('button', 'btn btn-secondary', 'Back to activity types'); back.type = 'button'; back.dataset.activityBack = 'true'; back.prepend(icon('arrow-left'));
+      back.addEventListener('click', () => { showChoices(); choices.querySelector('button').focus(); }); choices.append(back);
+    }
+    for (const [preset, glyph, title, description] of websiteStep ? websites : presets) {
+    const choice = element('button', 'activity-library-choice'); choice.type = 'button'; choice.dataset.activityPreset = preset; choice.dataset.cloudMutation = 'true'; choice.disabled = !canEdit();
     const copy = element('span'); copy.append(element('strong', '', title), element('span', '', description));
     choice.append(icon(glyph), copy, icon('chevron-right'));
-    choice.addEventListener('click', () => { if (!canEdit()) return; picker.close(); editSubject(null, { preset }); });
+    choice.addEventListener('click', () => {
+      if (!canEdit()) return;
+      if (preset === 'website') { showChoices(true); choices.querySelector('[data-activity-preset]').focus(); return; }
+      picker.close(); editSubject(null, { preset: preset === 'custom-website' ? 'website' : preset });
+    });
     choices.append(choice);
+    }
+    window.lucide?.createIcons();
   }
-  byId('add-subject-btn').addEventListener('click', () => { if (canEdit()) picker.showModal(); });
+  byId('add-subject-btn').addEventListener('click', () => { if (canEdit()) { showChoices(); picker.showModal(); } });
   byId('activity-library-picker-close').addEventListener('click', () => picker.close());
   search.addEventListener('input', render); child.addEventListener('change', render);
 

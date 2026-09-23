@@ -33,6 +33,12 @@ export function cloudSubjectEdit(captured, subjectId, form) {
 export function editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate, close, showError }, subject = null, { preset } = {}) {
   const isNew = !subject;
   if (isNew && preset === 'quizlet') subject = quizletSubjectPreset();
+  if (isNew && ['abeka', 'bju'].includes(preset)) subject = {
+    kind: 'website', title: preset === 'abeka' ? 'Abeka Academy' : 'Bob Jones / BJU Press',
+    url: preset === 'abeka' ? 'https://academy.abeka.com/' : 'https://homeschoolhub.com/auth',
+    portalProvider: preset, isSchoolPortal: true, icon: 'school', color: '#38bdf8',
+    accessTier: 'school', alwaysOpen: true, active: true, assignments: []
+  };
   // A previous dialog's close event may still be queued when this one opens.
   document.querySelectorAll('#cloud-editor .cloud-subject-remove').forEach(control => control.remove());
   if (!document.getElementById('cloud-subject-editor-style')) { const style = document.createElement('link'); style.id = 'cloud-subject-editor-style'; style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-school-editor.css?v=20260910-wide1'; document.head.append(style); }
