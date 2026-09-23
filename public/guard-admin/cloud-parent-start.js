@@ -49,6 +49,8 @@ export function setupParentStart({endpoint,getSnapshot,mutate,navigate,refresh=a
     try {
       state=await request('get-setup');
       index=Number.isInteger(startAt)?startAt:state.completed?(nextSetupStep(getSnapshot(),state)?.step??0):Math.max(0,steps.findIndex(step=>step.id>=state.step));
+      // Returning from Account/pairing cannot skip children, school and a plan.
+      if(startAt===3)index=Math.min(3,nextSetupStep(getSnapshot(),state)?.step??3);
       draft=null;reviewing=false;render();dialog.showModal();updateWelcome();
     }catch(failure){state=null;title.textContent='Family setup';progress.textContent='';body.replaceChildren(button('Try again',()=>{dialog.close();void open(startAt);}),button('Close',()=>dialog.close()));error.textContent=failure.message;footer.hidden=true;dialog.showModal();}
     finally{busy=false;launch.disabled=settingsLaunch.disabled=false;}
