@@ -1,3 +1,4 @@
+import { profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 const providers = [
   {value:'',label:'Choose an option'}, {value:'abeka',label:'Abeka Academy'},
   {value:'bju',label:'Bob Jones / BJU Press'}, {value:'custom',label:'Another school website'},
@@ -26,18 +27,28 @@ export function setupMainSchool({getSnapshot,editor,field,selectField,node,butto
     const snapshot=getSnapshot(), children=snapshot.students.filter(s=>!s.archived_at);
     let panel=document.getElementById('family-school-setup');
     const fresh=!panel;
-    if(fresh) { panel=node('details','cloud-panel'); panel.id='family-school-setup'; document.getElementById('students-list').before(panel); }
+    if(fresh) { panel=node('details','cloud-panel'); panel.id='family-school-setup'; (document.querySelector('.cloud-students-section-heading') || document.getElementById('students-list')).before(panel); }
     const unfinished=children.filter(s=>!s.main_school).length;
     if(fresh) panel.open=!children.length || unfinished>0;
-    const summary=node('summary','',unfinished ? `Set up school · ${unfinished} ${unfinished===1?'child':'children'} to finish` : 'Your children’s schools');
-    panel.replaceChildren(summary);
-    if(!children.length) panel.append(node('p','','Add a child, then choose their main school.'),button('Add child',()=>document.getElementById('add-student-btn').click()));
+    const summary=node('summary','cloud-schools-heading'),heading=node('span','cloud-schools-title','Your children’s schools');
+    heading.prepend(profileIcon('graduation-cap'));
+    const badge=node('span','cloud-schools-count',unfinished ? `${unfinished} to set up` : `${children.length} ${children.length===1?'child':'children'}`); badge.dataset.pending=String(unfinished>0);
+    const chevron=profileIcon('chevron-down');chevron.classList.add('cloud-schools-chevron');summary.append(heading,badge,chevron);
+    const content=node('div','cloud-schools-body'),grid=node('div','cloud-schools-grid');
+    content.append(node('p','cloud-schools-description','Choose Abeka, Bob Jones / BJU, or another school website. Daily Plan controls required work and activity access.'),grid);
+    panel.replaceChildren(summary,content);
+    if(!children.length) { const add=button('Add child',()=>document.getElementById('add-student-btn').click()); add.prepend(profileIcon('user-round-plus')); content.append(node('p','cloud-school-empty','Add your first child to choose their school.'),add); }
     for(const student of children) {
-      const label=providers.find(p=>p.value===student.main_school?.provider)?.label || 'Choose a main school';
-      const row=node('div','cloud-main-school-row');
-      const change=button(student.main_school?'Change school':'Choose school',()=>edit(student)); change.dataset.cloudMutation='true';
-      row.append(node('strong','',student.name),node('span','',label),change); panel.append(row);
+      const linked=snapshot.rules.subjects.find(s=>s.id===student.main_school?.subjectId);
+      const label=student.main_school?.provider==='custom' && linked?.title || providers.find(p=>p.value===student.main_school?.provider)?.label || 'School not chosen';
+      const row=node('article','cloud-main-school-row');row.dataset.pending=String(!student.main_school);
+      const identity=node('div','cloud-school-child');identity.append(profileIcon('user-round'),node('strong','',student.name));
+      const choice=node('div','cloud-school-choice'),symbol=node('span','cloud-school-symbol');symbol.append(profileIcon(student.main_school?.provider==='none'?'book-open':'school'));
+      const info=node('div','cloud-school-info');info.append(node('span','cloud-school-label','School website'),node('strong','',label));choice.append(symbol,info);
+      const change=button(student.main_school?'Change school':'Choose school',()=>edit(student)); change.dataset.cloudMutation='true';change.classList.add('cloud-school-change');change.prepend(profileIcon(student.main_school?'pencil':'plus'));change.setAttribute('aria-label',`${student.main_school?'Change':'Choose'} school for ${student.name}`);
+      row.append(identity,choice,change); grid.append(row);
     }
+    window.lucide?.createIcons();
   }
   function open(studentId) {
     render();

@@ -232,15 +232,18 @@ function renderStudents() {
     row.setAttribute('aria-label', `Edit ${student.name}`);
     const info = node('div', 'student-row-info');
     info.append(node('div', 'student-row-name', `${student.name}${student.archived_at ? ' · Archived' : ''}`), node('div', 'student-row-pin', student.grade ? `Grade ${student.grade}` : 'Grade not specified'));
-    row.append(studentAvatar(student, 'student-row-avatar'), info, profileIcon('pencil'));
-    const wrapper = node('div', 'cloud-student-management');
+    const editLabel = node('span', 'cloud-student-edit-label', 'Edit profile'); editLabel.prepend(profileIcon('pencil'));
+    row.append(studentAvatar(student, 'student-row-avatar'), info, editLabel);
+    const wrapper = node('article', 'cloud-student-management'); wrapper.dataset.archived = String(!!student.archived_at);
     const archive = button(student.archived_at ? 'Restore student' : 'Archive student', async () => {
       const archived = !student.archived_at;
       if (!confirm(archived ? `Archive ${student.name}? Their records and subject settings stay saved. Connected cloud computers will be unassigned when they reconnect. Offline computers may use their cached rules until reconnection or expiry.` : `Restore ${student.name}? Reassign their cloud computer in Overview when ready.`)) return;
       try { await mutate('archive-student', { studentId: student.id, archived }); } catch (_) { /* Existing feedback retains the error. */ }
-    }); archive.dataset.cloudMutation = 'true'; wrapper.append(row, archive); list.append(wrapper);
+    }); archive.dataset.cloudMutation = 'true'; archive.classList.add('cloud-student-archive'); archive.prepend(profileIcon(student.archived_at ? 'archive-restore' : 'archive')); archive.setAttribute('aria-label', `${student.archived_at ? 'Restore' : 'Archive'} ${student.name}`);
+    const footer = node('div', 'cloud-student-card-footer'), state = node('span', 'cloud-student-state', student.archived_at ? 'Archived' : 'Active student'); state.prepend(profileIcon(student.archived_at ? 'archive' : 'user-round-check'));
+    footer.append(state, archive); wrapper.append(row, footer); list.append(wrapper);
   }
-  if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'No cloud students added yet. Existing student records remain in your current Admin app.'));
+  if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'Add your first student to set up their profile and school.'));
 }
 function editStudent(student) {
   editStudentProfile({ student, editor, field, mutate });
