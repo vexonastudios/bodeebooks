@@ -37,6 +37,11 @@ export function setupCloudMobile({ navigate, refresh }) {
   }
   const install = button('Add to Home Screen', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin));
   menus['mobile-more'].prepend(install);
+  const desktopInstall = button('', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin), 'nav-item cloud-parent-install');
+  const appIcon = make('i', 'nav-icon'); appIcon.dataset.lucide = 'app-window'; appIcon.setAttribute('aria-hidden', 'true');
+  desktopInstall.append(appIcon, document.createTextNode('Install parent app'));
+  desktopInstall.title = 'Open BodeeGuard in its own app window; pin it to your taskbar';
+  root.querySelector('.sidebar-logo')?.after(desktopInstall);
   const bottom = make('nav', 'bottom-nav cloud-mobile-only'); bottom.setAttribute('aria-label', 'BodeeGuard navigation');
   const tabs = [['overview', '⌂', 'Controls'], ['grades', '▣', 'Papers'], ['messages', '✉', 'Messages'], ['mobile-add', '＋', 'Add media'], ['mobile-more', '•••', 'More']];
   for (const [id, icon, label] of tabs) {

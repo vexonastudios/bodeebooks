@@ -7,11 +7,16 @@
 .connectingProgress span { position: absolute; inset-block: 0; left: -45%; width: 45%; border-radius: inherit; background: linear-gradient(90deg, #0ea5e9, #27d3bd); animation: dashboardOpening 1.15s ease-in-out infinite; }
 @keyframes dashboardOpening { to { left: 100%; } }
 @media (prefers-reduced-motion: reduce) { .connectingProgress span { left: 0; width: 100%; animation: none; } }
-.installBackdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: #0009; padding: 20px; }
-.installCard { width: min(100%, 380px); border: 1px solid #334155; border-radius: 20px; background: #11152b; color: #f8fafc; padding: 24px; }
+.installBackdrop { box-sizing: border-box; position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: #0009; padding: 20px; }
+.installCard { box-sizing: border-box; width: min(100%, 560px); max-height: calc(100dvh - 40px); overflow-y: auto; border: 1px solid #334155; border-radius: 20px; background: #11152b; color: #f8fafc; padding: 24px; }
 .installCard h2 { font-size: 22px; margin-bottom: 12px; }
 .installCard p { color: #b4bfd2; line-height: 1.6; }
 .installCard button { min-height: 44px; margin: 18px 10px 0 0; padding: 10px 16px; border: 1px solid #64748b; border-radius: 10px; background: #29284f; color: white; cursor: pointer; }
+.installSteps { margin-top: 20px; padding: 16px; border: 1px solid #334155; border-radius: 12px; background: #0d1123; }
+.installSteps h3 { margin: 0; font-size: 16px; }
+.installSteps summary { cursor: pointer; color: #c4b5fd; line-height: 1.5; }
+.installSteps p { overflow-wrap: anywhere; }
+.installNote { font-size: 13px; }
 /* Hide the book navigation so keyboard users don't tab behind the workspace. */
 :global(body):has(.workspace) > :global(nav),
 :global(body):has(.workspace) > :global(footer) { display: none; }
