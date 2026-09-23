@@ -132,7 +132,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
-    const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'Abeka, Bob Jones / BJU, or another school website. Each child uses their own assigned school.' : card.portal ? 'This child’s assigned school website and lessons.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
+    const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'All school websites assigned to each child, such as Abeka, BJU and a separate math site.' : card.portal ? 'This website has its own required days and completion.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
     if (card.placement === 'school') el.append(make('p', 'daily-plan-required-days', requiredDaysText(card)));
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
@@ -145,7 +145,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     const moveField = field('', select); moveField.classList.add('daily-plan-move'); el.append(moveField);
     if (card.portal) {
       if (card.key === 'school') el.append(make('p', 'daily-plan-school-help', 'This plan sets school requirements and timing. Choose each child’s website in Students → Your children’s schools.'));
-      el.append(action(card.key === 'school' ? 'Set school for each child' : 'Change school website', 'school', openSchoolSetup, 'btn btn-secondary daily-plan-school-link'));
+      el.append(action(card.key === 'school' ? 'Set websites for each child' : 'Manage school websites', 'school', openSchoolSetup, 'btn btn-secondary daily-plan-school-link'));
     }
     if (isBlocked) return el;
     const settings = make('details', 'daily-plan-card-settings'), toggle = make('summary'); toggle.append(icon('sliders-horizontal'), document.createTextNode('Times & options')); settings.append(toggle);

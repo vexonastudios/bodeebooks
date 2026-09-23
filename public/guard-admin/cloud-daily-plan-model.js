@@ -128,7 +128,7 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
   for (const card of baseline) {
     if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120, games:60 }[card.module]; card.placement = 'after_school'; }
   }
-  baseline.unshift({ key: 'school', title: 'Each child’s school website', icon: 'graduation-cap', portal: true, goal: 0,
+  baseline.unshift({ key: 'school', title: 'Each child’s school websites', icon: 'graduation-cap', portal: true, goal: 0,
     placement: 'school', days: defaultDays('school'), start: null, end: null, limitMinutes: null });
   for (const subject of snapshot.rules.subjects) {
     if (subject.isSchoolPortal || snapshot.schoolActivities.some(a => a.url === subject.url)) continue;

@@ -94,3 +94,13 @@
   #family-school-setup .cloud-schools-grid { grid-template-columns:1fr; }
 }
 @media(prefers-reduced-motion:reduce) { #family-school-setup .cloud-schools-chevron { transition:none; } }
+
+#family-school-setup .cloud-school-site-count { margin-left:auto; font-size:12px; color:#b4d9ed; white-space:nowrap; }
+#family-school-setup .cloud-school-sites { display:grid; gap:10px; list-style:none; padding:0; margin:0; }
+#family-school-setup .cloud-school-site { padding:12px; border:1px solid #7dd3fc20; border-radius:12px; background:#7dd3fc05; min-width:0; }
+#family-school-setup .cloud-school-host { font-size:12px; color:#aaa7c0; overflow-wrap:anywhere; }
+#family-school-setup .cloud-school-site-actions { display:flex; gap:8px; margin-top:10px; }
+#family-school-setup .cloud-school-site-actions .btn { flex:1; padding:6px 10px; background:transparent; }
+#family-school-setup .cloud-school-site-actions .btn:last-child { color:#c1b6cb; border-color:transparent; }
+#family-school-setup .cloud-school-site-actions .btn:last-child:hover { background:#f8717110; border-color:#f8717138; color:#fecaca; }
+#family-school-setup .cloud-school-empty { font-size:13px; line-height:1.5; color:#aaa7c0; margin:0; }

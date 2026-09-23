@@ -55,7 +55,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "setup-school": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
       path = `/students/${encodeURIComponent(input.studentId)}/school`; method = "POST";
-      body = { provider: input.provider, title: input.title, url: input.url, revision: input.revision }; break;
+      body = { provider: input.provider, title: input.title, url: input.url, revision: input.revision, operation: input.operation, subjectId: input.subjectId }; break;
     }
     case "set-parent-password": path = "/parent-password"; method = "POST"; body = { password: input.password }; break;
     case "list-school": path = "/school/list"; method = "POST"; body = { studentId: input.studentId, date: input.date }; break;

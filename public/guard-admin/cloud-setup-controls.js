@@ -55,7 +55,7 @@ export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
   const section = node('section', '', 'setup-child setup-school-form'); section.append(node('h3', student.name));
   const providerLabel = node('label', '', 'setup-field'), select = node('select'); select.name = `school-${student.id}`;
   for (const [value, title] of [['','Choose a school'],['abeka','Abeka Academy'],['bju','Bob Jones / BJU Press'],['custom','Another school website'],['none','No online school']]) { const option=node('option',title); option.value=value; select.append(option); }
-  select.value = student.main_school?.provider || ''; providerLabel.append(node('span', 'Main school'), select);
+  select.value = student.main_school?.provider || ''; providerLabel.append(node('span', 'First school website'), select);
   const linked = getSnapshot().rules?.subjects?.find(row => row.id === student.main_school?.subjectId);
   const defaults = { abeka:'https://academy.abeka.com/', bju:'https://homeschoolhub.com/auth' };
   const title = setupField('School name', 'schoolTitle', linked?.title || ''), url = setupField('School website', 'schoolUrl', linked?.url || defaults[select.value] || '', 'url');
@@ -84,7 +84,7 @@ export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
     })().finally(()=>{pending=null; saveButton.disabled=false; select.disabled=false; update();});
     return pending;
   }
-  saveButton.onclick=()=>void save().catch(onError); update(); section.append(providerLabel,title.label,url.label,saveButton,status); host.append(section); return save;
+  saveButton.onclick=()=>void save().catch(onError); update(); section.append(providerLabel,title.label,url.label,saveButton,status,node('p','Uses more than one school website? Add the others in Students → Your children’s schools.','setup-note')); host.append(section); return save;
 }
 // Reuse working dashboard controls in a guide substep; keep the guide and its
 // exact DOM (including drafts and scroll position) mounted for the return.
