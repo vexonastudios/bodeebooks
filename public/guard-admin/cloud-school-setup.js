@@ -39,5 +39,14 @@ export function setupMainSchool({getSnapshot,editor,field,selectField,node,butto
       row.append(node('strong','',student.name),node('span','',label),change); panel.append(row);
     }
   }
-  return {edit,render};
+  function open(studentId) {
+    render();
+    const panel=document.getElementById('family-school-setup');
+    panel.open=true;
+    panel.scrollIntoView({block:'start'});
+    const student=getSnapshot().students.find(s=>s.id===studentId&&!s.archived_at);
+    if(student) edit(student);
+    else panel.querySelector('summary').focus();
+  }
+  return {edit,render,open};
 }

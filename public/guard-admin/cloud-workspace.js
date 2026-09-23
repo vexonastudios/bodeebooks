@@ -462,7 +462,7 @@ const learningVideos = setupCloudLearningVideos({ root: byId('cloud-learning-vid
   if (!response.ok) throw new Error(value.error || 'Learning videos could not connect.');
   return value;
 } });
-const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, editSubject, endpoint });
+const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, editSubject, chooseSchool: studentId => { selectTab('students'); mainSchool.open(studentId); }, endpoint });
 const mainSchool = setupMainSchool({getSnapshot:()=>snapshot,editor,field,selectField,node,button,mutate});
 const parentStart = setupParentStart({endpoint,getSnapshot:()=>snapshot,navigate:selectTab,mutate,refresh});
 

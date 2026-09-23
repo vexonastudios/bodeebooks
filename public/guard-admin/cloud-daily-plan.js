@@ -17,7 +17,7 @@ const action = (label, symbol, fn, cls = 'btn btn-secondary') => {
   el.onclick = fn;
   return el;
 };
-export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, endpoint = '/guard/dashboard/bridge/' }) {
+export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, chooseSchool, endpoint = '/guard/dashboard/bridge/' }) {
   const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260923-parent-setup'; document.head.append(stylesheet);
   const nav = action('Daily plan', 'list-checks', () => navigate('daily-plan'), 'nav-item'); nav.dataset.tab = 'daily-plan';
   document.querySelector('.sidebar-nav .nav-item[data-tab="overview"]')?.after(nav);
@@ -47,7 +47,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
   const differencesLabel = make('label', 'daily-plan-differences', 'Show only differences from family plan'); differencesLabel.prepend(differences);
   const preview = action('Preview child activities', 'eye', () => showPlanPreview(cards, getSnapshot().students.find(s => s.id === loadedChild)?.name || 'Family'));
   catalog.append(differencesLabel, preview);
-  const school = action('Choose school', 'school', () => navigate('students'));
+  const school = action('Choose school', 'school', openSchoolSetup);
   catalog.append(school);
   if (editSubject) catalog.append(action('Add school website or subject', 'plus', () => {
     if (changes.size) { notify('Save or discard your plan before adding a subject.', true); return; }
@@ -104,6 +104,14 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     window.lucide?.createIcons();
   }
   function changed(card) { changes.set(card.key, structuredClone(card)); notify('Unsaved changes'); updateControls(); }
+  function openSchoolSetup() {
+    if (busy) return;
+    if (changes.size) { notify('Save or discard your Daily Plan changes before changing school websites.', true); return; }
+    if (chooseSchool) { chooseSchool(loadedChild === 'family' ? null : loadedChild); return; }
+    navigate('students');
+    const panel = document.getElementById('family-school-setup');
+    if (panel) { panel.open = true; panel.scrollIntoView({ block: 'start' }); panel.querySelector('summary')?.focus(); }
+  }
   function move(card, placement, focus = false) {
     if (busy || card.placement === placement) return;
     movePlanCard(card, placement);
@@ -124,7 +132,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
-    const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'Uses each child’s assigned school and lesson goals' : card.portal ? 'Finish school lessons' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
+    const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'Abeka, Bob Jones / BJU, or another school website. Each child uses their own assigned school.' : card.portal ? 'This child’s assigned school website and lessons.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
     if (card.placement === 'school') el.append(make('p', 'daily-plan-required-days', requiredDaysText(card)));
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
@@ -135,6 +143,10 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, end
     const prompt = make('option', '', 'Move to…'); prompt.value = ''; prompt.disabled = true; select.append(prompt);
     for (const [id, name] of PLAN_GROUPS) { const option = make('option', '', name); option.value = id; option.disabled = id === card.placement; select.append(option); } select.value = ''; select.onchange = () => move(card, select.value, true); select.disabled = busy;
     const moveField = field('', select); moveField.classList.add('daily-plan-move'); el.append(moveField);
+    if (card.portal) {
+      if (card.key === 'school') el.append(make('p', 'daily-plan-school-help', 'This plan sets school requirements and timing. Choose each child’s website in Students → Your children’s schools.'));
+      el.append(action(card.key === 'school' ? 'Set school for each child' : 'Change school website', 'school', openSchoolSetup, 'btn btn-secondary daily-plan-school-link'));
+    }
     if (isBlocked) return el;
     const settings = make('details', 'daily-plan-card-settings'), toggle = make('summary'); toggle.append(icon('sliders-horizontal'), document.createTextNode('Times & options')); settings.append(toggle);
     settings.open = openOptions.has(card.key);
