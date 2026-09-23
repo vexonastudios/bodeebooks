@@ -1,5 +1,12 @@
 import { editSubjects, assignmentFor } from './cloud-workspace-model.js';
 
+export function quizletSubjectPreset() {
+  return { kind: 'website', title: 'Quizlet Study', url: 'https://quizlet.com/', icon: 'layers', color: '#4255ff',
+    description: 'Study flashcards, practice tests, and learning sets in Quizlet', accessTier: 'school_optional',
+    portalProvider: 'quizlet', isSchoolPortal: false, alwaysOpen: true, active: true,
+    allowedDomains: ['quizlet.com', 'accounts.google.com'], assignments: [] };
+}
+
 export function cloudSubjectEdit(captured, subjectId, form) {
   const subject = captured.rules.subjects.find(item => item.id === subjectId), kind = form.get('kind');
   const assignments = captured.students.flatMap(student => {
@@ -13,7 +20,8 @@ export function cloudSubjectEdit(captured, subjectId, form) {
   return editSubjects(captured, subjectId, form.get('title'), kind === 'website' ? form.get('url') : kind === 'activity' ? form.get('activityUrl') : '', false, assignments, {
     kind, accessTier: form.get('accessTier'), active: form.get('active') === 'on', icon: form.get('icon'), color: form.get('color'), description: form.get('description'),
     displayOrder: Number(form.get('displayOrder')), unlockAfterSubjectId: form.get('unlockAfterSubjectId') || null, isReward: form.get('isReward') === 'on',
-    isSchoolPortal: provider !== 'none', portalProvider: provider, idleMonitoringEnabled: subject?.idleMonitoringEnabled === true,
+    // Quizlet is optional flashcard study, not a provider lesson to verify.
+    isSchoolPortal: provider !== 'none' && provider !== 'quizlet', portalProvider: provider, idleMonitoringEnabled: subject?.idleMonitoringEnabled === true,
     gradeCaptureEnabled: kind === 'website' && subject?.gradeCaptureEnabled === true,
     alwaysOpen: form.get('alwaysOpen') === 'on',
     scheduleStart: form.get('alwaysOpen') === 'on' ? null : form.get('scheduleStart') || null,
@@ -22,7 +30,11 @@ export function cloudSubjectEdit(captured, subjectId, form) {
   });
 }
 
-export function editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate, close, showError }, subject = null) {
+export function editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate, close, showError }, subject = null, { preset } = {}) {
+  const isNew = !subject;
+  if (isNew && preset === 'quizlet') subject = quizletSubjectPreset();
+  // A previous dialog's close event may still be queued when this one opens.
+  document.querySelectorAll('#cloud-editor .cloud-subject-remove').forEach(control => control.remove());
   if (!document.getElementById('cloud-subject-editor-style')) { const style = document.createElement('link'); style.id = 'cloud-subject-editor-style'; style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-school-editor.css?v=20260910-wide1'; document.head.append(style); }
   const glyph = name => { const el = node('i'); el.dataset.lucide = name; el.setAttribute('aria-hidden', 'true'); return el; };
   const panel = (title, symbol, ...fields) => { const el = node('section', 'cloud-subject-panel'), heading = node('h3', '', title); heading.prepend(glyph(symbol)); el.append(heading, ...fields); return el; };
@@ -75,7 +87,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
     alwaysOpen, hours, hoursHelp,
     checkbox('Place with rewards', 'isReward', subject?.isReward === true),
     node('p', 'cloud-note', 'Uses your family time zone. After-school access also checks required subjects and assigned Spelling, Vocabulary and Poems.'));
-  const iconOptions = [['book-open','Book'],['graduation-cap','Graduation cap'],['school','School'],['laptop','Computer'],['notebook-pen','Writing'],['pencil','Pencil'],['calculator','Math'],['flask-conical','Science'],['globe','Geography'],['languages','Languages'],['spell-check','Spelling'],['keyboard','Typing'],['music','Music'],['headphones','Audiobooks'],['palette','Art'],['brain','Thinking'],['star','Star']].map(([value,label]) => ({value,label}));
+  const iconOptions = [['book-open','Book'],['layers','Flashcards'],['graduation-cap','Graduation cap'],['school','School'],['laptop','Computer'],['notebook-pen','Writing'],['pencil','Pencil'],['calculator','Math'],['flask-conical','Science'],['globe','Geography'],['languages','Languages'],['spell-check','Spelling'],['keyboard','Typing'],['music','Music'],['headphones','Audiobooks'],['palette','Art'],['brain','Thinking'],['star','Star']].map(([value,label]) => ({value,label}));
   const currentIcon = subject?.icon || 'book-open';
   if (!iconOptions.some(item => item.value === currentIcon)) iconOptions.push({ value: currentIcon, label: 'Current icon' });
   const iconField = selectField('Subject icon', 'icon', iconOptions, currentIcon), preview = node('div', 'cloud-subject-icon-preview'); preview.setAttribute('aria-hidden','true');
@@ -91,22 +103,23 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   for (const student of captured.students) {
     const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 }, row = node('div', 'cloud-assignment-row');
     const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current && current.active !== false); enabled.setAttribute('aria-label', `Assign to ${student.name}`);
-    const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? 30, 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
+    const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? (subject?.portalProvider === 'quizlet' ? 0 : 30), 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
     const update = () => { for (const wrapper of [goal, order]) { const input = wrapper.querySelector('input'); input.disabled = !enabled.checked; input.required = enabled.checked; } };
     const childLabel = node('label', 'cloud-subject-child'); childLabel.append(enabled, node('span', '', student.name + (student.archived_at ? ' (archived; settings retained)' : '')));
     enabled.addEventListener('change', update); update(); row.append(childLabel, goal, order); assignmentGrid.append(row);
   }
   if (subject?.assignments?.some(a => a.dailyPlan)) assignmentFields.append(node('p', 'cloud-note', 'This subject has individual Daily plan settings. Change its placement and days in Daily plan.'));
   if (!captured.students.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
+  if (subject?.portalProvider === 'quizlet') basics.append(node('p', 'cloud-note', 'Choose the children who may use Quizlet. You can use its home page or paste a specific Quizlet set link. Sign in to Quizlet on the child computer if needed; BodeeGuard does not create a Quizlet account or subscription.'));
   const grid = node('div', 'cloud-subject-grid'); grid.append(basics, availability, appearance, assignmentFields);
   let remove = null;
-  if (subject) { remove = button('Remove subject', async () => {
+  if (!isNew) { remove = button('Remove subject', async () => {
     if (!confirm(`Remove ${subject.title} from cloud school? Its history is retained. Hide the subject instead to retain its assignments and prerequisites.`)) return;
     try { await mutate('save-subjects', editSubjects(captured, subject.id, '', '', true)); close(); } catch (error) { showError(error.message); }
   }, 'btn btn-danger cloud-subject-remove'); remove.prepend(glyph('trash-2')); remove.title = 'Remove subject'; }
   changeKind();
-  editor(subject ? 'Edit Subject' : 'Add Subject', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
-  document.getElementById('cloud-editor-title')?.prepend(glyph(subject ? 'notebook-pen' : 'plus'));
+  editor(isNew ? preset === 'quizlet' ? 'Add Quizlet Study' : 'Add Subject' : 'Edit Subject', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
+  document.getElementById('cloud-editor-title')?.prepend(glyph(isNew ? 'plus' : 'notebook-pen'));
   const dialog = document.getElementById('cloud-editor');
   if (remove && dialog?.open) { dialog.querySelector('.modal-actions')?.prepend(remove); dialog.addEventListener('close', () => remove.remove(), { once: true }); }
   for (const [selector, name] of [['#cloud-editor-cancel','x'],['button[type="submit"]','save']]) { const control = dialog?.querySelector(selector); if (control && !control.querySelector('svg,i')) control.prepend(glyph(name), document.createTextNode(' ')); }

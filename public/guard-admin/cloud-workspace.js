@@ -381,9 +381,9 @@ function editor(title, fields, save) {
   byId('cloud-editor').showModal();
   byId('cloud-editor').scrollTop = 0;
 }
-function editSubject(subject = null) {
+function editSubject(subject = null, options = {}) {
   editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate,
-    close: () => byId('cloud-editor').close(), showError: message => { byId('cloud-editor-error').textContent = message; } }, subject);
+    close: () => byId('cloud-editor').close(), showError: message => { byId('cloud-editor-error').textContent = message; } }, subject, options);
 }
 
 function clearRecovery() {
@@ -468,6 +468,10 @@ document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListen
 byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
 byId('add-subject-btn').addEventListener('click', () => editSubject());
+const quizletShortcut = button('Add Quizlet', () => editSubject(null, {preset:'quizlet'}));
+quizletShortcut.dataset.cloudMutation = 'true';
+const quizletIcon = node('i'); quizletIcon.dataset.lucide = 'layers'; quizletIcon.setAttribute('aria-hidden','true'); quizletShortcut.prepend(quizletIcon);
+byId('add-subject-btn').before(quizletShortcut);
 byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
 byId('add-school-break').addEventListener('click', () => addSchoolBreak());
 byId('add-day-exception').addEventListener('click', () => addDayException());
