@@ -1,7 +1,7 @@
 {
-  "name": "BodeeGuard",
+  "name": "BodeeGuard Parent",
   "short_name": "BodeeGuard",
-  "description": "Your family dashboard",
+  "description": "Your parent dashboard, daily plans and grades in their own app window.",
   "id": "/dashboard/",
   "start_url": "/dashboard/",
   "scope": "/",
