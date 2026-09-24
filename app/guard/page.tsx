@@ -17,7 +17,7 @@ import GuardAuthActions from "@/components/GuardAuthActions";
 import styles from "./guard.module.css";
 
 export const metadata: Metadata = {
-  title: "BodeeGuard – The Windows Learning Environment for Families",
+  title: { absolute: "BodeeGuard – The Windows Learning Environment for Families" },
   description:
     "BodeeGuard is the digital bodyguard for a child’s school day, turning Windows into a focused homeschool environment for lessons, accountability, learning tools, and parent-controlled recreation.",
   alternates: { canonical: "https://www.bodeebooks.com/guard/" },
