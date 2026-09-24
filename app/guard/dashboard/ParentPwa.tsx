@@ -23,18 +23,25 @@ export default function ParentPwa() {
     setIos(isIos);
     setDesktop(!isIos && !/Android/.test(navigator.userAgent));
     setEdge(/Edg\//.test(navigator.userAgent));
-    setInstalled(matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+    const displayMode = matchMedia("(display-mode: standalone)");
+    const inAppWindow = () => displayMode.matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+    const frame = () => document.querySelector<HTMLIFrameElement>('iframe[title="BodeeGuard Parent Dashboard"]')?.contentWindow;
+    const sendDisplayMode = (standalone = inAppWindow()) => frame()?.postMessage({ type: "bodeeguard-pwa-display", standalone }, location.origin);
+    setInstalled(inAppWindow());
     if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/guard-parent-sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
     const capture = (event: Event) => { event.preventDefault(); installEvent.current = event as InstallEvent; setAvailable(true); };
-    const done = () => { installEvent.current = null; setAvailable(false); setInstalled(true); };
+    const done = () => { installEvent.current = null; setAvailable(false); setInstalled(true); sendDisplayMode(true); };
     const request = (event: MessageEvent) => {
-      const frame = document.querySelector<HTMLIFrameElement>('iframe[title="BodeeGuard Parent Dashboard"]');
-      if (event.origin === location.origin && event.source === frame?.contentWindow && event.data?.type === "bodeeguard-install") { setNotice(""); setOpen(true); }
+      if (event.origin !== location.origin || event.source !== frame()) return;
+      if (event.data?.type === "bodeeguard-pwa-state-request") sendDisplayMode();
+      if (event.data?.type === "bodeeguard-install" && !inAppWindow()) { setNotice(""); setOpen(true); }
     };
+    const changed = () => { setInstalled(inAppWindow()); sendDisplayMode(); };
+    displayMode.addEventListener("change", changed);
     window.addEventListener("beforeinstallprompt", capture);
     window.addEventListener("appinstalled", done);
     window.addEventListener("message", request);
-    return () => { window.removeEventListener("beforeinstallprompt", capture); window.removeEventListener("appinstalled", done); window.removeEventListener("message", request); };
+    return () => { displayMode.removeEventListener("change", changed); window.removeEventListener("beforeinstallprompt", capture); window.removeEventListener("appinstalled", done); window.removeEventListener("message", request); };
   }, []);
   if (!open) return null;
   async function install() {
