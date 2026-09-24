@@ -17,6 +17,14 @@
 .installSteps summary { cursor: pointer; color: #c4b5fd; line-height: 1.5; }
 .installSteps p { overflow-wrap: anywhere; }
 .installNote { font-size: 13px; }
+.updateBanner { box-sizing: border-box; position: fixed; z-index: 150; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100vw - 32px); padding: 16px 18px; border: 1px solid #5eead4; border-radius: 16px; background: #112a30; color: #f8fafc; box-shadow: 0 8px 28px #0006; font: 14px/1.45 system-ui, sans-serif; }
+.updateBanner > svg { flex-shrink: 0; color: #5eead4; }
+.updateBanner strong, .updateBanner span { display: block; }
+.updateBanner span { margin-top: 3px; color: #cbd5e1; }
+.updateBanner button { flex-shrink: 0; min-height: 44px; padding: 10px 18px; border: 0; border-radius: 10px; background: #5eead4; color: #082f35; font-weight: 700; cursor: pointer; }
+.updateBanner button:focus-visible { outline: 3px solid white; outline-offset: 4px; }
+.updateBanner button:disabled { opacity: .7; cursor: wait; }
+@media (max-width: 480px) { .updateBanner { gap: 10px; padding: 12px; } .updateBanner > svg { display: none; } .updateBanner span { font-size: 12px; } }
 /* Hide the book navigation so keyboard users don't tab behind the workspace. */
 :global(body):has(.workspace) > :global(nav),
 :global(body):has(.workspace) > :global(footer) { display: none; }
