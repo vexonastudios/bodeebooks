@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import styles from "./workspace.module.css";
 import ParentPwa from "./ParentPwa";
 import ParentWorkspace from "./ParentWorkspace";
+import ParentUpdate from "./ParentUpdate";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://guard.bodeebooks.com"),
@@ -22,5 +23,6 @@ export default async function FamilyDashboard() {
   return <div className={styles.workspace} data-guard-workspace="true">
     <ParentPwa />
     <ParentWorkspace />
+    <ParentUpdate />
   </div>;
 }
