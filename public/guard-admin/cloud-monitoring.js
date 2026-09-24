@@ -1,4 +1,4 @@
-import { connectionState, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
+import { connectionState, connectionExpiresAt, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
 import { studentAvatar } from './cloud-student-profile.js';
 import { cardColor, activityAccent } from './cloud-activity-colors.js';
 
@@ -15,8 +15,9 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
   return snapshot.students.filter(s=>!s.archived_at).map((student,index)=>{
     const devices=snapshot.devices.filter(d=>d.student_id===student.id).sort((a,b)=>(Date.parse(b.last_seen_at)||0)-(Date.parse(a.last_seen_at)||0));
     const device=devices.find(d=>connectionState(d,now)==='Connected')||devices[0];
-    const online=!!device&&connectionState(device,now)==='Connected';
-    const current=online?subjects.find(s=>s.id===device.current_subject):null;
+    const connection=device?connectionState(device,now):'No computer connected';
+    const online=connection==='Connected';
+    const current=online&&now-Date.parse(device.last_seen_at)<90000?subjects.find(s=>s.id===device.current_subject):null;
     const goals=subjects.filter(s=>s.active!==false&&assignmentFor(s,student.id)?.active!==false&&assignmentFor(s,student.id)).map(subject=>{
       const progress=subjectProgress(snapshot,student.id,subject.id);
       const claim=snapshot.monitoring?.completions?.find(c=>c.student_id===student.id&&c.subject_id===subject.id);
@@ -35,7 +36,7 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
     }
     activity.sort((a,b)=>b.seconds-a.seconds);
     const required=goals.filter(g=>g.required);
-    return {student,devices,device,online,current,media,activity,goals,color:colors[index%colors.length],
+    return {student,devices,device,online,connection,current,media,activity,goals,color:colors[index%colors.length],
       total:todaySeconds(snapshot,student.id),currentSeconds:current?goals.find(g=>g.id===current.id)?.seconds:null,
       done:required.filter(g=>g.complete).length,required:required.length,
       courses:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).flatMap(p=>p.courses)};
@@ -63,7 +64,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
   function connectionNow(){
     const snapshot=getSnapshot();
     if(snapshot!==observedSnapshot){observedSnapshot=snapshot;observedAt=Date.now();}
-    return Date.parse(snapshot?.serverTime)+Math.max(0,Date.now()-observedAt);
+    return Date.parse(snapshot?.connectionCheckedAt||snapshot?.serverTime)+Math.max(0,Date.now()-observedAt);
   }
   const connectedDevices=()=>{const now=connectionNow();return (getSnapshot()?.devices||[]).filter(device=>connectionState(device,now)==='Connected');};
   const studentOnline=studentId=>connectedDevices().some(device=>device.student_id===studentId);
@@ -163,7 +164,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       const {student,device}=model;
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
       const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
-      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!device?'No computer connected':!model.online?'Not connected':device.locked?'Computer locked':model.current?.title||'Dashboard'));
+      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!model.online?model.connection:device.locked?'Computer locked':model.current?.title||'BodeeGuard connected'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
       const clocks=node('div','monitor-timer-row');
       for(const [label,time,cls]of [['School today',model.total,''],['Subject today',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
@@ -197,7 +198,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       actions.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
-      if(!model.online)card.append(node('p','monitor-offline-note','Controls are available when this child’s computer is online.'));
+      if(!model.online)card.append(node('p','monitor-offline-note',model.connection==='Connection not checked'?'The connection check is unavailable. Refresh to check again.':'Controls are available when this child’s computer is online.'));
       mobile()?.decorateCard(card,student.id,model);
       for(const control of card.querySelectorAll('.cloud-monitor-actions button, .cloud-mobile-only button')){
         control.dataset.requiresDevice=String(model.online&&control.dataset.requiresDevice!=='false');
@@ -218,11 +219,11 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model?.online)renderQuickDialog(model);else quickDialog.close();}
     window.lucide?.createIcons();
     if(connected.length){
-      const nextExpiry=Math.min(...connected.map(device=>Date.parse(device.last_seen_at)+90000))-now;
+      const nextExpiry=Math.min(...connected.map(connectionExpiresAt))-now;
       connectionExpiry=setTimeout(()=>{render();setControls();},Math.max(0,nextExpiry)+20);
     }
     const expires=Date.parse(snapshot.screenshotAvailability?.checkedAt)+75000-Date.now();
     if(expires>0)screenshotExpiry=setTimeout(()=>{grid.querySelectorAll('.monitor-control--screenshot').forEach(control=>{control.disabled=true;control.dataset.requiresDevice='false';control.title='Refresh to check the child app’s connection.';});},expires+20);
   }
-  return {render};
+  return {render,connectionNow};
 }

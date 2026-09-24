@@ -1,30 +1,30 @@
 const GAMES=[['chess','Chess','crown','♞'],['connect-four','Connect Four','circle','●'],['checkers','Checkers','circle-dot','◉'],['fleet-battle','Fleet Battle','ship','⛴']];
 const PIECES={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
-export function setupTabletop({root,request,parent=false}){
+export function setupTabletop({root,request,parent=false,online=false}){
   let state={supported:false,rooms:[]},selected='chess',square=null,draftId=null,draft=[],shipId='flagship',localBusy=false,renderKey='';
   const node=(tag,text='',css='')=>{const n=document.createElement(tag);n.className=css;n.textContent=text;return n;};
   const icon=name=>{const i=node('i');i.dataset.lucide=name;i.setAttribute('aria-hidden','true');return i;};
   const button=(text,fn,symbol,disabled=false)=>{const b=node('button','','btn btn-secondary');b.type='button';b.disabled=disabled;if(symbol)b.append(icon(symbol));b.append(document.createTextNode(text));b.addEventListener('click',fn);return b;};
   const note=node('p','','tabletop-note');note.setAttribute('role','status');
   const counter=node('span','','cloud-game-badge'),body=node('div'),catalog=node('div','','tabletop-catalog');
-  const header=node('div','','cloud-game-section-heading'),heading=node('h3','Play with your siblings');header.append(heading,counter);
-  root.classList.add('tabletop-room');root.append(header,node('p','Choose a game. One child hosts, and another joins on the same home Wi-Fi.','cloud-note'),catalog,note,body);
+  const header=node('div','','cloud-game-section-heading'),heading=node('h3',online?'Play with your family':'Play with your siblings');header.append(heading,counter);
+  root.classList.add('tabletop-room');root.append(header,node('p',online?'One player presses Host. The other chooses Join below. Keep this room open on both screens.':'Choose a game. One child hosts, and another joins on the same home Wi-Fi.','cloud-note'),catalog,note,body);
   async function run(kind,input){if(localBusy)return;localBusy=true;draw(true);try{setState(await request(kind,input));}catch(e){note.textContent=e.message;}finally{localBusy=false;draw(true);}}
   function action(input){square=null;return run('move',{id:crypto.randomUUID(),revision:state.match.revision,...input});}
-  function setState(value){state=value||{supported:false,rooms:[]};if(state.game)selected=state.game;counter.textContent=state.remainingSeconds==null?'Home LAN':`${Math.floor(state.remainingSeconds/60)}:${String(state.remainingSeconds%60).padStart(2,'0')} left`;note.textContent=state.message||'';draw();}
+  function setState(value){state=value||{supported:false,rooms:[]};if(state.game)selected=state.game;counter.textContent=state.remainingSeconds==null?(online?'Private family room':'Home LAN'):`${Math.floor(state.remainingSeconds/60)}:${String(state.remainingSeconds%60).padStart(2,'0')} left`;note.textContent=state.message||'';draw();}
   function draw(force=false){
     const key=JSON.stringify([state.game,state.roomId,state.connected,state.match?.id,state.match?.revision,state.pendingMove,state.rooms,state.busy,state.supported,state.history,localBusy]);
     if(!force&&key===renderKey)return;renderKey=key;root.classList.toggle('has-match',!!state.match);catalog.replaceChildren();body.replaceChildren();
     const busy=localBusy||state.busy||state.pendingMove;
     for(const [id,name,symbol,mark]of GAMES){const b=button('',()=>{selected=id;square=null;draw(true);},null,!!state.game&&id!==state.game||busy);b.className='tabletop-game'+(selected===id?' selected':'');b.setAttribute('aria-pressed',String(selected===id));const art=node('span',mark,`tabletop-game-icon ${id}`);art.setAttribute('aria-hidden','true');const title=node('span');title.append(node('strong',name),node('small','Play over your home LAN'));b.append(art,title);catalog.append(b);}
-    if(parent||!state.supported){body.append(node('p',parent?'Included in the Windows child app. Children host and join here; your computer does not need to stay on. Family Games access and time limits above apply to all four games.':'Open the updated BodeeGuard Windows app to host or join these games.','cloud-note'));icons();return;}
+    if(parent&&!online||!state.supported){body.append(node('p',parent?'Choose Play as Mom or Dad above to join your children. Children can also play each other over home Wi-Fi in the Windows app.':'Open the updated BodeeGuard Windows app to host or join these games.','cloud-note'));icons();return;}
     if(!state.game){
       const actions=node('div','','cloud-game-actions');actions.append(button(`Host ${GAMES.find(g=>g[0]===selected)[1]}`,()=>run('host',{game:selected}),'radio',busy));body.append(actions);
-      const rooms=node('div','','tabletop-lobby');rooms.append(node('h4','Join a sibling'));
+      const rooms=node('div','','tabletop-lobby');rooms.append(node('h4','Join a family member'));
       const available=(state.rooms||[]).filter(r=>r.game===selected);
-      if(!available.length)rooms.append(node('p','No room open yet. Ask a sibling to open Family Games, choose this game and press Host.','cloud-note'));
-      for(const room of available)rooms.append(button(`Join ${GAMES.find(g=>g[0]===room.game)[1]} · ${room.id.slice(0,4).toUpperCase()}`,()=>run('join',{roomId:room.id}),'users-round',busy));
-      const help=node('details');help.append(node('summary','Having trouble finding each other?'),node('p','Both computers need the same private home network. Guest Wi-Fi may keep computers separate. Keep BodeeGuard open on both and allow it on private networks.','cloud-note'));rooms.append(help);body.append(rooms);history();icons();return;
+      if(!available.length)rooms.append(node('p',online?'No room open yet. Ask your family member to open Play with family online, choose this game and press Host.':'No room open yet. Ask a sibling to open Family Games, choose this game and press Host.','cloud-note'));
+      for(const room of available)rooms.append(button(`Join ${room.hostName||GAMES.find(g=>g[0]===room.game)[1]} · ${room.id.slice(0,4).toUpperCase()}`,()=>run('join',{roomId:room.id}),'users-round',busy));
+      const help=node('details');help.append(node('summary','Having trouble finding each other?'),node('p',online?'Use the same BodeeGuard family account. Children need the latest app and Family Games enabled in Daily Plan. Choose the same game on both screens. Internet is required.':'Both computers need the same private home network. Guest Wi-Fi may keep computers separate. Keep BodeeGuard open on both and allow it on private networks.','cloud-note'));rooms.append(help);body.append(rooms);history();icons();return;
     }
     const controls=node('div','','cloud-game-actions');
     controls.append(button(state.match?'Leave match':'Close room',()=>run('leave'),'log-out',busy));

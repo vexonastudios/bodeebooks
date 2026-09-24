@@ -81,6 +81,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "coloring-image": path = "/coloring-studio/image"; method = "POST"; body = { requestId: input.requestId, delivery: "url", thumbnail: input.thumbnail === true }; break;
     case "computer-command": path = "/computers/command"; method = "POST"; body = { kind: input.kind, locked: input.locked, deviceId: input.deviceId, studentId: input.studentId, subjectId: input.subjectId, unlocked: input.unlocked, revision: input.revision, requestId: input.requestId }; break;
     case "refresh-computers": path = "/refresh"; method = "POST"; body = {}; break;
+    case "connection-status": path = "/connections"; method = "GET"; body = undefined; break;
     case "screenshots-overview": path = "/screenshots/overview"; method = "POST"; body = {}; break;
     case "request-screenshot": path = "/screenshots/request"; method = "POST"; body = { studentId: input.studentId }; break;
     case "screenshot-action": path = "/screenshots/action"; method = "POST"; body = { screenshotId: input.screenshotId, action: input.screenshotAction }; break;
@@ -110,6 +111,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "list-learning-videos": path = "/learning-videos/list"; method = "POST"; body = { category: input.category }; break;
     case "save-learning-video": path = "/learning-videos/save"; method = "POST"; body = { id: input.id, revision: input.revision, url: input.url, title: input.title, folder: input.folder, order: input.order, active: input.active, approved: input.approved, libraryKind: input.libraryKind }; break;
     case "game-room": path = "/games/room"; method = "POST"; body = {}; break;
+    case "game-tabletop": path = "/games/tabletop"; method = "POST"; body = { operation: input.operation, role: input.role, id: input.id, roomId: input.roomId, game: input.game, move: input.move }; break;
     case "game-settings": path = "/games/settings"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, settings: input.settings }; break;
     case "game-action": path = "/games/action"; method = "POST"; body = { id: input.id, action: input.gameAction, matchId: input.matchId, revision: input.revision }; break;
     case "upload-file": path = "/files/upload"; method = "POST"; body = { id: input.id, studentId: input.studentId, name: input.name, mime: input.mime, purpose: input.purpose, data: input.data }; break;

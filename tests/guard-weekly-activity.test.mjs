@@ -26,3 +26,10 @@ test('weekly bridge rejects signed-out and foreign-origin requests without an AP
 test('existing grade and school reports retain their original destinations',async()=>{
  for(const [action,destination]of [['list-grades','/grades/list'],['school-report','/reports/school-time']]){const b=bridge();assert.equal((await b.post(request({action}))).status,200);assert.equal(b.calls[0][0],destination);}
 });
+test('live connections use a read-only endpoint and tabletop roles never accept household identity',async()=>{
+ const c=bridge();assert.equal((await c.post(request({action:'connection-status',householdId:'foreign'}))).status,200);
+ assert.equal(c.calls[0][0],'/connections');assert.equal(c.calls[0][1].method,'GET');assert.equal(c.calls[0][1].body,undefined);
+ const g=bridge();assert.equal((await g.post(request({action:'game-tabletop',role:'mom',operation:'host',id:'receipt',game:'chess',householdId:'foreign',studentId:'spoof'}))).status,200);
+ assert.equal(g.calls[0][0],'/games/tabletop');assert.deepEqual(JSON.parse(g.calls[0][1].body),{role:'mom',operation:'host',id:'receipt',game:'chess'});
+ for(const action of ['connection-status','game-tabletop']){const blocked=bridge(false);assert.equal((await blocked.post(request({action}))).status,401);assert.equal(blocked.calls.length,0);}
+});
