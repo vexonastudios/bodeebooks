@@ -97,7 +97,7 @@ function selectTab(id) {
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
-    control.disabled = !usable || mutating;
+    control.disabled = !usable || mutating || control.dataset.requiresDevice === 'false';
   });
 }
 function showSnapshot() {
@@ -402,6 +402,7 @@ function showRecovery(device) {
 
 setupSidebarGroups();
 const monitoring = setupMonitoring({
+  setControls,
   getSnapshot: () => snapshot,
   mutate,
   navigate: selectTab,

@@ -1,7 +1,10 @@
 .cloud-workspace #tab-overview{padding-top:8px}
 .cloud-workspace #tab-overview .monitor-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));align-items:start;gap:16px}
 .cloud-workspace .cloud-monitor-card{min-width:0;padding:16px;gap:12px}
-.cloud-workspace .cloud-monitor-card.monitor-card--idle{opacity:1;filter:none;border-color:var(--border)}
+.cloud-workspace .cloud-monitor-card.monitor-card--idle{opacity:.65;filter:grayscale(1);border-color:var(--border)}
+.cloud-monitor-card.monitor-card--idle:hover{border-color:var(--border);box-shadow:none}
+.monitor-offline-note{margin:0;color:var(--text-secondary);font-size:12px;line-height:1.45;text-align:center}
+.cloud-monitor-actions[aria-disabled="true"] summary{opacity:.45;cursor:not-allowed}
 .cloud-monitor-card.monitor-card--idle .monitor-status-badge{color:var(--text-secondary)}
 .cloud-workspace .cloud-monitor-card .monitor-name{font-size:17px;margin:0}
 .cloud-monitor-card .monitor-avatar{border:2px solid var(--child-color);background:color-mix(in srgb,var(--child-color) 16%,transparent);color:var(--child-color);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center}
