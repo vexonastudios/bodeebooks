@@ -17,7 +17,11 @@ export default function ParentWorkspace() {
       try {
         const token = await Promise.race([getToken({ skipCache: true }), new Promise<undefined>(resolve => setTimeout(resolve, 6000))]);
         if (disposed || document.hidden) return;
-        if (token === null) { window.location.assign('/guard/sign-in/?redirect_url=%2Fguard%2Fdashboard%2F'); return; }
+        if (token === null) {
+          const child = new URLSearchParams(window.location.search).get('conversation');
+          const target = '/guard/dashboard/' + (child && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(child) ? '?conversation=' + child : '');
+          window.location.assign('/guard/sign-in/?redirect_url=' + encodeURIComponent(target)); return;
+        }
         opened = true; setReady(true);
         if (token) frame.current?.contentWindow?.postMessage({type:'bodeeguard-session-ready'}, window.location.origin);
       } catch { if (!disposed && !document.hidden) { opened = true; setReady(true); } }

@@ -4,6 +4,7 @@ import { createMessageThread } from './message-thread.js';
 export function setupCloudMessages({ endpoint }) {
   const el = id => document.getElementById(id);
   let students = [];
+  let unread = new Map();
   let selected = null;
   let active = false;
   let page = null;
@@ -96,6 +97,7 @@ export function setupCloudMessages({ endpoint }) {
       thread.dataset.rendered = key;
       if (atBottom) thread.scrollTop = thread.scrollHeight;
     }
+    markRead();
     const uncertain = pending.get(selected);
     if (uncertain && unique.some(message => message.id === uncertain.id)) {
       pending.delete(selected); drafts.delete(selected); attachments.delete(selected); localFiles.delete(selected); voices.delete(selected); voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = '';
@@ -137,6 +139,7 @@ export function setupCloudMessages({ endpoint }) {
   function renderStudents() {
     el('messages-student-list').replaceChildren(...students.map(student => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.textContent = student.name;
+      const count = unread.get(student.id) || 0; if (count) button.textContent += ' · ' + (count > 99 ? '99+' : count) + ' unread';
       button.setAttribute('aria-pressed', String(student.id === selected)); button.addEventListener('click', () => choose(student.id)); return button;
     }));
   }
@@ -238,10 +241,18 @@ export function setupCloudMessages({ endpoint }) {
     } catch (failure) { if (ticket === generation) note(failure.message); }
     finally { loading = false; controls(); if (active && !document.hidden && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 30000); refreshQueued = false; }
   });
+  function markRead() {
+    const thread = el('messages-thread-content');
+    if (!active || document.hidden || !selected || cursor !== undefined || thread.scrollHeight - thread.scrollTop - thread.clientHeight >= 40) return;
+    const latest = page?.messages.filter(message => message.sender === 'child').at(-1);
+    if (latest) window.parent.postMessage({ type: 'bodeeguard-conversation-read', studentId: selected, messageId: latest.id }, location.origin);
+  }
+  el('messages-thread-content').addEventListener('scroll', markRead, { passive: true });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
+    setUnread(items) { unread = new Map(items.map(item => [item.studentId, item.count])); renderStudents(); markRead(); },
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if (studentId === selected && active) return refresh(); },

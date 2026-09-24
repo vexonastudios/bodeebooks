@@ -34,6 +34,7 @@ import { setupCloudTyping } from './cloud-typing.js?v=20260911-controls1';
 import { setupCloudEconomy } from './cloud-economy.js?v=20260911-controls1';
 import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
+import { setupNotificationNavigation } from './cloud-notification-navigation.js';
 const endpoint = '/guard/dashboard/bridge/';
 const messaging = setupCloudMessages({ endpoint });
 const byId = id => document.getElementById(id);
@@ -118,6 +119,7 @@ function showSnapshot() {
   renderSchoolCalendar();
   screenshots.update(snapshot);
   messaging.update(snapshot.students);
+  notificationNavigation.update();
   setControls();
 }
 async function refresh() {
@@ -480,6 +482,7 @@ window.addEventListener('pageshow', event => { if (event.persisted) { usable = f
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');
+const notificationNavigation = setupNotificationNavigation({ messaging, navigate: selectTab, getStudents: () => snapshot?.students || [] });
 window.lucide?.createIcons();
 setControls();
 refresh();

@@ -1,6 +1,7 @@
 "use client";
 
-import { Show, UserButton } from "@clerk/nextjs";
+import { Show } from "@clerk/nextjs";
+import GuardSignOut from "./GuardSignOut";
 import Link from "next/link";
 import { ArrowRight, LogIn } from "lucide-react";
 import styles from "@/app/guard/guard.module.css";
@@ -21,7 +22,7 @@ export default function GuardAuthActions() {
         <Link className={styles.primaryButton} href="/guard/account">
           Open parent account <ArrowRight size={17} />
         </Link>
-        <UserButton />
+        <GuardSignOut className={styles.secondaryButton} />
       </Show>
     </div>
   );

@@ -19,7 +19,7 @@ async function accountPage(params={}) {
     if(name==='../actions')return new Proxy({},{get:()=>async()=>{}});
     if(name.endsWith('/guard-cloud-release'))return cloudReleaseModule;
     if(name==='./ChildSetup')return {__esModule:true,default:props=>React.createElement('section',{'data-collapsed':String(props.initiallyCollapsed)},props.children)};
-    if(name==='./PlanControls'||name==='../AccountRetry')return {__esModule:true,default:()=>null};
+    if(name==='./PlanControls'||name==='../AccountRetry'||name.endsWith('/GuardSignOut'))return {__esModule:true,default:()=>null};
     if(name==='../SubmitButton')return {__esModule:true,default:props=>React.createElement('button',null,props.children)};
     if(name==='next/link')return {__esModule:true,default:props=>React.createElement('a',props,props.children)};
     if(name.endsWith('.module.css'))return {__esModule:true,default:new Proxy({},{get:(_,key)=>key})};
