@@ -28,3 +28,24 @@
 /* Hide the book navigation so keyboard users don't tab behind the workspace. */
 :global(body):has(.workspace) > :global(nav),
 :global(body):has(.workspace) > :global(footer) { display: none; }
+
+.notificationCard { font: 16px/1.5 system-ui, sans-serif; width: min(100%, 460px); max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; }
+.notificationHeading { display: flex; align-items: center; gap: 12px; color: #c4b5fd; }
+.notificationHeading h2 { margin: 0; color: #f8fafc; }
+.notificationCard button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px system-ui; }
+.notificationCard button:disabled { opacity: .55; cursor: wait; }
+.notificationActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.notificationActions button { margin: 0; }
+.notificationCard .notificationStatus { color: #d4caff; font-weight: 700; }
+.notificationCard .notificationHint { font-size: 13px; }
+.notificationWarning { position: fixed; z-index: 190; bottom: max(90px,env(safe-area-inset-bottom)); right: 20px; max-width: min(580px,calc(100vw - 40px)); box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 14px; border: 1px solid #a58b36; border-radius: 14px; background: #292413; color: #fff1be; font: 14px/1.5 system-ui; box-shadow: 0 8px 30px #0006; }
+.notificationWarning > svg { flex-shrink: 0; }
+.notificationWarning button { min-width: 44px; min-height: 44px; border: 1px solid #a58b36; border-radius: 8px; color: inherit; background: #4b4020; padding: 8px; cursor: pointer; }
+.notificationAttention { padding: 10px; border-radius: 8px; background: #4b4020; color: #fff1be !important; }
+.notificationSubheading { display: flex; align-items: center; gap: 8px; font-size: 17px; margin-top: 24px; }
+.notificationLabel { display: grid; gap: 6px; color: #c9d2e3; font: 14px system-ui; margin-bottom: 12px; }
+.notificationLabel input { box-sizing: border-box; width: 100%; min-height: 44px; border: 1px solid #596078; border-radius: 9px; background: #090d1e; color: #fff; padding: 10px; font: 16px system-ui; }
+.notificationDevices { display: grid; gap: 12px; }
+.notificationLabel textarea { box-sizing: border-box; width: 100%; resize: vertical; padding: 12px; border: 1px solid #596078; border-radius: 9px; background: #090d1e; color: #fff; font: 16px/1.5 system-ui; }
+.notificationDevice { padding: 14px; border: 1px solid #38435a; border-radius: 12px; }
+.notificationDevice small { display: block; color: #b4bfd2; margin-bottom: 12px; }

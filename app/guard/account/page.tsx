@@ -11,6 +11,7 @@ import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
 import styles from "../portal.module.css";
 import AccountRetry from "../AccountRetry";
+import GuardSignOut from "@/components/GuardSignOut";
 
 export const metadata: Metadata = { title: "BodeeGuard Parent Account" };
 
@@ -223,6 +224,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <header className={styles.portalHeader}>
           <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Your parent dashboard lives online at guard.bodeebooks.com. Only children’s Windows computers need the BodeeGuard app—there is nothing for parents to install.</p></div>
         </header>
+        <GuardSignOut className={styles.portalButton} />
         <section className={styles.dashboardEntry} aria-label="Online parent dashboard">
             <div><span className={styles.kicker}><Monitor size={15} /> Your online dashboard</span><h2>Manage school from your phone or browser.</h2><p>Set school rules, review progress, and manage connected child computers. You can close your browser or turn off your computer without stopping their school day.</p>
               <Link className={styles.portalButton} href="/guard/dashboard/">Open family dashboard <ArrowRight size={16} /></Link>
