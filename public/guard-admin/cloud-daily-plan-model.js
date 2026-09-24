@@ -11,6 +11,9 @@ const quizlet = () => ({ key:'preset:quizlet', preset:'quizlet', title:'Quizlet 
 const isHandwriting = value => { try { const url = new URL(value); return url.origin === 'https://letters.bodeebooks.com' && !url.username && !url.password; } catch { return false; } };
 const handwriting = () => ({ key:'preset:handwriting', preset:'handwriting', title:'Letters · Handwriting', icon:'pencil', color:'#34d399',
   url:'https://letters.bodeebooks.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
+const isNumerals = value => { try { const url = new URL(value); return url.origin === 'https://numerals.bodeebooks.com' && !url.username && !url.password; } catch { return false; } };
+const numerals = () => ({ key:'preset:numerals', preset:'numerals', title:'Numerals · Roman Numerals', icon:'hash', color:'#f59e0b',
+  url:'https://numerals.bodeebooks.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
 const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'learning-videos': 'Learning Videos', poems: 'Poems' };
 const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
 icons.games = 'gamepad-2';
@@ -51,7 +54,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     if (module) seen.add(module);
     const stats = details.media?.[mediaKinds[module]], plan = assignment?.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
-    cards.push({ key: subject.id, subjectId: subject.id, module, ...(subject.planOnly && subject.portalProvider === 'quizlet' ? {preset:'quizlet'} : subject.planOnly && isHandwriting(subject.url) ? {preset:'handwriting'} : {}), title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
+    cards.push({ key: subject.id, subjectId: subject.id, module, ...(subject.planOnly && subject.portalProvider === 'quizlet' ? {preset:'quizlet'} : subject.planOnly && isHandwriting(subject.url) ? {preset:'handwriting'} : subject.planOnly && isNumerals(subject.url) ? {preset:'numerals'} : {}), title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
       goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment?.dailyGoalMinutes ?? 0, portal: subject.isSchoolPortal,
       placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false,
       days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
@@ -72,6 +75,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
   }
   if (!snapshot.rules.subjects.some(s => s.portalProvider === 'quizlet' || /^https:\/\/(www\.)?quizlet\.com\//i.test(s.url || ''))) cards.push(quizlet());
   if (!snapshot.rules.subjects.some(s => isHandwriting(s.url))) cards.push(handwriting());
+  if (!snapshot.rules.subjects.some(s => isNumerals(s.url))) cards.push(numerals());
   for (const card of cards) if (card.disabled && card.placement !== 'blocked') { card.previousPlacement = card.placement; card.placement = 'blocked'; }
   return cards;
 }
@@ -99,6 +103,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     if (!subject) {
       subject = { id: newId(), title: card.title, kind: card.preset ? 'website' : 'activity', url: card.url, icon: card.icon, active: true, accessTier: 'school_optional', planOnly: true, assignments: [],
         ...(card.preset === 'handwriting' ? {isSchoolPortal:false,alwaysOpen:true,color:'#34d399',allowedDomains:['letters.bodeebooks.com']} : {}),
+        ...(card.preset === 'numerals' ? {isSchoolPortal:false,alwaysOpen:true,color:'#f59e0b',allowedDomains:['numerals.bodeebooks.com']} : {}),
         ...(card.preset === 'quizlet' ? { portalProvider:'quizlet', isSchoolPortal:false, alwaysOpen:true, color:'#4255ff', allowedDomains:['quizlet.com','accounts.google.com'] } : {}) };
       subjects.push(subject);
     }
@@ -114,7 +119,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     if (!Number.isInteger(card.goal) || card.goal < 0 || card.goal > 480) throw Error('Choose a school goal from 0 to 480 minutes.');
     if (card.limitMinutes !== null && (!Number.isInteger(card.limitMinutes) || card.limitMinutes < 1 || card.limitMinutes > 480)) throw Error('Choose daily media minutes from 1 to 480.');
     if (card.placement === 'school' && card.limitMinutes !== null && card.goal > card.limitMinutes) throw Error(`The ${card.title} school goal cannot exceed its daily media limit.`);
-    if (card.placement === 'school' && !card.portal && !card.assignedWork && (card.module || card.preset === 'handwriting') && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
+    if (card.placement === 'school' && !card.portal && !card.assignedWork && (card.module || ['handwriting','numerals'].includes(card.preset)) && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
     if (!card.days.length) throw Error(`Choose at least one day for ${card.title}.`);
     if ((!!card.start !== !!card.end) || card.start && card.start >= card.end || card.placement === 'scheduled' && !card.start) throw Error(`Choose valid hours for ${card.title}.`);
     const blocked = card.placement === 'blocked';
@@ -131,7 +136,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
 export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTemplate) {
   const baseline = dailyPlanCards({ ...snapshot, rules: { ...snapshot.rules, subjects: [] } }, {}, 'family');
   for (const card of baseline) {
-    if (card.preset === 'handwriting') { card.placement = 'anytime'; card.enabled = true; }
+    if (['handwriting','numerals'].includes(card.preset)) { card.placement = 'anytime'; card.enabled = true; }
     if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120, games:60 }[card.module]; card.placement = 'after_school'; }
   }
   baseline.unshift({ key: 'school', title: 'Each child’s school websites', icon: 'graduation-cap', portal: true, goal: 0,
@@ -145,6 +150,8 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
   if (baseline.some(c => c.subjectId && (snapshot.rules.subjects.find(s => s.id === c.subjectId)?.portalProvider === 'quizlet' || /^https:\/\/(www\.)?quizlet\.com\//i.test(c.url || '')))) baseline.splice(baseline.findIndex(c => c.preset === 'quizlet'), 1);
   const handwritingPreset = baseline.findIndex(c => c.preset === 'handwriting' && !c.subjectId);
   if (handwritingPreset >= 0 && baseline.some(c => c.subjectId && isHandwriting(c.url))) baseline.splice(handwritingPreset, 1);
+  const numeralsPreset = baseline.findIndex(c => c.preset === 'numerals' && !c.subjectId);
+  if (numeralsPreset >= 0 && baseline.some(c => c.subjectId && isNumerals(c.url))) baseline.splice(numeralsPreset, 1);
   for (const card of baseline) {
     // Color describes the activity, not its placement or family plan settings.
     const subject = snapshot.rules.subjects.find(s => s.active !== false && s.url === card.url);
