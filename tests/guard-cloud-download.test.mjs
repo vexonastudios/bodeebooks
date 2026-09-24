@@ -38,6 +38,14 @@ test('the current internal Family Beta can expose only its configured cloud test
   for (const version of ['', '01.2.167', '1.2', '1.2.65536']) assert.equal(internalPilotRelease(eligible, version), null);
 });
 
+test('Family Beta notes match the configured release and keep future unknown versions generic', () => {
+  const eligible = { billingMode: 'complimentary', entitlementStatus: 'active', releaseChannel: 'beta' };
+  assert.match(JSON.stringify(internalPilotRelease(eligible, '1.2.239').notes), /Spelling progresses per word/);
+  assert.match(JSON.stringify(internalPilotRelease(eligible, '1.2.238').notes), /Typing goals require active practice/);
+  assert.doesNotMatch(JSON.stringify(internalPilotRelease(eligible, '1.2.238').notes), /Spelling progresses per word/);
+  assert.equal(internalPilotRelease(eligible, '1.2.999').notes.title, 'Cloud Family Beta');
+});
+
 async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token', internalPilot = false, runAfter = false, metricFails = false } = {}) {
   const filename = path.resolve('app/guard/download/windows/route.ts');
   const route = new Module(filename), localRequire = createRequire(filename), afterWork=[];

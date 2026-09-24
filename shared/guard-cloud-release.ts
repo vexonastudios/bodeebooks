@@ -7,6 +7,72 @@ export type GuardAccountRelease = {
   } | null;
 };
 
+// Version-specific parent notes mirror the reviewed child release notes.
+const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.239": {
+    "title": "Learning improvements and the complete pending update",
+    "sections": [
+      {
+        "heading": "Version 1.2.239",
+        "headline": "Your requested learning improvements are included",
+        "summary": "This cumulative release brings together the pending school video, Spelling, Vocabulary, Poems and default activity changes.",
+        "highlights": [
+          "Spelling progresses per word from copying to rotating letter hints and unaided recall.",
+          "Vocabulary distinguishes practice, test readiness and later retention.",
+          "Daily Plan includes Letters handwriting and Numerals; existing child choices stay intact until you apply changes.",
+          "School video fullscreen and caption controls are repaired. Poem narration supports a shared ElevenLabs voice and family audio caching when the provider is configured.",
+          "Active typing time, individual activity colors and Mom/Dad family games remain included."
+        ]
+      }
+    ]
+  },
+  "1.2.238": {
+    "title": "Typing time counts actual practice",
+    "sections": [
+      {
+        "heading": "Version 1.2.238",
+        "headline": "Typing goals require active practice",
+        "summary": "Leaving Typing School open no longer counts toward a daily schoolwork goal.",
+        "highlights": [
+          "Time begins when the child types in a lesson or speed test.",
+          "The school timer pauses shortly after typing stops and when the window loses focus.",
+          "Holding down a key does not earn practice time. Activity colors and family board games remain included."
+        ]
+      }
+    ]
+  },
+  "1.2.237": {
+    "title": "Play board games with Mom and Dad",
+    "sections": [
+      {
+        "heading": "Version 1.2.237",
+        "headline": "Join your children in Family Games",
+        "summary": "Parents can play as Mom or Dad from the parent dashboard, with clearer Windows game downloads.",
+        "highlights": [
+          "Play Chess, Connect Four, Checkers and Fleet Battle in a private family room.",
+          "Children retain their Family Games hours and daily time limits.",
+          "Includes the student activity colors from version 1.2.236."
+        ]
+      }
+    ]
+  },
+  "1.2.236": {
+    "title": "Colorful student activity cards",
+    "sections": [
+      {
+        "heading": "Version 1.2.236",
+        "headline": "Activity colors now match your Daily Plan",
+        "summary": "Children can find familiar activities by the same colors used in the parent plan.",
+        "highlights": [
+          "Student dashboard cards use each built-in activity color from Daily Plan.",
+          "Custom subject colors stay intact.",
+          "Required and completed schoolwork still show their clear status labels."
+        ]
+      }
+    ]
+  }
+};
+
 type InternalPilotAccount = {
   billingMode?: string;
   entitlementStatus?: string;
@@ -43,7 +109,7 @@ export function internalPilotRelease(account: InternalPilotAccount, version: str
   return {
     version: normalizedVersion,
     downloadUrl: "/guard/download/windows",
-    notes: {
+    notes: familyBetaNotes[normalizedVersion] || {
       title: "Cloud Family Beta",
       sections: [{
         heading: "Install on a child computer",
