@@ -1,5 +1,6 @@
 import { FAMILY_GAME_PREVIEWS } from './cloud-games-catalog.js';
 import { setupTabletop } from './cloud-tabletop-ui.js';
+import { setupOnlineTabletop } from './cloud-online-tabletop.js';
 // LAN traffic stays in the installed main process. Parent access remains cloud-managed.
 export function setupCloudGames({ root, request, parent = false, renderAvatar, externalRequest, lanRequest, tabletop = parent || !!lanRequest, assetBase = new URL('assets/family-games/v1/', window.location.href) }) {
   let external={supported:false,games:[]};
@@ -20,6 +21,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   const formArea = node('div');
   const gallery = makeGallery();
   const tabletopRoot=node('section');
+  const onlineRoot=node('section');
+  const onlineUI=setupOnlineTabletop({root:onlineRoot,request,parent});
   const tabletopUI=tabletop?setupTabletop({root:tabletopRoot,request:lanRequest,parent}):null;
   root.classList.add('cloud-family-room'); root.classList.toggle('is-parent', parent);
   root.append(header, formArea, content);
@@ -47,7 +50,15 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   function makeGallery() {
     const section = node('section', '', 'cloud-game-gallery'); section.setAttribute('aria-label', 'More family games');
     const top = node('div', '', 'cloud-game-section-heading'); top.append(heading('h3', 'Family adventures', 'sparkles'), node('span', 'Windows games', 'cloud-game-badge'));
-    section.append(top, node('p', 'Games download and update on the child’s PC. For family multiplayer, one child hosts and the others join inside the game using the same home router. Lesson Village is single-player.', 'cloud-note'));
+    section.append(top, node('p', 'These are separate Windows games. Lesson Village is single-player; the other games support family multiplayer on the same home Wi-Fi.', 'cloud-note'));
+    const steps=node('ol','','cloud-game-start-steps');
+    for(const text of (parent?[
+      'Allow Family Games for each child using Access & game time on the left, or Daily Plan.',
+      'On each child’s computer: open Family Games, find a game below, then choose Download & play. After the first download, choose Play.',
+      'To join on your Windows computer, download the parent installer below and open the game. Choose Mom or Dad as your player name.',
+      'For multiplayer, one player hosts in the game lobby. Everyone else joins from the same home Wi-Fi. Keep everyone on the same game version.'
+    ]:['Choose Download & play below. The first download can take a few minutes.','Next time, choose Play. BodeeGuard checks for game updates automatically.','For multiplayer, one person hosts in the game lobby and the others join on the same home Wi-Fi.']))steps.append(node('li',text));
+    section.append(steps);
     const banners = node('div', '', 'cloud-game-banners');
     FAMILY_GAME_PREVIEWS.forEach((game, index) => {
       const card = button('', () => preview(index, card)); card.className = 'cloud-game-banner'; card.style.setProperty('--game-accent', game.color); card.setAttribute('aria-label', `Preview ${game.name}`);
@@ -64,7 +75,11 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     external=value||{supported:false,games:[]};gallery.hidden=!parent&&!external.supported;
     for(const game of FAMILY_GAME_PREVIEWS){
       const area=gameActions.get(game.id);area.replaceChildren();
-      if(parent){area.append(node('p','Available in the Windows child app · Uses Family Games access and time','cloud-note'));continue;}
+      if(parent){
+        const downloads={ 'berean-rpg':'BereanRPG-Setup.exe','family-paintball-showdown':'FamilyPaintballShowdown-Setup.exe','rally-rascals':'RallyRascals-Setup.exe','conquering-canaan':'ConqueringOfCanaan-Setup.exe' };
+        const link=node('a','Download for my Windows PC','btn btn-secondary');link.href=`https://github.com/vexonastudios/${game.id}-releases/releases/latest/download/${downloads[game.id]}`;link.target='_blank';link.rel='noopener noreferrer';link.prepend(icon('download'));
+        area.append(link,node('p',game.id==='berean-rpg'?'Single player · Children download from their own app.':'Play as Mom or Dad in the game lobby · Same home Wi-Fi','cloud-note'));continue;
+      }
       if(!external.supported)continue;
       const record=external.games.find(item=>item.key===game.id);
       const run=async action=>{try{await externalRequest(action,game.id);}catch(error){note(error.message);}};
@@ -205,7 +220,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     }
     const play = node('main', '', 'cloud-game-play');
     if(tabletop){
-      play.append(tabletopRoot);
+      play.append(onlineRoot,tabletopRoot);
       if(parent&&room.matches.length){const old=node('details');old.append(node('summary','Previous online Checkers matches'),matches);if(match)old.append(display);play.append(old);}
     }else{if (match) play.append(display);play.append(matches);}
     play.append(gallery);
@@ -230,8 +245,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       if (active && !document.hidden && !external.playing && (!tabletop||parent)) timer = setTimeout(refresh, Math.min(parent?1800000:60000,(parent ? 1800000 : 5000)*2**Math.min(failures,4)));
     }
   }
-  function setActive(value) { active = value; clearTimeout(timer); if (active) refresh(); else { generation++; fresh = false; square = null; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); } }
-  function clear() { generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
+  function setActive(value) { active = value; onlineUI.setActive(value); clearTimeout(timer); if (active) refresh(); else { generation++; fresh = false; square = null; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); } }
+  function clear() { onlineUI.clear(); generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); fresh = false; if (!document.hidden && active) refresh(); else render(); });
   window.addEventListener('pagehide', () => { active = false; clear(); clearTimeout(timer); });
   return { setActive, clear, refresh, setExternalState, setLanState:value=>tabletopUI?.setState(value), isEditing: () => settingsOpen };

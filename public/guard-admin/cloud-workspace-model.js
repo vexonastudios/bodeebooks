@@ -1,8 +1,25 @@
 // Pure presentation mappings shared by browser tests. Never infer Wi-Fi failure
 // from a missing cloud heartbeat or school completion from elapsed time.
 export function connectionState(device, now) {
+  if (device.connection) {
+    const checked = Date.parse(device.connection.checkedAt);
+    if (!Number.isFinite(checked) || now < checked - 5000 || now - checked >= 75000) return 'Connection not checked';
+    return ({ connected: 'Connected', disconnected: 'Not connected' })[device.connection.state] || 'Connection not checked';
+  }
   const last = Date.parse(device.last_seen_at);
   return Number.isFinite(last) && now >= last - 5000 && now - last < 90000 ? 'Connected' : 'Not connected';
+}
+export function connectionExpiresAt(device) {
+  return device.connection ? Date.parse(device.connection.checkedAt) + 75000 : Date.parse(device.last_seen_at) + 90000;
+}
+export function applyConnectionStatus(snapshot, value) {
+  if (!snapshot || !Array.isArray(value?.devices) || !Number.isFinite(Date.parse(value.checkedAt))) return snapshot;
+  if (Date.parse(value.checkedAt) < Date.parse(snapshot.connectionCheckedAt || snapshot.serverTime)) return snapshot;
+  return { ...snapshot, connectionCheckedAt: value.checkedAt, screenshotAvailability: value.screenshotAvailability,
+    devices: snapshot.devices.map(device => {
+      const row = value.devices.find(item => item.id === device.id && item.studentId === device.student_id);
+      return { ...device, connection: row?.connection || { state: 'unknown', checkedAt: value.checkedAt } };
+    }) };
 }
 export function receivedTime(seconds) {
   if (seconds == null || !Number.isFinite(Number(seconds))) return 'Not available';

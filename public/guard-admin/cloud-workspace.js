@@ -1,4 +1,5 @@
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
+import { createConnectionRefresh } from './cloud-connection-refresh.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
 import { setupParentStart } from './cloud-parent-start.js';
 import { setupMainSchool } from './cloud-school-setup.js';
@@ -8,7 +9,7 @@ import { editCloudSubject } from './cloud-school-editor.js';
 import { setupActivityLibrary } from './cloud-activity-library.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, deliveryState, editSchedule } from './cloud-workspace-model.js';
+import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
 import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
@@ -138,10 +139,11 @@ async function refresh() {
       snapshot = data;
       usable = true;
       failures = 0;
-      byId('live-text').textContent = 'Connected · 30s refresh';
+      byId('live-text').textContent = 'Connections checked every 30s';
       byId('live-indicator').dataset.connected = 'true';
       feedback('');
       showSnapshot();
+      if (!document.hidden) connectionRefresh.start();
     } catch (error) {
       usable = false;
       failures++;
@@ -158,7 +160,7 @@ async function refresh() {
         loader.parentElement.setAttribute('aria-busy', 'false');
         loader.remove();
       }
-      if (!document.hidden) timer = setTimeout(refresh, Math.min(300000, 30000 * (2 ** Math.min(failures, 4))));
+      if (!document.hidden) timer = setTimeout(refresh, failures ? Math.min(300000,30000 * (2 ** Math.min(failures,4))) : 1800000);
     }
   })();
   return inFlight;
@@ -198,7 +200,7 @@ function renderComputers() {
   }
   for (const device of snapshot.devices) {
     const student = snapshot.students.find(item => item.id === device.student_id);
-    const connected = connectionState(device, Date.parse(snapshot.serverTime));
+    const connected = connectionState(device, monitoring.connectionNow());
     const row = node('div', 'cloud-computer-setting');
     const info = node('div');
     info.append(node('strong', '', device.computer_name),
@@ -438,7 +440,7 @@ const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
 const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import'), onApplied: refresh });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, assetBase: new URL('/guard-admin/family-games/v1/', location.href), request: async (kind, input = {}) => {
   const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
-    : { ...input, action: kind === 'settings' ? 'game-settings' : 'game-room' };
+    : { ...input, action: kind === 'tabletop' ? 'game-tabletop' : kind === 'settings' ? 'game-settings' : 'game-room' };
   const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const value = await response.json();
   if (!response.ok) { const error = new Error(value.error || 'Family games could not connect.'); error.status = response.status; throw error; }
@@ -477,12 +479,24 @@ byId('cloud-editor-form').addEventListener('submit', async event => {
 });
 byId('cloud-recovery-close').addEventListener('click', () => byId('cloud-recovery').close());
 byId('cloud-recovery').addEventListener('close', clearRecovery);
+const connectionRefresh = createConnectionRefresh({
+  refresh: async signal => {
+    const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),body:JSON.stringify({action:'connection-status'})});
+    if (!response.ok) throw new Error('Connection check unavailable');
+    const status = await response.json(); signal.throwIfAborted();
+    snapshot = applyConnectionStatus(snapshot, status);
+    monitoring.render();
+    if (!byId('cloud-computer-settings').contains(document.activeElement)) renderComputers();
+    screenshots.update(snapshot); setControls();
+  },
+  onError: () => { monitoring.render(); setControls(); },
+});
 document.addEventListener('visibilitychange', () => {
   clearTimeout(timer);
-  if (document.hidden) { clearRecovery(); byId('cloud-recovery').close(); }
+  if (document.hidden) { connectionRefresh.stop(); clearRecovery(); byId('cloud-recovery').close(); }
   else refresh();
 });
-window.addEventListener('pagehide', () => { clearTimeout(timer); clearRecovery(); });
+window.addEventListener('pagehide', () => { connectionRefresh.stop(); clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
