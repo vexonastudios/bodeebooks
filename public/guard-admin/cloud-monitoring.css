@@ -1,3 +1,4 @@
+@import url('./cloud-weekly-activity.css');
 .cloud-workspace #tab-overview{padding-top:8px}
 .cloud-workspace #tab-overview .monitor-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));align-items:start;gap:16px}
 .cloud-workspace .cloud-monitor-card{min-width:0;padding:16px;gap:12px}
