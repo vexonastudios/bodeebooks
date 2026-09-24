@@ -36,12 +36,24 @@ export function setupCloudMobile({ navigate, refresh }) {
     if (addTabs.includes(id)) menus['mobile-add'].append(menuButton());
   }
   const install = button('Add to Home Screen', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin));
+  install.classList.add('cloud-parent-mobile-install'); install.hidden = true;
   menus['mobile-more'].prepend(install);
   const desktopInstall = button('', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin), 'nav-item cloud-parent-install');
+  desktopInstall.hidden = true;
   const appIcon = make('i', 'nav-icon'); appIcon.dataset.lucide = 'app-window'; appIcon.setAttribute('aria-hidden', 'true');
   desktopInstall.append(appIcon, document.createTextNode('Install parent app'));
   desktopInstall.title = 'Open BodeeGuard in its own app window; pin it to your taskbar';
-  root.querySelector('.sidebar-logo')?.after(desktopInstall);
+  const sidebar = root.querySelector('.sidebar'), accountBadge = byId('admin-user-badge');
+  if (accountBadge) {
+    const footer = make('div', 'cloud-sidebar-footer'); accountBadge.before(footer);
+    const clients = sidebar.querySelector('.sidebar-clients'); if (clients) footer.append(clients);
+    footer.append(desktopInstall, accountBadge);
+  } else sidebar.append(desktopInstall);
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || event.origin !== window.location.origin || event.data?.type !== 'bodeeguard-pwa-display') return;
+    desktopInstall.hidden = install.hidden = Boolean(event.data.standalone);
+  });
+  window.parent.postMessage({ type: 'bodeeguard-pwa-state-request' }, window.location.origin);
   const bottom = make('nav', 'bottom-nav cloud-mobile-only'); bottom.setAttribute('aria-label', 'BodeeGuard navigation');
   const tabs = [['overview', '⌂', 'Controls'], ['grades', '▣', 'Papers'], ['messages', '✉', 'Messages'], ['mobile-add', '＋', 'Add media'], ['mobile-more', '•••', 'More']];
   for (const [id, icon, label] of tabs) {
