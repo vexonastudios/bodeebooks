@@ -1,3 +1,4 @@
+import { parentActionFeedback } from './cloud-action-feedback.js';
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
@@ -63,8 +64,7 @@ function button(text, callback, className = 'btn btn-secondary') {
   return element;
 }
 function feedback(text, error = false) {
-  byId('cloud-feedback').textContent = text;
-  byId('cloud-feedback').dataset.error = String(error);
+  parentActionFeedback().page(text,error);
 }
 function selectTab(id) {
   weeklyActivity.setActive(id === 'overview');
@@ -100,7 +100,7 @@ function selectTab(id) {
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
-    control.disabled = !usable || mutating || control.dataset.requiresDevice === 'false';
+    control.disabled = !usable || mutating || control.dataset.requiresDevice === 'false' || control.dataset.actionPending === 'true';
   });
 }
 function showSnapshot() {
@@ -165,7 +165,7 @@ async function refresh() {
   })();
   return inFlight;
 }
-async function mutate(action, data) {
+async function mutate(action, data, { notify = true } = {}) {
   if (!usable || mutating) throw new Error('Wait for a successful dashboard connection before making changes.');
   mutating = true;
   setControls();
@@ -180,7 +180,7 @@ async function mutate(action, data) {
   } catch (error) {
     const message = error.name === 'TimeoutError' || error.name === 'TypeError'
       ? 'The result is uncertain. Refresh before trying again; your request may have reached the server.' : error.message;
-    feedback(message, true);
+    if (notify) feedback(message, true);
     throw new Error(message);
   } finally { mutating = false; setControls(); }
 }
@@ -410,7 +410,7 @@ const weeklyActivity = setupWeeklyActivity({ endpoint, getSnapshot: () => snapsh
 const monitoring = setupMonitoring({
   setControls,
   getSnapshot: () => snapshot,
-  mutate,
+  mutate: (action,data) => mutate(action,data,{notify:false}),
   navigate: selectTab,
   openMessages: studentId => { selectTab('messages'); messaging.openStudent(studentId); },
   showError: feedback,

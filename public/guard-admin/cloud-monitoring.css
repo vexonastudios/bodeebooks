@@ -99,3 +99,27 @@
   #tab-overview .cloud-overview-refresh { grid-column:1/-1; justify-content:flex-end; }
   .cloud-overview-assistant { display:none; }
 }
+
+/* Parent action feedback stays with the control and confirms at screen center. */
+.cloud-feedback[hidden],.cloud-action-inline[hidden],.cloud-action-toast[hidden]{display:none!important}
+.cloud-action-inline{grid-column:1/-1;display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:10px;border:1px solid #34d39940;background:#34d3990d;color:#a7f3d0;font-size:12px;line-height:1.5;min-width:0}
+.cloud-action-inline strong{display:block;font-size:12px;overflow-wrap:anywhere}
+.cloud-action-inline p{margin:3px 0 0;color:var(--text-secondary,#c4c2d8);overflow-wrap:anywhere}
+.cloud-action-inline>svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.cloud-action-inline[data-state=pending]{border-color:#38bdf840;background:#38bdf80d;color:#7dd3fc}
+.cloud-action-inline[data-state=error]{border-color:#fca5a550;background:#f871710d;color:#fecaca}
+.cloud-action-toast{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;z-index:30000;box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:24px;border:1px solid #34d39980;border-radius:20px;background:#171626;color:#f1efff;box-shadow:0 20px 90px #000a;font-family:inherit;text-align:left}
+.cloud-action-toast:not([hidden]){display:flex;align-items:flex-start;gap:16px}
+.cloud-action-toast::backdrop{background:transparent;pointer-events:none}
+.cloud-action-toast[data-state=error]{border-color:#fca5a580}
+.cloud-action-mark{display:flex;align-items:center;justify-content:center;flex:0 0 42px;height:42px;border-radius:12px;background:#34d39918;color:#6ee7b7}
+.cloud-action-mark svg{width:25px;height:25px}
+.cloud-action-toast[data-state=error] .cloud-action-mark{background:#f8717118;color:#fca5a5}
+.cloud-action-copy{flex:1;min-width:0;padding-top:2px}
+.cloud-action-title{display:block;font-size:18px;line-height:1.35;overflow-wrap:anywhere}
+.cloud-action-detail{margin:8px 0 0;font-size:14px;line-height:1.55;color:#c4c2d8;overflow-wrap:anywhere}
+.cloud-action-dismiss{display:flex;align-items:center;justify-content:center;flex:0 0 34px;height:34px;padding:6px;border:1px solid #ffffff24;border-radius:9px;background:#ffffff08;color:#c4c2d8;cursor:pointer}
+.cloud-action-dismiss:hover{background:#ffffff18;color:#fff}
+.cloud-action-dismiss:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}
+.cloud-action-dismiss svg{width:19px;height:19px}
+@media(max-width:600px){.cloud-action-toast{padding:18px;gap:12px!important}.cloud-action-mark{flex-basis:32px;height:32px}.cloud-action-mark svg{width:22px;height:22px}.cloud-action-title{font-size:16px}.cloud-action-dismiss{flex-basis:38px;height:38px}.cloud-action-detail{font-size:13px}}
