@@ -55,7 +55,7 @@ function renderCompletedSession(session) {
   const eventual = Number(session.eventual_correct) || 0;
   return `<div class="spelling-session-status is-complete">
     <strong>✓ ${escapeHtml(modeLabel(session.mode))} completed ${escapeHtml(sessionDateLabel(session.session_date))}</strong>
-    <span>${firstTry}/${total} right first try · ${missedFirstTry} missed first try · ${eventual}/${total} eventually correct</span>
+    <span>${session.guided_practice ? `${Number(session.unaided_first_try)||0}/${total} spelled from memory on the first try · Guided practice includes copying and letter hints` : `${firstTry}/${total} right first try · ${missedFirstTry} missed first try · ${eventual}/${total} eventually correct`}</span>
   </div>`;
 }
 
@@ -133,7 +133,8 @@ function render() {
     return `<article class="spelling-list-card ${status === 'active' ? 'is-active' : ''}" data-spelling-list="${escapeHtml(list.id)}">
       <div class="spelling-list-top"><div><div class="spelling-list-student">${escapeHtml(list.student_name)}</div><div class="spelling-list-title">${escapeHtml(list.title)}</div></div><span class="spelling-list-badge ${status}">${escapeHtml(status === 'active' ? 'Active list' : status)}</span></div>
       <div class="spelling-list-meta"><span>${list.word_count} words</span>${list.practice_only?'<span>Practice anytime</span>':`<span>Week ${dateLabel(list.week_start)}</span><span>Pre-test ${dateLabel(list.test_date)}</span>`}</div>
-      <div class="spelling-list-progress"><div><strong>${list.study_days ?? list.days_practiced ?? 0}</strong><span>Study days</span></div><div><strong>${latestStudy ? `${studyFirstTry}/${studyTotal}` : '—'}</strong><span>Right first try</span></div><div><strong>${latestStudy ? studyMissed : '—'}</strong><span>Missed first try</span></div></div>
+      <div class="spelling-list-progress"><div><strong>${list.study_days ?? list.days_practiced ?? 0}</strong><span>Study days</span></div><div><strong>${latestStudy ? `${studyFirstTry}/${studyTotal}` : '—'}</strong><span>${latestStudy?.guided_practice?'First try · includes help':'Right first try'}</span></div><div><strong>${latestStudy ? studyMissed : '—'}</strong><span>Missed first try</span></div></div>
+      ${list.progression ? `<div class="spelling-session-status"><strong>${Number(list.progression.ready)||0}/${list.word_count} ready without hints</strong><span>${Number(list.progression.copy)||0} learning · ${Number(list.progression.partial)||0} using letter hints · ${Number(list.progression.recall)||0} practicing from memory</span><span>Ready means correct from memory on two practice days. Copying and same-day retries do not count.</span></div>` : ''}
       <div class="spelling-pretest-row"><strong>Practice pre-test:</strong> ${list.practice_only ? 'No scheduled test' : latestTest ? `${Math.round(Number(latestTest.score_percent))}% · ${latestTest.first_try_correct}/${latestTest.total_words} right` : `Not taken yet · opens ${dateLabel(list.test_date)}`}</div>
       ${list.source_science_list_id?'<p class="spelling-history-row">Earlier science results are saved in Previous results below.</p>':''}${renderCompletedSession(latestStudy)}
       ${activeSessions.map(renderActiveSession).join('')}

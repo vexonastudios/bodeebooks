@@ -85,12 +85,14 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
   function notify(text, error = false) { status.textContent = text; status.dataset.error = String(error); }
   function updateControls() {
     const isFamily = child.value === 'family', hasDefault = !!captured?.rules.dailyPlanTemplate;
+    const missingDefaults = isFamily ? cards.filter(card => ['handwriting','numerals'].includes(card.preset) && !card.subjectId && !captured?.rules.dailyPlanTemplate?.activities?.some(entry => entry.key === `preset:${card.preset}`)) : [];
+    const newDefault = missingDefaults.length > 0;
     save.replaceChildren(icon('save'), document.createTextNode(isFamily ? 'Save default' : 'Save plan'));
-    save.disabled = busy || !captured || (!changes.size && (!isFamily || hasDefault)); discard.hidden = !changes.size; child.disabled = busy; retry.disabled = busy || changes.size > 0;
+    save.disabled = busy || !captured || (!changes.size && (!isFamily || hasDefault && !newDefault)); discard.hidden = !changes.size; child.disabled = busy; retry.disabled = busy || changes.size > 0;
     editDefault.hidden = isFamily; editDefault.disabled = busy; copyDefault.hidden = isFamily; copyDefault.disabled = busy || !captured;
-    applyDefault.disabled = busy || !hasDefault || changes.size > 0 || !getSnapshot()?.students.some(s => !s.archived_at);
+    applyDefault.disabled = busy || !hasDefault || newDefault || changes.size > 0 || !getSnapshot()?.students.some(s => !s.archived_at);
     familyText.textContent = isFamily
-      ? 'Save a reusable plan, then apply it to all or selected children. Changes here leave their current plans in place until you apply them.'
+      ? newDefault && hasDefault ? `New activities are available in your default plan: ${missingDefaults.map(card => card.title).join(', ')}. Save default, then apply it to the children who should receive them.` : 'Save a reusable plan, then apply it to all or selected children. Changes here leave their current plans in place until you apply them.'
       : 'Apply the family plan to this child, then change only what they need. Applying is a saved copy; later family edits do not overwrite their choices.';
     differencesLabel.hidden = isFamily || !hasDefault;
     preview.disabled = busy || !captured;
@@ -133,7 +135,9 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
     const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'All school websites assigned to each child, such as Abeka, BJU and a separate math site.' : card.portal ? 'This website has its own required days and completion.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
-    if (summary !== 'Uses your activity settings') el.append(make('p', 'daily-plan-card-summary', summary));
+    if (card.preset === 'handwriting') el.append(make('p', 'daily-plan-card-summary', isBlocked ? 'Letters handwriting practice. Move to allow.' : card.placement === 'school' ? `${card.goal} minutes of handwriting practice` : 'Learn to form letters with guided handwriting practice. Optional unless you move it to School.'));
+    if (card.preset === 'numerals') el.append(make('p', 'daily-plan-card-summary', isBlocked ? 'Roman numeral practice. Move to allow.' : card.placement === 'school' ? `${card.goal} minutes of Roman numeral practice` : 'Learn Roman numerals with guided practice. Optional unless you move it to School.'));
+    if (summary !== 'Uses your activity settings' && !['handwriting','numerals'].includes(card.preset)) el.append(make('p', 'daily-plan-card-summary', summary));
     if (card.placement === 'school') el.append(make('p', 'daily-plan-required-days', requiredDaysText(card)));
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));

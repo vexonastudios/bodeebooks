@@ -125,11 +125,12 @@ function renderLists() {
       <div class="vocabulary-list-top"><div><div class="vocabulary-list-student">${escapeHtml(list.student_name || state.students.find(student => String(student.id) === String(list.student_id))?.name || 'Child')}</div><div class="vocabulary-list-title">${escapeHtml(list.title || 'Vocabulary List')}</div></div><span class="vocabulary-list-badge ${status}">${escapeHtml(status)}</span></div>
       <div class="vocabulary-list-meta"><span>${count} words</span><span>Test ${escapeHtml(dateLabel(list.test_date))}</span><span>${Number(list.daily_term_limit) || 8} words per session</span><span>${list.required_daily ? 'Required daily' : 'Optional'}</span>${Number.isFinite(readiness) ? `<span>${Math.round(readiness)}% test-ready</span>` : ''}</div>
       <div class="vocabulary-stage-grid"><div><strong>${mastery(list, 'new')}</strong><span>New</span></div><div><strong>${mastery(list, 'learning')}</strong><span>Learning</span></div><div><strong>${mastery(list, 'test_ready')}</strong><span>Test-ready</span></div><div><strong>${mastery(list, 'remembered')}</strong><span>Remembered</span></div></div>
+      ${masteryDetails(list)}
       ${trouble.length ? `<div class="vocabulary-trouble"><strong>Needs attention:</strong> ${trouble.slice(0, 8).map(escapeHtml).join(' · ')}</div>` : ''}
       ${due.length ? `<div class="vocabulary-due"><strong>Due for review:</strong> ${due.slice(0, 8).map(escapeHtml).join(' · ')}</div>` : ''}
     </article>`;
   }).join('');
-  root.querySelectorAll('[data-vocabulary-list]').forEach(card => card.addEventListener('click', () => openModal(state.lists.find(list => String(list.id) === card.dataset.vocabularyList))));
+  root.querySelectorAll('[data-vocabulary-list]').forEach(card => card.addEventListener('click', event => !event.target.closest('details') && openModal(state.lists.find(list => String(list.id) === card.dataset.vocabularyList))));
 }
 
 function populateStudents() {
@@ -326,6 +327,10 @@ function setupVocabulary() {
   });
 }
 
+function masteryDetails(list){
+  if(!list.mastery_basis)return '';
+  return '<p class="vocabulary-due">'+escapeHtml(list.mastery_basis)+'</p><details><summary>Word-by-word progress</summary><ul>'+ (list.word_progress||[]).map(word=>'<li><strong>'+escapeHtml(word.word)+'</strong> — '+escapeHtml(word.stage)+' · '+Number(word.recall_days||0)+'/2 recall days · '+(word.context_available?(word.context_checked?'context checked':'context to practice'):'no curriculum context supplied')+'</li>').join('')+'</ul></details>';
+}
 function button(label,action){const e=document.createElement('button');e.type='button';e.className='btn btn-secondary';e.textContent=label;e.onclick=()=>void action().catch(error=>notice(error.message));return e;}
 async function retryChange(){if(!pending||busy)return;busy=true;controls();try{await send('command',pending.command);pending=null;busy=false;closeModal();await loadVocabularyTab();}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}}
 const retry=button('Retry saved Vocabulary change',retryChange),retryModal=button('Retry saved Vocabulary change',retryChange);retryModal.id='vocabulary-retry-modal';retry.hidden=retryModal.hidden=true;byId('vocabulary-admin-status').after(retry);byId('vocabulary-form-error').after(retryModal);
