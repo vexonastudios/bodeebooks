@@ -10,8 +10,8 @@ export function clockTime(value) {
   const n=seconds(value);return `${Math.floor(n/3600)}:${String(Math.floor(n/60)%60).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 }
 const duration = value => value < 60 ? '<1m' : value < 3600 ? `${Math.floor(value/60)}m` : `${Math.floor(value/3600)}h ${Math.floor(value/60)%60}m`;
-export function monitoringChildren(snapshot) {
-  const now=Date.parse(snapshot.serverTime),subjects=snapshot.rules?.subjects||[];
+export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)) {
+  const subjects=snapshot.rules?.subjects||[];
   return snapshot.students.filter(s=>!s.archived_at).map((student,index)=>{
     const devices=snapshot.devices.filter(d=>d.student_id===student.id).sort((a,b)=>(Date.parse(b.last_seen_at)||0)-(Date.parse(a.last_seen_at)||0));
     const device=devices.find(d=>connectionState(d,now)==='Connected')||devices[0];
@@ -44,7 +44,7 @@ export function monitoringChildren(snapshot) {
 function node(tag,className='',text=''){const el=document.createElement(tag);el.className=className;el.textContent=text;return el;}
 function icon(name){const el=node('i');el.dataset.lucide=/^[a-z][a-z0-9-]*$/.test(name)?name:'book-open';el.setAttribute('aria-hidden','true');return el;}
 function button(label,glyph,callback,className='monitor-control'){
-  const el=node('button',className);el.type='button';el.append(icon(glyph),node('span','',label));el.onclick=()=>callback(el);return el;
+  const el=node('button',className);el.type='button';el.append(icon(glyph),node('span','',label));el.onclick=()=>{if(!el.disabled)callback(el);};return el;
 }
 function ring(model){
   const box=node('div','monitor-completion-ring'),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 36 36');
@@ -55,10 +55,20 @@ function ring(model){
   }
   box.title=`${model.done} of ${model.required} subject goals completed`;box.append(svg,node('span','ring-label',`${model.done}/${model.required}`));return box;
 }
-export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showError,mobile}){
-  let screenshotExpiry = null;
+export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showError,mobile,setControls=()=>{}}){
+  let screenshotExpiry = null, connectionExpiry = null;
+  let observedSnapshot = null, observedAt = 0;
+  // Age the server's connection snapshot locally, even when a refresh fails.
+  // This uses elapsed time so an incorrect parent computer clock cannot keep a card online.
+  function connectionNow(){
+    const snapshot=getSnapshot();
+    if(snapshot!==observedSnapshot){observedSnapshot=snapshot;observedAt=Date.now();}
+    return Date.parse(snapshot?.serverTime)+Math.max(0,Date.now()-observedAt);
+  }
+  const connectedDevices=()=>{const now=connectionNow();return (getSnapshot()?.devices||[]).filter(device=>connectionState(device,now)==='Connected');};
+  const studentOnline=studentId=>connectedDevices().some(device=>device.student_id===studentId);
   let quickStudentId = null;
-  const canScreenshot = studentId => { const state=getSnapshot()?.screenshotAvailability;return state?.known===true&&state.availableStudentIds?.includes(studentId)&&Date.now()-Date.parse(state.checkedAt)<75000; };
+  const canScreenshot = studentId => { const state=getSnapshot()?.screenshotAvailability;return studentOnline(studentId)&&state?.known===true&&state.availableStudentIds?.includes(studentId)&&Date.now()-Date.parse(state.checkedAt)<75000; };
   const grid=document.getElementById('overview-grid');
   const quickDialog=node('dialog','cloud-quick-dialog');quickDialog.id='cloud-quick-unlock-dialog';quickDialog.setAttribute('aria-labelledby','cloud-quick-unlock-title');
   document.getElementById('admin-dashboard').append(quickDialog);
@@ -69,7 +79,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
   const updated=node('time','cloud-overview-updated');updated.id='cloud-overview-updated';updated.setAttribute('aria-live','polite');
   const refreshGroup=node('div','cloud-overview-refresh');refresh.before(refreshGroup);refreshGroup.append(updated,refresh);
   const lockAll=button('Lock All Computers','lock-keyhole',el=>run(el,async()=>{
-    const devices=getSnapshot()?.devices||[];
+    const devices=connectedDevices();
     if(devices.length)await mutate('computer-command',{kind:'lock-all',locked:!devices.every(d=>d.locked)});
   }),'btn monitor-student-action--lock');lockAll.id='cloud-lock-all';lockAll.dataset.cloudMutation='true';header.querySelector('.cloud-actions').prepend(lockAll);
   const stats=node('div','command-center cloud-monitor-stats');stats.id='cloud-monitor-stats';grid.before(stats);
@@ -81,7 +91,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
   async function run(control,callback,notice){
     control.disabled=true;
     try{await callback();if(notice)showError(notice,false);}catch(error){showError(error.message,true);}
-    finally{if(control.isConnected)control.disabled=control.dataset.requiresDevice==='false';}
+    finally{if(control.isConnected)control.disabled=control.dataset.requiresDevice==='false';setControls();}
   }
   function mediaControl(model,kind,label,glyph){
     const row=node('div','monitor-media-action');row.dataset.media=kind;
@@ -109,6 +119,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       const unlocked=!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
         &&Array.isArray(model.student.quick_unlock.subjectIds)&&model.student.quick_unlock.subjectIds.includes(subject.id);
       const choice=button(subject.label,unlocked?'circle-check':subject.icon,async el=>{
+        if(!studentOnline(model.student.id)){quickDialog.close();render();setControls();return;}
         el.disabled=true;
         quickDialog.querySelector('.cloud-quick-status').textContent='Saving…';
         try{
@@ -116,7 +127,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
           const status=quickDialog.querySelector('.cloud-quick-status');if(status){status.textContent=unlocked?'Usual rule restored.':'Saved for today.';status.setAttribute('role','status');}
         }catch(error){
           const status=quickDialog.querySelector('.cloud-quick-status');if(status){status.textContent=error.message;status.setAttribute('role','alert');}
-        }finally{if(el.isConnected)el.disabled=false;}
+        }finally{if(el.isConnected)el.disabled=false;setControls();}
       },`cloud-quick-choice${unlocked?' is-unlocked':''}`);
       choice.style.setProperty('--quick-color',subject.color);
       choice.style.setProperty('--quick-accent',subject.accent);
@@ -128,30 +139,31 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
     status.setAttribute('role','status');foot.append(status,done);shell.append(head,choices,foot);quickDialog.append(shell);window.lucide?.createIcons();
   }
   function openQuickDialog(studentId){
-    const model=monitoringChildren(getSnapshot()).find(item=>item.student.id===studentId);if(!model)return;
+    const model=monitoringChildren(getSnapshot(),connectionNow()).find(item=>item.student.id===studentId);if(!model?.online)return;
     quickStudentId=studentId;renderQuickDialog(model);if(!quickDialog.open)quickDialog.showModal();
   }
   function render(){
-    clearTimeout(screenshotExpiry);
+    clearTimeout(screenshotExpiry);clearTimeout(connectionExpiry);
     const snapshot=getSnapshot();if(!snapshot)return;
     const openMenus=[...grid.querySelectorAll('details[open]')].map(detail=>({
       studentId:detail.closest('[data-student-id]')?.dataset.studentId,
       kind:detail.closest('[data-media]')?.dataset.media
     })).filter(item=>item.kind);
-    const models=monitoringChildren(snapshot);grid.replaceChildren();stats.replaceChildren();
-    const online=snapshot.devices.filter(d=>connectionState(d,Date.parse(snapshot.serverTime))==='Connected').length;
+    const now=connectionNow(),models=monitoringChildren(snapshot,now);grid.replaceChildren();stats.replaceChildren();
+    const connected=connectedDevices(),online=connected.length;
     for(const [glyph,value,total,label]of [['activity',models.filter(m=>m.online&&m.current&&!m.device.locked).length,models.length,'Studying'],['laptop',online,snapshot.devices.length,'Computers connected'],['circle-check',models.reduce((n,m)=>n+m.done,0),models.reduce((n,m)=>n+m.required,0),'Subject goals done']]){
       const stat=node('div','cc-stat'),copy=node('div','cc-stat-body'),count=node('span','cc-stat-value',String(value));count.append(node('span','cc-of',` / ${total}`));copy.append(count,node('span','cc-stat-label',label));stat.append(icon(glyph),copy);stats.append(stat);
     }
     updated.dateTime=snapshot.serverTime;updated.textContent='Updated '+new Date(snapshot.serverTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-    const allLocked=snapshot.devices.length>0&&snapshot.devices.every(d=>d.locked);
+    const allLocked=online>0&&connected.every(d=>d.locked);
     lockAll.replaceChildren(icon(allLocked?'lock-open':'lock-keyhole'),document.createTextNode(allLocked?'Unlock All Computers':'Lock All Computers'));
-    lockAll.disabled=!snapshot.devices.length;lockAll.dataset.requiresDevice=String(!!snapshot.devices.length);
+    lockAll.disabled=!online;lockAll.dataset.requiresDevice=String(online>0);
+    lockAll.title=online?'Lock or unlock your family’s computers.':'Controls become available when a child computer connects.';
     for(const model of models){
       const {student,device}=model;
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
       const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
-      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!device?'No computer connected':device.locked?'Computer locked':model.online?model.current?.title||'Dashboard':'Not connected'));
+      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!device?'No computer connected':!model.online?'Not connected':device.locked?'Computer locked':model.current?.title||'Dashboard'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
       const clocks=node('div','monitor-timer-row');
       for(const [label,time,cls]of [['School today',model.total,''],['Subject today',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
@@ -162,6 +174,11 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       if(!model.activity.length)list.append(node('p','monitor-activity-empty','No activity received today.'));activity.append(list);card.append(activity);
       if(model.courses.length){const lessons=node('div','cloud-abeka-courses');lessons.setAttribute('aria-label',"Today's Abeka lessons");for(const c of model.courses)lessons.append(node('span',`cloud-abeka-course${c.completed?' complete':''}`,`${c.completed?'✓':'○'} ${c.courseName}`));card.append(lessons);}
       const actions=node('div','cloud-monitor-actions');
+      actions.inert=!model.online;actions.setAttribute('aria-disabled',String(!model.online));
+      actions.addEventListener('click',event=>{
+        if(studentOnline(student.id))return;
+        event.preventDefault();event.stopImmediatePropagation();render();setControls();
+      },true);
       const shot=button('Snap Screen','camera',el=>run(el,async()=>{if(!canScreenshot(student.id)){el.dataset.requiresDevice='false';throw Error('The child app must be online. Refresh to check its connection.');}await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');}),'monitor-control monitor-control--screenshot');shot.disabled=!canScreenshot(student.id);shot.dataset.requiresDevice=String(!shot.disabled);shot.dataset.cloudMutation='true';shot.title=shot.disabled?'Open the child app, then refresh to check its connection.':'Capture the child’s BodeeGuard screen';actions.append(shot);
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
       if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
@@ -180,16 +197,30 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,showEr
       if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       actions.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
-      mobile()?.decorateCard(card,student.id,model);grid.append(card);
+      if(!model.online)card.append(node('p','monitor-offline-note','Controls are available when this child’s computer is online.'));
+      mobile()?.decorateCard(card,student.id,model);
+      for(const control of card.querySelectorAll('.cloud-monitor-actions button, .cloud-mobile-only button')){
+        control.dataset.requiresDevice=String(model.online&&control.dataset.requiresDevice!=='false');
+        control.disabled=control.dataset.requiresDevice==='false';control.dataset.cloudMutation='true';
+        if(!model.online)control.title='Available when this child’s computer is online.';
+      }
+      for(const summary of actions.querySelectorAll('summary')){
+        summary.setAttribute('aria-disabled',String(!model.online));summary.tabIndex=model.online?0:-1;
+      }
+      grid.append(card);
     }
     if(!models.length)grid.append(node('p','cloud-panel','Add your children in Students to see them here.'));
     for(const {studentId,kind} of openMenus){
       const card=[...grid.children].find(item=>item.dataset.studentId===studentId);
       const detail=[...(card?.querySelectorAll('.monitor-media-action')||[])].find(item=>item.dataset.media===kind)?.querySelector('details');
-      if(detail)detail.open=true;
+      if(detail&&!detail.closest('.cloud-monitor-actions').inert)detail.open=true;
     }
-    if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model)renderQuickDialog(model);else quickDialog.close();}
+    if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model?.online)renderQuickDialog(model);else quickDialog.close();}
     window.lucide?.createIcons();
+    if(connected.length){
+      const nextExpiry=Math.min(...connected.map(device=>Date.parse(device.last_seen_at)+90000))-now;
+      connectionExpiry=setTimeout(()=>{render();setControls();},Math.max(0,nextExpiry)+20);
+    }
     const expires=Date.parse(snapshot.screenshotAvailability?.checkedAt)+75000-Date.now();
     if(expires>0)screenshotExpiry=setTimeout(()=>{grid.querySelectorAll('.monitor-control--screenshot').forEach(control=>{control.disabled=true;control.dataset.requiresDevice='false';control.title='Refresh to check the child app’s connection.';});},expires+20);
   }
