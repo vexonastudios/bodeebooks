@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.240": {
+    "title": "Study time pauses when a child is inactive",
+    "sections": [
+      {
+        "heading": "Version 1.2.240",
+        "headline": "More accurate school time",
+        "summary": "Unattended study pages stop adding time, while playing video lessons can continue without mouse or keyboard activity.",
+        "highlights": [
+          "Typing School counts actual exercise typing and pauses shortly after typing stops.",
+          "Other assigned study activities pause after two minutes without input.",
+          "School websites can keep counting while a visible lesson video advances; paused, stalled or finished video does not extend idle time.",
+          "Sleep, lock, breaks and background windows pause school time. Previously saved history stays unchanged.",
+          "Includes the earlier activity colors and learning improvements. Update the child app to apply these rules."
+        ]
+      }
+    ]
+  },
   "1.2.239": {
     "title": "Learning improvements and the complete pending update",
     "sections": [
