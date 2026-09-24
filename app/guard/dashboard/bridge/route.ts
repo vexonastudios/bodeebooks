@@ -117,6 +117,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "read-file": path = "/files/read"; method = "POST"; body = { id: input.id }; break;
     case "remove-file": path = "/files/remove"; method = "POST"; body = { id: input.id }; break;
     case "review-file": path = "/files/review"; method = "POST"; body = { id: input.id, rotation: input.rotation, reviewed: input.reviewed, gradeId: input.gradeId }; break;
+    case "weekly-activity": path = "/reports/weekly-time"; method = "POST"; body = { studentId: input.studentId, start: input.start, end: input.end }; break;
     case "list-grades":
     case "school-report": {
       path = input.action === "list-grades" ? "/grades/list" : "/reports/school-time";

@@ -1,3 +1,4 @@
+import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
 import { setupParentStart } from './cloud-parent-start.js';
 import { setupMainSchool } from './cloud-school-setup.js';
@@ -65,6 +66,7 @@ function feedback(text, error = false) {
   byId('cloud-feedback').dataset.error = String(error);
 }
 function selectTab(id) {
+  weeklyActivity.setActive(id === 'overview');
   approvedApps.setActive(id === 'apps');
   dailyPlan.setActive(id === 'daily-plan');
   if(id==='science-spelling')id='spelling';
@@ -104,6 +106,7 @@ function showSnapshot() {
   if (!snapshot) return;
   // Refresh action labels immediately; monitoring restores any open action menu.
   monitoring.render();
+  weeklyActivity.update();
   if (!byId('cloud-computer-settings').contains(document.activeElement)) renderComputers();
   renderStudents();
   renderSubjects();
@@ -401,6 +404,7 @@ function showRecovery(device) {
 }
 
 setupSidebarGroups();
+const weeklyActivity = setupWeeklyActivity({ endpoint, getSnapshot: () => snapshot });
 const monitoring = setupMonitoring({
   setControls,
   getSnapshot: () => snapshot,
