@@ -23,3 +23,17 @@ signed expiry, auth/access rejection, input tampering, legacy/wrong-channel reje
 public-channel behavior and unchanged download redirects. Changed route/component
 ESLint passed; Next.js production webpack build and TypeScript passed. No child app
 was installed, enrolled or restored during development. Publication follows below.
+
+## Published September 25, 2026
+
+Source: 335d097bf43a1cd144f81d56da8db6b60dc47d97. Hosted build and TypeScript passed.
+Deployment: dpl_97b6Hx71DhNaTtZF4FnCCnPxvKhj,
+https://bodeebooks-dqoxz8wv2-vexonastudios-3984s-projects.vercel.app.
+Candidate anonymous POST returned 401. The live authenticated Parent Account
+showed the new steps and generated a signed installer-only URL for 1.2.240 with
+a verified remaining lifetime below five minutes. No signed URL or credential
+is retained in this receipt. Reload clears the temporary UI link. The candidate
+check also caught and corrected a trailing-slash redirect before publication.
+
+Previous production: dpl_CQphL32gkWwnWrm4pf8Fg21dEm8J. No API deployment, child
+artifact/feed, physical installation, enrollment, restore or backup opt-in changed.
