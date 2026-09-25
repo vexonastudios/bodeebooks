@@ -527,3 +527,17 @@ test('assistant approval bridge keeps explicit parent approval and strips submit
  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });
+
+
+test('Coloring Studio bridge preserves explicit preview/full-size selection and parent sharing choice',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{};}});
+  await route.POST(request({action:'coloring-image',requestId:deviceId,thumbnail:true,householdId:'forged'}));
+  await route.POST(request({action:'coloring-image',requestId:deviceId,thumbnail:false}));
+  await route.POST(request({action:'coloring-global-settings',family_daily_limit:8,family_monthly_limit:60,reuse_matching_pages:true,auto_share_with_family:false}));
+  await route.POST(request({action:'coloring-pending'}));
+  assert.deepEqual(calls[0],{path:'/coloring-studio/image',body:{requestId:deviceId,delivery:'url',thumbnail:true}});
+  assert.equal(calls[1].body.thumbnail,false);assert.equal(calls[2].body.auto_share_with_family,false);
+  assert.deepEqual(calls[3],{path:'/coloring-studio/pending',body:{}});
+  const source=fs.readFileSync('public/guard-admin/cloud-coloring-studio.js','utf8');
+  assert.match(source,/IntersectionObserver/);assert.match(source,/dataUrl\(request, false\)/);assert.match(source,/thumbnail = true/);
+});
