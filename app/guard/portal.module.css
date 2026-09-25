@@ -179,3 +179,14 @@
 .betaInvitationForm { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin-top: 24px; }
 .betaInvitationForm label { display: grid; gap: 8px; font-weight: 600; flex: 1 1 220px; }
 .betaInvitationForm input, .betaInvitationForm select { min-width: 0; width: 100%; padding: 12px; border: 1px solid #b8d4dd; border-radius: 10px; background: #fff; color: #102a43; font: inherit; }
+
+.installerShare { margin-top: 20px; padding: 18px; border: 1px solid #cbdcdf; border-radius: 12px; background: #f7fbfb; color: #34576b; }
+.installerShare > button, .installerLinkRow button { gap: 8px; cursor: pointer; }
+.installerShare p { margin: 10px 0 0; font-size: .85rem; line-height: 1.6; }
+.installerShare [role="status"]:empty { display: none; }
+.installerLinkDetails { margin-top: 16px; }
+.installerLinkDetails label { display: block; margin-bottom: 8px; font-weight: 700; font-size: .85rem; }
+.installerLinkRow { display: flex; align-items: stretch; gap: 10px; }
+.installerLinkRow input { flex: 1; min-width: 0; width: 100%; padding: 10px; border: 1px solid #b8d4dd; border-radius: 8px; background: #fff; color: #173652; font: .8rem/1.5 monospace; }
+.installerShare button:focus-visible, .installerLinkRow input:focus-visible { outline: 3px solid #159cb4; outline-offset: 3px; }
+@media (max-width: 480px) { .installerLinkRow { flex-direction: column; } .installerShare > button { width: 100%; } }

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHmac} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import Module, { createRequire } from 'node:module';
@@ -46,14 +47,15 @@ test('Family Beta notes match the configured release and keep future unknown ver
   assert.equal(internalPilotRelease(eligible, '1.2.999').notes.title, 'Cloud Family Beta');
 });
 
-async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token', internalPilot = false, runAfter = false, metricFails = false } = {}) {
+async function download({ account, authenticated = true, apiOk = true, failFetch = false, token = 'fixture-token', internalPilot = false, runAfter = false, metricFails = false, share = false, origin = "https://guard.bodeebooks.com", crossSite = false, body } = {}) {
   const filename = path.resolve('app/guard/download/windows/route.ts');
   const route = new Module(filename), localRequire = createRequire(filename), afterWork=[];
   route.require = name => {
-    if (name === '@clerk/nextjs/server') return { auth: { protect: async () => {
-      if (!authenticated) throw new Error('sign-in-required');
-      return { getToken: async () => token };
-    } } };
+    if (name === '@clerk/nextjs/server') {
+      const auth = async () => ({isAuthenticated: authenticated, getToken: async () => token});
+      auth.protect = async () => { if (!authenticated) throw new Error('sign-in-required'); return auth(); };
+      return {auth};
+    }
     if (name === 'next/server') return { after: work=>afterWork.push(work), NextResponse: { redirect: (url, init) => new Response(null, {
       status: typeof init === 'number' ? init : init.status, headers: { ...(init.headers || {}), Location: String(url) },
     }) } };
@@ -83,7 +85,7 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
     route._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText, filename);
-    const response = await route.exports.GET(new Request('https://guard.bodeebooks.com/download/windows/'));
+    const response = await route.exports[share ? 'POST' : 'GET'](new Request('https://guard.bodeebooks.com/download/windows/', share ? {method: 'POST', headers: {...(origin ? {origin} : {}), 'sec-fetch-site': crossSite ? 'cross-site' : 'same-origin'}, ...(body ? {body: JSON.stringify(body)} : {})} : undefined));
     const callsBeforeResponse = calls.length;
     if(runAfter)for(const work of afterWork)await work();
     return { response, calls, callsBeforeResponse, queued:afterWork.length };
@@ -156,4 +158,42 @@ test('the public setup surfaces no longer send families to a parent installation
     assert.doesNotMatch(source, /install on the parent computer|Set up the parent computer|\bLAN\b|home network|home Wi-Fi|local install link|2 parent\/admin|Auto-Scan/);
     assert.match(source, /nothing to install/);
   }
+});
+
+
+test('a parent can share the exact eligible installer without sharing their login or approving a computer', async () => {
+  const account = {billingMode:'complimentary', entitlementStatus:'active', releaseChannel:'beta', release:null};
+  const {response,calls} = await download({account, internalPilot:true, share:true, body:{version:'9.9.9',url:'https://untrusted.invalid',studentId:'untrusted'}});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('cache-control'),'private, no-store');
+  const result=await response.json(), url=new URL(result.url);
+  assert.deepEqual(Object.keys(result).sort(),['expiresAt','url','version']);
+  assert.equal(result.version,'1.2.167');
+  assert.equal(url.pathname,'/v1/installers/internal/BodeeGuard-Cloud-Test-1.2.167.exe');
+  const expires=Number(url.searchParams.get('expires'));
+  assert.ok(expires*1000>Date.now() && expires*1000<=Date.now()+300000);
+  assert.equal(Date.parse(result.expiresAt),expires*1000);
+  assert.equal(url.searchParams.get('signature'),createHmac('sha256','synthetic-test-secret').update(['bodeeguard-installer-download-v1','GET',url.pathname,String(expires)].join('\n')).digest('hex'));
+  assert.doesNotMatch(JSON.stringify(result),/fixture-token|synthetic-test-secret|studentId|household/);
+  assert.equal(calls.length,1);assert.ok(calls.every(call=>call.url.endsWith('/v1/account')));
+});
+
+test('sharing preserves sign-in, same-origin, access and release boundaries', async () => {
+  for (const options of [{origin:null},{origin:'https://untrusted.invalid'},{crossSite:true}]) {
+    const {response,calls}=await download({account:active,share:true,...options});
+    assert.equal(response.status,403);assert.equal(calls.length,0);
+  }
+  const denied=await download({account:active,share:true,authenticated:false});
+  assert.equal(denied.response.status,401);assert.equal(denied.calls.length,0);
+  for (const options of [{account:{...active,entitlementStatus:'inactive'}},{apiOk:false},{failFetch:true},{token:null},{account:{...active,release:legacyReleaseFixture}}]) {
+    const {response}=await download({account:active,share:true,...options});
+    assert.ok([403,503].includes(response.status));
+    assert.equal(response.headers.get('cache-control'),'private, no-store');
+    assert.equal((await response.json()).url,undefined);
+  }
+});
+
+test('public channel download links do not claim a false expiry or switch channels', async () => {
+  const {response}=await download({account:active,share:true});
+  assert.deepEqual(await response.json(),{url:active.release.downloadUrl,version:active.release.version,expiresAt:null});
 });

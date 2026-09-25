@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import ChildSetup from "./ChildSetup";
+import InstallerShareLink from "./InstallerShareLink";
 import PlanControls, {type AiAllowance} from "./PlanControls";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
@@ -261,18 +262,20 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
               )}
             </div>
+            {installerAvailable && <InstallerShareLink temporary={!cloudAccountRelease(account)} />}
+            <p className={styles.channelExplanation}>Stay signed in on your own computer or phone. The child computer only needs the installer; approve its code here and assign an existing child in your dashboard.</p>
             <ol className={styles.setupSteps}>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>1</span>
-                <div><strong>Install</strong><p>Run the download on your child’s PC. Choose <b>Get pairing code</b>.</p></div>
+                <div><strong>Install</strong><p>Run the installer on your child’s PC. Open BodeeGuard and note its pairing code. If needed, choose <b>Get pairing code</b>.</p></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>2</span>
-                <div><strong>Connect</strong><p>Enter the pairing code here.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
+                <div><strong>Approve from your device</strong><p>On your own computer or phone, enter the code shown by the child app.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>3</span>
-                <div><strong>Check readiness</strong><p>Return to family setup to assign this computer, check its connection and review the child’s activities.</p><Link className={styles.stepAction} href="/guard/dashboard/?setup=connect">Continue setup <ArrowRight size={15} /></Link></div>
+                <div><strong>Check readiness</strong><p>Assign this computer to the child’s existing profile, check its connection and complete the Parent password setup if prompted.</p><Link className={styles.stepAction} href="/guard/dashboard/?setup=connect">Continue setup <ArrowRight size={15} /></Link></div>
               </li>
             </ol>
           </> : <p className={styles.channelExplanation}>{canStartTrial ? "Start your trial below, then download and connect your child’s computer here." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}
