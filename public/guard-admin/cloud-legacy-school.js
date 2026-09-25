@@ -27,6 +27,7 @@ export function setupCloudLegacySchool({ root, request, onApplied = () => {} }) 
   function totals(detail) {
     summary.replaceChildren(node('p', `${detail.records} original records: ${detail.counts.subjects} subjects, ${detail.counts.student_subjects} assignments, ${detail.counts.sessions} sessions, ${detail.counts.daily_progress} daily progress entries and ${detail.counts.quizlet_module_enrollment} Quizlet enrollment markers.`),
       node('p', `${detail.existingSubjects.length} existing cloud subjects and the current ${detail.timeZone} calendar will be kept.`));
+    for (const subject of detail.retainedOnlySubjects || []) summary.append(node('p', subject.title + ': history only. ' + subject.reason + ' Its saved assignments are retained but do not grant access.'));
     if (detail.unknownSubjectHistory) summary.append(node('p', `${detail.unknownSubjectHistory} entries refer to deleted subjects. Their dates, time and saved metadata remain available in history.`));
     if (detail.unfinishedSessions) summary.append(node('p', `${detail.unfinishedSessions} unfinished original sessions will remain historical records. A new cloud timer starts only when a child opens schoolwork.`));
     if (detail.pendingActivities.length) summary.append(node('p', `These original activities are retained but still unavailable in the current cloud child: ${detail.pendingActivities.map(s => s.title).join(', ')}.`));
@@ -54,8 +55,9 @@ export function setupCloudLegacySchool({ root, request, onApplied = () => {} }) 
   }
   async function createReview() {
     pending ??= { id: archiveId, requestId: crypto.randomUUID() }; plan = await request('planSchoolTransfer', pending); const detail = plan.review;
-    review.replaceChildren(node('h4', 'Review the complete original School transfer'), node('p', `Add ${detail.counts.subjects} original subjects and retain ${detail.records} records. Keep ${detail.existingSubjects.length} existing cloud subjects and the current family calendar.`), definitions(detail),
+    review.replaceChildren(node('h4', 'Review the complete original School transfer'), node('p', `Match ${detail.matchedSubjects} original activities to existing subjects, add ${detail.newSubjects} subjects and ${detail.addedAssignments} missing child assignments, and retain ${detail.records} records. Keep current cloud choices and the family calendar.`), definitions(detail),
       node('p', 'Original sessions and daily progress contribute one historical time baseline. Saved completion flags remain labeled as original records. Quizlet markers do not re-enroll a removed subject. This transfer adds no coins.'));
+    for (const subject of detail.retainedOnlySubjects || []) review.append(node('p', subject.title + ': retain its original records as history only. ' + subject.reason + ' No access or required work is added for this item.'));
     if (detail.pendingActivities.length) review.append(node('p', `${detail.pendingActivities.length} original activities still need their cloud child implementation. Applying the history transfer does not make the complete child installer ready.`));
     const apply = button('Apply reviewed School transfer', async () => {
       const saved = await request('applySchoolTransfer', { planId: plan.id, digest: plan.digest });
