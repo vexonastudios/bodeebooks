@@ -44,7 +44,7 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
       const paths=new Map();let prefix;
       for(const file of files){const relative=file.webkitRelativePath,slash=relative.indexOf('/');if(slash<1)throw new Error('Choose the prepared package folder.');prefix??=relative.slice(0,slash+1);if(!relative.startsWith(prefix))throw new Error('Choose one package folder.');const key=relative.slice(prefix.length);if(paths.has(key))throw new Error('The folder contains duplicate paths.');paths.set(key,file);}
       if(paths.has('INCOMPLETE'))throw new Error('This package did not finish preparing. Keep the original backup.');
-      const file=paths.get('manifest.json');if(!file||file.size>2500000)throw new Error('Choose the sanitized package, not the raw Admin backup.');
+      const file=paths.get('manifest.json');if(!file||file.size>4000000)throw new Error('Choose the sanitized package, not the raw Admin backup.');
       const manifest=JSON.parse(await file.text());if(manifest.purpose!=='bodeeguard-sanitized-archive'||manifest.version!==1||!Array.isArray(manifest.chunks)||manifest.chunks.length>20000)throw new Error('This is not a supported transfer package.');
       const expected=new Set(['manifest.json','LOCAL-RECONCILIATION.json']);
       for(const chunk of manifest.chunks){const key=`chunks/${chunk.sha256}.blob`;expected.add(key);if(!/^[a-f0-9]{64}$/.test(chunk.sha256)||paths.get(key)?.size!==chunk.bytes)throw new Error('A transfer part is missing or has changed. Prepare the package again.');}

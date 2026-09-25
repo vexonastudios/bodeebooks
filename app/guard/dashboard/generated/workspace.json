@@ -48,7 +48,7 @@
     "renderer/js/admin/cloud-reading.js": "bb63af4cdbfad15eb5e40152158619a2d34ce9d1514cf4f65a1d97dfc75bd6a5",
     "renderer/js/admin/cloud-typing.js": "e93c5c193ee1745b6ce247f7d40b263f9fb19151a610e18f15264eb4fcbecf44",
     "renderer/js/admin/cloud-economy.js": "32234e463eb3f0a9d24b5441bc4a10f16b56cb6d738cb2a95a0d08d8fb85c0ae",
-    "renderer/js/admin/cloud-legacy-archive.js": "14212f14e0c14586e67706c412ba199f3f73d6a7882b9446f978d83eba979169",
+    "renderer/js/admin/cloud-legacy-archive.js": "4e6657bf358fd7d48303e5f555512d78ad324df2600315773d2aec6eb4bd5c18",
     "renderer/js/admin/cloud-legacy-activation.js": "8a75f8ebd731b26a3845860351da4132d15b281aad5a4b26331e23eb1ad17c02",
     "renderer/js/admin/cloud-legacy-typing.js": "5fdbde42dc46b64e067bcc16e3d1d7865f5ed0f65874a06bb0597bd0d70ab4a7",
     "renderer/js/admin/cloud-legacy-daily.js": "5ed8047eb939a157bd5309ddca520a42116e19f8f17232536ff005b2a0638ea5",

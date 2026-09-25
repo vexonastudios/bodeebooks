@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { cloudApi, CloudApiError } from "../cloud-api";
 export const maxDuration = 30;
+// Match the 4 MB archive index plus its small JSON envelope; keep file parts bounded separately.
+const MAX_CREATE_BYTES = 4000000 + 1024;
 const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
 const reply = (body: unknown, status = 200) => Response.json(body, { status, headers });
 const fields: Record<string, string[]> = {
@@ -26,9 +28,10 @@ export async function POST(request: Request) {
   let input: Record<string, unknown>;
   try {
     const chunks: Uint8Array[] = []; let size = 0;
-    for (;;) { const item = await reader.read(); if (item.done) break; size += item.value.length; if (size > 3 * 1024 * 1024) { await reader.cancel(); return reply({ error: "The transfer part is too large." }, 413); } chunks.push(item.value); }
+    for (;;) { const item = await reader.read(); if (item.done) break; size += item.value.length; if (size > MAX_CREATE_BYTES) { await reader.cancel(); return reply({ error: "The transfer part is too large." }, 413); } chunks.push(item.value); }
     const bytes = new Uint8Array(size); let offset = 0; for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
     input = JSON.parse(new TextDecoder().decode(bytes));
+    if (input?.action === "put" && size > 3 * 1024 * 1024) return reply({ error: "The transfer part is too large." }, 413);
     if (!input || typeof input.action !== "string" || !Object.hasOwn(fields, input.action) || !["create", "put"].includes(input.action) && size > 96000) return reply({ error: "Choose a supported transfer action." }, 400);
   } catch { return reply({ error: "The transfer request is invalid." }, 400); }
   finally { reader.releaseLock(); }
