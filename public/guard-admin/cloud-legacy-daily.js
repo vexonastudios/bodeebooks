@@ -36,7 +36,8 @@ export function setupCloudLegacyDaily({root,request,onApplied=()=>{}}){
     review.append(node('h4',`${detail.sourceName} → ${detail.cloudName}`),node('p',`Transfer ${Object.values(detail.counts).reduce((count,value)=>count+value,0)} original Daily Verse rewards and Brain Teaser results.`),
       node('p','Retain the original dates and coin amounts, including amounts from earlier reward rules. Original Verse reward dates count toward the continuing streak. Recorded Brain Teaser references prevent repeating those questions until the bank is exhausted.'),
       node('p','Original questions and option text were not saved. Verse rewards do not identify the selected answer. These fields remain unknown.'),
-      node('p','This import adds 0 coins. Original earned coins are handled by the separate opening-balance transfer. Dates with existing cloud answers must be reconciled before import.'));
+      node('p','This import adds 0 coins. Original earned coins are handled by the separate opening-balance transfer. Both histories are retained on overlapping dates; the child continues to see their saved cloud answer.'));
+    review.append(node('p',`${detail.overlappingRecords||0} original results overlap saved cloud answers. Neither result is replaced, and no reward is paid again.`));
     const apply=button('Apply reviewed Daily history',async()=>{
       const result=await request('applyDailyTransfer',{planId:plan.id,digest:plan.digest});
       status.textContent=`Daily history connected: ${result.records} original records, ${result.coinsAdded} coins added. The remaining module transfers are still pending.`;pending=plan=null;review.replaceChildren();await afterChange();
