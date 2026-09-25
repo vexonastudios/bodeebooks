@@ -107,6 +107,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       title: input.title, author: input.author, emoji: input.emoji, totalPages: input.totalPages, status: input.status, pages: input.pages, note: input.note,
       balance: input.balance, totalEarned: input.totalEarned }; break;
     case "assistant-welcome": path = "/assistant/welcome"; method = "POST"; body = {}; break;
+    case "assistant-music-approve": path = "/assistant/music/approve"; method = "POST"; body = { prompt: input.prompt, requestId: input.requestId, youtubeId: input.youtubeId, approved: input.approved }; break;
     case "assistant-ask": path = "/assistant/ask"; method = "POST"; body = { prompt: input.prompt, requestId: input.requestId, ai: input.ai, history: input.history, topicId: input.topicId, contextTab: input.contextTab }; break;
     case "list-learning-videos": path = "/learning-videos/list"; method = "POST"; body = { category: input.category }; break;
     case "save-learning-video": path = "/learning-videos/save"; method = "POST"; body = { id: input.id, revision: input.revision, url: input.url, title: input.title, folder: input.folder, order: input.order, active: input.active, approved: input.approved, libraryKind: input.libraryKind }; break;

@@ -21,3 +21,13 @@
   .parent-assistant-safety small { max-height: 90px; overflow-y: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .parent-assistant-drawer, .parent-assistant-launcher { transition: none; } }
+
+.assistant-music-choices { display: grid; gap: 16px; margin-top: 16px; white-space: normal; }
+.assistant-music-card { display: grid; gap: 8px; padding: 12px; border: 1px solid #526081; border-radius: 12px; background: #10182b; }
+.assistant-music-card strong { line-height: 1.4; }
+.assistant-music-channel { color: #b9c9de; font-size: .8rem; }
+.assistant-music-card iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 8px; }
+.assistant-music-approve { min-height: 44px; border: 1px solid #5bdcbd; border-radius: 8px; padding: 9px 12px; background: #165645; color: #ecfff9; font: inherit; font-weight: 700; cursor: pointer; }
+.assistant-music-approve:disabled { opacity: .6; cursor: default; }
+.assistant-music-status { margin: 0; font-size: .85rem; color: #c7def1; }
+.assistant-music-status:empty { display: none; }

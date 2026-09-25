@@ -31,7 +31,7 @@ test('full media panels do not crash dashboard initialization when the compact l
   const library = setupCloudLearningVideos({ root: null, parent: true, request: () => { calls++; } });
   library.setActive(true); library.setCategory('music'); library.clear();
   assert.equal(calls, 0);
-  assert.match(html, /cloud-workspace.js\?v=20260922-apps2/);
+  assert.match(html, /cloud-workspace\.js\?v=[a-zA-Z0-9-]+/);
 });
 
 test('dashboard removes its initial loading cover after success or a visible connection failure', async () => {
@@ -347,7 +347,7 @@ test('workspace escapes identity, inherits real navigation, restricts scripts an
   const html = await result.text();
   assert.match(html, /&lt;script&gt;attack&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script>attack|admin123|admin-password|kioskAPI/);
-  for (const label of ['Live Monitoring', 'Student Management', 'Subject Management', 'Learning Videos', 'Calendar / Schedule', 'Family Games', 'Account &amp; billing']) assert.ok(html.includes(label), label);
+  for (const label of ['Live Monitoring', 'Student Management', 'Activity library', 'Learning Videos', 'Calendar / Schedule', 'Family Games', 'Account &amp; billing']) assert.ok(html.includes(label), label);
 });
 test('direct workspace navigation returns to the Clerk-managed page for long-lived sessions', async () => {
   const route = load('workspace/route.ts');
@@ -517,4 +517,13 @@ test('Coloring Studio bridge keeps page controls family-scoped and strips submit
   assert.deepEqual(calls[2],{path:'/coloring-studio/image',body:{requestId:deviceId,delivery:'url',thumbnail:false}});
   assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+});
+
+test('assistant approval bridge keeps explicit parent approval and strips submitted family authority', async () => {
+ const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{mode:'action'};}});
+ const input={action:'assistant-music-approve',prompt:'add song test for all my kids',requestId:deviceId,youtubeId:'abcdefghijk',approved:true,householdId:'forged',student_ids:['foreign'],screened:true};
+ assert.equal((await route.POST(request(input))).status,200);
+ assert.deepEqual(calls,[{path:'/assistant/music/approve',body:{prompt:input.prompt,requestId:deviceId,youtubeId:'abcdefghijk',approved:true}}]);
+ assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+ assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });

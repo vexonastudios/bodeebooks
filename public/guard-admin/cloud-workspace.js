@@ -498,7 +498,7 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { connectionRefresh.stop(); clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
-setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); } });
+setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); if (feature === 'games') { void games.refresh(); void refresh(); } if (feature === 'music') { void refresh(); } } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');
 const notificationNavigation = setupNotificationNavigation({ messaging, navigate: selectTab, getStudents: () => snapshot?.students || [] });

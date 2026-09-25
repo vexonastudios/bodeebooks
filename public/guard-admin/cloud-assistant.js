@@ -69,6 +69,52 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     }
     item.append(actions);
   }
+  function musicReview(item, review) {
+    if (!review || !Array.isArray(review.candidates)) return;
+    const choices = document.createElement('div'); choices.className = 'assistant-music-choices';
+    const buttons = [];
+    let selected = null, approvalId = null, saved = false;
+    for (const candidate of review.candidates.slice(0, 3)) {
+      if (!/^[A-Za-z0-9_-]{11}$/.test(candidate.youtubeId || '')) continue;
+      const card = document.createElement('section'); card.className = 'assistant-music-card';
+      const title = document.createElement('strong'); title.textContent = candidate.title;
+      const channel = document.createElement('span'); channel.textContent = candidate.channel; channel.className = 'assistant-music-channel';
+      const preview = document.createElement('iframe');
+      preview.src = 'https://www.youtube-nocookie.com/embed/' + candidate.youtubeId;
+      preview.title = 'Preview ' + candidate.title; preview.loading = 'lazy'; preview.allow = 'encrypted-media; fullscreen'; preview.referrerPolicy = 'strict-origin-when-cross-origin'; preview.allowFullscreen = true;
+      const approve = document.createElement('button'); approve.type = 'button'; approve.className = 'assistant-music-approve'; approve.textContent = 'Approve & add for all children';
+      const status = document.createElement('p'); status.className = 'assistant-music-status'; status.setAttribute('aria-live', 'polite');
+      buttons.push(approve);
+      approve.addEventListener('click', async () => {
+        if (busy || saved) return;
+        const current = generation;
+        if (selected !== candidate.youtubeId) { selected = candidate.youtubeId; approvalId = crypto.randomUUID(); }
+        busy = true; input.readOnly = true; byId('parent-assistant-send').disabled = true;
+        for (const button of buttons) button.disabled = true;
+        status.textContent = 'Adding this song for your children…';
+        try {
+          const response = await request('assistant-music-approve', {prompt:review.prompt, youtubeId:selected, approved:true, requestId:approvalId});
+          if (current !== generation) return;
+          saved = true; status.textContent = 'Approved';
+          const reply = message('assistant', response.message); sources(reply, response.sources, true);
+          if (response.change?.changedCount > 0) onChange?.(response.change.feature);
+          // Stop previews once the choice is saved, including videos in other cards.
+          for (const frame of choices.querySelectorAll('iframe')) frame.remove();
+          for (const button of buttons) button.textContent = button === approve ? 'Added to Music Library' : 'Another match';
+        } catch (error) {
+          if (current === generation) { status.textContent = error.message; approve.textContent = 'Retry approval'; }
+        } finally {
+          if (current === generation) {
+            busy = false; input.readOnly = false; byId('parent-assistant-send').disabled = false;
+            for (const button of buttons) button.disabled = saved;
+          }
+        }
+      });
+      card.append(title, channel, preview, approve, status); choices.append(card);
+    }
+    item.append(choices);
+    requestAnimationFrame(() => item.scrollIntoView({block:'start'}));
+  }
   function loadWelcome() {
     if (welcome) return welcome;
     const current = generation;
@@ -107,8 +153,9 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       pending.remove();
       const reply = message('assistant', response.message);
       const mode = document.createElement('small'); mode.className = 'cloud-assistant-mode';
-      mode.textContent = response.mode === 'action' ? 'Settings request complete' : response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
-      reply.append(mode); sources(reply, response.sources, response.mode === 'action');
+      mode.textContent = response.mode === 'action' ? 'Request saved' : response.mode === 'music-review' ? 'Your approval is needed to add a song' : response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
+      reply.append(mode); sources(reply, response.sources, response.mode === 'action' || response.mode === 'music-review');
+      if (response.mode === 'music-review') musicReview(reply, response.musicReview);
       if (response.mode === 'action' && response.change?.changedCount > 0) onChange?.(response.change.feature);
       if (response.notice) message('assistant', response.notice, 'cloud-assistant-notice');
       topicId = response.sources?.[0]?.id || topicId;
@@ -133,7 +180,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   drawer.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); }
     if (event.key === 'Tab') {
-      const controls = [...drawer.querySelectorAll('button, textarea, input, a[href]')].filter(control => !control.disabled && !control.hidden && control.getClientRects().length);
+      const controls = [...drawer.querySelectorAll('button, textarea, input, a[href], iframe')].filter(control => !control.disabled && !control.hidden && control.getClientRects().length);
       if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1)?.focus(); }
       else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0]?.focus(); }
     }
