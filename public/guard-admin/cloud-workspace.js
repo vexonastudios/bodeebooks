@@ -1,3 +1,4 @@
+import { setupRecoveryBackups } from './cloud-retention.js';
 import { parentActionFeedback } from './cloud-action-feedback.js';
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js';
@@ -91,6 +92,7 @@ function selectTab(id) {
   worksheets.setActive(id === 'worksheets');
   economy.setActive(id === 'economy'); typing.setActive(id === 'typing');
   legacy.setActive(id === 'settings');
+  recoveryBackups.setActive(id === 'settings');
   files.setActive(id === 'grades');
   games.setActive(id === 'family-games');
   learningVideos.setActive(id === 'learning-videos');
@@ -421,6 +423,7 @@ const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange: id => files.setStudent(id), onGradeSaved: () => files.refresh() });
 const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, editSubject, canEdit: () => usable && !mutating });
 const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
+const recoveryBackups = setupRecoveryBackups({ endpoint, root: byId('tab-settings') });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });

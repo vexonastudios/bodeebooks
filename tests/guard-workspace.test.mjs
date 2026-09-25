@@ -541,3 +541,16 @@ test('Coloring Studio bridge preserves explicit preview/full-size selection and 
   const source=fs.readFileSync('public/guard-admin/cloud-coloring-studio.js','utf8');
   assert.match(source,/IntersectionObserver/);assert.match(source,/dataUrl\(request, false\)/);assert.match(source,/thumbnail = true/);
 });
+
+
+test('notebook recovery bridge authenticates, validates operations and strips submitted family authority', async () => {
+  const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { backups: [], restores: [] }; } });
+  const input = { action: 'recovery-backups', operation: 'restore', id: deviceId, deviceId: 'assigned-child-device', householdId: 'forged', studentId: 'forged', storagePath: 'forged', state: 'applied' };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(calls[0], { path: '/backups', body: { operation: 'restore', id: deviceId, deviceId: 'assigned-child-device' } });
+  assert.equal((await route.POST(request({ ...input, operation: 'upload' }))).status, 400);
+  assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+  const source = fs.readFileSync('public/guard-admin/cloud-workspace.js', 'utf8');
+  assert.match(source, /setupRecoveryBackups/); assert.match(source, /recoveryBackups.setActive\(id === 'settings'\)/);
+});
