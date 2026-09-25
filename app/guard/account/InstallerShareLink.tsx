@@ -23,7 +23,7 @@ export default function InstallerShareLink({ temporary }: { temporary: boolean }
     if (busy) return;
     setBusy(true); setLink(null); setMessage("");
     try {
-      const response = await fetch("/guard/download/windows", { method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000) });
+      const response = await fetch("/guard/download/windows/", { method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000) });
       const result = await response.json();
       if (!response.ok) throw Error(result.error || "Could not create a download link. Try again.");
       setLink(result);
