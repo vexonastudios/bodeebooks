@@ -6,7 +6,7 @@ import { fitParentViewport } from "./visible-viewport";
 import styles from "./workspace.module.css";
 
 export default function ParentWorkspace({ query = "" }: { query?: string }) {
-  const { getToken, isLoaded } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function ParentWorkspace({ query = "" }: { query?: string }) {
       try {
         const token = await Promise.race([getToken({ skipCache: true }), new Promise<undefined>(resolve => setTimeout(resolve, 6000))]);
         if (disposed || document.hidden) return;
-        if (token === null) {
+        if (token === null && isSignedIn === false) {
           const target = '/guard/dashboard/' + query;
           window.location.assign('/guard/sign-in/?redirect_url=' + encodeURIComponent(target)); return;
         }
@@ -28,7 +28,7 @@ export default function ParentWorkspace({ query = "" }: { query?: string }) {
       finally { pending = false; }
     }
     const message = (event: MessageEvent) => {
-      if (event.origin === window.location.origin && event.source === frame.current?.contentWindow && event.data?.type === 'bodeeguard-renew-session') void renew(Boolean(event.data.manual));
+      if (event.origin === window.location.origin && event.source === frame.current?.contentWindow && event.data?.type === 'bodeeguard-renew-session') void renew(Boolean(event.data.manual || event.data.reason === 'authentication'));
     };
     const visible = () => { if (!document.hidden) void renew(); };
     window.addEventListener('message', message);
@@ -36,7 +36,7 @@ export default function ParentWorkspace({ query = "" }: { query?: string }) {
     document.addEventListener('visibilitychange', visible);
     void renew();
     return () => { disposed = true; window.removeEventListener('message', message); window.removeEventListener('online', visible); document.removeEventListener('visibilitychange', visible); };
-  }, [getToken, isLoaded, query]);
+  }, [getToken, isLoaded, isSignedIn, query]);
   useEffect(() => {
     if (ready && frame.current) return fitParentViewport(frame.current);
   }, [ready]);

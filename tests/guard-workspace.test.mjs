@@ -46,7 +46,8 @@ test('dashboard removes its initial loading cover after success or a visible con
       document: { hidden: false }, inFlight: null, timer: null, endpoint: '/synthetic', snapshot: null, usable: false, failures: 0,
       AbortController, setTimeout: () => 1, clearTimeout() {}, byId: id => elements[id], setControls() {},
       feedback: (message, error) => messages.push({ message, error }), showSnapshot: () => { rendered = true; },
-      fetch: async () => ({ ok, status: ok ? 200 : 503, json: async () => ok ? { serverTime: '2026-09-22T14:00:00Z' } : { error: 'Synthetic connection failure' } }),
+      connectionRefresh: { start() {} },
+      parentSession: { read: async () => ({ ok, status: ok ? 200 : 503, json: async () => ok ? { serverTime: '2026-09-22T14:00:00Z' } : { error: 'Synthetic connection failure' } }) },
     });
     assert.equal(removed, true);
     assert.equal(classes.has('cloud-startup-loading'), false);

@@ -1,3 +1,4 @@
+import { createParentSessionRecovery, createParentSessionNotice } from './cloud-parent-session.js';
 import { createStudentAssignment, createAssignmentConfirmation } from './cloud-student-assignment.js';
 import { setupRecoveryBackups } from './cloud-retention.js';
 import { parentActionFeedback } from './cloud-action-feedback.js';
@@ -53,6 +54,12 @@ let editorSave = null;
 let recoveryGeneration = 0;
 let mobile = null;
 const computerRows = new Map();
+const sessionNotice = createParentSessionNotice(refresh);
+const parentSession = createParentSessionRecovery({ onState: sessionNotice, onPause: () => {
+  usable = false; feedback(''); setControls();
+  byId('live-text').textContent = 'Reconnecting…'; byId('live-indicator').dataset.connected = 'false';
+} });
+
 
 function node(tag, className = '', text = '') {
   const element = document.createElement(tag);
@@ -137,9 +144,9 @@ async function refresh() {
   const timeout = setTimeout(() => controller.abort(), 12000);
   inFlight = (async () => {
     try {
-      const response = await fetch(endpoint, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal });
+      const response = await parentSession.read(endpoint, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal });
       const data = await response.json();
-      if (!response.ok) throw new Error(response.status === 401 ? 'Your sign-in expired. Open Account to sign in again.' : data.error || 'The cloud service could not be reached.');
+      if (!response.ok) throw new Error(data.error || 'The cloud service could not be reached.');
       snapshot = data;
       usable = true;
       failures = 0;
@@ -153,7 +160,7 @@ async function refresh() {
       failures++;
       byId('live-text').textContent = 'Cloud not refreshed';
       byId('live-indicator').dataset.connected = 'false';
-      feedback(`${error.message} ${snapshot ? 'Showing the last received information; changes are paused until reconnection.' : 'Your family records have not been cleared.'}`, true);
+      if (!error.sessionRecovery) feedback(`${error.message} ${snapshot ? 'Showing the last received information; changes are paused until reconnection.' : 'Your family records have not been cleared.'}`, true);
       setControls();
     } finally {
       clearTimeout(timeout);

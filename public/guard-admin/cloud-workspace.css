@@ -214,3 +214,10 @@
 .cloud-sidebar-footer { margin-top: auto; flex-shrink: 0; }
 .cloud-sidebar-footer .cloud-parent-install { margin: 0 12px 8px; width: calc(100% - 24px); min-height: 44px; }
 .cloud-parent-install[hidden], .cloud-parent-mobile-install[hidden] { display: none !important; }
+
+/* Brief account recovery is an inline status, not a sign-out alert over the controls. */
+.cloud-session-notice { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; margin: 0 0 16px; padding: 12px 16px; border: 1px solid #435476; border-radius: 12px; background: #162036; color: #d7e5ff; font: 14px/1.5 system-ui,sans-serif; }
+.cloud-session-notice[hidden], .cloud-session-notice button[hidden] { display: none !important; }
+.cloud-session-notice span { flex: 1; min-width: 0; }
+.cloud-session-notice button { flex: 0 0 auto; min-height: 44px; }
+.cloud-mobile .cloud-session-notice { margin: 8px; padding: 10px 12px; font-size: 13px; flex-wrap: wrap; }

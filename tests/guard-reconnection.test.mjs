@@ -7,7 +7,7 @@ import ts from 'typescript';
 
 function load(file, mocks={}) {
   const filename=path.resolve(file), localRequire=createRequire(filename), mod=new Module(filename);
-  mod.filename=filename;mod.require=name=>mocks[name]||localRequire(name);
+  mod.filename=filename;mod.require=name=>mocks[name]||(name==='./visible-viewport'?load('app/guard/dashboard/visible-viewport.ts'):localRequire(name));
   mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,filename);
   return mod.exports;
 }
@@ -39,7 +39,7 @@ test('parent workspace delegates microphone access only to its own authenticated
     react:{useRef:()=>({current:null}),useState:()=>[true,()=>{}],useEffect(){}},'@clerk/nextjs':{useAuth:()=>({isLoaded:true,getToken:async()=>null})},
     'next/image':{default:props=>props},'./workspace.module.css':{default:{}}
   }).default;
-  const frame=ParentWorkspace();assert.equal(frame.type,'iframe');assert.ok(frame.props.allow.includes("microphone 'self'"));assert.equal(frame.props.src,'/guard/dashboard/workspace/');assert.match(frame.props.sandbox,/allow-same-origin/);
+  const frame=ParentWorkspace({});assert.equal(frame.type,'iframe');assert.ok(frame.props.allow.includes("microphone 'self'"));assert.equal(frame.props.src,'/guard/dashboard/workspace/');assert.match(frame.props.sandbox,/allow-same-origin/);
 });
 test('remote computer commands require the parent session and same origin, and forward no submitted authority', async () => {
   let authenticated = false; const calls = [];
@@ -92,12 +92,12 @@ test('dashboard opened in a background tab waits for visibility before renewing 
   globalThis.window = win; globalThis.document = doc; globalThis.setTimeout = () => 0;
   try {
     const ParentWorkspace = load('app/guard/dashboard/ParentWorkspace.tsx', {
-      react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect = fn; } },
+      react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect ||= fn; } },
       '@clerk/nextjs': { useAuth: () => ({ isLoaded: true, getToken: async () => { renewals++; return 'synthetic'; } }) },
       'next/image': { default: props => props },
       './workspace.module.css': { default: {} },
     }).default;
-    ParentWorkspace(); const cleanup = effect();
+    ParentWorkspace({}); const cleanup = effect();
     await Promise.resolve(); assert.equal(renewals, 0); assert.deepEqual(ready, []);
     doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange'));
     for (let n = 0; n < 10; n++) await Promise.resolve();
@@ -115,12 +115,12 @@ test('hiding during initial auth renewal does not mount a background dashboard a
   globalThis.window = win; globalThis.document = doc; globalThis.setTimeout = () => 0;
   try {
     const ParentWorkspace = load('app/guard/dashboard/ParentWorkspace.tsx', {
-      react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect = fn; } },
+      react: { useRef: () => ({ current: null }), useState: () => [false, value => ready.push(value)], useEffect: fn => { effect ||= fn; } },
       '@clerk/nextjs': { useAuth: () => ({ isLoaded: true, getToken: () => { renewals++; return token; } }) },
       'next/image': { default: props => props },
       './workspace.module.css': { default: {} },
     }).default;
-    ParentWorkspace(); const cleanup = effect();
+    ParentWorkspace({}); const cleanup = effect();
     doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange')); resolveToken('synthetic');
     for (let n = 0; n < 10; n++) await Promise.resolve();
     assert.deepEqual(ready, []);
@@ -128,4 +128,45 @@ test('hiding during initial auth renewal does not mount a background dashboard a
     for (let n = 0; n < 10; n++) await Promise.resolve();
     assert.equal(renewals, 2); assert.deepEqual(ready, [true]); cleanup();
   } finally { Object.assign(globalThis, previous); }
+});
+
+
+test('a trusted rejected read forces renewal even just after opening; foreign frames cannot renew or force sign-out', async () => {
+  const previous={window:globalThis.window,document:globalThis.document,setTimeout:globalThis.setTimeout};
+  const doc=new EventTarget(),win=new EventTarget();doc.hidden=false;
+  const redirects=[],posted=[],frame={postMessage:(...args)=>posted.push(args)};let renewals=0,effect,token='synthetic';
+  win.location={origin:'https://guard.example',assign:url=>redirects.push(url)};
+  globalThis.window=win;globalThis.document=doc;globalThis.setTimeout=()=>0;
+  const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
+  try {
+    const Workspace=load('app/guard/dashboard/ParentWorkspace.tsx',{
+      react:{useRef:()=>({current:{contentWindow:frame}}),useState:()=>[false,()=>{}],useEffect:fn=>{effect ||= fn;}},
+      '@clerk/nextjs':{useAuth:()=>({isLoaded:true,isSignedIn:false,getToken:async()=>{renewals++;if(token instanceof Error)throw token;return token;}})},
+      'next/image':{default:props=>props},'./workspace.module.css':{default:{}}
+    }).default;
+    Workspace({});const cleanup=effect();await flush();assert.equal(renewals,1);
+    const signal=(source=frame,origin=win.location.origin)=>win.dispatchEvent(Object.assign(new Event('message'),{source,origin,data:{type:'bodeeguard-renew-session',reason:'authentication'}}));
+    signal({},win.location.origin);signal(frame,'https://foreign.example');await flush();assert.equal(renewals,1);
+    signal();await flush();assert.equal(renewals,2);assert.equal(redirects.length,0);
+    assert.ok(posted.every(([data,origin])=>Object.keys(data).join()==='type'&&data.type==='bodeeguard-session-ready'&&origin===win.location.origin));
+    token=new Error('offline');signal();await flush();assert.equal(redirects.length,0,'network trouble is not a confirmed sign-out');
+    token=null;signal();await flush();assert.equal(redirects.length,1);assert.match(redirects[0],/sign-in/);cleanup();
+  } finally {Object.assign(globalThis,previous);}
+});
+
+
+test('a missing refresh token alone does not redirect a parent who is still signed in', async()=>{
+  const previous={window:globalThis.window,document:globalThis.document,setTimeout:globalThis.setTimeout};
+  const doc=new EventTarget(),win=new EventTarget();doc.hidden=false;const redirects=[],posted=[];let effect;
+  win.location={origin:'https://guard.example',assign:url=>redirects.push(url)};
+  globalThis.window=win;globalThis.document=doc;globalThis.setTimeout=()=>0;
+  try {
+    const Workspace=load('app/guard/dashboard/ParentWorkspace.tsx',{
+      react:{useRef:()=>({current:{contentWindow:{postMessage:data=>posted.push(data)}}}),useState:()=>[false,()=>{}],useEffect:fn=>{effect ||= fn;}},
+      '@clerk/nextjs':{useAuth:()=>({isLoaded:true,isSignedIn:true,getToken:async()=>null})},
+      'next/image':{default:props=>props},'./workspace.module.css':{default:{}}
+    }).default;
+    Workspace({});const cleanup=effect();for(let i=0;i<12;i++)await Promise.resolve();
+    assert.deepEqual(redirects,[]);assert.deepEqual(posted,[],'no false renewal success is sent');cleanup();
+  }finally{Object.assign(globalThis,previous);}
 });
