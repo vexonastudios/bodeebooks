@@ -4,7 +4,8 @@ The parent account and the public short-code download page use the same native
 installer link with immediate inline "Download requested" feedback. It identifies
 the version, points to the browser Downloads menu / Ctrl+J, and explains opening
 the EXE when the browser finishes. A five-second guard prevents rapid duplicate
-clicks. Retry is explicit. No fake byte progress or completion is reported, and
+clicks. Retry is explicit. Download handoff uses a separate browsing context so
+a browser-blocked download or redirect failure cannot replace the setup page. No fake byte progress or completion is reported, and
 no full installer is buffered in page memory. A signed link expiring does not
 remove instructions for a transfer that already started; it blocks a new request
 and directs the parent to refresh the link with Get download.

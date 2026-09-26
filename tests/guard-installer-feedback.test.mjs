@@ -26,6 +26,8 @@ test('native handoff remains intact, feedback appears immediately, and rapid dup
   const view=mount();
   assert.doesNotMatch(view.render(),/Download requested/);
   assert.equal(view.anchor().props.href,'https://downloads.example.test/child.exe');
+  assert.equal(view.anchor().props.target,'_blank');
+  assert.equal(view.anchor().props.rel,'noopener noreferrer');
   assert.equal(view.click().defaultPrevented,false);
   assert.equal(view.click().defaultPrevented,true);
   assert.match(view.render(),/role="status".*aria-live="polite"/);

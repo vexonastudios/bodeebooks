@@ -26,7 +26,7 @@ export default function InstallerDownload({href,label,version,expiresAt,secondar
     retryTimer.current=setTimeout(()=>{pendingClick.current=false;setCooldown(false);},5000);
   }
   return <div className={styles.installerDownload}>
-    <a className={secondary?styles.secondaryPortalButton:styles.portalButton} href={href} rel="noreferrer" onClick={start} aria-disabled={cooldown||expired} aria-describedby={requested||expired?id:undefined}>
+    <a className={secondary?styles.secondaryPortalButton:styles.portalButton} href={href} target="_blank" rel="noopener noreferrer" onClick={start} aria-disabled={cooldown||expired} aria-describedby={requested||expired?id:undefined}>
       {requested&&!cooldown&&!expired?<RotateCcw size={18}/>:<Download size={18}/>}
       {expired?"Refresh download above":cooldown?"Download requested":requested?"Try download again":label}
     </a>
