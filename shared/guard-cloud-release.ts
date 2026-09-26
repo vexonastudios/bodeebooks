@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.241": {
+  "title": "Themed planner and readable coin balances",
+  "sections": [
+    {
+      "heading": "Version 1.2.241",
+      "headline": "A planner that matches each child",
+      "summary": "My planner now follows the selected student theme, with a clearer coin balance on smaller or scaled screens.",
+      "highlights": [
+        "The dashboard planner and assignment form use the selected theme, including light themes.",
+        "Coin amounts use lighter text and fit on one line without cutting off digits.",
+        "Wallet headings and buttons stay readable in light and dark themes.",
+        "Includes the earlier activity colors, learning improvements and inactivity-aware study timing."
+      ]
+    }
+  ]
+},
   "1.2.240": {
     "title": "Study time pauses when a child is inactive",
     "sections": [
