@@ -1,3 +1,4 @@
+import { createStudentAssignment, createAssignmentConfirmation } from './cloud-student-assignment.js';
 import { setupRecoveryBackups } from './cloud-retention.js';
 import { parentActionFeedback } from './cloud-action-feedback.js';
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
@@ -51,6 +52,7 @@ let mutating = false;
 let editorSave = null;
 let recoveryGeneration = 0;
 let mobile = null;
+const computerRows = new Map();
 
 function node(tag, className = '', text = '') {
   const element = document.createElement(tag);
@@ -110,7 +112,7 @@ function showSnapshot() {
   // Refresh action labels immediately; monitoring restores any open action menu.
   monitoring.render();
   weeklyActivity.update();
-  if (!byId('cloud-computer-settings').contains(document.activeElement)) renderComputers();
+  renderComputers();
   renderStudents();
   renderSubjects();
   dailyPlan.update();
@@ -186,53 +188,51 @@ async function mutate(action, data, { notify = true } = {}) {
     throw new Error(message);
   } finally { mutating = false; setControls(); }
 }
-function mutationButton(text, action, data, className) {
-  const result = button(text, () => mutate(action, data).catch(() => {}), className);
-  result.dataset.cloudMutation = 'true';
-  return result;
-}
 function renderComputers() {
   const setup = byId('cloud-computer-settings');
   const clients = byId('clients-panel');
-  setup.replaceChildren();
   clients.replaceChildren();
+  let created = false;
+  for (const [id, item] of computerRows) if (!snapshot.devices.some(device => device.id === id)) { item.row.remove(); computerRows.delete(id); }
+  setup.querySelector('.cloud-computers-empty')?.remove();
   if (!snapshot.devices.length) {
-    setup.append(node('p', 'cloud-note', 'No child computers paired yet. Approve a computer to assign it to a child.'));
+    setup.append(node('p', 'cloud-note cloud-computers-empty', 'No child computers paired yet. Approve a computer to assign it to a child.'));
     clients.append(node('p', 'clients-empty', 'No cloud computers yet'));
   }
   for (const device of snapshot.devices) {
     const student = snapshot.students.find(item => item.id === device.student_id);
     const connected = connectionState(device, monitoring.connectionNow());
-    const row = node('div', 'cloud-computer-setting');
-    const info = node('div');
-    info.append(node('strong', '', device.computer_name),
-      node('p', '', `${connected} · ${device.app_version || 'Version unavailable'} · ${deliveryState(device)}`),
-      node('p', '', device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study'));
-    const assignment = node('select', 'admin-input');
-    assignment.dataset.cloudMutation = 'true';
-    assignment.setAttribute('aria-label', `Student for ${device.computer_name}`);
-    const options = [{ id: '', name: 'Assign a student…' }, ...snapshot.students.filter(item => !item.archived_at)];
-    for (const item of options) { const option = node('option', '', item.name); option.value = item.id; assignment.append(option); }
-    assignment.value = device.student_id || '';
-    assignment.addEventListener('change', async () => {
-      try { await mutate('assign-student', { deviceId: device.id, studentId: assignment.value || null }); }
-      catch { assignment.value = device.student_id || ''; }
-    });
-    const actions = node('div', 'cloud-actions');
-    const recovery = button('Offline recovery', () => showRecovery(device));
-    recovery.dataset.cloudMutation = 'true';
-    actions.append(mutationButton(device.locked ? 'Resume cloud school' : 'Pause cloud school', 'set-school-pause', { deviceId: device.id, locked: !device.locked }, 'btn btn-secondary'), recovery);
-    const controls = node('div', 'cloud-computer-controls');
-    controls.append(assignment, actions);
-    row.append(info, controls); setup.append(row);
+    let item = computerRows.get(device.id);
+    if (!item) {
+      created = true;
+      const row = node('div', 'cloud-computer-setting'), info = node('div'), title = node('strong'), status = node('p'), recoveryStatus = node('p');
+      info.append(title, status, recoveryStatus);
+      const assignment = createStudentAssignment({ device, students: snapshot.students, mutate: (action, data) => mutate(action, data, { notify: false }),
+        canEdit: () => usable && !mutating, setControls, onSaved: () => assignmentConfirmation.start() });
+      const actions = node('div', 'cloud-actions');
+      const recovery = button('Offline recovery', () => showRecovery(computerRows.get(device.id).device)); recovery.dataset.cloudMutation = 'true';
+      const pause = button('', () => { const current = computerRows.get(device.id).device; void mutate('set-school-pause', { deviceId: current.id, locked: !current.locked }).catch(() => {}); });
+      pause.dataset.cloudMutation = 'true'; actions.append(pause, recovery);
+      const controls = node('div', 'cloud-computer-controls'); controls.append(assignment.element, actions);
+      row.append(info, controls); setup.append(row);
+      item = { row, title, status, recoveryStatus, assignment, pause, device }; computerRows.set(device.id, item);
+    }
+    item.device = device; item.title.textContent = device.computer_name;
+    item.status.textContent = `${connected} · ${device.app_version || 'Version unavailable'} · ${deliveryState(device)}`;
+    item.recoveryStatus.textContent = device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study';
+    item.pause.textContent = device.locked ? 'Resume cloud school' : 'Pause cloud school';
+    item.assignment.update(device, snapshot.students);
     clients.append(button(`${student?.name || device.computer_name} · ${connected}`, () => {
       selectTab('overview');
-      const card = student && [...byId('overview-grid').children].find(item => item.dataset.studentId === student.id);
+      const card = student && [...byId('overview-grid').children].find(element => element.dataset.studentId === student.id);
       if (!card) setup.closest('details').open = true;
-      (card || row).scrollIntoView({ block: 'nearest' });
+      (card || item.row).scrollIntoView({ block: 'nearest' });
     }, 'nav-item'));
   }
+  window.lucide?.createIcons();
+  if (created) queueMicrotask(() => assignmentConfirmation.start());
 }
+
 function renderStudents() {
   const list = byId('students-list');
   list.replaceChildren();
@@ -464,6 +464,7 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.addEventListener('click', () => selectTab(item.dataset.tab));
 });
 document.querySelectorAll('[data-open-tab]').forEach(item => item.addEventListener('click', () => selectTab(item.dataset.openTab)));
+const assignmentConfirmation = createAssignmentConfirmation({ refresh, hasPending: () => [...computerRows.values()].some(item => item.assignment.hasPending()) });
 byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
 
@@ -489,7 +490,7 @@ const connectionRefresh = createConnectionRefresh({
     const status = await response.json(); signal.throwIfAborted();
     snapshot = applyConnectionStatus(snapshot, status);
     monitoring.render();
-    if (!byId('cloud-computer-settings').contains(document.activeElement)) renderComputers();
+    renderComputers();
     screenshots.update(snapshot); setControls();
   },
   onError: () => { monitoring.render(); setControls(); },
