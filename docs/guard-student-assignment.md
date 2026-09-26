@@ -19,3 +19,17 @@ This is a website-only publication; API and 1.2.240 child installer stay unchang
 
 Rollback website: dpl_6wVU7xko4NGVa9ugbpYqe6gSWKNZ. Candidate production build and
 publication receipt follow after deployment.
+
+## Published September 26, 2026
+
+Website source: d73376277d68f0b134baf019c4281847c7854678.
+Deployment: dpl_ANWGszEfbYDVKVevuj9wWSbGUm6b,
+https://bodeebooks-q1t3ddun3-vexonastudios-3984s-projects.vercel.app.
+The clean Git archive in .tmp/web-student-assignment was built successfully
+(build 30 seconds), checked before promotion, and promoted to production.
+Candidate and live guard.bodeebooks.com helper both returned HTTP 200 and exactly
+matched the reviewed file hash. The authenticated dashboard loaded cache version
+20260926-assign1 and displayed five Save student buttons with five Lucide save
+icons after opening Computer setup & offline recovery. No selection was changed.
+The fictional 390x844 browser preview demonstrated draft, waiting and confirmation.
+API, installer version and child update feed were not changed.
