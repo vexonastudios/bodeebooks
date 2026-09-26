@@ -319,3 +319,26 @@
 .cloud-mobile .cloud-messages-panel > .tab-header svg { width: 22px; height: 22px; }
 .cloud-mobile .cloud-chat-search { margin-top: 8px; font-size: 16px; }
 .cloud-mobile .cloud-chat-compose [hidden], .cloud-chat-avatar[hidden] { display: none !important; }
+
+/* A visible broadcast entry shares the ordinary composer and private delivery path. */
+.cloud-chat-people .cloud-chat-all { display: flex; align-items: center; flex: 0 0 auto; gap: 12px; width: calc(100% - 24px); margin: 12px 12px 0; padding: 14px; border: 1px solid #56cdbb55; border-radius: 14px; color: #d8fff6; background: #143e3b; white-space: normal; }
+.cloud-chat-all > svg { width: 24px; height: 24px; flex: 0 0 24px; color: #64e1c5; }
+.cloud-chat-all > span { flex: 1; min-width: 0; }
+.cloud-chat-all strong, .cloud-chat-all small { display: block; text-align: left; }
+.cloud-chat-all strong { font-size: 15px; font-weight: 650; }
+.cloud-chat-all small { margin-top: 4px; font-size: 12px; font-weight: 400; color: #acd7cf; }
+.cloud-chat-all:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
+.cloud-broadcast { min-width: 0; width: 100%; color: #d8e0ef; }
+.cloud-broadcast h3 { margin: 0 0 8px; font-size: 18px; }
+.cloud-broadcast p { margin: 8px 0 16px; color: #b7c8dc; font-size: 13px; line-height: 1.6; }
+.cloud-broadcast blockquote { margin: 12px 0; padding: 12px 16px; border-left: 3px solid #64e1c5; background: #ffffff08; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cloud-broadcast-recipients { display: grid; gap: 8px; list-style: none; padding: 0; margin: 0 0 16px; }
+.cloud-broadcast-recipients li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; padding: 10px 12px; border: 1px solid #ffffff14; border-radius: 10px; }
+.cloud-broadcast-recipients strong { flex: 1; font-size: 14px; overflow-wrap: anywhere; }
+.cloud-broadcast-recipients span { font-size: 12px; color: #a1aec4; }
+.cloud-broadcast-recipients small { flex-basis: 100%; font-size: 12px; color: #fecaca; overflow-wrap: anywhere; }
+.cloud-broadcast-recipients .is-saved span { color: #64e1c5; }
+.cloud-broadcast-recipients .needs-retry { border-color: #fca5a555; }
+.cloud-mobile .cloud-chat-people .cloud-chat-all { min-height: 70px; }
+
+.cloud-broadcast-retry { margin: 0 0 16px; min-height: 44px; }
