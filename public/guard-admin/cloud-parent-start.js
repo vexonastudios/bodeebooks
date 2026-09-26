@@ -13,7 +13,7 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20260926-connect1';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -52,8 +52,9 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     try {
       state=await request('get-setup');
       index=Number.isInteger(startAt)?startAt:state.completed?(nextSetupStep(getSnapshot(),state)?.step??0):Math.max(0,steps.findIndex(step=>step.id>=state.step));
-      // Returning from Account/pairing cannot skip children, school and a plan.
-      if(startAt===3)index=Math.min(3,nextSetupStep(getSnapshot(),state)?.step??3);
+      // Pairing returns directly to the computer checklist. Missing school or plan
+      // choices remain visible there and never become complete just by opening it.
+      if(startAt===3)index=children().length?3:0;
       draft=null;reviewing=false;render();dialog.showModal();updateWelcome();
     }catch(failure){state=null;title.textContent='Family setup';progress.textContent='';body.replaceChildren(button('Try again',()=>{dialog.close();void open(startAt);}),button('Close',()=>dialog.close()));error.textContent=failure.message;footer.hidden=true;dialog.showModal();}
     finally{busy=false;launch.disabled=settingsLaunch.disabled=false;}
@@ -157,20 +158,33 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   }
   function readiness() {
     const rows=familyReadiness(getSnapshot(),state);
-    body.append(node('p','Your choices can be saved before a computer is connected. These checks confirm connection and parent controls. Check the child’s screen to confirm the latest activities and school sign-in.','setup-copy'));
-    const connections=node('details','','parent-start-more');connections.open=rows.some(row=>!row.devices.length);
+    body.append(node('p','Choose who uses each computer, then check its connection and parent controls below. Check school sign-in on the child’s screen.','setup-copy'));
+    body.append(button('Check again',async()=>{if(busy)return;busy=true;try{for(const commit of pending)await commit();await refresh();render();}catch(failure){error.textContent=failure.message;}finally{busy=false;}}));
+    const connections=node('details','','parent-start-more');connections.open=!(getSnapshot().devices||[]).some(device=>!device.revoked_at);
     connections.append(node('summary','Connect a Windows computer'),node('p','On the child’s Windows computer, download and install BodeeGuard. Choose Get pairing code. You can approve that code from this phone or any signed-in parent browser.','setup-copy'));
     const download=link('Get Windows installer','/guard/account/?setup=connect#child-setup-heading'),approve=link('Approve pairing code','/guard/activate/?setup=1');
     for(const anchor of [download,approve]){anchor.target='_blank';anchor.rel='noopener';}
     connections.append(download,approve,node('p','This setup stays open. Return here after approving the code.','setup-copy'));body.append(connections);
     const unassigned=(getSnapshot().devices||[]).filter(device=>!device.revoked_at&&!device.student_id);
     for(const device of unassigned){
-      const row=node('label','','setup-field'),select=node('select');row.append(node('span',`Who uses ${device.computer_name || 'this computer'}?`));
+      const row=node('section','','setup-child setup-computer-assignment'),field=node('label','','setup-field'),select=node('select');
+      row.append(node('h3',device.computer_name || 'Child computer'));
+      field.append(node('span','Who uses this computer?'));
       const prompt=node('option','Choose a child');prompt.value='';select.append(prompt);
       for(const child of children()){const option=node('option',child.name);option.value=child.id;select.append(option);}
-      select.onchange=async()=>{if(!select.value||busy)return;busy=true;select.disabled=true;try{await mutate('assign-student',{deviceId:device.id,studentId:select.value});render();}catch(failure){error.textContent=failure.message;select.disabled=false;}finally{busy=false;}};
-      row.append(select);body.append(row);
+      const notice=node('p','','setup-copy');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');
+      const saveStudent=button('Save student',async()=>{
+        if(!select.value||busy)return;busy=true;select.disabled=saveStudent.disabled=true;notice.textContent='Saving student…';
+        try{await mutate('assign-student',{deviceId:device.id,studentId:select.value});render();}
+        catch(failure){notice.textContent=failure.message;select.disabled=false;saveStudent.disabled=false;}
+        finally{busy=false;}
+      },true);
+      saveStudent.disabled=true;
+      select.onchange=()=>{saveStudent.disabled=!select.value;notice.textContent=select.value?'Not saved yet. Tap Save student to assign this computer.':'';};
+      pending.push(()=>{if(select.value)throw Error(`Tap Save student for ${device.computer_name || 'this computer'} first, or clear your selection.`);});
+      field.append(select);row.append(field,saveStudent,notice);body.append(row);
     }
+
     for(const row of rows){
       const card=node('section','','setup-child parent-start-readiness');card.append(node('h3',row.child.name),node('strong',row.ready?'Computer ready for your first school check':'Setup still needs attention'));
       const checks=node('ul');for(const check of row.checks){const item=node('li',check.label);item.dataset.done=String(check.done);const icon=node('i');icon.dataset.lucide=check.done?'circle-check':'circle';icon.setAttribute('aria-hidden','true');item.prepend(icon);checks.append(item);}card.append(checks);
@@ -180,7 +194,8 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       if(row.child.main_school?.provider&&row.child.main_school.provider!=='none')card.append(node('p','First school check: open the school on this child’s computer, sign in, and confirm a lesson opens. Website sign-in cannot be verified from here.','setup-copy'));
       card.append(button('Preview child activities',()=>previewChild(row.child)));body.append(card);
     }
-    body.append(button('Check again',async()=>{if(busy)return;busy=true;try{await refresh();render();}catch(failure){error.textContent=failure.message;}finally{busy=false;}}),button('Review Daily Plan',()=>section('daily-plan')));
+    body.append(node('p','After saving a student, keep BodeeGuard open on that computer. Tap Check again to see when it confirms the assignment and parent controls.','setup-copy'));
+    body.append(button('Review Daily Plan',()=>section('daily-plan')));
   }
   function render() {
     footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();

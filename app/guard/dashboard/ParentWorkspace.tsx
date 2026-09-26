@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import styles from "./workspace.module.css";
 
-export default function ParentWorkspace() {
+export default function ParentWorkspace({ query = "" }: { query?: string }) {
   const { getToken, isLoaded } = useAuth();
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
@@ -18,8 +18,7 @@ export default function ParentWorkspace() {
         const token = await Promise.race([getToken({ skipCache: true }), new Promise<undefined>(resolve => setTimeout(resolve, 6000))]);
         if (disposed || document.hidden) return;
         if (token === null) {
-          const child = new URLSearchParams(window.location.search).get('conversation');
-          const target = '/guard/dashboard/' + (child && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(child) ? '?conversation=' + child : '');
+          const target = '/guard/dashboard/' + query;
           window.location.assign('/guard/sign-in/?redirect_url=' + encodeURIComponent(target)); return;
         }
         opened = true; setReady(true);
@@ -36,7 +35,7 @@ export default function ParentWorkspace() {
     document.addEventListener('visibilitychange', visible);
     void renew();
     return () => { disposed = true; window.removeEventListener('message', message); window.removeEventListener('online', visible); document.removeEventListener('visibilitychange', visible); };
-  }, [getToken, isLoaded]);
+  }, [getToken, isLoaded, query]);
   if (!ready) return <div className={styles.connecting} role="status">
     <Image className={styles.connectingLogo} src="/guard-icons/bodeeguard-parent-192.png" alt="" width={64} height={64} priority />
     <p>Opening your dashboard…</p>
@@ -44,7 +43,7 @@ export default function ParentWorkspace() {
       <span />
     </div>
   </div>;
-  return <iframe ref={frame} title="BodeeGuard Parent Dashboard" src="/guard/dashboard/workspace/" className={styles.frame}
+  return <iframe ref={frame} title="BodeeGuard Parent Dashboard" src={"/guard/dashboard/workspace/" + query} className={styles.frame}
     allow="autoplay; fullscreen; encrypted-media; microphone 'self'"
     sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-downloads allow-top-navigation-by-user-activation" />;
 }

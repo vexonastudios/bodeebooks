@@ -6,6 +6,7 @@ import ParentPwa from "./ParentPwa";
 import ParentWorkspace from "./ParentWorkspace";
 import ParentUpdate from "./ParentUpdate";
 import ParentNotifications from "./ParentNotifications";
+import { dashboardQuery, type DashboardQuery } from "./navigation";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://guard.bodeebooks.com"),
@@ -16,16 +17,16 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#11152b" };
 
-export default async function FamilyDashboard({ searchParams }: { searchParams: Promise<{ conversation?: string }> }) {
-  const { conversation } = await searchParams;
-  const target = '/guard/dashboard/' + (typeof conversation === 'string' && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(conversation) ? '?conversation=' + conversation : '');
+export default async function FamilyDashboard({ searchParams }: { searchParams: Promise<DashboardQuery> }) {
+  const query = dashboardQuery(await searchParams);
+  const target = '/guard/dashboard/' + query;
   if (!(await auth()).isAuthenticated) redirect('/guard/sign-in?redirect_url=' + encodeURIComponent(target));
   // Keep the surrounding ClerkProvider alive to renew the parent's session.
   // A same-origin document isolates shared desktop CSS from the book site.
   // It is not a LAN iframe and never calls the parent's desktop.
   return <div className={styles.workspace} data-guard-workspace="true">
     <ParentPwa />
-    <ParentWorkspace />
+    <ParentWorkspace query={query} />
     <ParentUpdate />
     <ParentNotifications />
   </div>;
