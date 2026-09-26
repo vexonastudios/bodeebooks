@@ -38,10 +38,12 @@ screen and an inline incorrect/expired-code message from the real API. All 18
 existing anonymous parent-domain checks passed. A brief initial post-promotion
 404 resolved after alias propagation without a source change.
 
-Authenticated code creation/redemption still needs the parent to sign back in;
-the existing browser session expired during verification. The synthetic service
-and website integration checks pass; no actual child PC was paired or installed.
-The short-page proof image contains no code or private family data.
+After parent sign-in, live code creation and redemption passed: the parent
+account produced a short code and the public form offered the current 1.2.240
+Windows installer with a fresh signed five-minute download window. No parent
+credentials reach the public endpoint; no physical child PC was paired and no
+installer was executed. Temporary test input was cleared. The saved public-page
+proof image contains no code or family data.
 Rollback website: `dpl_CJEFsHCJZPxtF3iXVUu8YDvpAtGw` (source `e7b8620`).
 
 ## Previous link-sharing implementation (historical)
