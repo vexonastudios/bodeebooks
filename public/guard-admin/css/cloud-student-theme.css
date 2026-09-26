@@ -1,0 +1,215 @@
+/* Theme chrome shared by packaged child activities and the media bridge.
+   Paper, artwork, video pixels, maps and piano keys retain their own colors. */
+:root[class*="theme-"] {
+  --panel: var(--theme-surface-strong);
+  --ink: var(--theme-text);
+  --line: var(--theme-border);
+  --danger: var(--theme-danger-text);
+  --danger-bg: var(--theme-control-bg);
+  --vocab-bg: var(--theme-bg);
+  --vocab-panel: var(--theme-surface-strong);
+  --vocab-panel-strong: var(--theme-surface-strong);
+  --vocab-text: var(--theme-text);
+  --vocab-muted: var(--theme-text-secondary);
+  --vocab-border: var(--theme-border);
+  --vocab-mint: var(--theme-success-text);
+  --vocab-cyan: var(--theme-text-secondary);
+  --vocab-gold: var(--theme-warning-text);
+  --vocab-violet: var(--theme-info-text);
+  --vocab-danger: var(--theme-danger-text);
+}
+:root[data-theme-activity] body { color: var(--theme-text); }
+:root[class*="theme-"] :is(button, a, input, textarea, select, summary):focus-visible {
+  outline: 3px solid var(--theme-text); outline-offset: 3px;
+}
+:root[data-theme-activity] :is(.cloud-practice-controls, .cloud-spelling-controls,
+ .cloud-science-controls, .cloud-poem-controls, .cloud-quiz-controls,
+ .cloud-vocabulary-controls, #typing-connection, .header, .topbar, .toolbar,
+ .art-header, .art-tools, .art-card, .state-panel, .daily-meter, .studio-card,
+ .modal, .modal-box, dialog, .modal-content, .feedback, .done-screen,
+ .stat-card, .stat, .panel, .result-stat, .summary-card, .tip,
+ #notebook-notice, #print-dialog, #confirm-modal .modal-box) {
+  background: var(--theme-surface-strong) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border-strong) !important;
+}
+:root[data-theme-activity] :is(button, .btn):where(:not(.art-color,.key,.piano-key,.swatch,.ql-toolbar button,.ql-picker-item)) {
+  background: var(--theme-surface-strong) !important;
+  color: var(--theme-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  border-color: var(--theme-border-strong) !important;
+}
+:root[data-theme-activity] :is(button, .btn):not(:disabled):not(.art-color):not(.key):not(.piano-key):not(.ql-toolbar button):hover {
+  box-shadow: inset 0 0 0 2px var(--theme-border-strong);
+}
+:root[data-theme-activity] :is(h1,h2,h3,h4,.title,.brand,.learn-word,.sentence,.prompt,.art-title) {
+  color: var(--theme-text); -webkit-text-fill-color: currentColor;
+}
+:root[data-theme-activity] :is(.muted,.subtitle,.sub,.hint,.description,.empty-state,
+ .brand p,.pill,.mode-label,.spelling-stage-label,.progress-label,.progress-wrap,
+ .header-sub,.card p,.art-card p,.art-header p,.art-tools p,.daily-meter small,
+ .studio-brand p,.safety-note,.daily-limit-message,.status,.notice,.eyebrow,
+ .section-label,.stat-label,.score-label,.result-label,.lesson-desc) {
+  color: var(--theme-text-secondary) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+:root[data-theme-activity] :is(button.primary,.primary-btn,.btn-primary,.btn-submit,.next-btn,.done-btn,
+ .check-order-btn,.school-tab.active,.tp-btn-primary,.art-primary,.vocab-primary,
+ #new-btn,#submit-doc-btn,#print-confirm) {
+  background: var(--theme-primary) !important;
+  color: var(--theme-on-primary) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+:root[data-theme-activity] :is(.correct,.correct-fb,.is-correct,.success,.feedback-banner.correct) {
+  color: var(--theme-success-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+:root[data-theme-activity] :is(.wrong,.incorrect,.wrong-fb,.is-wrong,.error,.feedback-banner.incorrect) {
+  color: var(--theme-danger-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+:root[data-theme-activity] :is(.coin-badge,.done-coins,.coin-pop .amount,.daily-meter strong) { color: var(--theme-warning-text) !important; }
+:root[data-theme-activity] #speed-test-frame {
+  --bg: var(--theme-bg); --surface: var(--theme-surface-strong);
+  --text: var(--theme-text); --muted: var(--theme-text-secondary);
+  --purple: var(--theme-primary); --green: var(--theme-success-text); --red: var(--theme-danger-text);
+}
+/* Keep the editor sheet and its formatting controls consistent with printed ink. */
+:root[data-theme-activity] :is(#editor-header,#editor-wrapper,.ql-toolbar,.ql-picker-options) { background: var(--paper-bg, #fff) !important; color: var(--paper-ink, #172033) !important; }
+:root[data-theme-activity] #editor-header :is(input,#doc-title) { background: var(--paper-bg, #fff) !important; color: var(--paper-ink, #172033) !important; }
+:root[data-theme-activity] .ql-editor { background: var(--paper-bg, #fff); color: var(--paper-ink, #172033); }
+:root[data-theme-activity] :is(.ql-editor, #editor-header) ::placeholder { color: #596579 !important; }
+
+/* Transport status is part of the activity, including loading and retry states. */
+:root[data-theme-activity] :is(#practice-status,#spelling-status,#vocabulary-cloud-status,#poems-cloud-status,#quizzes-status,#science-cloud-status,#typing-status,.module-study-label,.module-study-goal,#status) {
+ color: var(--theme-text-secondary) !important;
+}
+:root[data-theme-activity] :is(.activity-loader,.activity-status,.coin-pop,.module-study,.brand-icon,.poem-shell>header,.vocab-hero,.worksheet-search) {
+ background: var(--theme-surface-strong) !important; color: var(--theme-text) !important;
+ border-color: var(--theme-border-strong) !important;
+}
+:root[data-theme-activity] :is(.activity-status[data-kind="success"],#score-correct) { color: var(--theme-success-text) !important; }
+:root[data-theme-activity] .activity-status[data-kind="error"] { color: var(--theme-danger-text) !important; }
+:root[data-theme-activity] :is(.activity-loader p,#score-label,#art-gallery-status,.art-gallery>p,.art-header small,header>p) { color: var(--theme-text-secondary) !important; }
+:root[data-theme-activity] :is(#typing-study-time,#mode-badge) { color: var(--theme-link) !important; }
+:root[data-theme-activity] #word-count { color: #4f46a0 !important; }
+
+:root[data-theme-activity] :is(.spanish-header,.module-study-time,.spanish-empty) { background: var(--theme-surface-strong) !important; }
+:root[data-theme-activity] :is(.spanish-header strong,.spanish-empty p,.brand small,.art-intro p,.coin-pop>div) { color: var(--theme-text-secondary) !important; }
+:root[data-theme-activity] #coin-pop-amount { color: var(--theme-warning-text) !important; }
+
+:root[class*="theme-"] {
+ --spanish-bg: var(--theme-bg); --spanish-panel: var(--theme-surface-strong);
+ --spanish-panel-strong: var(--theme-surface-strong); --spanish-line: var(--theme-border);
+ --spanish-text: var(--theme-text); --spanish-muted: var(--theme-text-secondary);
+ --spanish-gold: var(--theme-warning-text); --spanish-green: var(--theme-success-text);
+ --spanish-blue: var(--theme-link); --spanish-red: var(--theme-danger-text);
+}
+
+/* Learning content, explanations and progress badges share semantic ink. */
+:root[data-theme-activity] :is(.coach-panel,.memory-overview,.mode-card,.study-pair,.song-set-step,
+ .learning-card,.meta-pill,.today-status,.badge-new,.worksheet-category,.practice-card,.progress-panel,
+ .recitation-text,.map-stanza,.chips span,.today) {
+ background: var(--theme-surface-strong) !important; border-color: var(--theme-border-strong) !important;
+ color: var(--theme-text) !important;
+}
+:root[data-theme-activity] :is(.type-badge,.coach-eyebrow,.coach-title,.coach-explanation,.coach-tip,
+ .memory-overview h3,.mode-card h3,.mode-card-icon,#term-text,.term) {
+ color: var(--theme-text) !important; -webkit-text-fill-color: currentColor !important;
+}
+:root[data-theme-activity] :is(.coach-panel p,.memory-overview p,.mode-card p,.mode-card .mode-status,
+ .song-set-count,.study-region,.practice-note,.study-instruction,#memory-mode-status,#challenge-mode-status,
+ #memory-summary-text,#today-status,.worksheet-category,.brand-copy span,.spanish-panel p) {
+ color: var(--theme-text-secondary) !important; -webkit-text-fill-color: currentColor !important;
+}
+:root[data-theme-activity] :is(.study-capital,#memory-strong-count,.teach-meaning span) { color: var(--theme-link) !important; }
+:root[data-theme-activity] :is(.corrections li,.corrections b) { color: var(--theme-danger-text) !important; }
+:root[data-theme-activity] :is(#spanish-streak,#spanish-xp) { color: var(--theme-warning-text) !important; }
+
+:root[data-theme-activity] :is(.mode-grid>p,.map-line,.section-head small,.practice-top small,
+ #recitation small,#cue,.teach-meaning span,.teach-meaning>p>span,section>div>small,header small,#count) {
+ color: var(--theme-text-secondary) !important;
+}
+
+:root[class*="theme-"] .cloud-student :is(#completion-text,#typing-wpm,#streak-best) { color: var(--theme-link) !important; }
+:root[class*="theme-"] .cloud-student .schoolwork-label { background: var(--theme-surface-strong) !important; color: var(--theme-warning-text) !important; }
+:root:is(.theme-pink,.theme-sunset-gold) .cloud-student #dashboard-screen .subject-icon {
+ color: color-mix(in srgb, var(--card-color) 58%, #000) !important;
+}
+:root[data-theme-activity] footer { color: var(--theme-text-secondary); }
+
+:root[data-theme-activity] :is(.mode-heading p,.friendly-meaning>span) { color: var(--theme-text-secondary) !important; }
+:root[data-theme-activity] :is(.player-controls,.tracklist-panel,.tracklist-header,.track-row,.video-time-offer-card,.modal-box) {
+ background: var(--theme-surface-strong) !important; color: var(--theme-text) !important;
+}
+:root[data-theme-activity] :is(#song-artist,.track-a,#budget-label,#time-budget,.player-channel,.time-lbl) { color: var(--theme-text-secondary) !important; }
+:root[data-theme-activity] :is(#tl-title,.track-t,#vol-lbl) { color: var(--theme-text) !important; }
+
+/* These mounted activities define their own local variables; inherit the desk. */
+:root[class*="theme-"] .cloud-student :is(#student-reading-panel,#student-store-panel,#student-messages-panel) {
+ --bg: var(--theme-bg); --surface: var(--theme-surface-strong); --surface2: var(--theme-surface-strong);
+ --text: var(--theme-text); --muted: var(--theme-text-secondary); --border: var(--theme-border);
+ --accent: var(--theme-link); --purple: var(--theme-link); --green: var(--theme-success-text); --gold: var(--theme-warning-text);
+ background: var(--theme-page) !important; color: var(--theme-text) !important;
+}
+:root[class*="theme-"] .cloud-student .cloud-student-panel { background: var(--theme-surface-strong); color: var(--theme-text); }
+:root[class*="theme-"] .cloud-student :is(#student-reading-panel,#student-store-panel,#student-messages-panel) :is(.header,.store-card,.coin-badge,.store-note,.toast,.modal-card,.message-bubble,.compose-area) {
+ background: var(--theme-surface-strong) !important; border-color: var(--theme-border-strong) !important;
+}
+:root[class*="theme-"] .cloud-student :is(.badge-reading,#store-status,.store-subtitle,.coin-badge-label,.store-note,.parent-badge,#store-history p) { color: var(--theme-text-secondary) !important; }
+:root[class*="theme-"] .cloud-student #store-coin-balance { color: var(--theme-warning-text) !important; }
+:root[class*="theme-"] .cloud-student #student-store-panel .item-action { background: var(--theme-primary); color: var(--theme-on-primary); }
+
+:root[class*="theme-"] .cloud-student #message-status { color: var(--theme-text-secondary) !important; }
+
+:root[class*="theme-"] .cloud-student #student-messages-panel .msg-meta { color: var(--theme-text-secondary) !important; }
+:root[class*="theme-"] .cloud-student #student-reading-panel :is(.badge-finished,.toast.success) { color: var(--theme-success-text) !important; }
+:root[data-theme-activity] .bg-learning-player #seek-feedback { color: var(--theme-success-text); }
+
+/* Theme the family room controls, preserving board squares, pieces and previews. */
+:root[class*="theme-"] .cloud-student .cloud-family-room {
+ --game-panel: var(--theme-surface-strong); --game-line: var(--theme-border-strong);
+ --game-muted: var(--theme-text-secondary); color: var(--theme-text);
+}
+:root[class*="theme-"] .cloud-student .cloud-family-room :is(.cloud-game-header,.cloud-game-people,
+ .cloud-game-person,.cloud-game-banner,.cloud-game-banner-label,.cloud-game-install-card,
+ .cloud-game-avatar,.cloud-game-badge,.tabletop-room,.tabletop-game,dialog) {
+ background: var(--theme-surface-strong); color: var(--theme-text); border-color: var(--theme-border-strong);
+}
+:root[class*="theme-"] .cloud-student .cloud-family-room :is(.cloud-game-eyebrow,.cloud-game-banner-genre,
+ .cloud-game-banner-action,.cloud-game-preview-nav>span,.cloud-game-start-steps,.cloud-game-access-reason,
+ .tabletop-game small,.tabletop-moves p) { color: var(--theme-text-secondary); }
+:root[class*="theme-"] .cloud-student .cloud-family-room :is(.cloud-game-online,.cloud-game-time,.tabletop-note,.tabletop-turn) { color: var(--theme-success-text); }
+:root[class*="theme-"] .cloud-student .cloud-family-room .cloud-game-preview-availability { color: var(--theme-warning-text); }
+:root[class*="theme-"] .cloud-student .cloud-family-room .tabletop-game.selected { border-color: var(--theme-link); box-shadow: inset 0 0 0 1px var(--theme-link); }
+:root[class*="theme-"] .cloud-student .cloud-family-room .btn { background: var(--theme-surface-strong); color: var(--theme-text); border-color: var(--theme-border-strong); }
+:root[class*="theme-"] .cloud-student .cloud-family-room .btn-primary { background: var(--theme-primary); color: var(--theme-on-primary); }
+
+:root[data-theme-activity] :is(.time-budget,.mini-budget,.header-stats>span) { background: var(--theme-surface-strong) !important; color: var(--theme-text-secondary) !important; }
+:root[data-theme-activity] :is(.time-budget,.mini-budget) span { color: inherit !important; -webkit-text-fill-color: currentColor !important; }
+
+/* Typing instructions and keyboard labels must remain readable in light themes. */
+:root[data-theme-activity] :is(#typing-study-goal,#coach-text,#voice-status,#finger-cue) { color: var(--theme-text-secondary) !important; }
+:root[data-theme-activity] .coach-mini-avatar { background: var(--theme-primary) !important; color: var(--theme-on-primary) !important; }
+:root[data-theme-activity] .target-char { color: var(--theme-text-secondary); }
+:root[data-theme-activity] .target-char.current { background: var(--theme-primary); color: var(--theme-on-primary); }
+:root[data-theme-activity] .target-char.done { color: var(--theme-success-text); }
+:root[data-theme-activity] .keyboard-key:not(.target):not(.pressed-correct):not(.pressed-wrong) { background: var(--theme-surface-strong); color: var(--theme-text); }
+:root[data-theme-activity] .keyboard-key.unlearned { opacity: 1; color: var(--theme-text-secondary) !important; border-style: dashed; }
+:root[data-theme-activity] .keyboard-key.pressed-correct { background: var(--theme-surface-strong); color: var(--theme-success-text); border: 2px solid var(--theme-success-text); }
+:root[data-theme-activity] .keyboard-key.pressed-wrong { background: var(--theme-surface-strong); color: var(--theme-danger-text); border: 2px solid var(--theme-danger-text); }
+
+:root[data-theme-activity] .lesson-controls { background: var(--theme-surface-strong); }
+
+:root[data-theme-activity] :is(.tp-title,.tp-leaderboard-score,#stat-wpm) { color: var(--theme-link) !important; -webkit-text-fill-color: currentColor !important; }
+
+:root[data-theme-activity] .header-stats b { color: var(--theme-link); }
+
+/* Include untyped text inputs, whose default HTML type is still text. */
+:root[data-theme-activity] :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),textarea,select),
+:root[class*="theme-"] .cloud-student :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),textarea,select) {
+ background: var(--theme-surface-strong) !important; color: var(--theme-text) !important;
+ -webkit-text-fill-color: currentColor !important; border-color: var(--theme-border-strong) !important;
+}
+:root[data-theme-activity] ::placeholder,
+:root[class*="theme-"] .cloud-student ::placeholder { color: var(--theme-text-secondary) !important; -webkit-text-fill-color: currentColor !important; opacity: 1; }
