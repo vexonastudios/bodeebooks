@@ -127,7 +127,6 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     assignment.dailyPlan = { placement: blocked ? card.previousPlacement || 'anytime' : card.placement, days: card.days, start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes,
       ...(card.accessChanged ? {enabled:!blocked} : typeof assignment.dailyPlan?.enabled === 'boolean' ? {enabled:assignment.dailyPlan.enabled} : {}) };
   }
-  if (subjects.length > 30) throw Error('Your plan supports up to 30 distinct subjects. Remove unused subjects first.');
   return { revision: snapshot.rules.revision, subjects, schedule: structuredClone(snapshot.rules.schedule) };
 }
 

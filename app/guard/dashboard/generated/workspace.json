@@ -3,7 +3,7 @@
   "hashes": {
     "renderer/js/admin/cloud-spelling-photos.js": "1b15e007fb0ec01097d62b59ad345ea704693e336dc23a82380d75bac8b6a28f",
     "renderer/js/admin/cloud-daily-plan.js": "5696b8b8461d23c1e0df1fbe4424710dc727fd7883d66465d25c01af7b11f548",
-    "renderer/js/admin/cloud-daily-plan-model.js": "db7bb76c2050d22935dfbebcb5fec83507738ee5b93ead7be842875321dcf222",
+    "renderer/js/admin/cloud-daily-plan-model.js": "100d38a687e60bc442ac344fa1f766570d06d41a412af366971228bbb78083b8",
     "renderer/css/admin/cloud-daily-plan.css": "cc967b6bbe078743d7a9728ef78d1aaa3d038331ee72fd4fa1ca0b27750b6a3d",
     "renderer/css/admin/base.css": "ad2247c6ad708673da6ce44538ef289b89a9c3c199b049eb2d27bb0f83c77366",
     "renderer/css/admin/assistant.css": "8b4c3fc2e56026fc9192a678f0102285342e1fc1b1e82547883d8768b3b1ce1f",
