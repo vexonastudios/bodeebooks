@@ -18,6 +18,7 @@ export function setupNotificationNavigation({ messaging, navigate, getStudents }
     const heading = document.querySelector(`#tab-${tab} h1`);
     if (!heading) continue;
     const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary';
+    button.ariaLabel = 'Message notifications'; button.title = 'Message notifications';
     button.innerHTML = '<i data-lucide="bell" aria-hidden="true"></i> Message notifications';
     button.addEventListener('click', () => window.parent.postMessage({ type: 'bodeeguard-phone-notifications' }, location.origin));
     heading.after(button);

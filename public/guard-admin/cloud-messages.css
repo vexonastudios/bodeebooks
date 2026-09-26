@@ -3,6 +3,7 @@
 }
 
 .cloud-messages-panel {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   display: block;
   width: 100%;
   max-width: 1440px;
@@ -226,3 +227,95 @@
     max-width: 100%;
   }
 }
+.cloud-unread-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.45em;padding:2px 6px;margin-left:6px;border-radius:999px;background:#a5b4fc;color:#11152b;font:700 12px/1.4 system-ui;vertical-align:middle}
+.cloud-unread-badge[hidden]{display:none}
+.cloud-chat-heading { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,.08); }
+.cloud-chat-heading #messages-thread-header { flex: 1; min-width: 0; margin: 0; border: 0; }
+.cloud-chat-back { display: none; }
+.cloud-chat-help { margin: 0 0 16px; color: #a1aec4; font-size: 13px; }
+.cloud-chat-help summary { width: fit-content; padding: 8px 0; cursor: pointer; }
+.cloud-chat-help p { max-width: 920px; margin: 8px 0; line-height: 1.6; }
+.cloud-chat-avatar { display: none; }
+.cloud-chat-person-copy small { display: none; }
+.cloud-chat-person-copy strong { font-weight: inherit; }
+#messages-cloud-status:empty, #messages-record-status:empty, #messages-attachment-status:empty { display: none; }
+
+/* The phone shows a conversation list OR a chat. Only the message history scrolls. */
+.cloud-mobile.cloud-messages-active #admin-dashboard { grid-template-rows: minmax(0, 1fr) auto; }
+.cloud-mobile.cloud-messages-active #admin-dashboard > .app-header { display: none !important; }
+.cloud-mobile.cloud-messages-active .main-content { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.cloud-mobile.cloud-messages-active #parent-assistant-launcher { display: none !important; }
+.cloud-mobile #tab-messages.active { display: flex; flex: 1; min-height: 0; padding: 0; }
+.cloud-mobile .cloud-messages-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.cloud-mobile .cloud-messages-panel > .tab-header { flex: 0 0 auto; min-height: 68px; padding: calc(12px + env(safe-area-inset-top)) 16px 12px; margin: 0; flex-wrap: nowrap; border-bottom: 1px solid #ffffff12; }
+.cloud-mobile .cloud-messages-panel > .tab-header h1 { margin: 0; }
+.cloud-mobile .cloud-messages-panel > .tab-header .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px; font-size: 12px; }
+.cloud-mobile .cloud-messages-panel > .tab-header svg { flex: 0 0 18px; width: 18px; height: 18px; }
+.cloud-mobile .cloud-chat-help { flex: 0 0 auto; margin: 0; padding: 0 16px; max-height: 28%; overflow: auto; }
+.cloud-mobile .cloud-chat-help summary { min-height: 44px; display: flex; align-items: center; }
+.cloud-mobile .cloud-chat-layout { display: flex; flex: 1; height: auto; min-height: 0; gap: 0; overflow: hidden; }
+.cloud-mobile .cloud-chat-people, .cloud-mobile .cloud-chat-conversation { flex: 1; min-height: 0; height: auto; max-height: none; border: 0; border-radius: 0; background: transparent; }
+.cloud-mobile .cloud-chat-people > h2 { display: none; }
+.cloud-mobile #messages-student-list { padding: 0 12px 16px; }
+.cloud-mobile #messages-student-list .cloud-chat-person { display: flex; align-items: center; gap: 12px; min-height: 82px; padding: 14px 8px; margin: 0; border: 0; border-bottom: 1px solid #ffffff12; border-radius: 0; background: transparent; outline: none; }
+.cloud-mobile #messages-student-list .cloud-chat-person:focus-visible { outline: 2px solid #a5b4fc; outline-offset: -2px; border-radius: 12px; }
+.cloud-mobile .cloud-chat-avatar { display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 48px; border-radius: 50%; background: #292850; color: #d8d3ff; font-size: 17px; font-weight: 700; }
+.cloud-mobile .cloud-chat-person:nth-child(3n+2) .cloud-chat-avatar { color: #9eefdd; background: #123b3a; }
+.cloud-mobile .cloud-chat-person:nth-child(3n+3) .cloud-chat-avatar { color: #b3ddff; background: #19344f; }
+.cloud-mobile .cloud-chat-person-copy { flex: 1; min-width: 0; text-align: left; }
+.cloud-mobile .cloud-chat-person-copy strong { display: block; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.cloud-mobile .cloud-chat-person-copy small { display: block; margin-top: 4px; color: #a1aec4; font-size: 12px; font-weight: 400; }
+.cloud-mobile [data-message-view="list"] .cloud-chat-conversation { display: none; }
+.cloud-mobile [data-message-view="thread"] .cloud-chat-people,
+.cloud-mobile [data-message-view="thread"] .cloud-messages-panel > .tab-header,
+.cloud-mobile [data-message-view="thread"] .cloud-chat-help { display: none; }
+.cloud-mobile .cloud-chat-heading { flex: 0 0 auto; gap: 8px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px; background: #11152b; }
+.cloud-mobile .cloud-chat-heading #messages-thread-header { padding: 0; font-size: 17px; overflow-wrap: anywhere; }
+.cloud-mobile .cloud-chat-back { display: grid; place-items: center; width: 44px; min-height: 44px; flex: 0 0 44px; padding: 0; border: 0; background: transparent; color: #c4b5fd; }
+.cloud-mobile .cloud-chat-back svg { width: 24px; height: 24px; }
+.cloud-mobile #messages-thread-content { min-height: 0; max-height: none; padding: 16px 12px; gap: 12px; overscroll-behavior: contain; scroll-padding-bottom: 12px; }
+.cloud-mobile #messages-thread-content:empty::after { content: 'Send a message, voice note or attachment.'; margin: auto; max-width: 240px; text-align: center; color: #a1aec4; font-size: 14px; line-height: 1.6; }
+.cloud-mobile .cloud-message { max-width: 88%; padding: 10px 12px; border: 0; border-radius: 16px 16px 16px 4px; background: #1d233a; overflow-wrap: anywhere; }
+.cloud-mobile .cloud-message.parent { background: #303563; border-radius: 16px 16px 4px 16px; }
+.cloud-mobile .cloud-message p { font-size: 15px; line-height: 1.5; }
+.cloud-mobile .cloud-message small { display: block; font-size: 10px; line-height: 1.5; color: #bcc4db; }
+.cloud-mobile .cloud-message audio { max-width: 100%; }
+.cloud-mobile #messages-cloud-status { flex: 0 0 auto; margin: 0; padding: 8px 16px; max-height: 90px; overflow: auto; font-size: 12px; background: #1b2239; }
+.cloud-mobile #messages-cloud-status.is-routine { display: none; }
+.cloud-mobile .cloud-chat-history { flex: 0 0 auto; margin: 4px auto; min-height: 32px; padding: 4px 12px; font-size: 12px; }
+.cloud-mobile .cloud-chat-compose { flex: 0 0 auto; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px 44px; align-items: end; gap: 8px 4px; padding: 10px 8px; margin: 0; background: #11152b; }
+.cloud-mobile .cloud-chat-compose-tools, .cloud-mobile .cloud-chat-compose-actions, .cloud-mobile .cloud-chat-voice-actions { display: contents; }
+.cloud-mobile .cloud-chat-message-field { grid-column: 2; grid-row: 1; min-width: 0; margin: 0; }
+.cloud-mobile .cloud-chat-message-field > span,
+.cloud-mobile .cloud-chat-attachment-field > span,
+.cloud-mobile #messages-record > span,
+.cloud-mobile #messages-reply-btn > span,
+.cloud-mobile #messages-attachment-clear > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.cloud-mobile #messages-reply-input { min-height: 44px; max-height: 112px; padding: 10px 12px; border: 1px solid #465273; border-radius: 22px; resize: none; line-height: 22px; font-size: 16px; }
+.cloud-mobile .cloud-chat-attachment-field, .cloud-mobile #messages-record, .cloud-mobile #messages-reply-btn, .cloud-mobile #messages-attachment-clear { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-height: 44px; padding: 0; margin: 0; border: 0; border-radius: 50%; }
+.cloud-mobile .cloud-chat-attachment-field { grid-column: 1; grid-row: 1; background: transparent; color: #c4b5fd; }
+.cloud-mobile #messages-record { grid-column: 3; grid-row: 1; background: transparent; color: #c4b5fd; }
+.cloud-mobile #messages-record.recording { background: #5d2237; color: #fecaca; }
+.cloud-mobile #messages-reply-btn { grid-column: 4; grid-row: 1; background: #6d5ce7; color: white; }
+.cloud-mobile .cloud-chat-compose svg { width: 21px; height: 21px; }
+.cloud-mobile #messages-record-status { grid-column: 1 / -1; grid-row: 3; margin: 0; padding: 0 8px; color: #c4b5fd; font-size: 12px; }
+.cloud-mobile #messages-attachment-status { grid-column: 1 / 4; grid-row: 2; align-self: center; max-width: none; padding: 8px 12px; border-radius: 12px; background: #232b47; color: #d8def1; font-size: 12px; }
+.cloud-mobile #messages-attachment-clear { grid-column: 4; grid-row: 2; color: #fecaca; background: #332637; }
+.cloud-mobile .cloud-chat-voice-preview { display: flex; grid-column: 1 / -1; grid-row: 4; gap: 8px; padding: 8px; margin: 0; }
+.cloud-mobile .cloud-chat-voice-preview audio { width: 100%; flex: 1 1 100%; min-width: 0; }
+.cloud-mobile #messages-voice-discard { margin-left: auto; padding: 8px; font-size: 12px; }
+
+/* Keep chat controls within the visible screen, including when the keyboard opens. */
+.cloud-chat-search { margin: 12px; width: calc(100% - 24px); min-height: 44px; flex: 0 0 auto; padding: 10px 14px; border: 1px solid #39405c; border-radius: 22px; background: #161a30; color: #eef2ff; font: inherit; }
+.cloud-chat-search:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
+.cloud-chat-list-empty { color: #b7c8dc; padding: 16px; line-height: 1.5; }
+.cloud-message .cloud-message-meta { display: block; text-align: right; margin-top: 6px; }
+.cloud-mobile.cloud-conversation-open #admin-dashboard { grid-template-rows: minmax(0, 1fr); }
+.cloud-mobile.cloud-conversation-open .bottom-nav { display: none !important; }
+.cloud-mobile.cloud-conversation-open .cloud-chat-compose { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+.cloud-mobile .cloud-chat-heading .cloud-chat-avatar { width: 40px; height: 40px; flex-basis: 40px; font-size: 15px; }
+.cloud-mobile .cloud-chat-heading #messages-thread-header { padding: 12px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cloud-mobile .cloud-messages-panel > .tab-header .btn { width: 44px; height: 44px; min-width: 44px; padding: 0; font-size: 0; border-radius: 50%; }
+.cloud-mobile .cloud-messages-panel > .tab-header svg { width: 22px; height: 22px; }
+.cloud-mobile .cloud-chat-search { margin-top: 8px; font-size: 16px; }
+.cloud-mobile .cloud-chat-compose [hidden], .cloud-chat-avatar[hidden] { display: none !important; }

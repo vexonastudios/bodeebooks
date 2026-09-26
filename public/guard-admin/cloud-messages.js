@@ -22,14 +22,43 @@ export function setupCloudMessages({ endpoint }) {
   const attachments = new Map();
   const localFiles = new Map(), voices = new Map();
   const threadRows = createMessageThread(el('messages-thread-content'));
+  const mobile = window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)');
+  const section = el('tab-messages') || document.querySelector('.cloud-messages-panel');
+  section.dataset.messageView = 'list';
+  const threadHeader = document.createElement('div'); threadHeader.className = 'cloud-chat-heading';
+  const back = document.createElement('button'); back.type = 'button'; back.className = 'btn cloud-chat-back';
+  back.setAttribute('aria-label', 'Back to conversations'); back.innerHTML = '<i data-lucide="arrow-left" aria-hidden="true"></i>';
+  el('messages-thread-header').before(threadHeader); threadHeader.append(back, el('messages-thread-header'));
+  const threadAvatar = document.createElement('span'); threadAvatar.className = 'cloud-chat-avatar'; threadAvatar.setAttribute('aria-hidden', 'true'); back.after(threadAvatar);
+  const initials = name => name.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0]).join('');
+  const search = document.createElement('input'); search.type = 'search'; search.placeholder = 'Search your children'; search.className = 'cloud-chat-search'; search.setAttribute('aria-label', 'Search conversations');
+  el('messages-student-list').before(search); search.addEventListener('input', renderStudents);
+  back.addEventListener('click', () => { pauseMedia(); clearTimeout(timer); showConversation(false); renderStudents(); el('messages-student-list').querySelector('[aria-pressed="true"]')?.focus(); });
+  el('messages-reply-input').placeholder = 'Message…';
+  el('messages-attachment').setAttribute('aria-label', 'Attach an image, PDF or audio file');
+  el('messages-attachment-clear').innerHTML = '<i data-lucide="x" aria-hidden="true"></i><span>Clear attachment</span>';
+  el('messages-attachment-clear').setAttribute('aria-label', 'Remove attachment');
+  const help = document.createElement('details'); help.className = 'cloud-chat-help';
+  const summary = document.createElement('summary'); summary.textContent = 'About messages';
+  const helpNote = document.querySelector('.cloud-messages-panel > .cloud-note');
+  helpNote.before(help); help.append(summary, helpNote);
+  function showConversation(value) { section.dataset.messageView = value ? 'thread' : 'list'; document.body.classList.toggle('cloud-conversation-open', active && value); sizeInput(); }
+  function conversationVisible() { return active && !document.hidden && selected && (!mobile.matches || section.dataset.messageView === 'thread'); }
+  function sizeInput() {
+    const input = el('messages-reply-input'); input.style.removeProperty('height');
+    if (mobile.matches) { input.style.height = '44px'; input.style.height = `${Math.min(112, Math.max(44, input.scrollHeight + 2))}px`; }
+  }
+  el('messages-reply-input').addEventListener('input', sizeInput);
+  mobile.addEventListener('change', () => { sizeInput(); if (conversationVisible()) void refresh(); else { clearTimeout(timer); pauseMedia(); } });
   let previewFile = null, previewUrl = null, recordingChild = null;
   const voicePanel = document.createElement('div'); voicePanel.className = 'cloud-chat-voice';
   voicePanel.innerHTML = '<div class="cloud-chat-voice-actions"><button id="messages-record" class="btn btn-secondary" type="button" disabled><i data-lucide="mic"></i><span>Record voice</span></button><span id="messages-record-status" role="status"></span></div><div id="messages-voice-preview" class="cloud-chat-voice-preview" hidden><audio id="messages-voice-audio" controls preload="metadata" aria-label="Preview your voice message"></audio><span id="messages-voice-duration"></span><button id="messages-voice-discard" class="btn btn-secondary" type="button"><i data-lucide="trash-2"></i>Discard</button></div>';
   el('messages-compose-tools').prepend(voicePanel);
-  document.querySelector('.cloud-messages-panel > .cloud-note').textContent = 'Record a voice message up to 60 seconds, or attach an image, PDF or audio file up to 2 MB. Messages travel over an encrypted connection. Received means delivered to the computer.';
+  helpNote.textContent = 'Record a voice message up to 60 seconds, or attach an image, PDF or audio file up to 2 MB. Messages travel over an encrypted connection. Received means delivered to the computer.';
   const voice = createVoiceRecorder({ onChange: value => {
     const recording = value.phase === 'recording', label = el('messages-record').querySelector('span');
     label.textContent = recording ? 'Stop recording' : 'Record voice';
+    el('messages-record').setAttribute('aria-label', label.textContent);
     el('messages-record').classList.toggle('recording', recording);
     const mark = document.createElement('i'); mark.dataset.lucide = recording ? 'square' : 'mic';
     el('messages-record').firstElementChild.replaceWith(mark); window.lucide?.createIcons();
@@ -53,7 +82,7 @@ export function setupCloudMessages({ endpoint }) {
     el('messages-voice-preview').hidden = !file;
     el('messages-voice-duration').textContent = value ? `${value.seconds}s · Ready to send` : '';
   }
-  function note(text) { el('messages-cloud-status').textContent = text; }
+  function note(text) { el('messages-cloud-status').textContent = text; el('messages-cloud-status').classList.toggle('is-routine', text === 'Messages updated.'); }
   async function request(action, input) {
     const response = await fetch(action === 'upload-file' ? endpoint.replace(/bridge\/?$/, 'upload/') : endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(28000),
       redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
@@ -73,9 +102,21 @@ export function setupCloudMessages({ endpoint }) {
     el('messages-voice-discard').disabled = sending || pending.has(selected);
     el('messages-record').disabled = !selected || sending || pending.has(selected) || ['requesting', 'finishing'].includes(voice.state().phase) || voice.state().phase !== 'recording' && Boolean(localFiles.get(selected) || attachments.get(selected));
     el('messages-attachment-status').textContent = attachments.get(selected)?.name || localFiles.get(selected)?.name || '';
-    el('messages-reply-btn').innerHTML = `<i data-lucide="send"></i>${pending.has(selected) ? 'Retry same message' : 'Send'}`;
+    el('messages-attachment-status').hidden = voices.has(selected);
+    el('messages-attachment-clear').hidden = !attachments.has(selected) && !localFiles.has(selected) || voices.has(selected);
+    const sendLabel = pending.has(selected) ? 'Retry same message' : 'Send';
+    el('messages-reply-btn').innerHTML = `<i data-lucide="send" aria-hidden="true"></i><span>${sendLabel}</span>`;
+    el('messages-reply-btn').setAttribute('aria-label', sendLabel);
+    el('messages-record').setAttribute('aria-label', el('messages-record').querySelector('span').textContent);
     el('messages-older').disabled = !selected || loading || !(cursor === undefined ? page?.nextBefore : cursor);
-    preview(); window.lucide?.createIcons();
+    el('messages-older').hidden = !(cursor === undefined ? page?.nextBefore : cursor);
+    sizeInput(); preview(); window.lucide?.createIcons();
+  }
+  function messageMeta(message) {
+    const date = new Date(message.createdAt);
+    const today = date.toDateString() === new Date().toDateString();
+    const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return `${today ? '' : date.toLocaleDateString([], { month: 'short', day: 'numeric', year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }) + ' · '}${time}${message.sender === 'parent' ? ' · ' + (message.receivedAt ? 'Received' : 'Saved online') : ''}`;
   }
   function render() {
     const messages = [...older, ...(page?.messages || [])];
@@ -85,27 +126,41 @@ export function setupCloudMessages({ endpoint }) {
     if (thread.dataset.rendered !== key) {
       const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
       threadRows.update(unique, { fingerprint: message => JSON.stringify([selected, message.sender, message.body, message.attachment]), refresh: (row, message) => {
-        row.querySelector('small').textContent = `${message.sender === 'parent' ? 'Parent' : students.find(student => student.id === selected)?.name || 'Child'} · ${new Date(message.createdAt).toLocaleString()} · ${message.receivedAt ? 'Received' : 'Saved online'}`;
+        row.querySelector('.cloud-message-meta').textContent = messageMeta(message);
       }, create: message => {
         const row = document.createElement('article'); row.className = `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`;
-        const meta = document.createElement('small'); meta.textContent = `${message.sender === 'parent' ? 'Parent' : students.find(student => student.id === selected)?.name || 'Child'} · ${new Date(message.createdAt).toLocaleString()} · ${message.receivedAt ? 'Received' : 'Saved online'}`;
+        const meta = document.createElement('small'); meta.className = 'cloud-message-meta'; meta.textContent = messageMeta(message);
         const body = document.createElement('p'); body.textContent = message.body;
-        row.append(meta, body);
-        if (message.attachment) row.append(window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })));
-        return { node: row };
+        meta.title = new Date(message.createdAt).toLocaleString();
+        row.append(body);
+        if(message.sender==='child' && message.body.startsWith('🎵 Song request:')) {
+          const review=document.createElement('button');review.type='button';review.className='btn btn-secondary';review.textContent='Review song requests';
+          review.onclick=()=>document.dispatchEvent(new CustomEvent('cloud-open-song-requests'));row.append(review);
+        }
+        const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
+        if (attachment) row.append(attachment);
+        row.append(meta);
+        return { node: row, dispose: () => attachment?.dispose?.() };
       } });
       thread.dataset.rendered = key;
       if (atBottom) thread.scrollTop = thread.scrollHeight;
     }
-    markRead();
     const uncertain = pending.get(selected);
     if (uncertain && unique.some(message => message.id === uncertain.id)) {
       pending.delete(selected); drafts.delete(selected); attachments.delete(selected); localFiles.delete(selected); voices.delete(selected); voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = '';
     }
     controls();
+    markVisibleConversation();
   }
+  function markVisibleConversation() {
+    const thread=el('messages-thread-content');
+    if(!conversationVisible()||thread.scrollHeight-thread.scrollTop-thread.clientHeight>=40)return;
+    const latest=page?.messages.filter(message=>message.sender==='child').at(-1);
+    if(latest)window.parent.postMessage({type:'bodeeguard-conversation-read',studentId:selected,messageId:latest.id},location.origin);
+  }
+  el('messages-thread-content').addEventListener('scroll',markVisibleConversation,{passive:true});
   async function refresh() {
-    if (!active || document.hidden || !selected) return;
+    if (!conversationVisible()) return;
     if (loading) { refreshQueued = true; return; }
     clearTimeout(timer); loading = true; controls();
     const child = selected; const ticket = generation;
@@ -122,26 +177,38 @@ export function setupCloudMessages({ endpoint }) {
       note(`${error} Showing the last received messages; your draft remains here.`);
     } finally {
       loading = false; controls();
-      if (active && !document.hidden && (refreshQueued || ticket !== generation || !live || failures)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(300000, 30000 * 2 ** Math.min(failures, 4)));
+      if (conversationVisible() && (refreshQueued || ticket !== generation || !live || failures)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(15 * 60000, 5 * 60000 * 2 ** Math.min(failures, 2)));
       refreshQueued = false;
     }
   }
   function choose(child) {
-    if (selected === child) return;
+    showConversation(Boolean(child));
+    if (mobile.matches && child) back.focus();
+    if (selected === child) { void refresh(); return; }
     voice.cancel(); threadRows.clear(); delete el('messages-thread-content').dataset.rendered;
     if (selected) drafts.set(selected, el('messages-reply-input').value);
     selected = child; generation++; page = null; older = []; cursor = undefined;
     window.cloudFileTools.close(); el('messages-attachment').value = '';
     el('messages-reply-input').value = drafts.get(child) || '';
-    el('messages-thread-header').textContent = students.find(student => student.id === child)?.name || 'Conversation';
+    const name = students.find(student => student.id === child)?.name || 'Conversation';
+    el('messages-thread-header').textContent = name; threadAvatar.textContent = child ? initials(name) : ''; threadAvatar.hidden = !child;
     render(); renderStudents(); note('Loading conversation…'); void refresh();
   }
   function renderStudents() {
-    el('messages-student-list').replaceChildren(...students.map(student => {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.textContent = student.name;
-      const count = unread.get(student.id) || 0; if (count) button.textContent += ' · ' + (count > 99 ? '99+' : count) + ' unread';
+    const matches = students.filter(student => student.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()));
+    el('messages-student-list').replaceChildren(...matches.map(student => {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary cloud-chat-person';
+      const count=unread.get(student.id)||0;
+      const avatar = document.createElement('span'); avatar.className = 'cloud-chat-avatar'; avatar.setAttribute('aria-hidden', 'true'); avatar.textContent = initials(student.name);
+      const copy = document.createElement('span'); copy.className = 'cloud-chat-person-copy';
+      const name = document.createElement('strong'); name.textContent = student.name;
+      const hint = document.createElement('small'); hint.textContent = count ? 'New message' + (count === 1 ? '' : 's') : 'Open conversation';
+      copy.append(name, hint); button.append(avatar, copy);
+      button.setAttribute('aria-label', student.name + (count ? ', ' + count + ' unread messages' : ''));
+      if(count){const badge=document.createElement('span');badge.className='cloud-unread-badge';badge.textContent=count>99?'99+':String(count);button.append(badge);}
       button.setAttribute('aria-pressed', String(student.id === selected)); button.addEventListener('click', () => choose(student.id)); return button;
     }));
+    if (!matches.length) { const empty = document.createElement('p'); empty.className = 'cloud-chat-list-empty'; empty.textContent = students.length ? 'No children match your search.' : 'Your children’s conversations will appear here.'; el('messages-student-list').append(empty); }
   }
   function canChooseAttachment() {
     return Boolean(selected) && !sending && !recordingBusy() && !pending.has(selected) && !attachments.has(selected) && !voices.has(selected);
@@ -239,24 +306,17 @@ export function setupCloudMessages({ endpoint }) {
       if (ticket !== generation || result.studentId !== child) return;
       older = [...result.messages, ...older]; cursor = result.nextBefore; render();
     } catch (failure) { if (ticket === generation) note(failure.message); }
-    finally { loading = false; controls(); if (active && !document.hidden && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 30000); refreshQueued = false; }
+    finally { loading = false; controls(); if (conversationVisible() && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 5 * 60000); refreshQueued = false; }
   });
-  function markRead() {
-    const thread = el('messages-thread-content');
-    if (!active || document.hidden || !selected || cursor !== undefined || thread.scrollHeight - thread.scrollTop - thread.clientHeight >= 40) return;
-    const latest = page?.messages.filter(message => message.sender === 'child').at(-1);
-    if (latest) window.parent.postMessage({ type: 'bodeeguard-conversation-read', studentId: selected, messageId: latest.id }, location.origin);
-  }
-  el('messages-thread-content').addEventListener('scroll', markRead, { passive: true });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
-    setUnread(items) { unread = new Map(items.map(item => [item.studentId, item.count])); renderStudents(); markRead(); },
+    setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));renderStudents();},
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if (studentId === selected && active) return refresh(); },
     update(value) { students = value || []; renderStudents(); if (selected && !students.some(student => student.id === selected)) choose(null); },
-    setActive(value) { active = value; clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }
+    setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }
   };
 }

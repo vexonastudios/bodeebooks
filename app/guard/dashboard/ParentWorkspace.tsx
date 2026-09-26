@@ -2,6 +2,7 @@
 import { useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { fitParentViewport } from "./visible-viewport";
 import styles from "./workspace.module.css";
 
 export default function ParentWorkspace({ query = "" }: { query?: string }) {
@@ -36,6 +37,9 @@ export default function ParentWorkspace({ query = "" }: { query?: string }) {
     void renew();
     return () => { disposed = true; window.removeEventListener('message', message); window.removeEventListener('online', visible); document.removeEventListener('visibilitychange', visible); };
   }, [getToken, isLoaded, query]);
+  useEffect(() => {
+    if (ready && frame.current) return fitParentViewport(frame.current);
+  }, [ready]);
   if (!ready) return <div className={styles.connecting} role="status">
     <Image className={styles.connectingLogo} src="/guard-icons/bodeeguard-parent-192.png" alt="" width={64} height={64} priority />
     <p>Opening your dashboard…</p>
