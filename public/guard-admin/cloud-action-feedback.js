@@ -1,4 +1,5 @@
-// One non-modal confirmation surface, with persistent feedback beside each control.
+// Success confirmations are transient; pending requests and errors remain beside the control.
+const SUCCESS_MS = 6500, FADE_MS = 200;
 const instances = new WeakMap();
 function element(tag, className, text = '') {
   const node = document.createElement(tag); node.className = className; node.textContent = text; return node;
@@ -15,11 +16,24 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
   const title = element('strong', 'cloud-action-title'), detail = element('p', 'cloud-action-detail'); copy.append(title, detail);
   const close = element('button', 'cloud-action-dismiss'); close.type = 'button'; close.setAttribute('aria-label', 'Dismiss notification'); close.append(glyph('x'));
   toast.append(mark, copy, close); root.append(toast);
-  function dismiss() { clearTimeout(timer); if (dialogHost) dialogHost.removeEventListener('close', dismiss); dialogHost = null; active = null; if (toast.matches(':popover-open')) toast.hidePopover(); toast.hidden = true; }
-  function schedule() { clearTimeout(timer); if (active?.state === 'success' && !toast.matches(':hover, :focus-within')) timer = setTimeout(dismiss, 6500); }
+  function dismiss() { clearTimeout(timer); delete toast.dataset.dismissing; if (dialogHost) dialogHost.removeEventListener('close', dismiss); dialogHost = null; active = null; if (toast.matches(':popover-open')) toast.hidePopover(); toast.hidden = true; }
+  function pause() { clearTimeout(timer); delete toast.dataset.dismissing; }
+  function schedule() {
+    pause();
+    if (active?.state === 'success' && !toast.matches(':hover, :focus-within')) timer = setTimeout(() => {
+      toast.dataset.dismissing = 'true'; timer = setTimeout(dismiss, FADE_MS);
+    }, SUCCESS_MS);
+  }
+  function forget(key) { clearTimeout(entries.get(key)?.timer); entries.delete(key); }
+  function expire(key, entry) {
+    if (entries.get(key) !== entry) return;
+    if (Date.now() >= entry.expiresAt) { forget(key); render(); return; }
+    render();
+    entry.timer = setTimeout(() => expire(key, entry), entry.expiresAt - Date.now());
+  }
   close.onclick = dismiss;
-  toast.onpointerenter = () => clearTimeout(timer); toast.onpointerleave = schedule;
-  toast.onfocusin = () => clearTimeout(timer); toast.onfocusout = schedule;
+  toast.onpointerenter = pause; toast.onpointerleave = schedule;
+  toast.addEventListener('focusin', pause); toast.addEventListener('focusout', schedule);
   function show(entry, kind = 'action') {
     dismiss();
     // A modal makes DOM outside it inert, even if a popover is painted above it.
@@ -35,8 +49,12 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
     window.lucide?.createIcons(); schedule();
   }
   function render() {
+    const now = Date.now();
+    // Refreshing or returning from a suspended tab must not resurrect old confirmations.
+    for (const [key, entry] of entries) if (entry.expiresAt <= now) forget(key);
     for (const slot of root.querySelectorAll('[data-action-feedback]')) {
       const entry = entries.get(slot.dataset.actionFeedback); slot.replaceChildren(); slot.hidden = !entry;
+      slot.dataset.dismissing = String(Boolean(entry && entry.fadeAt <= now));
       if (!entry) continue;
       slot.dataset.state = entry.state;
       const text = element('div', ''); text.append(element('strong', '', entry.title));
@@ -56,10 +74,16 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
     bind(control, key, group = key) { control.dataset.actionFeedbackControl = key; control.dataset.actionFeedbackGroup = group; },
     mount(parent, key) { const slot = element('div', 'cloud-action-inline'); slot.dataset.actionFeedback = key; slot.hidden = true; parent.append(slot); },
     render,
-    begin(key, title, group = key) { const ticket = { key, id: ++serial }; for (const [other, entry] of entries) if (entry.group === group) entries.delete(other); entries.set(key, { id: ticket.id, group, state: 'pending', title }); dismiss(); render(); return ticket; },
+    begin(key, title, group = key) { const ticket = { key, id: ++serial }; for (const [other, entry] of entries) if (entry.group === group) forget(other); entries.set(key, { id: ticket.id, group, state: 'pending', title }); dismiss(); render(); return ticket; },
     finish(ticket, title, detail = '', error = false) {
       if (entries.get(ticket.key)?.id !== ticket.id) return;
-      const entry = { id: ticket.id, group: entries.get(ticket.key).group, state: error ? 'error' : 'success', title, detail }; entries.set(ticket.key, entry); render();
+      const entry = { id: ticket.id, group: entries.get(ticket.key).group, state: error ? 'error' : 'success', title, detail };
+      forget(ticket.key); entries.set(ticket.key, entry);
+      if (!error) {
+        entry.fadeAt = Date.now() + SUCCESS_MS; entry.expiresAt = entry.fadeAt + FADE_MS;
+        entry.timer = setTimeout(() => expire(ticket.key, entry), SUCCESS_MS);
+      }
+      render();
       // A slower earlier request must never replace feedback for a newer action.
       if (ticket.id === serial) show(entry);
     },

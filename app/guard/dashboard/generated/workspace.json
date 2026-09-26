@@ -88,10 +88,10 @@
     "reference/lan/renderer/admin.html": "09c25952f33f231e6488b6db437efb76d2cc0d87d66b2308e9a0e932125fdebf",
     "shared/adminWorkspaceTemplate.js": "8bf5d1ef311f2d1a132a4337efc666df085c5a6b51689d39c2e1e58e6e4f0516",
     "renderer/js/admin/cloud-monitoring.js": "13dabe5e5451ed3b5713dcc53a222b73505d2f27f53a4f58270b6a3faa4f9b29",
-    "renderer/css/admin/cloud-monitoring.css": "d4406fbca004ad3ff693a896b5cb53bd0702ad2f3946ca37c26f1164c2851a96",
+    "renderer/css/admin/cloud-monitoring.css": "00e5993ab147ac61136b97af56112e9e6537f74f3a577ca24ac5421e910e2a05",
     "renderer/js/admin/cloud-activity-colors.js": "6eec5abb3a358e3eaf06f1ccdaf13d0c385973c14d0283befbb33771e72e395f",
     "renderer/js/admin/cloud-retention.js": "f5557c84789b56fb6c8e0a0e1d40b89f69b9af2fb1c735a994790b93d538bff5",
-    "renderer/js/admin/cloud-action-feedback.js": "4a20d5ceb1a93bcad0e7293d2affbb516759947427cb1779212cfafc187d6b14",
+    "renderer/js/admin/cloud-action-feedback.js": "4c78a64ce4090d2a31377905d8f0bff6967476c6d8d4e8f6d2ce402abeb13827",
     "renderer/js/admin/cloud-student-assignment.js": "fce4a45591accb5ef29cde088cd5db46ecfd1f74ceb76f794338443d076332f5",
     "renderer/js/admin/cloud-notification-navigation.js": "9427efa9e4c2056c80d22f9617de85745729ea51ab73e006bfe808a60d60f4d5",
     "renderer/js/admin/cloud-parent-session.js": "136237939a9ef3d8289716cd557c959df2eff3fe37b3e944f0d2e097030f07d0"
