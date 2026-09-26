@@ -79,7 +79,7 @@ export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
     const change={ studentId:student.id, revision:getSnapshot().rules.revision, provider:select.value, title:title.input.disabled?null:title.input.value, url:url.input.disabled?null:url.input.value };
     saveButton.disabled=true; select.disabled=true; title.input.disabled=true; url.input.disabled=true;
     pending=(async()=>{
-      await mutate('setup-school', change);
+      await mutate('setup-school', change, {notify:false});
       dirty=false; status.textContent='Saved';
     })().finally(()=>{pending=null; saveButton.disabled=false; select.disabled=false; update();});
     return pending;

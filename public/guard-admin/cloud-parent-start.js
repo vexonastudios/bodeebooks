@@ -11,13 +11,16 @@ const steps = [
 const node = (tag,text='',cls='') => { const el=document.createElement(tag);el.textContent=text;el.className=cls;return el; };
 const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${primary?'btn-primary':'btn-secondary'}`);el.type='button';el.onclick=()=>void fn();return el; };
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
-export function setupParentStart({endpoint,getSnapshot,mutate,navigate,refresh=async()=>{}}) {
+export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
+  const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
   const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
   const later=button('Save and close',()=>save(true)),back=button('Back',()=>move(-1)),next=button('Continue',()=>move(1),true);
-  header.append(progress,title);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
+  const dismiss=button('Close',()=>{if(!busy)dialog.close();});dismiss.classList.add('setup-dismiss');
+  dismiss.setAttribute('aria-label','Close setup without saving');dismiss.title='Saved changes are kept. Unsaved edits will be discarded.';
+  header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{draft=null;render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null,reviewing=false;
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
@@ -190,7 +193,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate,navigate,refresh=a
     else readiness();
     body.scrollTop=0;decorateSetup(dialog);
   }
-  dialog.addEventListener('cancel',event=>{event.preventDefault();if(!state)dialog.close();else void save(true);});
+  dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy)dialog.close();});
   dialog.addEventListener('close',()=>{updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
   return {open,update(){
     updateWelcome();

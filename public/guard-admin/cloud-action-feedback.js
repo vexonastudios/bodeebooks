@@ -6,7 +6,7 @@ function element(tag, className, text = '') {
 function glyph(name) { const node = element('i', ''); node.dataset.lucide = name; node.setAttribute('aria-hidden', 'true'); return node; }
 export function parentActionFeedback(root = document.getElementById('admin-dashboard')) {
   if (instances.has(root)) return instances.get(root);
-  const entries = new Map(); let serial = 0, active = null, timer;
+  const entries = new Map(); let serial = 0, active = null, timer, dialogHost = null;
   const legacy = document.getElementById('cloud-feedback');
   if (legacy) { legacy.hidden = true; legacy.textContent = ''; }
   const toast = element('div', 'cloud-action-toast'); toast.id = 'cloud-action-toast'; toast.hidden = true;
@@ -15,13 +15,19 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
   const title = element('strong', 'cloud-action-title'), detail = element('p', 'cloud-action-detail'); copy.append(title, detail);
   const close = element('button', 'cloud-action-dismiss'); close.type = 'button'; close.setAttribute('aria-label', 'Dismiss notification'); close.append(glyph('x'));
   toast.append(mark, copy, close); root.append(toast);
-  function dismiss() { clearTimeout(timer); active = null; if (toast.matches(':popover-open')) toast.hidePopover(); toast.hidden = true; }
+  function dismiss() { clearTimeout(timer); if (dialogHost) dialogHost.removeEventListener('close', dismiss); dialogHost = null; active = null; if (toast.matches(':popover-open')) toast.hidePopover(); toast.hidden = true; }
   function schedule() { clearTimeout(timer); if (active?.state === 'success' && !toast.matches(':hover, :focus-within')) timer = setTimeout(dismiss, 6500); }
   close.onclick = dismiss;
   toast.onpointerenter = () => clearTimeout(timer); toast.onpointerleave = schedule;
   toast.onfocusin = () => clearTimeout(timer); toast.onfocusout = schedule;
   function show(entry, kind = 'action') {
-    clearTimeout(timer); active = { ...entry, kind }; toast.dataset.state = entry.state;
+    dismiss();
+    // A modal makes DOM outside it inert, even if a popover is painted above it.
+    // Keep dismissible feedback inside the active modal's interaction boundary.
+    const host = [...document.querySelectorAll('dialog:modal')].at(-1) || root;
+    if (toast.parentElement !== host) host.append(toast);
+    if (host !== root) { dialogHost = host; dialogHost.addEventListener('close', dismiss); }
+    active = { ...entry, kind }; toast.dataset.state = entry.state;
     toast.setAttribute('role', entry.state === 'error' ? 'alert' : 'status');
     mark.replaceChildren(glyph(entry.state === 'error' ? 'circle-alert' : 'circle-check'));
     title.textContent = entry.title; detail.textContent = entry.detail || ''; detail.hidden = !entry.detail;

@@ -11,3 +11,6 @@
 .parent-start-readiness li svg { width:18px; height:18px; flex-shrink:0; }
 .parent-start-more>.btn { margin:4px 8px 8px 0; }
 .parent-start-dialog .daily-plan-preview { width:min(760px,calc(100vw - 32px)); }
+.parent-start-dialog header{position:relative;padding-right:88px}
+.parent-start-dialog .setup-dismiss{position:absolute;top:12px;right:12px;min-width:44px;min-height:44px;padding:8px;font-size:12px}
+.parent-start-dialog .setup-dismiss .setup-icon{margin-right:4px;width:14px;height:14px}
