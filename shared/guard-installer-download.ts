@@ -15,4 +15,3 @@ export function internalPilotDownloadUrl(version: string) {
   assetUrl.searchParams.set("signature", createHmac("sha256", secret).update(message).digest("hex"));
   return assetUrl.toString();
 }
-
