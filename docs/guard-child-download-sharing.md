@@ -24,6 +24,26 @@ it now renders those components and checks current copy, retaining entitlement,
 operator-only invitation and one-active-child counting assertions.
 Candidate build and live acceptance receipts follow after publication.
 
+## Published short-code flow
+
+Source `c393275fb9cd097090977abaca242bfffc093a25`, deployment
+`dpl_GWR2fkw9mjyWM4EP7wWDk5cebccp`, is live on the existing project and
+`guard.bodeebooks.com`. The production Next.js build passed. API source
+`a239f963`, deployment `dpl_3MZnun1BqRa8aPCNJ28dc8G62Ya8`, was promoted first.
+The published child installer version stays at 1.2.240.
+
+Live `/install/`: 200, private/no-store, signed-out accessible, correct rewritten
+handler. Browser phone-width inspection confirmed an uncluttered BodeeGuard
+screen and an inline incorrect/expired-code message from the real API. All 18
+existing anonymous parent-domain checks passed. A brief initial post-promotion
+404 resolved after alias propagation without a source change.
+
+Authenticated code creation/redemption still needs the parent to sign back in;
+the existing browser session expired during verification. The synthetic service
+and website integration checks pass; no actual child PC was paired or installed.
+The short-page proof image contains no code or private family data.
+Rollback website: `dpl_CJEFsHCJZPxtF3iXVUu8YDvpAtGw` (source `e7b8620`).
+
 ## Previous link-sharing implementation (historical)
 
 # Download on a child computer without parent browser sign-in
