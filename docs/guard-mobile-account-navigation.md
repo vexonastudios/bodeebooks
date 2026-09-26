@@ -18,3 +18,21 @@ phone fixture passed at 390px and 320px with no horizontal overflow, visible ico
 44px or larger touch targets and correct top-frame destinations. Desktop still
 hides the phone header and displays its original sidebar. No child installation
 or enrollment occurred. Deployment and live navigation verification follow below.
+
+## Published September 26, 2026
+
+Source: dfcdd01 (website); maintained dashboard source: dbf75a5f.
+Deployment: dpl_22ZzVVZtkfJkPVv6G2B6r1cytLZj,
+https://bodeebooks-k8i20rdrg-vexonastudios-3984s-projects.vercel.app.
+Both candidate mobile assets matched the reviewed commit exactly. Production
+build and TypeScript passed; promotion and live-domain asset checks succeeded.
+The authenticated live dashboard at 390px showed both links and the new header.
+Tapping Set up a child computer navigated the top page to /account/?setup=connect
+and displayed Connect a child computer. Viewport override was reset afterward.
+The family installer remains 1.2.240; no child device was installed or paired.
+
+The maintained-source focused run passed static checks and 164 selected unit
+cases. All five required Electron scenarios passed across resumed runs. An
+initial notification timeout and transient admin renderer failure cleared on
+isolated retries (the unchanged admin baseline also passed). This was focused
+verification, not a new full-suite run.
