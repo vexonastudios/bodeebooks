@@ -60,6 +60,12 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
       status: typeof init === 'number' ? init : init.status, headers: { ...(init.headers || {}), Location: String(url) },
     }) } };
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
+    if (name.endsWith('/guard-installer-download')) {
+      const helperPath=path.resolve('shared/guard-installer-download.ts'), helper=new Module(helperPath);
+      helper.require=createRequire(helperPath);
+      helper._compile(ts.transpileModule(fs.readFileSync(helperPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,helperPath);
+      return helper.exports;
+    }
     return localRequire(name);
   };
   const previousFetch = globalThis.fetch;

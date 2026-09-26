@@ -255,14 +255,14 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <ChildSetup initiallyCollapsed={setupCollapsed && params.setup !== 'connect'} highlightDownload={canConnectComputers && installerAvailable}>
           {canConnectComputers ? <>
             <p className={styles.channelExplanation}>Start with children → school → activities → connect a computer. <Link href="/guard/dashboard/?setup=1">Continue your saved family setup</Link>. Use the steps below when you reach Connect.</p>
+            {installerAvailable && <InstallerShareLink />}
             <div className={styles.setupDownload}>
               {installerAvailable ? (
-                <a className={styles.portalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
+                <a className={styles.secondaryPortalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
               ) : (
                 <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
               )}
             </div>
-            {installerAvailable && <InstallerShareLink temporary={!cloudAccountRelease(account)} />}
             <p className={styles.channelExplanation}>Stay signed in on your own computer or phone. The child computer only needs the installer; approve its code here and assign an existing child in your dashboard.</p>
             <ol className={styles.setupSteps}>
               <li className={styles.setupStep}>

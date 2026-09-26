@@ -1,3 +1,31 @@
+# Short child installer download codes — September 26, 2026
+
+The parent account now leads with **Create download code**. On the child PC,
+open `https://guard.bodeebooks.com/install/` and type the ten-character code.
+It works for 30 minutes on multiple child PCs. No email or parent website sign-in
+is needed on those computers. The installer still requires separate parent
+pairing approval and assignment to an existing child profile.
+
+The API creates a cryptographically random code after authenticating the parent
+and checking the existing installer entitlement/channel boundary. Only a SHA-256
+hash and short-lived installer descriptor are stored. No parent token, personal
+records or signed URL is stored in the grant. Expired grants are purged at the
+next issuance; family deletion cascades to its grants. Persistent database limits
+bound issuance and public guesses across serverless instances. Guesses never
+return family identity. The website accepts only the API descriptor and builds
+an exact allowlisted catalog URL or signs the currently configured internal
+installer for five minutes. Code input is POST-only and never in URLs/analytics.
+The private installer is still private; no public release or enrollment gate
+has changed. Version remains 1.2.240.
+
+Validation: 39 website account/domain/download/code tests and TypeScript passed.
+Account fixture loader was stale after previously added nested setup components;
+it now renders those components and checks current copy, retaining entitlement,
+operator-only invitation and one-active-child counting assertions.
+Candidate build and live acceptance receipts follow after publication.
+
+## Previous link-sharing implementation (historical)
+
 # Download on a child computer without parent browser sign-in
 
 Parent Account > Connect a child computer now offers a shareable installer link.

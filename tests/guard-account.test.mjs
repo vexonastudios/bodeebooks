@@ -28,6 +28,15 @@ async function render(account) {
       auth: { protect: async () => ({ getToken: async () => 'fixture-session' }) },
       currentUser: async () => ({ fullName: 'Jamie Test', publicMetadata: {}, unsafeMetadata: {}, externalAccounts: [], primaryEmailAddress: { emailAddress: 'parent@example.com' } }),
     };
+    if (name === 'next/headers') return { cookies: async () => ({get: () => undefined}) };
+    if (name === 'next/navigation') return {useRouter: () => ({refresh(){}})};
+    if (name === '../AccountRetry' || name === '@/components/GuardSignOut') return {__esModule:true,default:() => React.createElement('button',null,name.includes('Retry')?'Try again':'Sign out')};
+    if (['./ChildSetup','./InstallerShareLink','./PlanControls'].includes(name)) {
+      const childPath=path.resolve(path.dirname(filename),name+'.tsx'), child=new Module(childPath);
+      child.require=component.require;
+      child._compile(ts.transpileModule(fs.readFileSync(childPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,childPath);
+      return child.exports;
+    }
     if (name === '../actions') return new Proxy({}, { get: () => async () => {} });
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { className: props.className, type: 'submit' }, props.children) };
@@ -55,7 +64,7 @@ function fixture(overrides = {}) {
 
 test('account outage is explicit, not an empty household or not-subscribed claim', async () => {
   const html = await render(null);
-  assert.match(html, /cannot load your family account/);
+  assert.match(html, /family account is temporarily unavailable/);
   assert.doesNotMatch(html, /No child computers connected yet|Not subscribed/);
 });
 
@@ -63,7 +72,7 @@ test('closed enrollment does not offer a ticking trial or an unusable download',
   const html = await render(fixture());
   assert.match(html, /Welcome, Jamie Test/);
   assert.match(html, /Family enrollment has not opened yet/);
-  assert.doesNotMatch(html, /Start 30-day trial — no card|Download child app for Windows|Owner-only release controls/);
+  assert.doesNotMatch(html, /Start 30-day trial — no card|Download child app for Windows|Invite a family to Beta/);
 });
 
 test('trial access has no cancellation, resume, or Stripe card-collection buttons', async () => {
@@ -91,9 +100,9 @@ test('ended subscription does not pretend it can be resumed before a past date',
 test('external Beta requires deliberate consent; owner invite controls are restricted', async () => {
   const html = await render(fixture({ enrollment: { betaInvited: true, canChooseBeta: true, canStartTrial: false } }));
   assert.match(html, /name="betaConsent"/);
-  assert.doesNotMatch(html, /Owner-only release controls/);
+  assert.doesNotMatch(html, /Invite a family to Beta/);
   const owner = await render(fixture({ billingMode: 'complimentary', entitlementStatus: 'active', releaseChannel: 'beta', releaseOperator: true }));
-  assert.match(owner, /Owner-only release controls/);
+  assert.match(owner, /Invite a family to Beta/);
   assert.match(owner, /Save Beta invitation/);
   assert.doesNotMatch(owner, /Cancel at the end of my billing period/);
 });
@@ -133,7 +142,7 @@ test('all account states describe cloud setup without parent installation or net
 test('an old installer neither enables cloud downloads nor appears as a cloud update', async () => {
   const html = await render(fixture({ billingMode: 'complimentary', entitlementStatus: 'active', release: legacyReleaseFixture }));
   assert.match(html, /Cloud installer not released yet/);
-  assert.match(html, /App already installed\? Approve its code/);
+  assert.match(html, /href="\/guard\/activate\/?"/);
   assert.doesNotMatch(html, /href="\/guard\/download\/windows"|What changed in 1\.2\.157|Version 1\.2\.157/);
 });
 
@@ -147,7 +156,7 @@ test('the verified account catalog must select a cloud artifact before enabling 
   const html = await render(fixture({ entitlementStatus: 'trial', release: cloudReleaseFixture() }));
   assert.match(html, /href="\/guard\/download\/windows"/);
   assert.match(html, /Download child app for Windows/);
-  assert.match(html, /Assign a child and save recovery/);
+  assert.match(html, /Assign this computer to the child’s existing profile/);
   assert.doesNotMatch(html, /Cloud installer not released yet/);
 });
 
@@ -159,9 +168,9 @@ test('browser sessions and old parent installations are not child-device slots',
     { ...device, id: 'child-1', deviceRole: 'child', computerName: 'Learning laptop' },
     { ...device, id: 'revoked-child', deviceRole: 'child', computerName: 'Removed laptop', revokedAt: '2030-01-01T10:00:00Z' },
   ] }));
-  assert.match(html, /1 of 10 child computers/);
+  assert.match(html, /1 of 10 computers connected/);
   assert.match(html, /Learning laptop/);
-  assert.match(html, /Parent browser sessions do not use child device slots/);
+  assert.equal((html.match(/class="computerRow"/g) || []).length, 1);
   assert.doesNotMatch(html, /Old parent|Old default-role installation|Removed laptop|Parent \/ admin/);
 });
 
