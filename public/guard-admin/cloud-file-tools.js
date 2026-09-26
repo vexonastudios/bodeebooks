@@ -75,7 +75,61 @@
       }));
     } catch (error) { if (ticket === generation) status.textContent = error.message; }
   }
+  function voiceAttachment(file, load) {
+    const item = element('div'); item.className = 'cloud-inline-audio';
+    const audio = element('audio'); audio.controls = true; audio.preload = 'none'; audio.hidden = true;
+    audio.setAttribute('aria-label', 'Voice message');
+    const status = element('span'); status.className = 'cloud-inline-audio-status'; status.setAttribute('role', 'status');
+    const play = button('', () => void start()); play.className = 'btn btn-secondary cloud-inline-audio-play';
+    const glyph = element('i'); glyph.dataset.lucide = 'play'; glyph.setAttribute('aria-hidden', 'true');
+    const label = element('span', 'Play voice message'); play.append(glyph, label); item.append(play, audio, status);
+    let url = null, loading = false, disposed = false;
+    const visible = () => !disposed && item.isConnected && !document.hidden && item.getClientRects().length > 0;
+    async function start() {
+      if (loading || !visible()) return;
+      loading = true; play.disabled = true; item.setAttribute('aria-busy', 'true'); status.textContent = '';
+      try {
+        if (!url) {
+          label.textContent = 'Loading voice message…';
+          const value = await load(); if (!visible()) return;
+          const saved = value?.file;
+          if (saved?.id !== file.id || saved.removed || saved.mime !== file.mime || !types.has(saved.mime) || !saved.mime.startsWith('audio/') || typeof value.data !== 'string' || value.data.length > Math.ceil(maximum / 3) * 4) throw new Error('The voice message response was invalid.');
+          const binary = atob(value.data);
+          if (!binary.length || binary.length !== saved.size || binary.length > maximum) throw new Error('The voice message size did not match.');
+          url = URL.createObjectURL(new Blob([Uint8Array.from(binary, char => char.charCodeAt(0))], { type: saved.mime }));
+          audio.src = url;
+        }
+        if (!visible()) return;
+        audio.hidden = false; label.textContent = 'Play voice message';
+        try { await audio.play(); play.hidden = true; }
+        catch (error) {
+          if (error.name === 'NotAllowedError') status.textContent = 'Ready to play. Tap Play.';
+          else if (error.name !== 'AbortError') throw new Error('This voice message could not play. Please try again.');
+        }
+      } catch (error) {
+        if (!disposed) { status.textContent = error.message || 'Could not load this voice message. Try again.'; label.textContent = 'Retry voice message'; }
+      } finally {
+        loading = false; play.disabled = false; item.removeAttribute('aria-busy');
+        if (!status.textContent) label.textContent = 'Play voice message';
+      }
+    }
+    audio.addEventListener('playing', () => {
+      if (!visible()) { audio.pause(); return; }
+      for (const other of document.querySelectorAll('.cloud-inline-audio audio')) if (other !== audio) other.pause();
+      play.hidden = true; status.textContent = '';
+    });
+    audio.addEventListener('error', () => {
+      if (disposed) return;
+      audio.hidden = true; play.hidden = false; label.textContent = 'Retry voice message';
+      status.textContent = 'This voice message could not play. Try again.';
+      audio.removeAttribute('src'); if (url) URL.revokeObjectURL(url); url = null;
+    });
+    // The keyed message row owns the URL; receipt updates leave this player intact.
+    item.dispose = () => { disposed = true; audio.pause(); audio.removeAttribute('src'); audio.load(); if (url) URL.revokeObjectURL(url); url = null; };
+    return item;
+  }
   function attachment(file, load) {
+    if (!file.removed && types.has(file.mime) && file.mime.startsWith('audio/')) return voiceAttachment(file, load);
     const item = button(file.removed ? 'Attachment removed' : `Open ${file.name || 'attachment'}`, () => preview(load));
     item.disabled = Boolean(file.removed); return item;
   }
