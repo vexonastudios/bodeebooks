@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.245": {
+  "title": "Connection help on child computers",
+  "sections": [
+    {
+      "heading": "Version 1.2.245",
+      "headline": "Clear answers when setup cannot connect",
+      "summary": "Run connection checks inside the child app before pairing, with specific results and useful next steps.",
+      "highlights": [
+        "Checks Windows date/time, BodeeGuard server access, the signed app release and the protection service.",
+        "A failed pairing attempt opens the checks and explains what needs attention.",
+        "Open date/time settings during setup, retry pairing or copy a technical support report.",
+        "Support reports exclude names, documents, passwords and pairing codes."
+      ]
+    }
+  ]
+},
   "1.2.244": {
   "title": "Faster media and a personal music library",
   "sections": [
