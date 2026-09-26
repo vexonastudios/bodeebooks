@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.244": {
+  "title": "Faster media and a personal music library",
+  "sections": [
+    {
+      "heading": "Version 1.2.244",
+      "headline": "Music that is easier to manage",
+      "summary": "Music, Audiobooks and Videos show the initial library with fewer cloud requests.",
+      "highlights": [
+        "Music collections load when opened, without holding up the whole library.",
+        "Each child can find songs in New to you, hide songs and restore them later.",
+        "Browsing a playlist keeps the current song playing.",
+        "Pinned players have Stop & close; school opening stops music, while White Noise remains available."
+      ]
+    }
+  ]
+},
   "1.2.241": {
   "title": "Themed planner and readable coin balances",
   "sections": [
