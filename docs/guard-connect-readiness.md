@@ -32,3 +32,17 @@ API and child source, installer and feed are unchanged. Logs are ignored in .tmp
 in the website and guard family-migration-readiness worktrees. Cache version:
 20260926-connect1. Previous healthy website: dpl_ANWGszEfbYDVKVevuj9wWSbGUm6b.
 Publication evidence follows.
+
+## Published September 26, 2026
+
+Website source: ba57458be25e950e98ff30f1fefe73c4441e88ea.
+Deployment: dpl_BrrNK656ti72jto1W7DA6U1dnQPd,
+https://bodeebooks-hy3ktwphr-vexonastudios-3984s-projects.vercel.app.
+Clean tracked-source archive: .tmp/web-connect-readiness. Hosted production build
+passed in 30 seconds. Candidate and public setup helper returned HTTP 200 with
+exact reviewed bytes before/after promotion. The live signed-in parent dashboard
+at 390x844 preserved /guard/dashboard/workspace/?setup=connect and automatically
+opened Connect & check readiness, with Check again and eight child checklists.
+No real approval, assignment, readiness save, installer or child update occurred.
+The browser check used Close without saving. Rollback remains the previous
+ dpl_ANWGszEfbYDVKVevuj9wWSbGUm6b deployment.
