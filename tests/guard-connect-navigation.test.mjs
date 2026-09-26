@@ -14,6 +14,7 @@ function load(relative, overrides = {}) {
     if (Object.hasOwn(overrides, name)) return overrides[name];
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     if (name === './navigation') return load('app/guard/dashboard/navigation.ts');
+    if (name === './visible-viewport') return load('app/guard/dashboard/visible-viewport.ts');
     return localRequire(name);
   };
   component._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true, target: ts.ScriptTarget.ES2022 } }).outputText, filename);
