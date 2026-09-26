@@ -17,3 +17,14 @@ and desktop fixtures verified real pointer dismissal, inline failed-school saves
 closing without a retry, and preserved prior saved choices. Maintained-source
 focused verification passed 263 unit cases and six Electron scenarios; nine
 specific school-setup regressions passed. Exact source and deployment follow.
+
+## Published September 26, 2026
+
+Website source e7b8620; deployment dpl_CJEFsHCJZPxtF3iXVUu8YDvpAtGw,
+https://bodeebooks-d7f31r07e-vexonastudios-3984s-projects.vercel.app.
+Build and TypeScript passed. Four candidate and live assets match after normal
+LF normalization; the first raw comparison differed only in CRLF line endings.
+Companion API source 36d24401; deployment dpl_HvihzHVuHrC7RJpnHtZdLjUPtAHv.
+Its existing school-plan storage gate and candidate/live health passed.
+No actual child school save was submitted as a production test. Installer remains
+1.2.240. Parent can reload and continue the failed school setup.
