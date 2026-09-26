@@ -63,6 +63,6 @@ test('the short address rewrites locally and the page does not demand parent log
  const {guardRoute}=load('shared/guard-domain.ts');
  for(const [route,method] of [['/install/','GET'],['/install/redeem/','POST'],['/install/code/','POST']]) assert.deepEqual(guardRoute('https://guard.bodeebooks.com'+route,method),{kind:'rewrite',url:'https://guard.bodeebooks.com/guard'+route});
  const source=fs.readFileSync('app/guard/install/page.tsx','utf8');assert.doesNotMatch(source,/auth\.protect|Clerk/);assert.match(source,/pairing code/);
- const client=fs.readFileSync('app/guard/install/InstallForm.tsx','utf8');assert.match(client,/credentials:"omit"/);assert.match(client,/setTimeout/);
+ const client=fs.readFileSync('app/guard/install/InstallForm.tsx','utf8');assert.match(client,/credentials:"omit"/);assert.match(client,/InstallerDownload key={link.url}/);assert.match(fs.readFileSync('app/guard/InstallerDownload.tsx','utf8'),/setTimeout/);
  const parent=fs.readFileSync('app/guard/account/InstallerShareLink.tsx','utf8');assert.match(parent,/guard.bodeebooks.com\/install/);assert.match(parent,/30 minutes/);assert.match(parent,/setTimeout/);
 });

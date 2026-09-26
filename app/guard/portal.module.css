@@ -203,3 +203,20 @@
 
 :global(body):has(.installPage) > :global(nav), :global(body):has(.installPage) > :global(footer) { display:none; }
 .installPage { min-height:100dvh; padding:clamp(24px,6vh,64px) 0; }
+
+.installerDownload { width:100%; }
+.installerDownload > a { gap:8px; min-height:44px; cursor:pointer; }
+.installerDownload > a[aria-disabled="true"] { opacity:.7; cursor:default; }
+.installerDownload > a:focus-visible { outline:3px solid #159cb4; outline-offset:3px; }
+.downloadFeedback { max-width:640px; margin-top:16px; padding:20px; border:1px solid #91c6d3; border-left:4px solid #088caa; border-radius:12px; background:#edf8fc; color:#24485f; text-align:left; }
+.downloadFeedbackHeading { display:flex; gap:12px; align-items:center; color:#075d77; }
+.downloadFeedbackHeading > svg { flex-shrink:0; }
+.downloadFeedbackHeading strong { display:block; font-size:1.1rem; }
+.downloadFeedbackHeading span { display:block; margin-top:5px; color:#446478; font-size:.82rem; }
+.downloadFeedback p { margin:14px 0 0; font-size:.93rem; line-height:1.6; }
+.downloadShortcut { display:flex; align-items:center; gap:10px; margin:16px 0; padding:12px; border-radius:8px; border:1px solid #c6dee7; background:#fff; font-size:.9rem; line-height:1.65; }
+.downloadShortcut > svg,.downloadNext > svg { flex-shrink:0; }
+.downloadShortcut kbd { padding:3px 6px; border:1px solid #bdcdd6; border-bottom-width:2px; border-radius:5px; color:#173652; background:#f7fafb; font:700 .9em var(--font-sans); white-space:nowrap; }
+.downloadFeedback .downloadNext { display:flex; gap:10px; align-items:flex-start; }
+.downloadFeedback .downloadRetryHelp { font-size:.83rem; color:#446478; }
+@media(max-width:700px){.installerDownload > a{width:100%;padding:12px 14px;text-align:center}.downloadFeedback{padding:16px}.downloadShortcut{align-items:flex-start}}

@@ -31,7 +31,7 @@ async function render(account) {
     if (name === 'next/headers') return { cookies: async () => ({get: () => undefined}) };
     if (name === 'next/navigation') return {useRouter: () => ({refresh(){}})};
     if (name === '../AccountRetry' || name === '@/components/GuardSignOut') return {__esModule:true,default:() => React.createElement('button',null,name.includes('Retry')?'Try again':'Sign out')};
-    if (['./ChildSetup','./InstallerShareLink','./PlanControls'].includes(name)) {
+    if (['./ChildSetup','./InstallerShareLink','./PlanControls','../InstallerDownload'].includes(name)) {
       const childPath=path.resolve(path.dirname(filename),name+'.tsx'), child=new Module(childPath);
       child.require=component.require;
       child._compile(ts.transpileModule(fs.readFileSync(childPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,childPath);

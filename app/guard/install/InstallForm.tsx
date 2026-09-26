@@ -1,18 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Download, KeyRound, LoaderCircle } from "lucide-react";
+import { useState } from "react";
+import { KeyRound, LoaderCircle } from "lucide-react";
 import styles from "../portal.module.css";
+import InstallerDownload from "../InstallerDownload";
 type DownloadLink = {url:string;version:string;expiresAt:string|null};
 export default function InstallForm() {
   const [code,setCode] = useState("");
   const [link,setLink] = useState<DownloadLink|null>(null);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState("");
-  useEffect(() => {
-    if (!link?.expiresAt) return;
-    const timer = setTimeout(() => {setLink(null);setError("The download button expired. Choose Get download again to refresh it.");},Math.max(0,Date.parse(link.expiresAt)-Date.now()));
-    return () => clearTimeout(timer);
-  },[link]);
   async function submit(event: React.FormEvent) {
     event.preventDefault(); if (busy) return;
     setBusy(true);setError("");setLink(null);
@@ -30,10 +26,10 @@ export default function InstallForm() {
     <p id="download-help" className={styles.pairingHelp}>10 letters and numbers. Spaces and the dash are optional.</p>
     <button className={styles.portalButton} type="submit" disabled={busy}>{busy ? <LoaderCircle size={18} className={styles.spin} /> : <KeyRound size={18} />}{busy?"Checking code…":"Get download"}</button>
     <div id="download-error" role="alert">{error && <p className={styles.errorMessage}>{error}</p>}</div>
-    {link && <div className={styles.installReady} role="status">
-      <strong>Your Windows download is ready.</strong>
+    {link && <div className={styles.installReady}>
+      <strong role="status">Your Windows download is ready.</strong>
       <p>Version {link.version} · Windows 64-bit</p>
-      <a className={styles.portalButton} href={link.url} rel="noreferrer"><Download size={18} /> Download BodeeGuard</a>
+      <InstallerDownload key={link.url} href={link.url} label="Download BodeeGuard" version={link.version} expiresAt={link.expiresAt} />
       <p>Open the downloaded installer, then follow its setup steps. {link.expiresAt && "Start the download within 5 minutes."}</p>
     </div>}
   </form>;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import ChildSetup from "./ChildSetup";
 import InstallerShareLink from "./InstallerShareLink";
+import InstallerDownload from "../InstallerDownload";
 import PlanControls, {type AiAllowance} from "./PlanControls";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
@@ -258,7 +259,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             {installerAvailable && <InstallerShareLink />}
             <div className={styles.setupDownload}>
               {installerAvailable ? (
-                <a className={styles.secondaryPortalButton} href="/guard/download/windows"><Download size={17} /> Download child app for Windows</a>
+                <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} secondary />
               ) : (
                 <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
               )}

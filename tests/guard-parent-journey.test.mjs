@@ -18,7 +18,7 @@ async function accountPage(params={}) {
     if(name==='next/headers')return {cookies:async()=>({get:()=>({value:'1'})})};
     if(name==='../actions')return new Proxy({},{get:()=>async()=>{}});
     if(name.endsWith('/guard-cloud-release'))return cloudReleaseModule;
-    if(name==='./InstallerShareLink'){const f=path.resolve('app/guard/account/InstallerShareLink.tsx'),c=new Module(f);c.require=component.require;c._compile(ts.transpileModule(fs.readFileSync(f,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,f);return c.exports;}
+    if(['./InstallerShareLink','../InstallerDownload'].includes(name)){const f=path.resolve(path.dirname(filename),name+'.tsx'),c=new Module(f);c.require=component.require;c._compile(ts.transpileModule(fs.readFileSync(f,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,f);return c.exports;}
     if(name==='./ChildSetup')return {__esModule:true,default:props=>React.createElement('section',{'data-collapsed':String(props.initiallyCollapsed)},props.children)};
     if(name==='./PlanControls'||name==='../AccountRetry'||name.endsWith('/GuardSignOut'))return {__esModule:true,default:()=>null};
     if(name==='../SubmitButton')return {__esModule:true,default:props=>React.createElement('button',null,props.children)};
@@ -38,8 +38,8 @@ test('Account uses the same journey, preserves installer eligibility and returns
  assert.match(html,/href="\/guard\/dashboard\/\?setup=connect"/);
  assert.match(html,/href="\/guard\/download\/windows"/);
  assert.match(html,/data-collapsed="true"/);
- assert.match(html,/Create download link/);
- assert.match(html,/USB drive or shared folder/);
+ assert.match(html,/Create download code/);
+ assert.match(html,/Using a USB drive instead/);
  assert.match(html,/Stay signed in on your own computer or phone/);
  assert.match(html,/existing profile/);
  assert.doesNotMatch(html,/<strong>Choose their school<\/strong>/);
