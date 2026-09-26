@@ -200,3 +200,6 @@
 .installReady { margin-top:24px; padding:20px; border:1px solid #a9d9c7; border-radius:12px; background:#edfaf4; color:#126348; }
 .installReady p { margin:10px 0; font-size:.9rem; line-height:1.6; }
 .installReady a { margin:8px 0; }
+
+:global(body):has(.installPage) > :global(nav), :global(body):has(.installPage) > :global(footer) { display:none; }
+.installPage { min-height:100dvh; padding:clamp(24px,6vh,64px) 0; }
