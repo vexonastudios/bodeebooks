@@ -1,5 +1,28 @@
 ## Inline download acknowledgement — September 26, 2026
 
+Published source: 0f315f3 (including 6dd23a9). Final deployment:
+`dpl_6wVU7xko4NGVa9ugbpYqe6gSWKNZ`,
+https://bodeebooks-8syehmt15-vexonastudios-3984s-projects.vercel.app.
+Built from the clean Git archive at
+`.tmp/web-download-feedback-final` in the existing website worktree.
+Vercel production build / TypeScript passed, candidate install page returned
+200, and the existing production project was promoted successfully.
+
+36 focused tests passed across the account, download, short-code, journey and
+feedback suites; the 17 cases affected by the final handoff correction were
+rerun successfully. Scoped ESLint and local TypeScript passed. The journey
+fixture was updated for the already-shipped short-code and USB wording.
+Live parent-account keyboard activation showed the persistent versioned notice.
+Live short-code redemption and download activation also showed the notice with
+a 390px viewport. The test browser blocked a native download navigation, which
+motivated preserving the setup page; no browser security block was bypassed and
+full EXE transfer was not used as a completion signal. No installer was executed
+or device paired. Test code input was cleared; the proof contains no code.
+
+Rollback before this change: `dpl_GWR2fkw9mjyWM4EP7wWDk5cebccp` (source c393275).
+The API and Windows installer remain unchanged at their prior verified releases.
+
+
 The parent account and the public short-code download page use the same native
 installer link with immediate inline "Download requested" feedback. It identifies
 the version, points to the browser Downloads menu / Ctrl+J, and explains opening
