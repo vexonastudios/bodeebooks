@@ -41,3 +41,16 @@
 .cloud-mobile #parent-assistant-launcher { bottom: calc(80px + env(safe-area-inset-bottom)); right: 14px; }
 .cloud-mobile #parent-assistant-drawer { bottom: calc(74px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 150px); width: calc(100% - 20px); right: 10px; }
 .cloud-mobile dialog { max-width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
+
+/* Keep account and computer setup discoverable when the desktop sidebar is hidden. */
+.cloud-mobile .app-header { gap: 8px; padding-left: 12px; padding-right: 12px; }
+.cloud-mobile .header-actions { flex-shrink: 0; gap: 6px; }
+.cloud-mobile .mobile-account-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; max-width: 82px; padding: 7px 8px; text-align: center; line-height: 1.25; color: #e2e8f0; background: var(--surface-2); border: 1px solid var(--line); }
+.cloud-mobile .mobile-account-links { display: grid; gap: 10px; margin-top: 18px; }
+.cloud-mobile .mobile-account-link { display: grid; grid-template-columns: 24px minmax(0, 1fr) 18px; align-items: center; gap: 12px; padding: 16px; border: 1px solid rgba(167,139,250,.35); border-radius: 16px; background: #181d38; color: #e2e8f0; text-decoration: none; }
+.cloud-mobile .mobile-account-link > svg { width: 24px; height: 24px; color: #c4b5fd; }
+.cloud-mobile .mobile-account-link > svg:last-child { width: 18px; height: 18px; }
+.cloud-mobile .mobile-account-link strong, .cloud-mobile .mobile-account-link small { display: block; }
+.cloud-mobile .mobile-account-link strong { font-size: 15px; }
+.cloud-mobile .mobile-account-link small { margin-top: 5px; font-size: 12px; line-height: 1.45; color: #a1aec4; }
+.cloud-mobile .mobile-account-link:focus-visible, .cloud-mobile .mobile-account-button:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }

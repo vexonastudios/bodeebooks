@@ -15,7 +15,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   brand.append(make('p', 'eyebrow', 'Parent dashboard'), make('h1', '', 'BodeeGuard'));
   const actions = make('div', 'header-actions');
   const reload = button('↻', () => void refresh(), 'icon-button'); reload.setAttribute('aria-label', 'Refresh dashboard');
-  const account = make('a', 'text-button', 'Account'); account.href = '/guard/account/'; account.target = '_top';
+  const account = make('a', 'text-button mobile-account-button', 'Parent account'); account.href = '/guard/account/'; account.target = '_top';
   actions.append(reload, account); header.append(brand, actions); root.prepend(header);
 
   const menus = {};
@@ -26,6 +26,19 @@ export function setupCloudMobile({ navigate, refresh }) {
     section.setAttribute('aria-label', title); section.append(make('h1', '', title));
     const list = make('div', 'more-list'); section.append(list); main.append(section); menus[id] = list;
   }
+  const accountLinks = make('nav', 'mobile-account-links');
+  accountLinks.setAttribute('aria-label', 'Parent account and computer setup');
+  for (const [label, detail, href, symbol] of [
+    ['Set up a child computer', 'Get the installer and connect a child’s PC from your phone.', '/guard/account/?setup=connect', 'laptop'],
+    ['Parent account', 'Manage your account, subscription and computers.', '/guard/account/', 'user-round']
+  ]) {
+    const link = make('a', 'mobile-account-link'); link.href = href; link.target = '_top';
+    const mark = make('i', ''); mark.dataset.lucide = symbol; mark.setAttribute('aria-hidden', 'true');
+    const copy = make('span', ''); copy.append(make('strong', '', label), make('small', '', detail));
+    const arrow = make('i', ''); arrow.dataset.lucide = 'chevron-right'; arrow.setAttribute('aria-hidden', 'true');
+    link.append(mark, copy, arrow); accountLinks.append(link);
+  }
+  menus['mobile-more'].before(accountLinks);
   const addTabs = ['learning-videos', 'spelling', 'science-spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
