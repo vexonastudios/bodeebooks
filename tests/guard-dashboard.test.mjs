@@ -26,6 +26,13 @@ async function render({ authenticated = true, unavailable = false } = {}) {
       if (unavailable) throw new Error('Cloud service unavailable');
       return { students: [{ id: 'child', name: '<script>private</script>', grade: '5' }], devices: [], rules: { revision: 1, subjects: [] } };
     } };
+    if (['./ParentPwa', './ParentUpdate', './ParentNotifications'].includes(name)) return { __esModule: true, default: () => null };
+    if (name === './ParentWorkspace') return { __esModule: true, default: ({ query }) => React.createElement('div', { 'data-parent-workspace-query': query }) };
+    if (name === './navigation') {
+      const child = new Module(path.resolve('app/guard/dashboard/navigation.ts'));
+      child._compile(ts.transpileModule(fs.readFileSync(child.id, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, child.id);
+      return child.exports;
+    }
     if (name === './actions') return new Proxy({}, { get: () => async () => {} });
     if (name === './LiveComputers') return { __esModule: true, default: () => React.createElement('div', null, 'Live computers') };
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { type: 'submit' }, props.children) };
@@ -43,14 +50,13 @@ test('cloud dashboard requires parent sign-in before fetching or rendering famil
 
 test('cloud dashboard hosts the shared Admin workspace without rebuilding its sidebar', async () => {
   const html = await render();
-  assert.match(html, /<iframe/);
-  assert.match(html, /\/guard\/dashboard\/workspace\//);
-  assert.match(html, /BodeeGuard Parent Dashboard/);
+  assert.match(html, /data-guard-workspace="true"/);
+  assert.match(html, /data-parent-workspace-query=""/);
   assert.doesNotMatch(html, /<aside|bodeeguard\.local|3737/);
 });
 
 test('the outer frame does not turn an API outage into an empty family snapshot', async () => {
-  assert.match(await render({ unavailable: true }), /\/guard\/dashboard\/workspace\//);
+  assert.match(await render({ unavailable: true }), /data-parent-workspace-query=""/);
 });
 
 function loadDashboardModule(relative, overrides = {}) {
@@ -81,7 +87,8 @@ test('live computer cards clearly distinguish pilot school pause, recovery, and 
     activity: [{ student_id: 'student', subject_id: 'subject', date_utc: '2026-09-05', seconds: 90 }],
   } }));
   assert.match(html, /Pause cloud school/);
-  assert.match(html, /Offline parent recovery/);
+  assert.match(html, /Parent password/);
+  assert.match(html, /Save parent password/);
   assert.match(html, /1m 30s/);
   assert.match(html, /not verified lesson completion/);
   assert.doesNotMatch(html, /Lock computer/);

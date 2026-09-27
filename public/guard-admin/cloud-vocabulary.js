@@ -1,7 +1,7 @@
 // Mechanically adapted original Vocabulary parent editor.
 export function setupCloudVocabulary(){
 let state = { students: [], lists: [], defaults: {} };
-let editingId = null;
+let editingId = null; let editorOpener = null;
 let terms = [];
 let archiveArmedUntil = 0;
 let listSource = 'manual';
@@ -89,30 +89,56 @@ function mastery(list, key) {
 
 function studentAvatar(student){return '<span>'+escapeHtml(student.name?.slice(0,1)||'Aa')+'</span>';}
 
+const stages = [
+  { key: 'new', label: 'New' }, { key: 'learning', label: 'Learning' },
+  { key: 'test_ready', label: 'Test-ready' }, { key: 'remembered', label: 'Remembered' }
+];
+function stageClass(value) { return stages.find(stage => stage.label === value)?.key || 'new'; }
+function stageMarkup(totals) {
+  return stages.map((stage, index) => `<div class="vocabulary-stage ${stage.key}"><strong>${totals[index]}</strong><span>${stage.label}</span></div>`).join('');
+}
+function progressBar(totals) {
+  const total = totals.reduce((sum, value) => sum + value, 0);
+  return `<div class="vocabulary-progress-bar" aria-hidden="true">${stages.map((stage,index) => `<span class="${stage.key}" style="flex-grow:${Math.max(0, totals[index]) / (total || 1)}"></span>`).join('')}</div>`;
+}
 function renderFamilySummary() {
   const root = byId('vocabulary-family-summary');
   if (!root) return;
+  const filter = byId('vocabulary-student-filter').value;
+  byId('vocabulary-show-all').hidden = !filter;
   root.innerHTML = state.students.map(student => {
     const totalsForChild=state.familySummary.find(row=>row.studentId===student.id)||{stages:{},active:0};
     const totals = ['New','Learning','Test-ready','Remembered'].map(stage=>totalsForChild.stages[stage]||0);
     const active = totalsForChild.active;
-    return `<article class="vocabulary-family-card">
-      <div class="vocabulary-family-name">${studentAvatar(student)}<span><strong>${escapeHtml(student.name)}</strong><small>${active} active list${active === 1 ? '' : 's'}</small></span></div>
-      <div class="vocabulary-stage-strip"><span><b>${totals[0]}</b><small>New</small></span><span><b>${totals[1]}</b><small>Learning</small></span><span><b>${totals[2]}</b><small>Test-ready</small></span><span><b>${totals[3]}</b><small>Remembered</small></span></div>
-    </article>`;
+    return `<button type="button" class="vocabulary-family-card" data-vocabulary-child="${escapeHtml(student.id)}" aria-pressed="${filter === String(student.id)}">
+      <span class="vocabulary-family-name"><span class="vocabulary-avatar" aria-hidden="true">${studentAvatar(student)}</span><span><strong>${escapeHtml(student.name)}</strong><small>${active ? `${active} active list${active === 1 ? '' : 's'}` : 'No active lists'}</small></span><span class="vocabulary-child-arrow" aria-hidden="true">→</span></span>
+      ${progressBar(totals)}<span class="vocabulary-child-progress">${totals.reduce((sum,value)=>sum+value,0) ? `<b>${totals[2]+totals[3]}</b> test-ready or remembered <span>of ${totals.reduce((sum,value)=>sum+value,0)} words</span>` : 'Add a list to begin'}</span>
+    </button>`;
   }).join('');
 }
-
 function itemWords(items) {
   return (items || []).map(item => typeof item === 'string' ? item : item.word || item.term).filter(Boolean);
 }
-
+function wordChips(words, kind, title) {
+  if (!words.length) return '';
+  return `<div class="vocabulary-review-group ${kind}"><strong>${title}</strong><div>${words.map(word=>`<span>${escapeHtml(word)}</span>`).join('')}</div></div>`;
+}
+function masteryDetails(list) {
+  const words = list.word_progress || [];
+  if (!words.length) return '<p class="vocabulary-no-progress">Word progress appears after practice is received.</p>';
+  return `<details class="vocabulary-word-progress"><summary><span>Word-by-word progress</span><span class="vocabulary-word-count">${words.length} words</span></summary>
+    <div class="vocabulary-word-table"><div class="vocabulary-word-table-head" aria-hidden="true"><span>Word &amp; stage</span><span>Meaning</span><span>Unaided recall</span><span>Context</span></div>
+      ${words.map(word=>`<div class="vocabulary-word-row"><div class="vocabulary-word-name"><strong>${escapeHtml(word.word)}</strong><span class="vocabulary-stage-label ${stageClass(word.stage)}">${escapeHtml(word.stage)}</span></div><div><small>Meaning</small><span class="${word.meaning_checked?'is-checked':''}">${word.meaning_checked?'Checked':'To practice'}</span></div><div><small>Unaided recall</small><span>${Math.min(2,Number(word.recall_days)||0)} of 2 days</span></div><div><small>Context</small><span class="${word.context_checked?'is-checked':''}">${word.context_available?(word.context_checked?'Checked':'To practice'):'Not supplied'}</span></div></div>`).join('')}
+    </div></details>`;
+}
 function renderLists() {
   const filter = byId('vocabulary-student-filter')?.value || '';
   const lists = state.lists.filter(list => (!filter || String(list.student_id) === filter));
   const root = byId('vocabulary-list-grid');
+  const child = state.students.find(student => String(student.id) === filter);
+  byId('vocabulary-lists-title').textContent = child ? `${child.name}’s vocabulary lists` : 'Vocabulary lists';
   if (!lists.length) {
-    root.innerHTML = '<div class="vocabulary-empty"><strong>No vocabulary lists here yet.</strong><br>Add the curriculum words and definitions manually. Photo scanning is unavailable.</div>';
+    root.innerHTML = '<div class="vocabulary-empty"><strong>No vocabulary lists here yet.</strong><p>Add a list with the words and definitions your child is learning.</p><button type="button" class="btn btn-primary" data-vocabulary-create>Create a vocabulary list</button></div>';
     return;
   }
   root.innerHTML = lists.map(list => {
@@ -121,16 +147,17 @@ function renderLists() {
     const due = itemWords(list.due_words || list.review_due);
     const count = Number(list.term_count ?? list.word_count ?? listTerms(list).length) || 0;
     const readiness = Number(list.progress_summary?.readiness_percent ?? list.readiness_percent);
+    const totals = stages.map(stage => mastery(list, stage.key));
     return `<article class="vocabulary-list-card ${status === 'active' ? 'is-active' : ''}" data-vocabulary-list="${escapeHtml(list.id)}">
-      <div class="vocabulary-list-top"><div><div class="vocabulary-list-student">${escapeHtml(list.student_name || state.students.find(student => String(student.id) === String(list.student_id))?.name || 'Child')}</div><div class="vocabulary-list-title">${escapeHtml(list.title || 'Vocabulary List')}</div></div><span class="vocabulary-list-badge ${status}">${escapeHtml(status)}</span></div>
-      <div class="vocabulary-list-meta"><span>${count} words</span><span>Test ${escapeHtml(dateLabel(list.test_date))}</span><span>${Number(list.daily_term_limit) || 8} words per session</span><span>${list.required_daily ? 'Required daily' : 'Optional'}</span>${Number.isFinite(readiness) ? `<span>${Math.round(readiness)}% test-ready</span>` : ''}</div>
-      <div class="vocabulary-stage-grid"><div><strong>${mastery(list, 'new')}</strong><span>New</span></div><div><strong>${mastery(list, 'learning')}</strong><span>Learning</span></div><div><strong>${mastery(list, 'test_ready')}</strong><span>Test-ready</span></div><div><strong>${mastery(list, 'remembered')}</strong><span>Remembered</span></div></div>
+      <div class="vocabulary-list-top"><div><div class="vocabulary-list-student">${escapeHtml(list.student_name || state.students.find(student => String(student.id) === String(list.student_id))?.name || 'Child')}</div><h3 class="vocabulary-list-title">${escapeHtml(list.title || 'Vocabulary List')}</h3></div><span class="vocabulary-list-badge ${status}">${escapeHtml(status)}</span></div>
+      <div class="vocabulary-list-meta"><span>${count} words</span><span>${list.test_date ? `Test ${escapeHtml(dateLabel(list.test_date))}` : 'No test date'}</span><span>${Number(list.daily_term_limit) || 8} words / session</span><span>${list.required_daily ? 'Daily schoolwork' : 'Optional practice'}</span></div>
+      <div class="vocabulary-readiness"><span>Ready for the test</span><strong>${Number.isFinite(readiness) ? `${Math.max(0,Math.min(100,Math.round(readiness)))}%` : 'Not assessed'}</strong></div>
+      ${progressBar(totals)}<div class="vocabulary-stage-grid">${stageMarkup(totals)}</div>
+      ${wordChips(trouble, 'needs-attention', 'Needs attention')}${wordChips(due, 'due-review', 'Due for review')}
       ${masteryDetails(list)}
-      ${trouble.length ? `<div class="vocabulary-trouble"><strong>Needs attention:</strong> ${trouble.slice(0, 8).map(escapeHtml).join(' · ')}</div>` : ''}
-      ${due.length ? `<div class="vocabulary-due"><strong>Due for review:</strong> ${due.slice(0, 8).map(escapeHtml).join(' · ')}</div>` : ''}
+      <footer class="vocabulary-list-footer"><span>Progress updates after practice syncs.</span><button class="btn btn-secondary" type="button" data-vocabulary-edit="${escapeHtml(list.id)}" aria-label="Edit ${escapeHtml(list.title)} for ${escapeHtml(list.student_name||'child')}">Edit list <span aria-hidden="true">↗</span></button></footer>
     </article>`;
   }).join('');
-  root.querySelectorAll('[data-vocabulary-list]').forEach(card => card.addEventListener('click', event => !event.target.closest('details') && openModal(state.lists.find(list => String(list.id) === card.dataset.vocabularyList))));
 }
 
 function populateStudents() {
@@ -171,19 +198,17 @@ function fieldClass(term, field) {
 function renderTermEditor() {
   const root = byId('vocabulary-term-editor');
   if (!terms.length) {
-    root.innerHTML = '<div class="vocabulary-empty-terms">No words yet. Add a word manually or scan the printed list.</div>';
+    root.innerHTML = '<div class="vocabulary-empty-terms">No words yet. Use Add word to enter your curriculum words and definitions.</div>';
     return;
   }
   root.innerHTML = terms.map((term, index) => {
     const review = term.completeness !== 'complete' || term.review_fields.length || !term.word || !term.definition;
-    const input = (field, label, extra = '') => `<label class="${extra} ${fieldClass(term, field)}">${label}<input data-vocabulary-term="${index}" data-vocabulary-field="${field}" value="${escapeHtml(term[field])}"></label>`;
+    const input = (field, label, extra = '') => `<label class="${extra} ${fieldClass(term, field)}">${label}${['definition','source_sentence'].includes(field) ? `<textarea rows="2" data-vocabulary-term="${index}" data-vocabulary-field="${field}">${escapeHtml(term[field])}</textarea>` : `<input data-vocabulary-term="${index}" data-vocabulary-field="${field}" value="${escapeHtml(term[field])}">`}</label>`;
     return `<article class="vocabulary-term-card ${review ? 'needs-review' : ''}">
-      <div class="vocabulary-term-card-head"><strong>Word ${index + 1}</strong>${review ? `<span class="vocabulary-term-warning">Review ${escapeHtml(term.review_fields.join(', ') || 'the scan result')}</span><button type="button" data-review-vocabulary-term="${index}">Optional blanks reviewed</button>` : ''}<button type="button" data-remove-vocabulary-term="${index}" aria-label="Remove word ${index + 1}">Remove</button></div>
+      <div class="vocabulary-term-card-head"><strong>Word ${index + 1}</strong>${review ? `<span class="vocabulary-term-warning">Review ${escapeHtml(term.review_fields.join(', ') || 'word and definition')}</span><button type="button" data-review-vocabulary-term="${index}">Optional blanks reviewed</button>` : ''}<button type="button" data-remove-vocabulary-term="${index}" aria-label="Remove word ${index + 1}">Remove</button></div>
       <div class="vocabulary-term-fields">
-        ${input('word', 'Word')}${input('pronunciation', 'Pronunciation')}${input('part_of_speech', 'Part of speech')}${input('definition', 'Definition')}
-        ${input('source_sentence', 'Source sentence', 'wide')}${input('synonyms', 'Synonyms', 'wide')}
-        ${input('antonyms', 'Antonyms', 'wide')}${input('related_forms', 'Related forms', 'wide')}
-      </div>
+        ${input('word', 'Word')}${input('part_of_speech', 'Part of speech')}${input('definition', 'Definition', 'full')}
+        </div><details class="vocabulary-term-extra"><summary>Examples &amp; related words (optional)</summary><div class="vocabulary-term-fields">${input('pronunciation', 'Pronunciation')}${input('source_sentence', 'Source sentence', 'full')}${input('synonyms', 'Synonyms')}${input('antonyms', 'Antonyms')}${input('related_forms', 'Related forms', 'full')}</div></details>
     </article>`;
   }).join('');
 }
@@ -192,6 +217,7 @@ function blankTerm() { return normalizeTerm({}); }
 
 function openModal(list = null, studentId = '') {
   if(busy||pending){notice('Retry the saved Vocabulary change first.');return;}
+  editorOpener = document.activeElement;
   editingId = list?.id || null;
   listSource = list?.source || 'manual';
   archiveArmedUntil = 0;
@@ -216,13 +242,15 @@ function openModal(list = null, studentId = '') {
   byId('vocabulary-scan-status').textContent = '';
   byId('vocabulary-scan-status').className = 'vocabulary-scan-status';
   byId('vocabulary-list-photos').value = '';
+  byId('vocabulary-list-save').textContent=list?'Save changes':'Save & assign';
   renderTermEditor();
-  byId('vocabulary-list-modal').classList.add('active');controls();byId('vocabulary-scan-status').textContent='Photo scanning and AI meaning feedback are unavailable. Enter the exact curriculum words and definitions manually.';
+  byId('vocabulary-list-modal').classList.add('active');byId('vocabulary-list-modal').querySelector('.modal-card').scrollTop=0;byId('vocabulary-list-close').focus();controls();byId('vocabulary-scan-status').textContent='Enter the exact curriculum text. Photo scanning is not available here yet.';
 }
 
 function closeModal() {
   if(busy||pending){notice('Keep this editor open and retry the saved Vocabulary change.');return;}
   byId('vocabulary-list-modal').classList.remove('active');
+  editorOpener?.focus();editorOpener=null;
   editingId = null;
   terms = [];
 }
@@ -269,7 +297,7 @@ async function saveList() {
     window.showToast?.('Vocabulary list saved and assigned.');
     await loadVocabularyTab();
   } catch (cause) { error.textContent = cause.message; }
-  finally { button.textContent = 'Save & assign'; controls(); }
+  finally { button.textContent = editingId ? 'Save changes' : 'Save & assign'; controls(); }
 }
 
 async function archiveList() {
@@ -292,7 +320,11 @@ async function archiveList() {
 function scanPhotos(){notice('Photo scanning is unavailable. Add the exact curriculum terms manually.');}
 
 function setupVocabulary() {
-  byId('vocabulary-add-list')?.addEventListener('click', () => openModal());
+  byId('vocabulary-add-list')?.addEventListener('click', () => openModal(null, byId('vocabulary-student-filter').value));
+  byId('vocabulary-family-summary').addEventListener('click', event => { const child=event.target.closest('[data-vocabulary-child]'); if(child){byId('vocabulary-student-filter').value=child.dataset.vocabularyChild;offset=0;void loadVocabularyTab();} });
+  byId('vocabulary-show-all').addEventListener('click',()=>{byId('vocabulary-student-filter').value='';offset=0;void loadVocabularyTab();});
+  byId('vocabulary-list-grid').addEventListener('click',event=>{const edit=event.target.closest('[data-vocabulary-edit]');if(edit)openModal(state.lists.find(list=>String(list.id)===edit.dataset.vocabularyEdit));if(event.target.closest('[data-vocabulary-create]'))openModal(null,byId('vocabulary-student-filter').value);});
+  byId('vocabulary-list-modal').addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();closeModal();}if(event.key==='Tab'){const nodes=[...byId('vocabulary-list-modal').querySelectorAll('button,input,select,textarea,summary')].filter(el=>!el.disabled&&el.getClientRects().length);const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}});
   byId('vocabulary-list-close')?.addEventListener('click', closeModal);
   byId('vocabulary-list-cancel')?.addEventListener('click', closeModal);
   byId('vocabulary-list-save')?.addEventListener('click', saveList);
@@ -327,14 +359,10 @@ function setupVocabulary() {
   });
 }
 
-function masteryDetails(list){
-  if(!list.mastery_basis)return '';
-  return '<p class="vocabulary-due">'+escapeHtml(list.mastery_basis)+'</p><details><summary>Word-by-word progress</summary><ul>'+ (list.word_progress||[]).map(word=>'<li><strong>'+escapeHtml(word.word)+'</strong> — '+escapeHtml(word.stage)+' · '+Number(word.recall_days||0)+'/2 recall days · '+(word.context_available?(word.context_checked?'context checked':'context to practice'):'no curriculum context supplied')+'</li>').join('')+'</ul></details>';
-}
 function button(label,action){const e=document.createElement('button');e.type='button';e.className='btn btn-secondary';e.textContent=label;e.onclick=()=>void action().catch(error=>notice(error.message));return e;}
 async function retryChange(){if(!pending||busy)return;busy=true;controls();try{await send('command',pending.command);pending=null;busy=false;closeModal();await loadVocabularyTab();}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}}
 const retry=button('Retry saved Vocabulary change',retryChange),retryModal=button('Retry saved Vocabulary change',retryChange);retryModal.id='vocabulary-retry-modal';retry.hidden=retryModal.hidden=true;byId('vocabulary-admin-status').after(retry);byId('vocabulary-form-error').after(retryModal);
-const previous=button('Newer Vocabulary lists',async()=>{offset=Math.max(0,offset-2);await loadVocabularyTab();}),next=button('Older Vocabulary lists',async()=>{offset+=2;await loadVocabularyTab();});previous.disabled=next.disabled=true;byId('vocabulary-list-grid').after(previous,next);
+const previous=button('Newer Vocabulary lists',async()=>{offset=Math.max(0,offset-2);await loadVocabularyTab();}),next=button('Older Vocabulary lists',async()=>{offset+=2;await loadVocabularyTab();});previous.disabled=next.disabled=true;byId('vocabulary-pagination').append(previous,next);
 const archived=document.createElement('option');archived.value='archived';archived.textContent='Archived — retained history and older-word reviews';byId('vocabulary-list-status').append(archived);
 setupVocabulary();window.addEventListener('beforeunload',event=>{if(pending||busy){event.preventDefault();event.returnValue='';}});
 return{update(){},setActive(active){if(active&&!loading){loading=true;void loadVocabularyTab().finally(()=>{loading=false;});}if(!active)closeModal();}};
