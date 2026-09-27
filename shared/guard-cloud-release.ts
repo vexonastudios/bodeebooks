@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.251": {
+  "title": "More ways to create in Art Studio",
+  "sections": [
+    {
+      "heading": "Version 1.2.251",
+      "headline": "Creative tools without a crowded canvas",
+      "summary": "Select and edit your own marks, add shapes and text, try mirrored drawing, or trace an approved coloring page.",
+      "highlights": [
+        "Move, resize, rotate, duplicate or delete a selected part of a drawing, with Undo and Cancel.",
+        "Shapes, text, color picking and symmetry live in More tools; brush settings appear only when needed.",
+        "Marker, pencil, crayon and watercolor-style brushes give children different ways to draw.",
+        "Approved library pages can become faint tracing guides that stay separate from printed artwork.",
+        "Save a copy keeps the original safe. Existing drawings and protected coloring outlines are preserved."
+      ]
+    }
+  ]
+},
   "1.2.250": {
   "title": "Smarter coloring and new page creation",
   "sections": [
