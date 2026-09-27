@@ -31,14 +31,23 @@ export function familyReadiness(snapshot, setup) {
       {id:'controls',label:'Computer setup confirmed',done:!!device && initialConfirmation(device),step:3,action:'Get computer confirmation',detail:'Open BodeeGuard on this child’s computer and keep it connected to the internet until it confirms the saved assignment and controls. Then tap Check again.'}
     ].filter(check => check.id !== 'password' || snapshot.parentPassword?.configured);
     const next = checks.find(check => !check.done);
-    return {child,devices,device,checks,connected,ready:!next,next,controlsPending:!!device && !controlsConfirmed(device)};
+    const connectLater = !(snapshot.devices || []).some(item=>item.student_id===child.id) && checks.filter(check=>check.step<3).every(check=>check.done);
+    return {child,devices,device,checks,connected,ready:!next,next,connectLater,controlsPending:!!device && !controlsConfirmed(device)};
   });
+}
+
+export function canFinishSetup(snapshot, setup) {
+  const rows = familyReadiness(snapshot, setup);
+  // A profile without a computer can wait. At least one child's computer must
+  // have completed setup; assigned devices cannot skip required recovery checks.
+  return rows.some(row=>row.ready) && rows.every(row=>row.ready || row.connectLater);
 }
 
 export function nextSetupStep(snapshot, setup) {
   const rows = familyReadiness(snapshot, setup);
   if (!rows.length) return {step:0,label:'Add your children'};
-  const unfinished = rows.find(row => row.next);
+  const unfinished = rows.find(row => row.next && !row.connectLater)
+    || (setup?.completed && rows.some(row=>row.ready) ? null : rows.find(row=>row.next));
   if (unfinished) return {step:unfinished.next.step,label:unfinished.child.name + ': ' + unfinished.next.action.toLowerCase()};
   return setup?.completed ? null : {step:3,label:'Finish setup and hide this reminder'};
 }

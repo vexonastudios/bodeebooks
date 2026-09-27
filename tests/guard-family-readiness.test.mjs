@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 const moduleUrl = text => 'data:text/javascript;base64,' + Buffer.from(text).toString('base64');
 const workspace = moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-workspace-model.js', import.meta.url), 'utf8'));
-const { familyReadiness, nextSetupStep } = await import(moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-parent-readiness.js', import.meta.url), 'utf8').replace("'./cloud-workspace-model.js'", JSON.stringify(workspace))));
+const { familyReadiness, nextSetupStep, canFinishSetup } = await import(moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-parent-readiness.js', import.meta.url), 'utf8').replace("'./cloud-workspace-model.js'", JSON.stringify(workspace))));
 function family() {
   return { students:[{id:'child',name:'Test Child',main_school:{provider:'none'}}],
     devices:[{id:'pc',student_id:'child',revision:3,acknowledged_revision:3,recovery_configured:true,last_seen_at:'2020-01-01T00:00:00Z',locked:true}],
@@ -55,4 +55,24 @@ test('school and activity choices remain required and archived profiles are excl
 });
 test('no children is never complete',()=>{
   const s=family();s.students=[];assert.equal(nextSetupStep(s,{completed:true}).step,0);
+});
+
+test('a prepared profile without a computer can be connected later',()=>{
+ const s=family();s.students.push({id:'later',name:'Later Child',main_school:{provider:'none'}});
+ s.rules.subjects[0].assignments.push({studentId:'later',dailyPlan:{placement:'school'}});
+ assert.equal(canFinishSetup(s,{completed:false}),true);
+ assert.equal(familyReadiness(s,{completed:false})[1].connectLater,true);
+ assert.equal(nextSetupStep(s,{completed:true}),null);
+});
+test('connecting a deferred child resurfaces missing device checks',()=>{
+ const s=family();s.students.push({id:'later',name:'Later Child',main_school:{provider:'none'}});
+ s.devices.push({...s.devices[0],id:'later-pc',student_id:'later',recovery_configured:false,acknowledged_revision:0});
+ assert.equal(canFinishSetup(s,{completed:true}),false);
+ assert.equal(nextSetupStep(s,{completed:true}).label,'Later Child: set up parent recovery');
+});
+test('a family with no configured computers cannot hide the guide',()=>{
+ const s=family();s.devices=[];
+ assert.equal(canFinishSetup(s,{completed:false}),false);
+ assert.equal(canFinishSetup(s,{completed:true}),false);
+ assert.match(nextSetupStep(s,{completed:true}).label,/connect a computer/);
 });

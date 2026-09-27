@@ -10,8 +10,8 @@ collapse. The last step offers **Finish setup & hide reminder** when requirement
 are satisfied, or **Save & finish later** with an explanation that the reminder
 stays. Completing uses the existing revision-checked household setup record, so
 it persists across parent devices. Family setup remains available from controls
-and settings. Missing school, device, recovery or password configuration still
-surfaces after completion; ordinary later control changes do not restart setup.
+and settings. Missing school choices, recovery or password configuration on assigned
+computers still surfaces after completion; ordinary later control changes do not restart setup.
 The school sign-in check is explained separately without pretending it can be
 verified from the dashboard.
 
@@ -21,10 +21,10 @@ No cloud schema, API policy, child installer, child data or family settings were
 changed for testing. Existing parent installer version remains 1.2.251.
 
 Validation:
-- 11 setup-state regressions: offline/paused, confirmation, recovery, password,
+- 14 setup-state regressions: offline/paused, confirmation, recovery, password,
   missing/revoked/new devices, multiple computers, archived children and choices.
 - 69 other related website account, journey, school, dashboard and workspace
-  checks (80 unique website tests including the new 11).
+  checks (83 unique website tests including the new 14).
 - Extended synthetic phone/desktop connection fixture: save/retry, initial
   assignment acknowledgement, finish while offline, failed completion, concurrent
   recovery change, reload persistence and required recovery loss resurfacing.
@@ -39,3 +39,18 @@ Validation:
 Source owns the parent guide in public/guard-admin; do not overwrite these files
 with an older full cloud export. The cloud repository only updates the existing
 onboarding fixture's expected button labels. Deployment receipt follows below.
+
+
+Live verification revealed a second reason for the recurring reminder: a family
+can have saved profiles whose computers will be connected later. A family with
+at least one fully configured child computer can finish while preserving those
+unassigned profiles. The guide explicitly names who will be connected later.
+An assigned computer still cannot skip missing initial confirmation or recovery.
+A family with no configured computers cannot finish. Completed families keep
+Family setup available; connecting a deferred profile resurfaces any required
+checks for that new computer. No profiles are archived, reassigned or removed.
+
+The original focused dashboard results above are retained for unchanged cloud
+code. After this refinement, all 14 model tests and both affected browser
+fixtures passed again, including partially connected families, reload persistence
+and newly connected profiles with missing recovery.

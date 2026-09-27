@@ -66,12 +66,15 @@ else {
   await click('Save & finish later');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,false);
   assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),false,'missing school remains actionable');
   snapshot.students[0].main_school={provider:'abeka'};
-  snapshot.rules.subjects=[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}}]}];
+  snapshot.rules.subjects=[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}},{studentId:'later-child',dailyPlan:{placement:'school'}}]}];
+  snapshot.students.push({id:'later-child',name:'Later Child',main_school:{provider:'none'}});
   snapshot.devices[0].last_seen_at='2020-01-01T00:00:00Z';snapshot.devices[0].locked=true;
   await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
   assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("Not connected right now")'));
   assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("Setup checks complete")'));
   assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("School paused")'));
+  assert.ok(await js('document.querySelector(".setup-readiness-summary").textContent.includes("Later Child: no computer assigned yet")'));
+  assert.ok(await js('document.querySelectorAll(".parent-start-readiness")[1].textContent.includes("Connect a computer when you’re ready")'));
   assert.equal(await js('document.querySelector(".setup-check-details").open'),false,'completed checks start collapsed');
   for(const [name,width,height]of [['phone',390,844],['desktop',1280,900]]){
    win.setContentSize(width,height);await new Promise(resolve=>setTimeout(resolve,120));

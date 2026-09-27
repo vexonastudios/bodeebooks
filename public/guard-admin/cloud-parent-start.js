@@ -1,7 +1,7 @@
 import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
-import { familyReadiness, nextSetupStep } from './cloud-parent-readiness.js';
+import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
@@ -34,16 +34,16 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const value=await response.json();if(!response.ok)throw Error(value.error||'Setup could not be saved.');return value;
   }
   function setupRows() {return familyReadiness(getSnapshot(),state);}
-  function canFinish() {const rows=setupRows();return rows.length>0&&rows.every(row=>row.ready);}
+  function canFinish() {return canFinishSetup(getSnapshot(),state);}
   function updateWelcome() {
     const snapshot=getSnapshot();if(!snapshot||!state){welcome.hidden=true;return;}
     const nextStep=nextSetupStep(snapshot,state);
     welcome.hidden=!nextStep;
     if(!nextStep)return;
-    const unfinished=setupRows().filter(row=>!row.ready),ready=children().length&&!unfinished.length;
+    const ready=canFinish();
     welcome.replaceChildren(node('h2',!children().length?'Start with the essentials':ready?'Your family setup is ready to finish':'A few setup steps remain'),
       node('p',!children().length?'Add your children, choose their school and activities, then connect their Windows computer.':ready
-        ?'Your saved setup checks are complete. Finish the guide to hide this reminder. Computers can be offline.'
+        ?'Finish setup for the computers you have connected. You can connect the remaining children later from Family setup.'
         :'Next: '+nextStep.label+'. Review the remaining steps below; your saved choices are kept.'),
       button(!children().length?'Set up my family':ready?'Review & finish setup':'Review remaining steps',()=>open(nextStep.step),true));
   }
@@ -164,12 +164,13 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   function readiness() {
     const rows=setupRows();
     const summary=node('section','','setup-readiness-summary');
-    const remaining=rows.filter(row=>!row.ready);
-    summary.dataset.ready=String(rows.length>0&&!remaining.length);
-    summary.append(node('h3',remaining.length?'What’s left to do':rows.length?'You can finish setup':'Connect your family'),
-      node('p',remaining.length?'Complete the steps marked below. Save & finish later keeps your choices and leaves the reminder visible.':rows.length
+    const deferred=rows.filter(row=>row.connectLater),finishable=canFinish();
+    summary.dataset.ready=String(finishable);
+    summary.append(node('h3',finishable?'You can finish setup':rows.length?'What’s left to do':'Connect your family'),
+      node('p',!finishable&&rows.length?'Complete the steps marked below. Save & finish later keeps your choices and leaves the reminder visible.':rows.length
         ?'Choose Finish setup & hide reminder below. Your choices stay saved, and Family setup remains available whenever you need it.'
         :'Add a child to begin.','setup-copy'),node('p','Computers do not have to stay online to finish setup. A paused school day does not undo setup.','setup-copy'));
+    if(deferred.length&&finishable)summary.append(node('p',deferred.map(row=>row.child.name).join(', ')+': no computer assigned yet. You can finish now and connect them later from Family setup. Their profiles and choices stay saved.','setup-copy'));
     body.append(summary);
     body.append(button('Check again',async()=>{if(busy)return;busy=true;try{for(const commit of pending)await commit();await refresh();render();}catch(failure){error.textContent=failure.message;}finally{busy=false;}}));
     const connections=node('details','','parent-start-more');connections.open=!(getSnapshot().devices||[]).some(device=>!device.revoked_at);
@@ -199,17 +200,19 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
 
     for(const row of rows){
       const card=node('section','','setup-child parent-start-readiness');card.dataset.ready=String(row.ready);
-      card.append(node('h3',row.child.name),node('strong',row.ready?'Setup checks complete':'Setup still needs attention'));
+      const later=row.connectLater&&finishable;
+      card.append(node('h3',row.child.name),node('strong',row.ready?'Setup checks complete':later?'Connect a computer when you’re ready':'Setup still needs attention'));
       if(row.device){
         const connection=row.connected?'Online now': 'Not connected right now';
         card.append(node('p',(row.device.computer_name||'Assigned computer')+' · '+connection+(row.device.locked?' · School paused':''),'setup-device-status'));
         if(row.ready&&!row.connected)card.append(node('p','This computer has already confirmed its setup. It can be offline while you finish the guide.','setup-copy'));
         if(row.ready&&row.controlsPending)card.append(node('p','Your latest control changes are waiting for this computer to sync. Its initial setup is already confirmed.','setup-copy'));
       }
-      const details=node('details','','setup-check-details');details.open=!row.ready;details.append(node('summary',row.ready?'View completed checks':'Required setup checks'));
+      const details=node('details','','setup-check-details');details.open=!row.ready&&!later;details.append(node('summary',row.ready?'View completed checks':later?'View setup steps':'Required setup checks'));
       const checks=node('ul');for(const check of row.checks){const item=node('li',check.label);item.dataset.done=String(check.done);item.dataset.check=check.id;const icon=node('i');icon.dataset.lucide=check.done?'circle-check':'circle';icon.setAttribute('aria-hidden','true');item.prepend(icon);checks.append(item);}details.append(checks);card.append(details);
+      if(later)card.append(node('p','No computer is assigned to this child yet. This does not stop you finishing setup for the rest of your family.','setup-copy'));
       if(row.next){
-        const action=node('div','','setup-next-action');action.append(node('strong','Next: '+row.next.action),node('p',row.next.detail));
+        const action=node('div','','setup-next-action');action.append(node('strong',(later?'When you’re ready: ':'Next: ')+row.next.action),node('p',row.next.detail));
         if(row.next.step<3)action.append(button(row.next.action,()=>{index=row.next.step;render();}));
         else if(row.next.id==='computer')action.append(button('Connect or assign a computer',()=>{connections.open=true;const target=body.querySelector('.setup-computer-assignment')||connections;target.scrollIntoView({block:'start',behavior:'smooth'});target.querySelector('select,summary')?.focus();}));
         card.append(action);
