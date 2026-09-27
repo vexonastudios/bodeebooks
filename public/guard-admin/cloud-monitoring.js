@@ -11,6 +11,16 @@ export function clockTime(value) {
   const n=seconds(value);return `${Math.floor(n/3600)}:${String(Math.floor(n/60)%60).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 }
 const duration = value => value < 60 ? '<1m' : value < 3600 ? `${Math.floor(value/60)}m` : `${Math.floor(value/3600)}h ${Math.floor(value/60)%60}m`;
+// Saved grades are free text. Sort recognized school levels numerically;
+// missing/custom levels follow them without changing the saved profiles.
+function gradeOrder(grade) {
+  const value = String(grade ?? '').trim().toLowerCase().replace(/[\s-]+/g, '');
+  if (/^(k|k5|kindergarten)$/.test(value)) return 0;
+  if (/^(pk|prek|prekindergarten|preschool|k4)$/.test(value)) return -1;
+  if (value === 'k3') return -2;
+  const number = /^(?:grade)?(\d{1,2})(?:st|nd|rd|th)?(?:grade)?$/.exec(value);
+  return number && Number(number[1]) <= 12 ? Number(number[1]) : -3;
+}
 export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)) {
   const subjects=snapshot.rules?.subjects||[];
   return snapshot.students.filter(s=>!s.archived_at).map((student,index)=>{
@@ -41,7 +51,9 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
       total:todaySeconds(snapshot,student.id),currentSeconds:current?goals.find(g=>g.id===current.id)?.seconds:null,
       done:required.filter(g=>g.complete).length,required:required.length,
       courses:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).flatMap(p=>p.courses)};
-  });
+  }).sort((a,b)=>gradeOrder(b.student.grade)-gradeOrder(a.student.grade)
+    || a.student.name.localeCompare(b.student.name, 'en', { sensitivity: 'base', numeric: true })
+    || a.student.id.localeCompare(b.student.id));
 }
 function node(tag,className='',text=''){const el=document.createElement(tag);el.className=className;el.textContent=text;return el;}
 function icon(name){const el=node('i');el.dataset.lucide=/^[a-z][a-z0-9-]*$/.test(name)?name:'book-open';el.setAttribute('aria-hidden','true');return el;}
