@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.246": {
+  "title": "Mountain Rush joins Family Games",
+  "sections": [
+    {
+      "heading": "Version 1.2.246",
+      "headline": "Race together in Mountain Rush",
+      "summary": "Children can download and play Mountain Rush from Family Games, with the same access rules and game-time limits.",
+      "highlights": [
+        "Verified downloads, automatic update checks and Update / repair are built in.",
+        "Parents can download the Windows game and join the same-version LAN race as Mom or Dad.",
+        "Game time, parent locks and Return to BodeeGuard stay active during play and graphics startup.",
+        "Players who share a Windows account share Mountain Rush saved progress."
+      ]
+    }
+  ]
+},
   "1.2.245": {
   "title": "Connection help on child computers",
   "sections": [

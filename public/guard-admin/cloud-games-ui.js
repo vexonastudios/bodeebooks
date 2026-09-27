@@ -39,10 +39,12 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     const imageArea = node('div', '', 'cloud-game-preview-image'); imageArea.append(picture);
     const info = node('div', '', 'cloud-game-preview-info'), description = node('p'), availability = node('p', 'Download and play in the BodeeGuard Windows app. For multiplayer, one child hosts and the others join inside the game on the same home router. Lesson Village is single-player.', 'cloud-game-preview-availability');
     const details = node('p', '', 'cloud-note'), navigation = node('div', '', 'cloud-game-preview-nav'), counter = node('span');
-    const draw = () => { const game = FAMILY_GAME_PREVIEWS[index]; name.textContent = game.name; picture.src = new URL(game.image, assetBase).href; picture.alt = game.alt; description.textContent = game.description; details.textContent = `${game.players} · Separate Windows game`; counter.textContent = `${index + 1} / ${FAMILY_GAME_PREVIEWS.length}`; };
-    const move = delta => { index = (index + delta + FAMILY_GAME_PREVIEWS.length) % FAMILY_GAME_PREVIEWS.length; draw(); };
+    let imageIndex = 0;
+    const imageButtons = node('div', '', 'cloud-game-preview-nav');
+    const draw = () => { const game = FAMILY_GAME_PREVIEWS[index]; name.textContent = game.name; const images=game.images||[game],current=images[imageIndex]||images[0]; picture.src = new URL(current.image, assetBase).href; picture.alt = current.alt; imageButtons.replaceChildren(); if(images.length>1)imageButtons.append(button('Previous picture',()=>{imageIndex=(imageIndex+images.length-1)%images.length;draw();}),node('span',`${imageIndex+1} / ${images.length}`),button('Next picture',()=>{imageIndex=(imageIndex+1)%images.length;draw();})); description.textContent = game.description; details.textContent = `${game.players} · Separate Windows game`; counter.textContent = `${index + 1} / ${FAMILY_GAME_PREVIEWS.length}`; };
+    const move = delta => { imageIndex=0; index = (index + delta + FAMILY_GAME_PREVIEWS.length) % FAMILY_GAME_PREVIEWS.length; draw(); };
     navigation.append(button('Previous game', () => move(-1), false, 'arrow-left'), counter, button('Next game', () => move(1), false, 'arrow-right'));
-    info.append(description, details, availability, navigation); dialog.append(top, imageArea, info); root.append(dialog);
+    info.append(imageButtons, description, details, availability, navigation); dialog.append(top, imageArea, info); root.append(dialog);
     dialog.addEventListener('keydown', event => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(event.key === 'ArrowRight' ? 1 : -1); } });
     dialog.addEventListener('close', () => { dialog.remove(); opener?.focus({ preventScroll: true }); });
     draw(); icons(); dialog.showModal(); close.focus();
@@ -55,7 +57,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     for(const text of (parent?[
       'Allow Family Games for each child using Access & game time on the left, or Daily Plan.',
       'On each child’s computer: open Family Games, find a game below, then choose Download & play. After the first download, choose Play.',
-      'To join on your Windows computer, download the parent installer below and open the game. Choose Mom or Dad as your player name.',
+      'To join on your Windows computer, use the Windows download below and open the game. Choose Mom or Dad as your player name.',
       'For multiplayer, one player hosts in the game lobby. Everyone else joins from the same home Wi-Fi. Keep everyone on the same game version.'
     ]:['Choose Download & play below. The first download can take a few minutes.','Next time, choose Play. BodeeGuard checks for game updates automatically.','For multiplayer, one person hosts in the game lobby and the others join on the same home Wi-Fi.']))steps.append(node('li',text));
     section.append(steps);
@@ -76,16 +78,17 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     for(const game of FAMILY_GAME_PREVIEWS){
       const area=gameActions.get(game.id);area.replaceChildren();
       if(parent){
-        const downloads={ 'berean-rpg':'BereanRPG-Setup.exe','family-paintball-showdown':'FamilyPaintballShowdown-Setup.exe','rally-rascals':'RallyRascals-Setup.exe','conquering-canaan':'ConqueringOfCanaan-Setup.exe' };
-        const link=node('a','Download for my Windows PC','btn btn-secondary');link.href=`https://github.com/vexonastudios/${game.id}-releases/releases/latest/download/${downloads[game.id]}`;link.target='_blank';link.rel='noopener noreferrer';link.prepend(icon('download'));
-        area.append(link,node('p',game.id==='berean-rpg'?'Single player · Children download from their own app.':'Play as Mom or Dad in the game lobby · Same home Wi-Fi','cloud-note'));continue;
+        const downloads={ 'berean-rpg':'BereanRPG-Setup.exe','family-paintball-showdown':'FamilyPaintballShowdown-Setup.exe','rally-rascals':'RallyRascals-Setup.exe','conquering-canaan':'ConqueringOfCanaan-Setup.exe','mountain-rush':'MountainRush-Windows.zip' };
+        const link=node('a','Download for my Windows PC','btn btn-secondary');link.href=`https://github.com/vexonastudios/${game.id==='mountain-rush'?'atv-racing':game.id}-releases/releases/latest/download/${downloads[game.id]}`;link.target='_blank';link.rel='noopener noreferrer';link.prepend(icon('download'));
+        area.append(link,node('p',game.id==='mountain-rush'?'Extract the ZIP, open MountainRush.exe, then choose your name in LAN Multiplayer. One person hosts; others select the host or enter its IP address. Use the same game version and home Wi-Fi. Progress is shared by players using the same Windows account.':game.id==='berean-rpg'?'Single player · Children download from their own app.':'Play as Mom or Dad in the game lobby · Same home Wi-Fi','cloud-note'));continue;
       }
       if(!external.supported)continue;
       const record=external.games.find(item=>item.key===game.id);
       const run=async action=>{try{await externalRequest(action,game.id);}catch(error){note(error.message);}};
       area.append(button(record?.installed?'Play':'Download & play',()=>run('play'),external.busy||!!external.playing,'play'));
-      if(record?.installed)area.append(button('Check for updates',()=>run('update'),external.busy||!!external.playing,'download'));
+      if(record?.installed)area.append(button('Update / repair',()=>run('update'),external.busy||!!external.playing,'download'));
       area.append(node('small',record?.version?`Installed ${record.version}`:'Download once · Automatic updates','cloud-note'));
+      if(game.id==='mountain-rush')area.append(node('small','LAN Multiplayer: one person hosts; others choose the host or enter its IP. Players on the same Windows account share saved progress.','cloud-note'));
       if(external.progress?.gameKey===game.id){const meter=node('progress');meter.max=100;if(external.progress.percent!=null)meter.value=external.progress.percent;meter.setAttribute('aria-label',`${game.name} download progress`);area.append(meter);}
     }
     if(external.message)note(external.message);icons();
