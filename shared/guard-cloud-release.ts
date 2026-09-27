@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.249": {
+  "title": "One Art & Coloring Studio",
+  "sections": [
+    {
+      "heading": "Version 1.2.249",
+      "headline": "Drawing, coloring pages and simple printing together",
+      "summary": "The child dashboard now opens one Art & Coloring Studio, keeping existing artwork and family rules.",
+      "highlights": [
+        "Browse larger coloring previews, search your library and open twelve pages at a time.",
+        "Print one fitted Letter portrait copy without the Windows print dialog or duplicate clicks.",
+        "Drawings save when switching sections or closing; existing artwork stays on the child computer.",
+        "Printer setup handles delayed registration and explains permission, driver and Print Spooler problems.",
+        "Creating new coloring pages shows its availability clearly. The cloud image service still needs configuration."
+      ]
+    }
+  ]
+},
   "1.2.248": {
   "title": "Compact White Noise controls",
   "sections": [
