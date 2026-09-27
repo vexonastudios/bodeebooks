@@ -26,7 +26,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
   const launch=button('Family setup',()=>open(),true);launch.id='parent-start-guide';
   (document.querySelector('#overview-actions')||document.querySelector('#tab-overview .tab-header'))?.append(launch);
-  const settingsLaunch=button('Family setup',()=>open());document.querySelector('#tab-settings .tab-header')?.append(settingsLaunch);
+  const settingsLaunch=button('Family setup',()=>open());const settingsIcon=node('i');settingsIcon.setAttribute('data-lucide','users');settingsIcon.setAttribute('aria-hidden','true');settingsLaunch.prepend(settingsIcon);(document.querySelector('#tab-settings .settings-header-actions')||document.querySelector('#tab-settings .tab-header'))?.append(settingsLaunch);
   const welcome=node('section','','cloud-panel parent-start-welcome');welcome.hidden=true;
   document.querySelector('#tab-overview .tab-header')?.after(welcome);
   async function request(action,data={}) {

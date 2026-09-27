@@ -430,7 +430,7 @@ const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange: id => files.setStudent(id), onGradeSaved: () => files.refresh() });
 const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, editSubject, canEdit: () => usable && !mutating });
 const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
-const recoveryBackups = setupRecoveryBackups({ endpoint, root: byId('tab-settings') });
+const recoveryBackups = setupRecoveryBackups({ endpoint, root: byId('cloud-settings-backups') || byId('tab-settings') });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });

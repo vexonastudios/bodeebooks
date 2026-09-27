@@ -1,13 +1,13 @@
 export function setupCloudRetention({ endpoint }) {
-  const root = document.createElement('section'); root.className = 'cloud-panel'; root.id = 'cloud-history-retention';
-  root.innerHTML = `<h2><i data-lucide="history"></i> History &amp; privacy</h2>
+  const root = document.createElement('section'); root.className = 'cloud-panel settings-section'; root.id = 'cloud-history-retention';
+  root.innerHTML = `<div class="settings-section-heading"><h2><i data-lucide="shield-check" aria-hidden="true"></i> History &amp; privacy</h2></div>
     <p>Choose when cloud messages and saved BodeeGuard tutor replies expire. School records, grades, submitted documents and kept screenshots stay saved.</p>
-    <form><label><input name="enabled" type="checkbox"> Automatically remove expired history</label>
-    <label>Keep messages for <select name="messageDays" class="admin-input"><option value="30">30 days</option><option value="90">90 days</option><option value="180">6 months</option><option value="365">1 year</option><option value="">Until I remove them</option></select></label>
-    <label>Keep detailed school activity for <select name="schoolEventDays" class="admin-input"><option value="30">30 days</option><option value="90">90 days</option><option value="180">6 months</option><option value="365">1 year</option></select></label>
-    <p>Daily school totals and reports stay saved. Archived school dates keep their original dates if your time zone changes. Built-in tutor replies expire after 30 days when cleanup is enabled; the separate Math Coach always keeps 30 days. Attachments expire with their last message; unattached message uploads expire after seven days. Settings changes have a seven-day grace period.</p>
-    <button class="btn btn-primary" type="submit" disabled><i data-lucide="save"></i> Save history settings</button><p role="status"></p></form>`;
-  document.getElementById('tab-settings')?.append(root);
+    <div class="settings-privacy-grid"><form><h3><i data-lucide="history" aria-hidden="true"></i> History settings</h3><label class="settings-toggle"><input name="enabled" type="checkbox"> Automatically remove expired history</label>
+    <div class="settings-fields"><label>Keep messages for <select name="messageDays" class="admin-input"><option value="30">30 days</option><option value="90">90 days</option><option value="180">6 months</option><option value="365">1 year</option><option value="">Until I remove them</option></select></label>
+    <label>Keep detailed school activity for <select name="schoolEventDays" class="admin-input"><option value="30">30 days</option><option value="90">90 days</option><option value="180">6 months</option><option value="365">1 year</option></select></label></div>
+    <p class="settings-help">Daily school totals and reports stay saved. Archived school dates keep their original dates if your time zone changes. Built-in tutor replies expire after 30 days when cleanup is enabled; the separate Math Coach always keeps 30 days. Attachments expire with their last message; unattached message uploads expire after seven days. Settings changes have a seven-day grace period.</p>
+    <button class="btn btn-primary" type="submit" disabled><i data-lucide="save"></i> Save history settings</button><p class="settings-status" role="status"></p></form></div>`;
+  (document.getElementById('cloud-settings-privacy') || document.getElementById('tab-settings'))?.append(root);
   const form = root.querySelector('form'), status = root.querySelector('[role="status"]'), save = root.querySelector('button');
   let policy = null, busy = false, active = false;
   async function request(action, data = {}) {
@@ -33,8 +33,8 @@ export function setupCloudRetention({ endpoint }) {
     } catch (error) { status.textContent = `${error.message} Reopen Settings before retrying.`; policy = null; }
     finally { busy = false; save.disabled = !policy; }
   });
-  const privacy=document.createElement('div');privacy.innerHTML=`<h3>Export or remove family data</h3><p>Export school records, conversations and saved files. Download each part when prompted to continue the export.</p><button type="button" class="btn btn-secondary" data-export><i data-lucide="download"></i> Export family data</button><div data-downloads></div>
-    <details><summary>Remove family data</summary><p>Removal starts after 30 days and can be cancelled before then. It removes cloud school records, submitted work, media, profiles and Math Coach history, and disconnects enrolled computers. Local drafts and playback positions stay on the computers. Billing records and your subscription are separate; this does not cancel billing.</p><label>Type DELETE FAMILY DATA <input class="admin-input" data-confirm autocomplete="off"></label><button type="button" class="btn btn-secondary" data-delete>Schedule removal</button><button type="button" class="btn btn-secondary" data-cancel hidden>Cancel removal</button></details><p role="status" data-privacy-status></p>`;root.append(privacy);
+  const privacy=document.createElement('div');privacy.className='settings-data-actions';privacy.innerHTML=`<h3><i data-lucide="folder-down" aria-hidden="true"></i> Your family’s data</h3><p>Export school records, conversations and saved files. Download each part when prompted to continue the export.</p><button type="button" class="btn btn-secondary" data-export><i data-lucide="download"></i> Export family data</button><div data-downloads></div>
+    <details class="settings-danger-zone"><summary><i data-lucide="trash-2" aria-hidden="true"></i>Remove family data<i data-lucide="chevron-down" aria-hidden="true"></i></summary><p>Removal starts after 30 days and can be cancelled before then. It removes cloud school records, submitted work, media, profiles and Math Coach history, and disconnects enrolled computers. Local drafts and playback positions stay on the computers. Billing records and your subscription are separate; this does not cancel billing.</p><label>Type DELETE FAMILY DATA <input class="admin-input" data-confirm autocomplete="off"></label><button type="button" class="btn btn-secondary" data-delete><i data-lucide="trash-2" aria-hidden="true"></i>Schedule removal</button><button type="button" class="btn btn-secondary" data-cancel hidden>Cancel removal</button></details><p role="status" data-privacy-status class="settings-status"></p>`;root.querySelector('.settings-privacy-grid').append(privacy);
   const note=privacy.querySelector('[data-privacy-status]'),download=privacy.querySelector('[data-export]'),remove=privacy.querySelector('[data-delete]'),cancel=privacy.querySelector('[data-cancel]');
   let removal=null,exporting=false;const exportURLs=new Set();
   window.addEventListener('pagehide',()=>{for(const url of exportURLs)URL.revokeObjectURL(url);});
@@ -57,20 +57,20 @@ export function setupCloudRetention({ endpoint }) {
       if(bytes>=32*1024*1024&&(!page.next?.chunk)&&!page.done)await savePart(true);if(page.done){await savePart();break;}cursor=page.next;
     }note.textContent=`Export ready. Download the remaining part above and keep all ${part} parts. The files contain private family records.`;}catch(error){note.textContent=`Export incomplete: ${error.message} Previously completed parts remain available.`;}finally{exporting=false;download.disabled=false;}
   });
-  const backups = setupRecoveryBackups({ endpoint, root });
+  const backups = setupRecoveryBackups({ endpoint, root: document.getElementById('cloud-settings-backups') || root });
   return { setActive(value) { active = value; backups.setActive(value); if (active){void load();void loadPrivacy();} } };
 }
 
 export function setupRecoveryBackups({ endpoint, root }) {
-  const section = document.createElement('section'); section.className = 'cloud-panel'; section.id = 'cloud-recovery-backups';
-  section.innerHTML = `<h3><i data-lucide="hard-drive-download"></i> Computer backups &amp; recovery</h3>
-    <p>Keep private recovery copies of your children’s writing and planners in Cloudflare. Saving and reminders still work locally. Backups do not submit papers for grading.</p>
+  const section = document.createElement('section'); section.className = 'cloud-panel settings-section'; section.id = 'cloud-recovery-backups';
+  section.innerHTML = `<div class="settings-section-heading"><h2><i data-lucide="hard-drive-download" aria-hidden="true"></i> Computer backups &amp; recovery</h2><button type="button" class="btn btn-secondary" data-refresh><i data-lucide="refresh-cw" aria-hidden="true"></i> Refresh backups</button></div>
+    <p>Keep private recovery copies of your children’s writing and planners. Restore saved work when a computer needs it.</p>
+    <div class="settings-backup-controls"><label class="settings-toggle"><input type="checkbox" data-enabled disabled> Back up writing and planners</label><button type="button" class="btn btn-primary" data-save disabled><i data-lucide="save" aria-hidden="true"></i> Save backup settings</button></div>
+    <details class="settings-explainer"><summary><i data-lucide="info" aria-hidden="true"></i> What gets backed up?<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
+    <p>Writing and planners are backed up privately in Cloudflare. Saving and reminders still work locally. Backups do not submit papers for grading.</p>
     <p>Parent settings and profiles are already saved with your family account and apply again when you connect a replacement computer. School logins, Windows passwords, device credentials and playback positions are excluded.</p>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><label><input type="checkbox" data-enabled disabled> Back up writing and planners</label>
-    <button type="button" class="btn btn-primary" data-save disabled><i data-lucide="save"></i> Save</button>
-    <button type="button" class="btn btn-secondary" data-refresh><i data-lucide="refresh-cw"></i> Refresh backups</button></div>
-    <p>Changed work backs up about every 15 minutes while BodeeGuard is open and connected. Keep up to seven recent versions and one from each of seven saved dates. The last good copy stays until you remove it. Family allowance: 256 MB.</p>
-    <p role="status" data-status></p><div data-list style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px"></div>`;
+    <p>Changed work backs up about every 15 minutes while BodeeGuard is open and connected. Keep up to seven recent versions and one from each of seven saved dates. The last good copy stays until you remove it. Family allowance: 256 MB.</p></details>
+    <p role="status" class="settings-status" data-status></p><div data-list class="settings-backup-list"></div>`;
   root.append(section);
   const note = section.querySelector('[data-status]'), enabled = section.querySelector('[data-enabled]'), save = section.querySelector('[data-save]'), refresh = section.querySelector('[data-refresh]'), list = section.querySelector('[data-list]');
   let state = null, busy = false, active = false;
@@ -91,13 +91,14 @@ export function setupRecoveryBackups({ endpoint, root }) {
     if (!state.backups.length) text('p', state.settings.enabled ? 'No successful backup yet. Leave the child’s updated BodeeGuard open and connected. Local work is not protected by a cloud copy until a backup appears here.' : 'Backups are off. Turn them on above to protect local writing and planners.', list);
     for (const backup of state.backups) {
       const devices = state.devices.filter(device => device.student_id === backup.studentId);
-      const card = document.createElement('article'); card.className = 'cloud-panel'; list.append(card);
+      const card = document.createElement('article'); card.className = 'settings-backup-card'; list.append(card);
       text('h4', backup.studentName || devices[0]?.student_name || 'Saved child work', card);
       text('p', `${new Date(backup.createdAt).toLocaleString()} · ${backup.documents} notes · ${backup.assignments} assignments · ${(backup.size / 1024).toFixed(0)} KB`, card);
-      const target = document.createElement('select'); target.className = 'admin-input'; target.setAttribute('aria-label', 'Computer to restore onto'); card.append(target);
+      const targetLabel = text('label', 'Restore to computer', card);
+      const target = document.createElement('select'); target.className = 'admin-input'; target.setAttribute('aria-label', 'Computer to restore onto'); targetLabel.append(target);
       for (const device of devices) { const option = document.createElement('option'); option.value = device.id; option.textContent = device.name; target.append(option); }
       if (!devices.length) text('p', 'Connect a computer to this child before restoring.', card);
-      const buttons = document.createElement('div'); buttons.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'; card.append(buttons);
+      const buttons = document.createElement('div'); buttons.className = 'settings-backup-actions'; card.append(buttons);
       const restore = text('button', 'Restore copies', buttons); restore.type = 'button'; restore.className = 'btn btn-primary'; restore.disabled = !devices.length;
       restore.addEventListener('click', () => { if (busy || !confirm('Restore this writing and planner as copies on the selected child’s computer? Existing work and current parent controls stay in place.')) return; void perform('restore', { id: backup.id, deviceId: target.value }, 'Recovery requested. It will run when the child returns to the dashboard and closes Writing and the planner. Refresh here to check completion.'); });
       const download = text('button', 'Download backup', buttons); download.type = 'button'; download.className = 'btn btn-secondary';
@@ -116,7 +117,8 @@ export function setupRecoveryBackups({ endpoint, root }) {
           note.textContent = 'Backup download started. Keep this file private; it contains the child’s writing and planner.';
         } catch (error) { note.textContent = error.message; } finally { download.disabled = false; }
       });
-      const remove = text('button', 'Remove', buttons); remove.type = 'button'; remove.className = 'btn btn-secondary';
+      const remove = text('button', 'Remove', buttons); remove.type = 'button'; remove.className = 'btn btn-secondary settings-remove';
+      for (const [control, name] of [[restore, 'rotate-ccw'], [download, 'download'], [remove, 'trash-2']]) { const icon = document.createElement('i'); icon.setAttribute('data-lucide', name); icon.setAttribute('aria-hidden', 'true'); control.prepend(icon); }
       remove.addEventListener('click', () => { if (busy || !confirm('Permanently remove this cloud recovery copy? Local work is unchanged.')) return; void perform('remove', { id: backup.id }, 'Recovery copy removed.'); });
     }
     for (const restore of state.restores) text('p', `${state.devices.find(device => device.id === restore.device_id)?.student_name || 'Child'}: ${restore.state === 'applied' ? `recovered ${new Date(restore.completed_at).toLocaleString()}` : 'recovery waiting for the selected computer’s dashboard'}.`, list);

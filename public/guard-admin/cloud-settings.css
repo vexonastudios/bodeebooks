@@ -1,0 +1,123 @@
+/* Parent Settings: scoped to avoid changing other dashboard pages. */
+#tab-settings { --text-secondary: #aaa9c2; max-width: 1480px; margin-inline: auto; padding-bottom: 48px; }
+#tab-settings .settings-header { align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 26px; }
+#tab-settings .settings-title { flex: 1 1 340px; }
+#tab-settings .settings-eyebrow { display: block; color: #9eabed; font-size: 11px; font-weight: 700; letter-spacing: .13em; margin-bottom: 8px; }
+#tab-settings h1 { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+#tab-settings h1 svg { width: 28px; height: 28px; color: #b6a4f6; }
+#tab-settings .settings-title p { color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin: 0; }
+#tab-settings .settings-header-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+#tab-settings .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; white-space: normal; line-height: 1.4; text-decoration: none; }
+#tab-settings svg { flex-shrink: 0; width: 20px; height: 20px; }
+#tab-settings :is(button, a, summary, input, select):focus-visible { outline: 2px solid #c4b5fd; outline-offset: 4px; }
+#tab-settings .settings-shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+#tab-settings .settings-shortcut { --settings-accent: #79c6f6; --settings-tint: rgba(56,189,248,.10); display: flex; flex-direction: column; align-items: flex-start; padding: 24px; border: 1px solid var(--border); border-radius: 18px; background: linear-gradient(140deg, var(--settings-tint), transparent 65%), var(--bg-card); }
+#tab-settings .settings-account { --settings-accent: #bda5fa; --settings-tint: rgba(167,139,250,.11); }
+#tab-settings .settings-computers { --settings-accent: #77dbc0; --settings-tint: rgba(52,211,153,.10); }
+#tab-settings .settings-icon { display: grid; place-items: center; width: 46px; height: 46px; background: var(--settings-tint); border: 1px solid color-mix(in srgb, var(--settings-accent) 22%, transparent); border-radius: 14px; color: var(--settings-accent); margin-bottom: 18px; }
+#tab-settings .settings-icon svg { width: 23px; height: 23px; }
+#tab-settings .settings-shortcut h2 { font-size: 18px; margin: 0 0 8px; }
+#tab-settings .settings-shortcut p { color: var(--text-secondary); font-size: 14px; line-height: 1.65; margin: 0 0 20px; flex: 1; }
+#tab-settings .settings-shortcut .btn { justify-content: space-between; text-align: left; width: 100%; color: var(--settings-accent); }
+#tab-settings .settings-section { padding: 26px; border-radius: 18px; margin: 0 0 22px; }
+#tab-settings .settings-section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+#tab-settings .settings-section-heading h2 { display: flex; align-items: center; gap: 10px; font-size: 20px; margin: 0; }
+#tab-settings .settings-section-heading h2 svg { color: #ab9bea; width: 22px; height: 22px; }
+#tab-settings .settings-section > p { max-width: 90ch; }
+#tab-settings .settings-toggle { display: flex; align-items: center; gap: 12px; min-height: 48px; font-size: 14px; font-weight: 600; cursor: pointer; padding: 12px 16px; background: rgba(167,139,250,.06); border: 1px solid var(--border); border-radius: 12px; }
+#tab-settings input[type="checkbox"] { width: 19px; height: 19px; margin: 0; accent-color: #a78bfa; flex-shrink: 0; }
+#tab-settings .settings-backup-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0 12px; }
+#tab-settings .settings-backup-controls .settings-toggle { flex: 1 1 280px; }
+#tab-settings .settings-backup-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; margin-top: 18px; }
+#tab-settings .settings-backup-list > p { grid-column: 1 / -1; padding: 18px; border: 1px dashed var(--border); border-radius: 12px; margin: 0; }
+#tab-settings .settings-backup-card { min-width: 0; padding: 18px; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,.10); }
+#tab-settings .settings-backup-card h4 { font-size: 16px; margin: 0 0 8px; }
+#tab-settings .settings-backup-card label { display: grid; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+#tab-settings .settings-backup-card select { width: 100%; }
+#tab-settings .settings-backup-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+#tab-settings .settings-remove { color: #f1a7ac; }
+#tab-settings #cloud-history-retention { max-width: none; margin-top: 0; }
+#tab-settings .settings-privacy-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; margin-top: 22px; }
+#tab-settings .settings-privacy-grid h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0 0 2px; }
+#tab-settings .settings-privacy-grid h3 svg { color: #a99bd6; }
+#tab-settings .settings-privacy-grid form { display: grid; align-content: start; gap: 16px; }
+#tab-settings .settings-fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+#tab-settings .settings-fields label { display: flex; flex-direction: column; align-items: stretch; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+#tab-settings .settings-fields select { width: 100%; }
+#tab-settings .settings-help { font-size: 13px; margin: 0; }
+#tab-settings .settings-data-actions { padding-left: 28px; border-left: 1px solid var(--border); }
+#tab-settings .settings-data-actions > p { margin-top: 14px; }
+#tab-settings :is(.settings-explainer, .settings-transfer-upload, .settings-archive-history, .settings-danger-zone) { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+#tab-settings :is(.settings-explainer, .settings-transfer-upload, .settings-archive-history, .settings-danger-zone) > summary { display: flex; align-items: center; gap: 9px; padding: 14px 16px; font-size: 14px; font-weight: 600; line-height: 1.5; cursor: pointer; list-style: none; min-height: 48px; }
+#tab-settings summary::-webkit-details-marker { display: none; }
+#tab-settings summary > svg:last-child { margin-left: auto; transition: transform .15s ease; }
+#tab-settings details[open] > summary > svg:last-child { transform: rotate(180deg); }
+#tab-settings summary:hover { background: rgba(167,139,250,.07); }
+#tab-settings .settings-explainer { border-color: transparent; background: rgba(0,0,0,.08); }
+#tab-settings .settings-explainer > summary { color: var(--text-secondary); }
+#tab-settings .settings-explainer > p { padding-inline: 16px; font-size: 13px; }
+#tab-settings .settings-danger-zone { margin-top: 24px; border-color: rgba(248,113,113,.2); }
+#tab-settings .settings-danger-zone > summary { color: #f5aaaa; }
+#tab-settings .settings-danger-zone > :not(summary) { margin: 0 16px 16px; }
+#tab-settings .settings-danger-zone label { display: grid; gap: 8px; font-size: 13px; }
+#tab-settings .settings-danger-zone input { width: 100%; min-width: 0; }
+#tab-settings [data-delete] { color: #ffb4b4; border-color: rgba(248,113,113,.3); }
+#tab-settings [data-downloads]:not(:empty) { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+#tab-settings .settings-status:empty { display: none; }
+#tab-settings .settings-status:not(:empty) { padding: 12px 14px; border-radius: 10px; background: rgba(167,139,250,.07); border-left: 3px solid #a78bfa; margin-block: 14px; font-size: 13px; }
+#tab-settings .settings-transfer-upload { margin: 20px 0; }
+#tab-settings .settings-transfer-body { padding: 4px 18px 18px; }
+#tab-settings .settings-transfer-controls { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+#tab-settings .settings-folder-picker { display: grid; gap: 9px; font-size: 13px; color: var(--text-secondary); flex: 1 1 320px; min-width: 0; }
+#tab-settings input[type="file"] { max-width: 100%; min-height: 44px; font: inherit; color: var(--text-secondary); }
+#tab-settings input[type="file"]::file-selector-button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); background: var(--bg-card); font: inherit; font-weight: 600; cursor: pointer; margin-right: 10px; }
+#tab-settings .settings-archive-list { display: grid; gap: 14px; }
+#tab-settings .settings-archive-card { min-width: 0; padding: 20px; background: rgba(0,0,0,.10); border: 1px solid var(--border); border-radius: 14px; }
+#tab-settings .settings-archive-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+#tab-settings .settings-archive-heading h3 { display: flex; align-items: center; gap: 9px; flex: 1; font-size: 16px; margin: 0; }
+#tab-settings .settings-archive-heading h3 svg { color: #ad9fe2; }
+#tab-settings .settings-badge { padding: 4px 10px; border-radius: 20px; background: rgba(148,163,184,.1); color: #c5c2d2; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+#tab-settings .settings-badge[data-state="verified"] { color: #88e5c0; background: rgba(52,211,153,.12); }
+#tab-settings .settings-badge[data-state="uploading"] { color: #f7d48a; background: rgba(245,158,11,.10); }
+#tab-settings .settings-archive-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+#tab-settings .settings-archive-history { margin-top: 16px; }
+#tab-settings .settings-review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 16px 16px; }
+#tab-settings .settings-review-grid .btn { justify-content: flex-start; text-align: left; font-size: 13px; }
+#tab-settings .settings-record-viewer:not(:empty) { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+#tab-settings .settings-record-viewer .btn { margin: 4px; }
+#tab-settings .settings-record-viewer select { margin-block: 12px; }
+#tab-settings .settings-record-viewer details { padding: 10px 0; border-bottom: 1px solid var(--border); }
+#tab-settings .settings-record-viewer dd { margin-left: 16px; }
+@media (max-width: 1100px) {
+  #tab-settings .settings-shortcuts { gap: 12px; }
+  #tab-settings .settings-shortcut { padding: 18px; }
+  #tab-settings .settings-privacy-grid { grid-template-columns: minmax(0,1fr); gap: 24px; }
+  #tab-settings .settings-data-actions { border-left: 0; padding-left: 0; padding-top: 24px; border-top: 1px solid var(--border); }
+}
+@media (max-width: 700px) {
+  #tab-settings .settings-header { margin-bottom: 20px; }
+  #tab-settings .settings-header-actions { width: 100%; }
+  #tab-settings .settings-header-actions .btn { flex: 1; }
+  #tab-settings .settings-shortcuts { grid-template-columns: minmax(0,1fr); gap: 12px; margin-bottom: 22px; }
+  #tab-settings .settings-shortcut { display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 6px 14px; padding: 18px; }
+  #tab-settings .settings-icon { grid-row: 1 / 3; width: 42px; height: 42px; margin: 0; border-radius: 12px; }
+  #tab-settings .settings-shortcut h2 { margin: 0; font-size: 17px; }
+  #tab-settings .settings-shortcut p { grid-column: 2; margin: 0 0 10px; font-size: 13px; }
+  #tab-settings .settings-shortcut .btn { grid-column: 1 / -1; }
+  #tab-settings .settings-section { padding: 18px; border-radius: 16px; }
+  #tab-settings .settings-section-heading h2 { font-size: 18px; }
+  #tab-settings .settings-section-heading > .btn { width: 100%; }
+  #tab-settings .settings-fields { grid-template-columns: minmax(0,1fr); }
+  #tab-settings .settings-backup-controls > .btn { width: 100%; }
+  #tab-settings .settings-archive-card { padding: 16px; }
+  #tab-settings .settings-archive-actions { flex-direction: column; }
+  #tab-settings .settings-review-grid { grid-template-columns: minmax(0,1fr); padding: 0 12px 12px; }
+  #tab-settings .settings-transfer-controls > .btn { flex: 1 1 140px; }
+  #tab-settings .settings-transfer-body { padding: 4px 12px 14px; }
+  #tab-settings .settings-title { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #tab-settings summary > svg:last-child { transition: none; }
+}
+
+#tab-settings [hidden] { display: none !important; }

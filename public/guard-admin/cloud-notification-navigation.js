@@ -21,7 +21,8 @@ export function setupNotificationNavigation({ messaging, navigate, getStudents }
     button.ariaLabel = 'Message notifications'; button.title = 'Message notifications';
     button.innerHTML = '<i data-lucide="bell" aria-hidden="true"></i> Message notifications';
     button.addEventListener('click', () => window.parent.postMessage({ type: 'bodeeguard-phone-notifications' }, location.origin));
-    heading.after(button);
+    const actions = document.querySelector(`#tab-${tab} .settings-header-actions`);
+    if (actions) actions.append(button); else heading.after(button);
   }
   window.parent.postMessage({ type: 'bodeeguard-messages-ready' }, location.origin);
   return { update: open };

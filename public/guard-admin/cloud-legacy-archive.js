@@ -14,12 +14,20 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   let selected=null,busy=false,stopped=false,generation=0,archive=null;
   const node=(tag,text='',className='')=>{const el=document.createElement(tag);el.textContent=text;el.className=className;return el;};
   const button=(text,fn)=>{const el=node('button',text,'btn btn-secondary');el.type='button';el.onclick=()=>Promise.resolve().then(fn).catch(error=>message(error.message));return el;};
-  const status=node('p','','cloud-note');status.role='status';
+  const icon=(name)=>{const el=node('i');el.setAttribute('data-lucide',name);el.setAttribute('aria-hidden','true');return el;};
+  const status=node('p','','cloud-note settings-status');status.role='status';
   const choose=document.createElement('input');choose.type='file';choose.multiple=true;choose.setAttribute('webkitdirectory','');choose.setAttribute('aria-label','Sanitized Admin transfer folder');
   const start=button('Upload / resume archive',transfer);start.disabled=true;
   const pause=button('Pause transfer',()=>{stopped=true;message('Pausing after the current parts finish. Resume the same folder to continue.');});pause.disabled=true;
-  const list=node('div'),viewer=node('div'),activationRoot=node('div');activationRoot.id='cloud-legacy-activation';activationRoot.hidden=true;
-  root.append(node('h2','Transfer and original records'),node('p','Choose a prepared Admin transfer folder. You can pause and resume without uploading verified parts again. Passwords, browser sessions and pending device commands stay in the private local backup.'),choose,start,pause,status,button('Refresh saved transfers',refresh),list,viewer);
+  const list=node('div','','settings-archive-list'),viewer=node('div','','settings-record-viewer'),activationRoot=node('div');activationRoot.id='cloud-legacy-activation';activationRoot.hidden=true;
+  const heading=node('div','','settings-section-heading'),title=node('h2','Transfer & original records');title.prepend(icon('archive'));
+  const refreshButton=button('Refresh saved transfers',refresh);refreshButton.prepend(icon('refresh-cw'));heading.append(title,refreshButton);
+  const upload=node('details','','settings-transfer-upload'),summary=node('summary','Upload an earlier backup');summary.prepend(icon('folder-up'));summary.append(icon('chevron-down'));
+  const uploadBody=node('div','','settings-transfer-body'),controls=node('div','','settings-transfer-controls');
+  const folder=node('label','','settings-folder-picker');folder.append(node('span','Prepared transfer folder'),choose);
+  start.prepend(icon('upload'));pause.prepend(icon('pause'));controls.append(folder,start,pause);
+  uploadBody.append(node('p','Choose a prepared Admin transfer folder. You can pause and resume without uploading verified parts again. Passwords, browser sessions and pending device commands stay in the private local backup.'),controls);upload.append(summary,uploadBody);
+  root.append(heading,node('p','Browse saved records from your earlier BodeeGuard, or bring over a prepared backup.'),upload,status,list,viewer);
   root.append(activationRoot);const activation=setupCloudLegacyActivation({root:activationRoot,request,onApplied});
   const typingRoot=node('div');typingRoot.id='cloud-legacy-typing';typingRoot.hidden=true;root.append(typingRoot);const typingTransfer=setupCloudLegacyTyping({root:typingRoot,request,onApplied});
   const dailyRoot=node('div');dailyRoot.id='cloud-legacy-daily';dailyRoot.hidden=true;root.append(dailyRoot);const dailyTransfer=setupCloudLegacyDaily({root:dailyRoot,request,onApplied});
@@ -70,23 +78,34 @@ export function setupCloudLegacyArchive({root,endpoint='/guard/dashboard/legacy/
   async function refresh(){
     const data=await request('list');list.replaceChildren();
     if(!data.archives.length)list.append(node('p','No original Admin archive has been transferred yet.'));
-    for(const item of data.archives){const card=node('div','','cloud-panel');card.append(node('h3',`${item.rehearsalOnly?'Rehearsal archive':'Original Admin archive'} · ${item.status}`),node('p',`${item.rows.toLocaleString()} records · ${item.files.toLocaleString()} files · ${new Date(item.createdAt).toLocaleString()}`));
-      if(item.status==='verified')card.append(button('Open original records',()=>open(item.id)));
-      if(item.status==='verified')card.append(button('Review profiles and balances',()=>{activationRoot.hidden=false;return activation.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Typing history',()=>{typingRoot.hidden=false;return typingTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original daily history',()=>{dailyRoot.hidden=false;return dailyTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Logic and Words history',()=>{practiceRoot.hidden=false;return practiceTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Spelling history',()=>{spellingRoot.hidden=false;return spellingTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Science history',()=>{scienceRoot.hidden=false;return scienceTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Vocabulary history',()=>{vocabularyRoot.hidden=false;return vocabularyTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Worksheets',()=>{worksheetsRoot.hidden=false;return worksheetsTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original School',()=>{schoolRoot.hidden=false;return schoolTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Poem history',()=>{poemsRoot.hidden=false;return poemsTransfer.open(item.id);}));
-      if(item.status==='verified')card.append(button('Review original Geography history',()=>{geographyRoot.hidden=false;return geographyTransfer.open(item.id);}));
+    for(const item of data.archives){
+      const card=node('div','','settings-archive-card'),header=node('div','','settings-archive-heading');
+      const title=node('h3',item.rehearsalOnly?'Rehearsal archive':'Original Admin archive');title.prepend(icon('archive'));
+      const badge=node('span',item.status,'settings-badge');badge.dataset.state=item.status;header.append(title,badge);
+      card.append(header,node('p',`${item.rows.toLocaleString()} records · ${item.files.toLocaleString()} files · ${new Date(item.createdAt).toLocaleString()}`));
+      if(item.status==='verified'){
+        const actions=node('div','','settings-archive-actions'),browse=button('Open original records',()=>open(item.id)),profiles=button('Review profiles and balances',()=>{activationRoot.hidden=false;return activation.open(item.id);});
+        browse.prepend(icon('folder-open'));profiles.prepend(icon('users'));actions.append(browse,profiles);card.append(actions);
+        const history=node('details','','settings-archive-history'),summary=node('summary','Review history by activity');summary.prepend(icon('history'));summary.append(icon('chevron-down'));
+        const reviews=node('div','','settings-review-grid');
+        reviews.append(button('Review original Typing history',()=>{typingRoot.hidden=false;return typingTransfer.open(item.id);}));
+        reviews.append(button('Review original daily history',()=>{dailyRoot.hidden=false;return dailyTransfer.open(item.id);}));
+        reviews.append(button('Review original Logic and Words history',()=>{practiceRoot.hidden=false;return practiceTransfer.open(item.id);}));
+        reviews.append(button('Review original Spelling history',()=>{spellingRoot.hidden=false;return spellingTransfer.open(item.id);}));
+        reviews.append(button('Review original Science history',()=>{scienceRoot.hidden=false;return scienceTransfer.open(item.id);}));
+        reviews.append(button('Review original Vocabulary history',()=>{vocabularyRoot.hidden=false;return vocabularyTransfer.open(item.id);}));
+        reviews.append(button('Review original Worksheets',()=>{worksheetsRoot.hidden=false;return worksheetsTransfer.open(item.id);}));
+        reviews.append(button('Review original School',()=>{schoolRoot.hidden=false;return schoolTransfer.open(item.id);}));
+        reviews.append(button('Review original Poem history',()=>{poemsRoot.hidden=false;return poemsTransfer.open(item.id);}));
+        reviews.append(button('Review original Geography history',()=>{geographyRoot.hidden=false;return geographyTransfer.open(item.id);}));
+        history.append(summary,reviews);card.append(history);
+      }
       if(item.status==='uploading')card.append(node('p','Choose the same local package above to resume.'));
       list.append(card);
     }
+    window.lucide?.createIcons?.();
   }
+
   async function open(id){
     const current=++generation,data=await request('browse',{id});if(current!==generation)return;archive=data;viewer.replaceChildren();
     viewer.append(node('h3','Original Admin records'),node('p',`This archive preserves original IDs, timestamps and relationships. ${archive.foreignKeyIssues} pre-existing missing references are retained. Archived commands cannot run. Profile and balance transfers have separate reviews and receipts below.`));
