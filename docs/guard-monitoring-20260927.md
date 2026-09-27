@@ -21,3 +21,15 @@ publication details live in the bodee-guard repository at
 The live signed-in staff page and synthetic diagnostic receipt were verified.
 A monitoring self-test is explicitly labelled operations-self-test. It is not a
 family error. The previous healthy deployment remains available for rollback.
+
+Final visual correction: source 9de0450 gives the monitor its own dark background
+so headings and help text remain readable under the existing website layout.
+Changed-file ESLint and another production build passed. Deployment
+`dpl_7vcHi3yazXUYRLBT17GZa9kewjaQ` is live:
+https://bodeebooks-nwgtum7fs-vexonastudios-3984s-projects.vercel.app
+
+Candidate release identity was verified before promotion. The signed-in live
+staff page was refreshed and visually checked afterward: readable text, persisted
+Investigating state and successful 14:30 UTC API/database, parent and update-feed
+checks. No family documents or settings were changed. BODEEGUARD_MONITOR_RELEASE
+is 9de0450; the parent installer version remains 1.2.251.
