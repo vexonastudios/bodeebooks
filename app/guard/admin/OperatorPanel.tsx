@@ -36,7 +36,7 @@ export default function OperatorPanel({initial,initialTab='overview'}:{initial:O
   const selected=groups.find(group=>group.id===category)!,visible=catalog?.items.filter(item=>item.category===category&&`${item.title} ${item.description}`.toLowerCase().includes(search.toLowerCase()))||[];
   return <main className={styles.page}>
     <header className={styles.header}><div><span className={styles.eyebrow}><ShieldCheck size={18}/> BODEEGUARD STAFF</span><h1>Product dashboard</h1><p>Collections, adoption and support in one place.</p></div><Link href="/guard/account/"><ArrowLeft size={17}/> Parent account</Link></header>
-    <nav className={styles.tabs} aria-label="Staff sections">{[{id:"overview",label:"Overview",Icon:BarChart3},{id:"usage",label:"Usage & costs",Icon:Activity},{id:"content",label:"Starter content",Icon:Library},{id:"reports",label:"Errors & reports",Icon:AlertTriangle}].map(({id,label,Icon})=><button key={id} aria-current={tab===id?"page":undefined} onClick={()=>navigate(id)}><Icon size={18}/>{label}</button>)}</nav>
+    <nav className={styles.tabs} aria-label="Staff sections">{[{id:"overview",label:"Overview",Icon:BarChart3},{id:"usage",label:"Usage & costs",Icon:Activity},{id:"content",label:"Starter content",Icon:Library},{id:"reports",label:"Errors & reports",Icon:AlertTriangle}].map(({id,label,Icon})=><button key={id} aria-current={tab===id?"page":undefined} onClick={()=>navigate(id)}><Icon size={18}/>{label}</button>)}<Link href="/guard/admin/health/"><Activity size={18}/> Service health</Link></nav>
     {error&&<p role="alert" className={styles.error}>{error}</p>}{notice&&<p role="status" className={styles.notice}><Check size={17}/>{notice}</p>}
     {tab==="usage"&&<UsagePanel/>}
     {tab==="overview"&&<>

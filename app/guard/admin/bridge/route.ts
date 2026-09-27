@@ -10,7 +10,9 @@ export async function POST(request:Request){
     const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
     const input=JSON.parse(new TextDecoder().decode(bytes));if(!input||typeof input!=="object"||Array.isArray(input))throw new OperatorError("Invalid request.",400);
     let result;
-    if(input.action==="overview")result=await operatorApi();
+    if(input.action==="operations")result=await operatorApi('/operations');
+    else if(input.action==="operation-state")result=await operatorApi('/operations',{id:input.id,state:input.state,lastSeen:input.lastSeen});
+    else if(input.action==="overview")result=await operatorApi();
     else if(input.action==="usage")result=await operatorApi(`/usage?days=${encodeURIComponent(String(input.days||7))}&family=${encodeURIComponent(String(input.family||"").slice(0,40))}`);
     else if(input.action==="reports")result=await operatorApi(`/diagnostics?reference=${encodeURIComponent(String(input.reference||"").slice(0,40))}`);
     else if(["catalog","save","publish","upload","preview"].includes(input.action))result=await operatorApi("/control",input);

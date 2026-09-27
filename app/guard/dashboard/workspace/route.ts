@@ -33,6 +33,7 @@ export async function GET(request: Request) {
     const name = user?.firstName?.trim() || user?.fullName?.trim() || "Parent account";
     const html = Object.entries(mediaPanels).reduce((html,[id,panel]) => html.replace(new RegExp(`<section class="tab-content" id="tab-${id}"[\\s\\S]*?<\\/section>`),panel),workspace.html)
       .replace('<main class="main-content">', `<main class="main-content cloud-startup-loading" aria-busy="true">${dashboardLoading}`)
+      .replace('</head>', `<script src="/guard-admin/parent-diagnostics.js?v=20260927" data-version="${/^[a-f0-9]{7,40}$/.test((process.env.BODEEGUARD_MONITOR_RELEASE||process.env.VERCEL_GIT_COMMIT_SHA)||'')?(process.env.BODEEGUARD_MONITOR_RELEASE||process.env.VERCEL_GIT_COMMIT_SHA):'unknown'}"></script></head>`)
       .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-economy-controls.css?v=20260911-controls1"><link rel="stylesheet" href="/guard-admin/cloud-dashboard-loading.css?v=20260910-loading1"></head>')
       .replace('</head>', '<link id="cloud-subject-editor-style" rel="stylesheet" href="/guard-admin/cloud-school-editor.css?v=20260910-wide1"></head>')
       .replace('</head>', '<link rel="stylesheet" href="/guard-admin/cloud-student-profile.css?v=20260910-photos1"><link rel="stylesheet" href="/guard-admin/cloud-screenshots.css?v=20260911-screenshot1"></head>')
