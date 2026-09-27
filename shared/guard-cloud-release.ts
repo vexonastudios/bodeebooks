@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.250": {
+  "title": "Smarter coloring and new page creation",
+  "sections": [
+    {
+      "heading": "Version 1.2.250",
+      "headline": "Coloring with protected outlines and fewer spills",
+      "summary": "Open saved pages in Draw & paint, with gap-aware fills and automatic local saves.",
+      "highlights": [
+        "Fill closes small gaps and asks before coloring a large area that reaches the page edge.",
+        "Protected outlines, Undo/Redo, an eraser, color picker, custom colors and zoom make detailed coloring easier.",
+        "Existing drawings remain in the local gallery; coloring copies save separately from the original pages.",
+        "Cloud page generation is connected to the existing hosted image service, with family limits and parent approval preserved."
+      ]
+    }
+  ]
+},
   "1.2.249": {
   "title": "One Art & Coloring Studio",
   "sections": [
