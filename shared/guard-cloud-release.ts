@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.247": {
+  "title": "Update and wake-up reliability",
+  "sections": [
+    {
+      "heading": "Version 1.2.247",
+      "headline": "Clearer restart status and more reliable updates",
+      "summary": "Fixes a Windows folder lock during automatic installation and false protection failures after sleep or delayed heartbeats.",
+      "highlights": [
+        "Update helpers no longer hold the installed application folder open.",
+        "Downloaded updates wait for saved work and closed activities while the dashboard remains usable.",
+        "Protection failures have a clear parent recovery message and a support report instead of a misleading safe-restart message.",
+        "Computers stuck on an older version may need this one-time manual upgrade; publishing does not confirm installation."
+      ]
+    }
+  ]
+},
   "1.2.246": {
   "title": "Mountain Rush joins Family Games",
   "sections": [
