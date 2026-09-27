@@ -155,25 +155,48 @@ export function setupCloudColoringStudio({ endpoint }) {
   }
   function requestCard(request) {
     const card = node('article', '', 'cloud-coloring-request'), preview = node('div', '', 'cloud-coloring-preview');
+    const artwork = node('div', '', 'cloud-coloring-artwork');
+    const previewHead = node('div', '', 'cloud-coloring-preview-head');
+    previewHead.append(node('span', 'Page preview'));
+    artwork.append(previewHead, preview);
     card.dataset.requestId = request.id;
-    let previewReady = !request.image_url;
+    card.dataset.state = request.status;
+    let previewReady = !request.image_url, updating = false;
     const approveControls = [];
     if (request.image_url) {
       const image = node('img', '', 'cloud-coloring-image');
       image.alt = request.title;
-      image.loading = 'lazy';
-      const zoom = button('View full image', 'maximize-2'); zoom.classList.add('cloud-coloring-zoom');
+      image.loading = 'lazy'; image.decoding = 'async';
+      const zoom = button('Enlarge', 'maximize-2'); zoom.classList.add('cloud-coloring-zoom');
+      zoom.setAttribute('aria-label', 'Enlarge ' + request.title);
       zoom.onclick = () => void previewImage(request);
-      preview.append(image, zoom);
-      image.onload = () => { previewReady = true; approveControls.forEach(control => { control.disabled = false; }); };
+      preview.append(image); previewHead.append(zoom);
+      let sharperRequested = false, thumbnailUrl = '', showingOriginal = false;
+      const previewStatus = statusNode(); artwork.append(previewStatus);
+      image.onload = () => {
+        previewReady = true; approveControls.forEach(control => { control.disabled = updating; });
+        // Only the visible approval image needs the original's fine print detail.
+        // Saved-page browsing remains on cached, lazy thumbnails.
+        if (request.status === 'pending_image_review' && !sharperRequested && active && preview.isConnected) {
+          sharperRequested = true;
+          void dataUrl(request, false).then(url => {
+            if (active && preview.isConnected) { showingOriginal = true; image.src = url; }
+          }).catch(() => { if (preview.isConnected) previewStatus.textContent = 'Sharper preview unavailable. Use Enlarge to try again.'; });
+        }
+      };
       image.onerror = () => {
+        if (showingOriginal && thumbnailUrl) {
+          showingOriginal = false; imageReads.delete(request.id + ':false'); image.src = thumbnailUrl;
+          previewStatus.textContent = 'Sharper preview unavailable. Use Enlarge to try again.'; return;
+        }
+        previewReady = false; approveControls.forEach(control => { control.disabled = true; });
         imageReads.delete(request.id + ':true');
         const retry = button('Retry preview', 'refresh-cw');
-        retry.onclick = () => { preview.replaceChildren(image, zoom); preview.loadPreview(); };
+        retry.onclick = () => { preview.replaceChildren(image); preview.loadPreview(); };
         preview.replaceChildren(node('p', 'The preview could not load.'), retry); window.lucide?.createIcons();
       };
-      preview.loadPreview = () => dataUrl(request).then(url => { if (preview.isConnected) image.src = url; }).catch(error => {
-        const retry = button('Retry preview', 'refresh-cw'); retry.onclick = () => { preview.replaceChildren(image, zoom); preview.loadPreview(); };
+      preview.loadPreview = () => dataUrl(request).then(url => { if (active && preview.isConnected) { thumbnailUrl = url; image.src = url; } }).catch(error => {
+        const retry = button('Retry preview', 'refresh-cw'); retry.onclick = () => { preview.replaceChildren(image); preview.loadPreview(); };
         preview.replaceChildren(node('p', error.message), retry); window.lucide?.createIcons();
       });
       imageObserver.observe(preview);
@@ -203,9 +226,11 @@ export function setupCloudColoringStudio({ endpoint }) {
       if (action.startsWith('approve')) { control.classList.add('cloud-coloring-approve'); approveControls.push(control); control.disabled = !previewReady; }
       if (action === 'delete' || action.startsWith('reject')) control.classList.add('cloud-coloring-danger');
       control.onclick = async () => {
+        if (updating) return;
+        updating = true;
         const buttons = [...controls.querySelectorAll('button')];
         buttons.forEach(value => { value.disabled = true; });
-        status.textContent = 'Updating…';
+        status.textContent = 'Updating…'; status.dataset.error = 'false';
         try {
           const updated = await call({ action: 'coloring-request-action', requestId: request.id, requestAction: action, ...(share ? { shareWithFamily: share.input.checked } : {}) });
           if (!active || !card.isConnected) return;
@@ -213,16 +238,22 @@ export function setupCloudColoringStudio({ endpoint }) {
           imageObserver.unobserve(preview);
           if (['deleted', 'blocked', 'rejected'].includes(updated.status)) {
             card.replaceChildren(node('p', updated.status === 'deleted' ? 'Page deleted.' : 'Request declined.', 'cloud-coloring-empty'));
+          } else if (updated.status === 'completed' && request.status !== 'completed') {
+            card.remove();
+            const saved = root.querySelector('.cloud-coloring-library .cloud-coloring-requests');
+            saved?.querySelector('.cloud-coloring-empty')?.remove();
+            saved?.prepend(requestCard({ ...updated, student_name: request.student_name }));
+            if (!root.querySelector('.cloud-coloring-review .cloud-coloring-request')) root.querySelector('.cloud-coloring-review .cloud-coloring-requests')?.append(node('p', 'All caught up. No coloring pages need your approval.', 'cloud-coloring-empty'));
           } else card.replaceWith(requestCard({ ...updated, student_name: request.student_name }));
           window.lucide?.createIcons();
           await refreshPending(true);
         }
-        catch (error) { buttons.forEach(value => { value.disabled = false; }); status.textContent = error.message; status.dataset.error = 'true'; }
+        catch (error) { updating = false; buttons.forEach(value => { value.disabled = approveControls.includes(value) && !previewReady; }); status.textContent = error.message; status.dataset.error = 'true'; }
       };
       controls.append(control);
     }
     body.append(controls, status);
-    card.append(preview, body);
+    card.append(artwork, body);
     return card;
   }
   function render() {
@@ -230,24 +261,26 @@ export function setupCloudColoringStudio({ endpoint }) {
     root.replaceChildren();
     const header = node('div', '', 'tab-header cloud-coloring-header'), reload = button('Refresh', 'refresh-cw');
     reload.onclick = () => void load();
-    header.append(heading('h1', 'Coloring Studio', 'palette'), reload);
+    const title = node('div'); title.append(heading('h1', 'Coloring Studio', 'palette'), node('p', 'Review the artwork, approve new pages, and browse your family’s collection.', 'cloud-coloring-intro'));
+    header.append(title, reload);
     root.append(header);
     if (!overview.configured) root.append(node('p', 'New page generation is temporarily unavailable. You can still manage saved pages and settings.', 'cloud-coloring-notice'));
     const requests = node('section', '', 'cloud-coloring-section cloud-coloring-review'), requestHead = node('div', '', 'cloud-coloring-section-head');
     requestHead.append(heading('h2', 'Awaiting your approval', 'image-check'), node('span', overview.pending + ' awaiting review', 'cloud-coloring-review-count'));
-    requests.append(requestHead, node('p', 'Review each image, choose whether to share it with siblings, then approve.', 'cloud-coloring-muted'));
+    requests.append(requestHead, node('p', 'See the whole page here. Choose whether to share it with siblings, then approve.', 'cloud-coloring-muted'));
     const list = node('div', '', 'cloud-coloring-requests');
     const pending = overview.requests.filter(request => ['pending_parent', 'pending_image_review', 'generating', 'error'].includes(request.status));
     pending.forEach(request => list.append(requestCard(request)));
     if (!pending.length) list.append(node('p', 'All caught up. No coloring pages need your approval.', 'cloud-coloring-empty'));
     requests.append(list); root.append(requests);
-    root.append(globalCard());
-    const library = node('details', '', 'cloud-coloring-section cloud-coloring-library');
+    const library = node('details', '', 'cloud-coloring-section cloud-coloring-library'); library.open = true;
     const libraryHeading = node('summary'); libraryHeading.append(heading('span', 'Saved pages & family sharing', 'images')); library.append(libraryHeading);
     const saved = node('div', '', 'cloud-coloring-requests');
     overview.requests.filter(request => request.status === 'completed').forEach(request => saved.append(requestCard(request)));
     if (!saved.children.length) saved.append(node('p', 'Approved pages appear here. Share or stop sharing any page.', 'cloud-coloring-empty'));
-    library.append(saved); root.append(library);
+    library.append(node('p', 'Your saved pages, ready to revisit or share with the family.', 'cloud-coloring-muted'), saved); root.append(library);
+    const settings = node('details', '', 'cloud-coloring-section cloud-coloring-family-settings'), settingsHeading = node('summary');
+    settingsHeading.append(heading('span', 'Family sharing & rendering limits', 'settings-2')); settings.append(settingsHeading, globalCard()); root.append(settings);
     const children = node('details', '', 'cloud-coloring-section cloud-coloring-child-settings');
     const childHeading = node('summary'); childHeading.append(heading('span', 'Child permissions & daily limits', 'users')); children.append(childHeading);
     const cards = node('div', '', 'cloud-coloring-students');

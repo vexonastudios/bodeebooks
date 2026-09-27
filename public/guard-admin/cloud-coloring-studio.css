@@ -1,12 +1,17 @@
-/* The original Coloring Studio card layout, using the shared dashboard theme. */
-#cloud-coloring-studio { min-width: 0; }
+/* Large portrait previews, with review actions alongside the artwork. */
+#cloud-coloring-studio { min-width: 0; max-width: 1560px; margin: 0 auto; padding-bottom: 24px; }
+#cloud-coloring-studio .cloud-coloring-intro { color: #adb4c8; font-size: 14px; line-height: 1.6; margin: 10px 0 0; }
 .cloud-coloring-sharing-setting { padding: 14px; margin: 12px 0 18px; border: 1px solid #f59e0b55; border-radius: 12px; background: #f59e0b0d; }
 .cloud-coloring-sharing-setting p { line-height: 1.6; }
 #cloud-coloring-studio .cloud-coloring-review { margin: 0 0 24px; }
 .cloud-coloring-review > p { margin-bottom: 16px !important; }
 .cloud-coloring-preview { position: relative; }
-#cloud-coloring-studio .cloud-coloring-zoom { position: absolute; right: 8px; bottom: 8px; background: #17172beF; color: white; font-size: 12px; }
-#cloud-coloring-studio .cloud-coloring-request .cloud-coloring-toggle { width: 100%; gap: 12px; }
+#cloud-coloring-studio .cloud-coloring-zoom { min-height: 36px; padding: 6px 10px; font-size: 12px; background: transparent; color: #d4d9e8; border-color: rgba(167,181,212,.18); }
+.cloud-coloring-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; min-height: 60px; color: #adb4c8; font-size: 12px; }
+.cloud-coloring-artwork { min-width: 0; background: rgba(5,9,20,.28); }
+#cloud-coloring-studio .cloud-coloring-artwork > .cloud-coloring-status:not(:empty) { padding: 10px 16px; }
+#cloud-coloring-studio .cloud-coloring-request .cloud-coloring-toggle { width: 100%; gap: 10px; justify-content: flex-start; padding: 12px; border: 1px solid rgba(167,181,212,.18); border-radius: 10px; }
+.cloud-coloring-request .cloud-coloring-toggle input { order: -1; }
 #cloud-coloring-studio details > summary { display: flex; align-items: center; padding: 18px; cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; font-size: 16px; }
 #cloud-coloring-studio details > summary::after { content: '+'; margin-left: auto; font-size: 22px; }
 #cloud-coloring-studio details[open] > summary::after { content: '−'; }
@@ -46,13 +51,23 @@
 .cloud-coloring-student-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .cloud-coloring-student-head > div { min-width: 0; }
 .cloud-coloring-avatar { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%; color: #fbbf24; background: rgba(245,158,11,.12); font-weight: 700; }
-#cloud-coloring-studio .cloud-coloring-muted { margin: 3px 0 0; font-size: 12px; color: var(--text-secondary); }
+#cloud-coloring-studio .cloud-coloring-muted { margin: 3px 0 0; font-size: 13px; color: #adb4c8; }
 .cloud-coloring-card > label { padding: 8px 0; border-top: 1px solid var(--border); }
 #cloud-coloring-studio .cloud-coloring-card > .btn { margin-top: 10px; width: 100%; border-color: rgba(245,158,11,.28); color: #fde68a; background: rgba(245,158,11,.08); }
-.cloud-coloring-requests { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,240px),1fr)); gap: 16px; }
+.cloud-coloring-requests { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,320px),1fr)); gap: 20px; align-items: start; }
+.cloud-coloring-review .cloud-coloring-requests { grid-template-columns: minmax(0,1fr); }
+.cloud-coloring-review .cloud-coloring-request { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(280px,.9fr); }
+.cloud-coloring-review .cloud-coloring-request-body { padding: 28px; gap: 16px; justify-content: center; }
+.cloud-coloring-review .cloud-coloring-actions { margin-top: 8px; }
+#cloud-coloring-studio .cloud-coloring-review h3 { font-size: 24px; line-height: 1.3; }
+#cloud-coloring-studio .cloud-coloring-review .cloud-coloring-request-body p { font-size: 14px; }
 .cloud-coloring-request { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card); min-width: 0; }
-.cloud-coloring-preview { display: grid; place-items: center; width: 100%; aspect-ratio: 4/3; background: #fff; overflow: hidden; color: #475569; }
+.cloud-coloring-preview { display: grid; place-items: center; width: 100%; height: 430px; padding: 12px; background: #e9edf2; overflow: hidden; color: #475569; }
 .cloud-coloring-image { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.cloud-coloring-review .cloud-coloring-preview { height: 600px; padding: 20px; }
+.cloud-coloring-review .cloud-coloring-placeholder { height: 240px; }
+.cloud-coloring-library > .cloud-coloring-muted { margin: 12px 2px 16px !important; }
+.cloud-coloring-family-settings > form { margin-top: 16px !important; }
 .cloud-coloring-placeholder { align-content: center; gap: 12px; background: linear-gradient(145deg,#e2e8f0,#f8fafc); font-size: 13px; }
 .cloud-coloring-placeholder svg { width: 38px; height: 38px; color: #94a3b8; }
 .cloud-coloring-preview > p { padding: 18px; text-align: center; font-size: 13px; }
@@ -62,7 +77,7 @@
 .cloud-coloring-badge { padding: 4px 8px; border-radius: 6px; color: #c4b5fd; background: rgba(167,139,250,.1); font-size: 11px !important; }
 .cloud-coloring-badge[data-state="completed"] { color: #6ee7b7; background: rgba(16,185,129,.1); }
 .cloud-coloring-badge[data-state^="pending"] { color: #fde68a; background: rgba(245,158,11,.1); }
-.cloud-coloring-prompt { color: var(--text-secondary); }
+.cloud-coloring-prompt { color: #adb4c8; }
 .cloud-coloring-reason { padding: 9px; border-radius: 8px; color: #fecaca; background: rgba(239,68,68,.08); }
 .cloud-coloring-actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; margin-top: auto; padding-top: 4px; }
 #cloud-coloring-studio .cloud-coloring-actions .btn { flex: 1 1 auto; padding: 8px 10px; font-size: 12px; }
@@ -76,7 +91,18 @@
 .cloud-coloring-empty { display: grid; gap: 16px; justify-items: center; grid-column: 1/-1; padding: 32px 20px; border: 1px dashed var(--border-hover); border-radius: 14px; color: var(--text-secondary); text-align: center; line-height: 1.5; }
 #cloud-coloring-studio :focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
 @media (max-width: 1200px) { .cloud-coloring-budget-fields { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 900px) {
+  .cloud-mobile #cloud-coloring-studio .cloud-coloring-artwork .cloud-coloring-preview { aspect-ratio: 3/4; max-height: none; height: auto; }
+  .cloud-mobile #cloud-coloring-studio .cloud-coloring-artwork .cloud-coloring-placeholder { aspect-ratio: auto; height: 200px; }
+  .cloud-coloring-review .cloud-coloring-request { grid-template-columns: minmax(0,1fr); }
+  .cloud-coloring-review .cloud-coloring-request-body { padding: 20px; }
+  .cloud-coloring-review .cloud-coloring-preview { height: 520px; padding: 14px; }
+}
 @media (max-width: 600px) {
+  .cloud-coloring-preview, .cloud-coloring-review .cloud-coloring-preview { height: auto; aspect-ratio: 3/4; padding: 10px; }
+  .cloud-coloring-review .cloud-coloring-placeholder { aspect-ratio: auto; height: 200px; }
+  .cloud-coloring-requests { grid-template-columns: minmax(0,1fr); }
+  #cloud-coloring-studio .cloud-coloring-review h3 { font-size: 21px; }
   #cloud-coloring-studio h1 { font-size: 24px; }
   #cloud-coloring-studio h2 { font-size: 18px; }
   .cloud-coloring-budget-fields { grid-template-columns: minmax(0,1fr); }
