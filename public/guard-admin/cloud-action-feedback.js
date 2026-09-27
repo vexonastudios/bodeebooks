@@ -57,6 +57,7 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
       slot.dataset.dismissing = String(Boolean(entry && entry.fadeAt <= now));
       if (!entry) continue;
       slot.dataset.state = entry.state;
+      slot.setAttribute('role', entry.state === 'error' ? 'alert' : 'status');
       const text = element('div', ''); text.append(element('strong', '', entry.title));
       if (entry.detail) text.append(element('p', '', entry.detail));
       slot.append(glyph(entry.state === 'pending' ? 'loader-circle' : entry.state === 'error' ? 'circle-alert' : 'circle-check'), text);
@@ -72,7 +73,7 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
   }
   const api = {
     bind(control, key, group = key) { control.dataset.actionFeedbackControl = key; control.dataset.actionFeedbackGroup = group; },
-    mount(parent, key) { const slot = element('div', 'cloud-action-inline'); slot.dataset.actionFeedback = key; slot.hidden = true; parent.append(slot); },
+    mount(parent, key) { const slot = element('div', 'cloud-action-inline'); slot.dataset.actionFeedback = key; slot.hidden = true; slot.setAttribute('role', 'status'); slot.setAttribute('aria-atomic', 'true'); parent.append(slot); },
     render,
     begin(key, title, group = key) { const ticket = { key, id: ++serial }; for (const [other, entry] of entries) if (entry.group === group) forget(other); entries.set(key, { id: ticket.id, group, state: 'pending', title }); dismiss(); render(); return ticket; },
     finish(ticket, title, detail = '', error = false) {
@@ -84,8 +85,12 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
         entry.timer = setTimeout(() => expire(ticket.key, entry), SUCCESS_MS);
       }
       render();
+      // A successful action needs only its inline confirmation. Keep a fallback
+      // when navigation removed or hid that control, and keep errors prominent.
+      const inline = [...root.querySelectorAll('[data-action-feedback]')].some(slot =>
+        slot.dataset.actionFeedback === ticket.key && !slot.hidden && slot.getClientRects().length > 0);
       // A slower earlier request must never replace feedback for a newer action.
-      if (ticket.id === serial) show(entry);
+      if (ticket.id === serial && (error || !inline)) show(entry);
     },
     page(text, error = false) {
       if (legacy) { legacy.hidden = true; legacy.textContent = ''; }
