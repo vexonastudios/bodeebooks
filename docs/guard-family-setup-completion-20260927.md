@@ -54,3 +54,19 @@ The original focused dashboard results above are retained for unchanged cloud
 code. After this refinement, all 14 model tests and both affected browser
 fixtures passed again, including partially connected families, reload persistence
 and newly connected profiles with missing recovery.
+
+## Published receipt
+
+- Website source: 7b47292 (initial UI change 5ed8c58).
+- Final production deployment: dpl_XH78yASGNfLwBXETd4ogmZDLSB1m.
+- URL: https://bodeebooks-qtgzcbeud-vexonastudios-3984s-projects.vercel.app.
+- Clean source archive: .tmp/setup-finish-final-site.
+- Candidate release identity and setup model matched before promotion.
+- Public guard.bodeebooks.com/dashboard/release/ returns the final deployment
+  with Cache-Control: no-store. All four changed public assets match source.
+- Signed-in, read-only live verification: the already-completed family's reminder
+  is hidden and Family setup remains available. No family mutations were sent.
+- Installer setting remains 1.2.251 at build/runtime. No child package, update
+  feed or API deployment changed.
+- Previous production dpl_6af9qzhfXE4dSvcEH7G8DYWgeJfY and intermediate
+  dpl_9Ts69B8ZbuzUbg1cpvAz6H5Ft1Ar remain available for rollback.
