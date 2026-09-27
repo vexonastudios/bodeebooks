@@ -1,6 +1,6 @@
 /* Keep the established Ask BodeeGuard drawer, with readable cloud/privacy states. */
 .parent-assistant-launcher { font-size: .9rem; bottom: max(22px, env(safe-area-inset-bottom)); }
-.parent-assistant-drawer { width: min(480px, 100vw); grid-template-rows: auto auto minmax(80px, 1fr) auto auto auto auto; transition: transform .22s ease; }
+.parent-assistant-drawer { width: min(480px, 100vw); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; transition: transform .22s ease; }
 .parent-assistant-safety { font-size: .85rem; padding: 12px 16px; }
 .parent-assistant-safety small { font-size: .78rem; color: #afbad0; }
 .assistant-ai-setting { font-size: .85rem; }
@@ -18,7 +18,7 @@
 @media (max-width: 560px) {
   .parent-assistant-launcher { width: auto; height: auto; padding: 12px 16px; }
   .parent-assistant-launcher span { display: inline; }
-  .parent-assistant-safety small { max-height: 90px; overflow-y: auto; }
+
 }
 @media (prefers-reduced-motion: reduce) { .parent-assistant-drawer, .parent-assistant-launcher { transition: none; } }
 
@@ -31,3 +31,50 @@
 .assistant-music-approve:disabled { opacity: .6; cursor: default; }
 .assistant-music-status { margin: 0; font-size: .85rem; color: #c7def1; }
 .assistant-music-status:empty { display: none; }
+
+/* A fixed header/composer and one scroll region work even above a phone keyboard. */
+.parent-assistant-drawer > * { min-width: 0; }
+.parent-assistant-header { padding: 14px 16px; min-width: 0; }
+.parent-assistant-header > div:nth-child(2) { min-width: 0; }
+.parent-assistant-header h2 { overflow-wrap: anywhere; }
+.parent-assistant-header > button { flex: 0 0 44px; width: 44px; height: 44px; display: grid; place-items: center; }
+.parent-assistant-header > button svg { width: 21px; height: 21px; }
+.cloud-assistant-content { min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-color: #475569 transparent; padding-bottom: 12px; }
+.cloud-assistant-help { margin: 12px 14px 0; border: 1px solid #334155; border-radius: 12px; background: #101c30; }
+.cloud-assistant-help > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 12px; color: #bdd0eb; font-size: 13px; font-weight: 600; cursor: pointer; list-style: none; }
+.cloud-assistant-help > summary::-webkit-details-marker { display: none; }
+.cloud-assistant-help > summary svg { width: 18px; height: 18px; flex-shrink: 0; }
+.cloud-assistant-help > summary svg:last-child { margin-left: auto; }
+.cloud-assistant-help[open] > summary svg:last-child { transform: rotate(180deg); }
+.cloud-assistant-help .parent-assistant-safety { background: none; border: 0; padding: 4px 12px 12px; }
+.cloud-assistant-help .parent-assistant-safety > svg { display: none; }
+.cloud-assistant-help .parent-assistant-safety > div { min-width: 0; gap: 12px; }
+.cloud-assistant-help .parent-assistant-safety small { max-height: none; overflow: visible; line-height: 1.55; }
+.cloud-assistant-help .assistant-ai-setting { width: auto; margin: 0; align-items: flex-start; line-height: 1.5; }
+.cloud-assistant-help .assistant-ai-setting input { flex: 0 0 18px; width: 18px; height: 18px; min-height: 18px; margin: 2px 0 0; padding: 0; }
+.cloud-assistant-reset { display: block; min-height: 44px; margin: 0 12px 10px; padding: 8px 0; font: inherit; font-size: 13px; text-align: left; }
+.cloud-assistant-content .parent-assistant-thread { overflow: visible; min-height: 0; padding: 16px; }
+.cloud-assistant-content .assistant-message { flex: 0 0 auto; max-width: 100%; font-size: 15px; line-height: 1.6; }
+.cloud-assistant-content .assistant-message.user { max-width: 92%; }
+.cloud-assistant-content .parent-assistant-suggestions { flex-wrap: wrap; overflow: visible; padding: 0 16px 4px; }
+.cloud-assistant-content .parent-assistant-suggestions button { flex: 1 1 180px; max-width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; text-align: left; line-height: 1.4; border-radius: 12px; white-space: normal; overflow-wrap: anywhere; }
+.cloud-assistant-composer { background: #0b1525; border-top: 1px solid #293449; padding-bottom: env(safe-area-inset-bottom); }
+.cloud-assistant-composer .parent-assistant-form { border: 0; padding: 12px 14px 8px; gap: 10px; }
+.cloud-assistant-composer textarea { font: inherit; font-size: 16px; line-height: 1.45; min-height: 48px; max-height: min(112px, 22dvh); height: 68px; margin: 0; scroll-margin: 0; }
+.cloud-assistant-composer .parent-assistant-form button { flex: 0 0 44px; width: 44px; height: 44px; margin-bottom: 2px; }
+.cloud-assistant-composer .parent-assistant-footnote { margin: 0; padding: 0 16px 10px; font-size: 11px; line-height: 1.4; }
+.parent-assistant-launcher[aria-expanded="true"] { visibility: hidden; pointer-events: none; }
+@media (max-width: 600px) {
+  .parent-assistant-drawer { inset: 0; width: 100%; height: 100dvh; max-height: none; border: 0; }
+  .parent-assistant-header { padding: max(10px, env(safe-area-inset-top)) 14px 10px; }
+  .parent-assistant-header h2 { font-size: 18px; }
+  .parent-assistant-mark { width: 36px; height: 36px; border-radius: 11px; }
+  .cloud-assistant-content { scrollbar-gutter: auto; }
+}
+@media (max-height: 480px) {
+  .parent-assistant-header { padding-block: 6px; }
+  .parent-assistant-header p { display: none; }
+  .cloud-assistant-composer .parent-assistant-form { padding-top: 8px; }
+  .cloud-assistant-composer textarea { height: 48px; }
+  .cloud-assistant-composer .parent-assistant-footnote { padding-bottom: 6px; font-size: 10px; }
+}

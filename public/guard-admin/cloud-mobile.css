@@ -38,8 +38,10 @@
 .cloud-mobile #tab-grades.active { display: flex; flex-direction: column; }
 .cloud-mobile #tab-grades .cloud-papers { order: -1; margin-bottom: 28px; }
 .cloud-mobile .cloud-messages-panel { min-width: 0; }
-.cloud-mobile #parent-assistant-launcher { bottom: calc(80px + env(safe-area-inset-bottom)); right: 14px; }
-.cloud-mobile #parent-assistant-drawer { bottom: calc(74px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 150px); width: calc(100% - 20px); right: 10px; }
+.cloud-mobile #parent-assistant-launcher { position: static; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 12px; box-shadow: none; }
+.cloud-mobile #parent-assistant-launcher span { display: none; }
+.cloud-mobile #parent-assistant-launcher svg { width: 21px; height: 21px; }
+.cloud-mobile #parent-assistant-drawer { inset: 0; width: 100%; height: 100dvh; max-height: none; border: 0; }
 .cloud-mobile dialog { max-width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
 
 /* Keep account and computer setup discoverable when the desktop sidebar is hidden. */
@@ -54,3 +56,12 @@
 .cloud-mobile .mobile-account-link strong { font-size: 15px; }
 .cloud-mobile .mobile-account-link small { margin-top: 5px; font-size: 12px; line-height: 1.45; color: #a1aec4; }
 .cloud-mobile .mobile-account-link:focus-visible, .cloud-mobile .mobile-account-button:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }
+
+/* Header actions occupy their own space, never the cards below them. */
+.cloud-mobile .app-header { flex-wrap: wrap; }
+.cloud-mobile .app-header > div:first-child { min-width: 0; flex: 1 1 110px; }
+.cloud-mobile .app-header h1 { font-size: 20px; line-height: 1.25; }
+.cloud-mobile .header-actions { margin-left: auto; align-items: center; }
+.cloud-mobile .header-actions .icon-button { width: 44px; height: 44px; }
+.cloud-mobile .mobile-account-button { max-width: 76px; }
+.cloud-mobile .cloud-assistant-help .assistant-ai-setting input { width: 18px; height: 18px; min-height: 18px; }

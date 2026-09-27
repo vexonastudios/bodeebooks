@@ -9,6 +9,21 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const ai = byId('parent-assistant-ai');
   const launcher = byId('parent-assistant-launcher');
   const background = byId('admin-dashboard');
+  // One scrolling body keeps long replies and expanded help away from the composer.
+  const content = document.createElement('div'); content.className = 'cloud-assistant-content';
+  const help = document.createElement('details'); help.className = 'cloud-assistant-help';
+  const summary = document.createElement('summary');
+  summary.innerHTML = '<i data-lucide="shield-check" aria-hidden="true"></i>Options &amp; privacy<i data-lucide="chevron-down" aria-hidden="true"></i>';
+  help.append(summary, drawer.querySelector('.parent-assistant-safety'));
+  content.append(help, thread, byId('parent-assistant-suggestions'));
+  const composer = document.createElement('div'); composer.className = 'cloud-assistant-composer';
+  composer.append(byId('parent-assistant-form'), drawer.querySelector('.parent-assistant-footnote'));
+  drawer.append(content, composer);
+  input.placeholder = 'Ask BodeeGuard…';
+  const closeButton = byId('parent-assistant-close');
+  closeButton.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>';
+  closeButton.setAttribute('aria-label', 'Close Ask BodeeGuard');
+  const phoneLayout = () => document.body.classList.contains('cloud-mobile') || window.matchMedia('(max-width: 600px)').matches;
   let welcome = null, busy = false, generation = 0, topicId = null, retry = null, controller = null;
   let history = [], returnFocus = null;
   function message(role, text, className = '') {
@@ -18,7 +33,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     thread.append(item);
     // Bound long sessions without retaining hidden conversation copies.
     while (thread.children.length > 40) thread.firstElementChild.remove();
-    requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
+    requestAnimationFrame(() => { content.scrollTop = content.scrollHeight; });
     return item;
   }
   async function request(action, data = {}) {
@@ -164,7 +179,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       if (!response.notice) { input.value = ''; retry = null; }
     } catch (error) { if (current === generation) { pending.remove(); message('assistant', error.message, 'error'); } }
     finally {
-      if (current === generation) { busy = false; input.readOnly = false; byId('parent-assistant-send').disabled = false; if (drawer.classList.contains('open')) input.focus(); }
+      if (current === generation) { busy = false; input.readOnly = false; byId('parent-assistant-send').disabled = false; if (drawer.classList.contains('open')) input.focus({ preventScroll: true }); }
     }
   }
   launcher.hidden = false; ai.disabled = true;
@@ -172,7 +187,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     returnFocus = launcher;
     drawer.inert = false; drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
     background.inert = true; launcher.setAttribute('aria-expanded', 'true'); byId('parent-assistant-backdrop').hidden = false;
-    loadWelcome(); input.focus();
+    loadWelcome(); (phoneLayout() ? closeButton : input).focus({ preventScroll: true });
   });
   byId('parent-assistant-close').addEventListener('click', close);
   byId('parent-assistant-backdrop').addEventListener('click', close);
@@ -180,7 +195,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   drawer.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); }
     if (event.key === 'Tab') {
-      const controls = [...drawer.querySelectorAll('button, textarea, input, a[href], iframe')].filter(control => !control.disabled && !control.hidden && control.getClientRects().length);
+      const controls = [...drawer.querySelectorAll('button, textarea, input, a[href], iframe, summary')].filter(control => !control.disabled && !control.hidden && control.checkVisibility());
       if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1)?.focus(); }
       else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0]?.focus(); }
     }
@@ -191,6 +206,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     generation++; controller?.abort(); welcome = null; history = []; retry = null; topicId = null; busy = false;
     input.value = ''; input.readOnly = false; byId('parent-assistant-send').disabled = false; thread.replaceChildren(); loadWelcome();
   });
-  byId('parent-assistant-form').before(reset);
+  help.append(reset);
+  window.lucide?.createIcons?.();
   window.addEventListener('pagehide', () => { generation++; controller?.abort(); history = []; retry = null; thread.replaceChildren(); });
 }

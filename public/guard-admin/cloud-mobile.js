@@ -14,6 +14,10 @@ export function setupCloudMobile({ navigate, refresh }) {
   const brand = make('div', '');
   brand.append(make('p', 'eyebrow', 'Parent dashboard'), make('h1', '', 'BodeeGuard'));
   const actions = make('div', 'header-actions');
+  const assistant = byId('parent-assistant-launcher');
+  const assistantHome = document.createComment('Assistant desktop position');
+  assistant?.before(assistantHome);
+  if (assistant) assistant.title = 'Ask BodeeGuard';
   const reload = button('↻', () => void refresh(), 'icon-button'); reload.setAttribute('aria-label', 'Refresh dashboard');
   const account = make('a', 'text-button mobile-account-button', 'Parent account'); account.href = '/guard/account/'; account.target = '_top';
   actions.append(reload, account); header.append(brand, actions); root.prepend(header);
@@ -103,6 +107,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   const heading = byId('tab-overview').querySelector('h1'); const desktopHeading = heading?.textContent;
   function resize() {
     document.body.classList.toggle('cloud-mobile', media.matches);
+    if (assistant) { if (media.matches) actions.prepend(assistant); else assistantHome.after(assistant); }
     if (heading) heading.textContent = media.matches ? 'Quick controls' : desktopHeading;
     if (!media.matches && document.querySelector('.cloud-mobile-menu.active')) navigate('overview');
   }
