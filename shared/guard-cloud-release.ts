@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.248": {
+  "title": "Compact White Noise controls",
+  "sections": [
+    {
+      "heading": "Version 1.2.248",
+      "headline": "Less clutter while children study",
+      "summary": "White Noise remembers first use and keeps its floating controls small.",
+      "highlights": [
+        "After the child opens White Noise once, the label stays hidden on that computer, including after reopening.",
+        "The wave icon opens sound choices. One Play/Pause button controls the selected sound; the extra Stop button is removed.",
+        "White Noise still works during Abeka and keeps its saved sound and volume."
+      ]
+    }
+  ]
+},
   "1.2.247": {
   "title": "Update and wake-up reliability",
   "sections": [
