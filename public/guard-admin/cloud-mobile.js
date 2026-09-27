@@ -127,7 +127,7 @@ export function setupCloudMobile({ navigate, refresh }) {
       const body = make('div', 'mobile-card-body'); body.id = `mobile-card-${id}`;
       for (const child of [...card.children]) if (child !== top) body.append(child);
       const shortcuts = make('div', 'cloud-actions cloud-mobile-only');
-      shortcuts.append(button('Messages', () => navigate('messages'), 'btn btn-secondary'), button('Screenshots', () => navigate('screenshots'), 'btn btn-secondary'));
+      shortcuts.append(button('Screenshots', () => navigate('screenshots'), 'btn btn-secondary'));
       body.append(shortcuts);
       const toggle = button(expanded.has(id) ? '⌃' : '⌄', () => {
         if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
