@@ -5,7 +5,7 @@ import { parentActionFeedback } from './cloud-action-feedback.js';
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
-import { setupParentStart } from './cloud-parent-start.js?v=20260926-connect1';
+import { setupParentStart } from './cloud-parent-start.js?v=20260927-finish1';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
@@ -464,7 +464,10 @@ const learningVideos = setupCloudLearningVideos({ root: byId('cloud-learning-vid
 } });
 const dailyPlan = setupDailyPlan({ getSnapshot: () => snapshot, mutate, navigate: selectTab, editSubject, chooseSchool: studentId => { selectTab('students'); mainSchool.open(studentId); }, endpoint });
 const mainSchool = setupMainSchool({getSnapshot:()=>snapshot,editor,field,selectField,node,button,mutate});
-const parentStart = setupParentStart({endpoint,getSnapshot:()=>snapshot,navigate:selectTab,mutate,refresh});
+const parentStart = setupParentStart({endpoint,getSnapshot:()=>snapshot,navigate:selectTab,mutate,refresh:async()=>{
+  await refresh();
+  if(!usable)throw Error('Could not check the latest setup. Reconnect and tap Check again before finishing.');
+}});
 
 document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
   item.title ||= item.textContent.replace(/\s+/g, ' ').trim();

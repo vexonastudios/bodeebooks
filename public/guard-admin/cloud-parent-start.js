@@ -13,7 +13,7 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20260926-connect1';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20260927-finish1';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -33,18 +33,23 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(15000),body:JSON.stringify({action,...data})});
     const value=await response.json();if(!response.ok)throw Error(value.error||'Setup could not be saved.');return value;
   }
+  function setupRows() {return familyReadiness(getSnapshot(),state);}
+  function canFinish() {const rows=setupRows();return rows.length>0&&rows.every(row=>row.ready);}
   function updateWelcome() {
-    const snapshot=getSnapshot();if(!snapshot)return;
+    const snapshot=getSnapshot();if(!snapshot||!state){welcome.hidden=true;return;}
     const nextStep=nextSetupStep(snapshot,state);
     welcome.hidden=!nextStep;
     if(!nextStep)return;
-    welcome.replaceChildren(node('h2',children().length?'Continue family setup':'Start with the essentials'),
-      node('p',children().length?`Next: ${nextStep.label}. Your saved choices are kept.`:'Add your children, choose their school and activities, then connect their Windows computer.'),
-      button(children().length?'Continue setup':'Set up my family',()=>open(nextStep.step),true));
+    const unfinished=setupRows().filter(row=>!row.ready),ready=children().length&&!unfinished.length;
+    welcome.replaceChildren(node('h2',!children().length?'Start with the essentials':ready?'Your family setup is ready to finish':'A few setup steps remain'),
+      node('p',!children().length?'Add your children, choose their school and activities, then connect their Windows computer.':ready
+        ?'Your saved setup checks are complete. Finish the guide to hide this reminder. Computers can be offline.'
+        :'Next: '+nextStep.label+'. Review the remaining steps below; your saved choices are kept.'),
+      button(!children().length?'Set up my family':ready?'Review & finish setup':'Review remaining steps',()=>open(nextStep.step),true));
   }
   function status() {
     progress.textContent=`Step ${index+1} of ${steps.length}`;back.disabled=index===0;
-    next.textContent=index===3?'Save choices & close':index===2?(reviewing?'Save plan & continue':'Review choices'):'Continue';
+    next.textContent=index===3?(canFinish()?'Finish setup & hide reminder':'Save & finish later'):index===2?(reviewing?'Save plan & continue':'Review choices'):'Continue';
   }
   async function open(startAt) {
     if(busy||dialog.open||!getSnapshot())return;
@@ -89,7 +94,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
         if(!reviewing){reviewing=true;render();return;}
         await savePlan();
       }
-      if(index===3&&direction>0){await persist(index,children().length>0&&familyReadiness(getSnapshot(),state).every(row=>row.ready));dialog.close();navigate('overview');return;}
+      if(index===3&&direction>0){const finishing=canFinish();await refresh();if(finishing&&!canFinish()){render();throw Error('A setup check changed. Review the next action below before finishing.');}await persist(index,canFinish());dialog.close();navigate('overview');return;}
       const target=Math.max(0,Math.min(3,index+direction));await persist(target);index=target;render();
     }catch(failure){error.textContent=failure.message;}
     finally{busy=false;unlock();status();}
@@ -157,8 +162,15 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     }catch(failure){error.textContent=failure.message;}finally{busy=false;}
   }
   function readiness() {
-    const rows=familyReadiness(getSnapshot(),state);
-    body.append(node('p','Choose who uses each computer, then check its connection and parent controls below. Check school sign-in on the child’s screen.','setup-copy'));
+    const rows=setupRows();
+    const summary=node('section','','setup-readiness-summary');
+    const remaining=rows.filter(row=>!row.ready);
+    summary.dataset.ready=String(rows.length>0&&!remaining.length);
+    summary.append(node('h3',remaining.length?'What’s left to do':rows.length?'You can finish setup':'Connect your family'),
+      node('p',remaining.length?'Complete the steps marked below. Save & finish later keeps your choices and leaves the reminder visible.':rows.length
+        ?'Choose Finish setup & hide reminder below. Your choices stay saved, and Family setup remains available whenever you need it.'
+        :'Add a child to begin.','setup-copy'),node('p','Computers do not have to stay online to finish setup. A paused school day does not undo setup.','setup-copy'));
+    body.append(summary);
     body.append(button('Check again',async()=>{if(busy)return;busy=true;try{for(const commit of pending)await commit();await refresh();render();}catch(failure){error.textContent=failure.message;}finally{busy=false;}}));
     const connections=node('details','','parent-start-more');connections.open=!(getSnapshot().devices||[]).some(device=>!device.revoked_at);
     connections.append(node('summary','Connect a Windows computer'),node('p','On the child’s Windows computer, download and install BodeeGuard. Choose Get pairing code. You can approve that code from this phone or any signed-in parent browser.','setup-copy'));
@@ -186,12 +198,25 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     }
 
     for(const row of rows){
-      const card=node('section','','setup-child parent-start-readiness');card.append(node('h3',row.child.name),node('strong',row.ready?'Computer ready for your first school check':'Setup still needs attention'));
-      const checks=node('ul');for(const check of row.checks){const item=node('li',check.label);item.dataset.done=String(check.done);const icon=node('i');icon.dataset.lucide=check.done?'circle-check':'circle';icon.setAttribute('aria-hidden','true');item.prepend(icon);checks.append(item);}card.append(checks);
-      if(row.next&&row.next.step<3)card.append(button(row.next.step===1?'Choose school':'Choose activities',()=>{index=row.next.step;render();}));
-      if(row.devices.some(d=>d.locked))card.append(node('p','School is paused. Resume it from parent controls when you are ready.','setup-copy'));
-      if(row.devices.some(d=>!d.recovery_configured))card.append(node('p','Finish parent recovery setup in the child app before starting school.','setup-copy'));
-      if(row.child.main_school?.provider&&row.child.main_school.provider!=='none')card.append(node('p','First school check: open the school on this child’s computer, sign in, and confirm a lesson opens. Website sign-in cannot be verified from here.','setup-copy'));
+      const card=node('section','','setup-child parent-start-readiness');card.dataset.ready=String(row.ready);
+      card.append(node('h3',row.child.name),node('strong',row.ready?'Setup checks complete':'Setup still needs attention'));
+      if(row.device){
+        const connection=row.connected?'Online now': 'Not connected right now';
+        card.append(node('p',(row.device.computer_name||'Assigned computer')+' · '+connection+(row.device.locked?' · School paused':''),'setup-device-status'));
+        if(row.ready&&!row.connected)card.append(node('p','This computer has already confirmed its setup. It can be offline while you finish the guide.','setup-copy'));
+        if(row.ready&&row.controlsPending)card.append(node('p','Your latest control changes are waiting for this computer to sync. Its initial setup is already confirmed.','setup-copy'));
+      }
+      const details=node('details','','setup-check-details');details.open=!row.ready;details.append(node('summary',row.ready?'View completed checks':'Required setup checks'));
+      const checks=node('ul');for(const check of row.checks){const item=node('li',check.label);item.dataset.done=String(check.done);item.dataset.check=check.id;const icon=node('i');icon.dataset.lucide=check.done?'circle-check':'circle';icon.setAttribute('aria-hidden','true');item.prepend(icon);checks.append(item);}details.append(checks);card.append(details);
+      if(row.next){
+        const action=node('div','','setup-next-action');action.append(node('strong','Next: '+row.next.action),node('p',row.next.detail));
+        if(row.next.step<3)action.append(button(row.next.action,()=>{index=row.next.step;render();}));
+        else if(row.next.id==='computer')action.append(button('Connect or assign a computer',()=>{connections.open=true;const target=body.querySelector('.setup-computer-assignment')||connections;target.scrollIntoView({block:'start',behavior:'smooth'});target.querySelector('select,summary')?.focus();}));
+        card.append(action);
+      }
+      if(row.child.main_school?.provider&&row.child.main_school.provider!=='none'){
+        const schoolCheck=node('details','','setup-first-lesson');schoolCheck.append(node('summary','Before the first lesson'),node('p','On this child’s computer, open their school, sign in, and check that a lesson opens. Website sign-in cannot be checked here and does not keep the setup reminder visible.','setup-copy'));card.append(schoolCheck);
+      }
       card.append(button('Preview child activities',()=>previewChild(row.child)));body.append(card);
     }
     body.append(node('p','After saving a student, keep BodeeGuard open on that computer. Tap Check again to see when it confirms the assignment and parent controls.','setup-copy'));
