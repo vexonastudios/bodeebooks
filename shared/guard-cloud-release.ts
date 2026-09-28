@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.260": {
+  "title": "Music while studying in Quizlet",
+  "sections": [
+    {
+      "heading": "Version 1.2.260",
+      "headline": "Keep music playing during Quizlet",
+      "summary": "Permitted pinned Music stays open when your child opens Quizlet Study.",
+      "highlights": [
+        "Start a song, Pin to Bottom, then open Quizlet.",
+        "Parent music permissions, daily listening limits and volume caps still apply.",
+        "Quizlet records its own study time while music listening keeps its existing usage counter.",
+        "Updates continue to wait during school and open activities."
+      ]
+    }
+  ]
+},
   "1.2.259": {
   "title": "Abeka volume controls work in full screen",
   "sections": [
