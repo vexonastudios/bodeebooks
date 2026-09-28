@@ -137,3 +137,24 @@
 .cloud-assignment-status[data-state="confirmed"]{border-color:#34d39965;color:#6ee7b7;background:#34d3990c}
 .cloud-assignment-status[data-state="error"]{border-color:#f8717165;color:#fca5a5;background:#f871710c}
 @media(max-width:600px){.cloud-assignment-actions .btn-primary{flex:1}.cloud-computer-controls>.cloud-actions{padding-top:10px;border-top:1px solid var(--border)}}
+
+/* The provider parent link stays outside student controls and remains available when a child computer is offline. */
+.cloud-abeka-parent-shortcut[hidden],.cloud-abeka-parent-settings[hidden]{display:none!important}
+.cloud-abeka-parent-shortcut{display:flex;align-items:center;gap:14px;min-height:64px;margin:0 0 18px;padding:14px 18px;border:1px solid #c084fc55;border-radius:16px;background:linear-gradient(110deg,#302046,#172135);color:#f1eaff;text-decoration:none;box-sizing:border-box}
+.cloud-abeka-parent-symbol{display:grid;place-items:center;flex:0 0 40px;height:40px;border-radius:12px;background:#c084fc24;color:#d8b4fe}
+.cloud-abeka-parent-symbol svg{width:22px;height:22px}
+.cloud-abeka-parent-copy{flex:1;min-width:0;line-height:1.4}
+.cloud-abeka-parent-copy strong,.cloud-abeka-parent-copy small{display:block}
+.cloud-abeka-parent-copy strong{font-size:16px}
+.cloud-abeka-parent-copy small{margin-top:3px;font-size:12px;color:#d4c6e5}
+.cloud-abeka-parent-shortcut>svg{flex:0 0 20px;width:20px;height:20px;color:#d8b4fe}
+.cloud-abeka-parent-shortcut:hover{border-color:#c084fc;background:#302346}
+.cloud-abeka-parent-shortcut:focus-visible,.cloud-abeka-parent-open:focus-visible{outline:2px solid #c4b5fd;outline-offset:3px}
+.cloud-abeka-parent-settings{margin:0 0 20px}
+.cloud-abeka-parent-settings h3{display:flex;align-items:center;gap:9px}
+.cloud-abeka-parent-settings h3 svg{width:20px;height:20px;color:#c4b5fd}
+.cloud-abeka-parent-open{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;white-space:normal;text-decoration:none}
+.cloud-abeka-parent-open svg{flex:0 0 18px;width:18px;height:18px}
+.cloud-abeka-parent-preference{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:12px;cursor:pointer;font-size:14px;line-height:1.5}
+.cloud-abeka-parent-preference input{flex:0 0 20px;width:20px;height:20px;accent-color:#a78bfa}
+@media(max-width:600px){.cloud-abeka-parent-shortcut{gap:10px;padding:12px;margin-bottom:16px}.cloud-abeka-parent-copy strong{font-size:15px}.cloud-abeka-parent-copy small{font-size:12px}.cloud-abeka-parent-open{width:100%;box-sizing:border-box}}
