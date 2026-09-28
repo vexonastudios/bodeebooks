@@ -12,15 +12,16 @@ const site = path.resolve(__dirname, '..');
 const fixture = {
   serverTime: new Date().toISOString(),
   schoolActivities: [],
-  students: [{ id: 'child-1', name: 'Test Child', grade: '5' }],
-  devices: [{ id: 'device-1', student_id: 'child-1', computer_name: 'Test PC', current_subject: 'school-1', last_seen_at: new Date().toISOString(), app_version: 'test', revision: 1, acknowledged_revision: 1, locked: false, recovery_configured: true }],
-  rules: { revision: 1, schedule: { enabled: false, timeZone: 'America/Chicago', days: [1,2,3,4,5], start: '08:00', end: '15:00', breaks: [], exceptions: [] }, subjects: [{ id: 'school-1', title: 'Abeka Academy', url: 'https://school.example', assignments: [{ studentId: 'child-1', dailyGoalMinutes: 120 }] }] },
-  activity: [{ student_id: 'child-1', subject_id: 'school-1', date_utc: new Date().toISOString().slice(0, 10), seconds: 4200 }]
+  students: [{ id: '11111111-1111-4111-8111-000000000001', name: 'Test Child', grade: '5' }],
+  devices: [{ id: 'device-1', student_id: '11111111-1111-4111-8111-000000000001', computer_name: 'Test PC', current_subject: 'school-1', last_seen_at: new Date().toISOString(), app_version: 'test', revision: 1, acknowledged_revision: 1, locked: false, recovery_configured: true }],
+  rules: { revision: 1, schedule: { enabled: false, timeZone: 'America/Chicago', days: [1,2,3,4,5], start: '08:00', end: '15:00', breaks: [], exceptions: [] }, subjects: [{ id: 'school-1', title: 'Abeka Academy', url: 'https://school.example', assignments: [{ studentId: '11111111-1111-4111-8111-000000000001', dailyGoalMinutes: 120 }] }] },
+  activity: [{ student_id: '11111111-1111-4111-8111-000000000001', subject_id: 'school-1', date_utc: new Date().toISOString().slice(0, 10), seconds: 4200 }]
 };
-fixture.screenshotAvailability = { known: true, availableStudentIds: ['child-1'], checkedAt: new Date().toISOString() };
-fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Casey', 'Riley', 'Sam'].map((name, i) => ({id:'child-'+(i+1),name,grade:'5'}));
+fixture.screenshotAvailability = { known: true, availableStudentIds: ['11111111-1111-4111-8111-000000000001'], checkedAt: new Date().toISOString() };
+fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Casey', 'Riley', 'Sam'].map((name, i) => ({id:'11111111-1111-4111-8111-'+String(i+1).padStart(12,'0'),name,grade:'5'}));
+fixture.students.forEach((student,i) => { student.last_child_message_sequence = i===0 ? '9' : i===1 ? '8' : null; });
 const history = new Map();
-history.set('child-1', [{id:'incoming-1', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
+history.set('11111111-1111-4111-8111-000000000001', [{id:'incoming-1', sequence:'9', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 let failSend = true;
 const calls = [];
 const server = http.createServer(async (req, res) => {
@@ -50,7 +51,7 @@ const server = http.createServer(async (req, res) => {
       output = { id: input.id, studentId: input.studentId, saved: true };
     }
     if (input.action === 'screenshots-overview') output = { retention_days: 3, screenshots: [], availability: fixture.screenshotAvailability };
-    if (input.action === 'request-screenshot') output = { id: 'request-1', student_id: 'child-1', status: 'pending', request_expires_at: new Date(Date.now() + 60000).toISOString() };
+    if (input.action === 'request-screenshot') output = { id: 'request-1', student_id: '11111111-1111-4111-8111-000000000001', status: 'pending', request_expires_at: new Date(Date.now() + 60000).toISOString() };
     if (input.action === 'upload-file') output = { saved: true, file: { id: input.id } };
     res.end(JSON.stringify(output)); return;
   }
@@ -68,6 +69,21 @@ async function run() {
   await wait('document.querySelectorAll(".monitor-card").length===9');
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   await wait('document.querySelectorAll(".cloud-chat-person").length===9');
+  assert.equal(await js('document.querySelector(".cloud-chat-person").dataset.studentId'),'11111111-1111-4111-8111-000000000001');
+  const unread = async items => { await js(`window.postMessage({type:'bodeeguard-unread',items:${JSON.stringify(items)}},location.origin)`); await new Promise(r=>setTimeout(r,100)); };
+  await unread([{studentId:'11111111-1111-4111-8111-000000000004',count:1,sequence:'20'}]);
+  assert.equal(await js('document.querySelector(".cloud-chat-person strong").textContent'),'Morgan','new student message moves its conversation first');
+  await unread([]);
+  assert.equal(await js('document.querySelector(".cloud-chat-person strong").textContent'),'Morgan','reading leaves the newest conversation first');
+  await unread([{studentId:'11111111-1111-4111-8111-000000000001',count:1,sequence:'31'}]);
+  assert.equal(await js('document.querySelector(".cloud-chat-person strong").textContent'),'Alex');
+  await js('document.querySelector("#messages-back").click()');
+  assert.equal(await js('document.querySelector("#tab-overview").classList.contains("active")'),true,'cold/list back returns to Controls');
+  await js('document.querySelector("[data-mobile-tab=mobile-more]").click();document.querySelector("[data-mobile-tab=messages]").click();document.querySelector("#messages-back").click()');
+  assert.equal(await js('document.querySelector("#tab-mobile-more").classList.contains("active")'),true,'back remembers the previous section');
+  await js('document.querySelector("[data-mobile-tab=overview]").click();document.querySelector("[data-mobile-tab=messages]").click()');
+  const listBackBox = await js('document.querySelector("#messages-back").getBoundingClientRect().toJSON()');
+  assert.ok(listBackBox.width>=44 && listBackBox.height>=44);
   const capture=async name=>{await new Promise(r=>setTimeout(r,150));fs.mkdirSync(path.join(site,'.tmp'),{recursive:true});fs.writeFileSync(path.join(site,'.tmp','messages-'+name+'.png'),(await win.webContents.capturePage()).toPNG());};
   const layout=()=>js(`({width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,people:getComputedStyle(document.querySelector('.cloud-chat-people')).display,chat:getComputedStyle(document.querySelector('.cloud-chat-conversation')).display,nav:getComputedStyle(document.querySelector('.bottom-nav')).display,assistant:getComputedStyle(document.querySelector('#parent-assistant-launcher')).display,composer:document.querySelector('#messages-reply-box').getBoundingClientRect().toJSON(),header:document.querySelector('.cloud-chat-heading').getBoundingClientRect().toJSON(),input:document.querySelector('#messages-reply-input').getBoundingClientRect().toJSON()})`);
   assert.equal((await layout()).chat,'none');assert.notEqual((await layout()).nav,'none');assert.equal((await layout()).assistant,'none');
@@ -83,7 +99,7 @@ async function run() {
     const state=await layout();assert.equal(state.people,'none');assert.equal(state.nav,'none');assert.equal(state.overflow,false);assert.ok(state.composer.bottom<=state.height+1,JSON.stringify(state));assert.ok(state.composer.top>state.header.bottom);assert.ok(state.input.width>70);await capture(label);
   }
   win.setContentSize(390,844);await new Promise(r=>setTimeout(r,100));
-  await js(`{const t=document.querySelector('#messages-reply-input');t.value='Draft for Alex';t.dispatchEvent(new Event('input'));document.querySelector('.cloud-chat-back').click();document.querySelectorAll('.cloud-chat-person')[1].click();}`);
+  await js(`{const t=document.querySelector('#messages-reply-input');t.value='Draft for Alex';t.dispatchEvent(new Event('input'));document.querySelector('.cloud-chat-back').click();document.querySelector('.cloud-chat-person[data-student-id="11111111-1111-4111-8111-000000000002"]').click();}`);
   await wait('document.querySelector("#messages-thread-header").textContent==="Jamie"');
   assert.equal(await js('document.querySelector("#messages-reply-input").value'),'');
   await js('document.querySelector(".cloud-chat-back").click();document.querySelector(".cloud-chat-person").click()');
@@ -94,7 +110,7 @@ async function run() {
   assert.equal(await js('document.querySelector("#messages-reply-btn").getAttribute("aria-label")'),'Retry same message');
   await js('document.querySelector("#messages-reply-box").requestSubmit()');
   await wait('document.querySelector("#messages-reply-input").value===""');
-  const sends=calls.filter(x=>x.action==='send-message');assert.equal(sends.length,2);assert.equal(sends[0].id,sends[1].id);assert.equal(sends[0].studentId,'child-1');
+  const sends=calls.filter(x=>x.action==='send-message');assert.equal(sends.length,2);assert.equal(sends[0].id,sends[1].id);assert.equal(sends[0].studentId,'11111111-1111-4111-8111-000000000001');
   await wait('document.querySelectorAll(".cloud-message").length===3');
   await js('document.querySelector("#messages-older").click()');await wait('document.querySelectorAll(".cloud-message").length===4');
   await js(`{const d=new DataTransfer();d.items.add(new File(['synthetic'],'school.pdf',{type:'application/pdf'}));const f=document.querySelector('#messages-attachment');f.files=d.files;f.dispatchEvent(new Event('change'));}`);
@@ -107,6 +123,6 @@ async function run() {
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   win.setContentSize(1365,900);await wait('!document.body.classList.contains("cloud-mobile")');
   assert.notEqual((await layout()).people,'none');assert.notEqual((await layout()).chat,'none');await capture('desktop');
-  console.log('Mobile messages passed: nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
+  console.log('Mobile messages passed: latest student first/read-stable order, previous-section back, nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
 }
 run().then(() => { server.close(); app.quit(); }).catch(error => { console.error(error.stack); server.close(); app.exit(1); });

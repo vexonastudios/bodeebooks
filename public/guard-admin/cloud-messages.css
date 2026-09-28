@@ -349,3 +349,11 @@
 .cloud-chat-reconnect .btn, .cloud-mobile .cloud-chat-reconnect .btn { min-height: 44px; text-decoration: none; }
 .cloud-mobile [data-message-load="loading"] #messages-thread-content:empty::after { content: 'Opening conversation…'; }
 .cloud-mobile [data-message-load="error"] #messages-thread-content:empty::after { content: 'Reconnect to load this conversation.'; }
+
+
+/* The list has its own way back; the chat arrow still returns to the list. */
+.cloud-messages-panel > .tab-header { gap: 12px; }
+.cloud-messages-back { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; min-height: 44px; padding: 0; border: 0; background: transparent; color: #c4b5fd; }
+.cloud-messages-back svg { width: 24px; height: 24px; }
+.cloud-messages-panel > .tab-header h1 { flex: 1; min-width: 0; }
+.cloud-messages-back:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }

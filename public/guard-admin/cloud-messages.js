@@ -2,7 +2,7 @@
 import { createVoiceRecorder } from './voice-recording.js';
 import { createMessageThread } from './message-thread.js';
 import { createParentSessionRecovery } from './cloud-parent-session.js';
-export function setupCloudMessages({ endpoint }) {
+export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const el = id => document.getElementById(id);
   const ALL_KIDS = 'all-kids';
   let broadcastResult = null;
@@ -10,6 +10,12 @@ export function setupCloudMessages({ endpoint }) {
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
   let unread = new Map();
+  const recentChildMessages = new Map();
+  const sequence = value => typeof value === 'string' && /^[1-9][0-9]{0,18}$/.test(value) ? BigInt(value) : 0n;
+  function rememberChildMessage(studentId, value) {
+    const next = sequence(value);
+    if (next > (recentChildMessages.get(studentId) || 0n)) recentChildMessages.set(studentId, next);
+  }
   let selected = null;
   let active = false;
   let page = null;
@@ -30,6 +36,10 @@ export function setupCloudMessages({ endpoint }) {
   const mobile = window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)');
   const section = el('tab-messages') || document.querySelector('.cloud-messages-panel');
   section.dataset.messageView = 'list';
+  const listBack = document.createElement('button'); listBack.type = 'button'; listBack.id = 'messages-back'; listBack.className = 'btn cloud-messages-back';
+  listBack.setAttribute('aria-label', 'Back to previous page'); listBack.title = 'Back to previous page';
+  listBack.innerHTML = '<i data-lucide="arrow-left" aria-hidden="true"></i>';
+  section.querySelector('.tab-header h1').before(listBack); listBack.addEventListener('click', onBack);
   const threadHeader = document.createElement('div'); threadHeader.className = 'cloud-chat-heading';
   const back = document.createElement('button'); back.type = 'button'; back.className = 'btn cloud-chat-back';
   back.setAttribute('aria-label', 'Back to conversations'); back.innerHTML = '<i data-lucide="arrow-left" aria-hidden="true"></i>';
@@ -211,7 +221,11 @@ export function setupCloudMessages({ endpoint }) {
       const result = await request('list-messages', { studentId: child,
         version: page?.version, receivedIds: page?.messages.filter(message => message.sender === 'child' && !message.receivedAt).map(message => message.id) || [] });
       if (ticket !== generation || result.studentId !== child) return;
-      if (!result.notModified) page = result;
+      if (!result.notModified) {
+        page = result;
+        for (const message of result.messages || []) if (message.sender === 'child') rememberChildMessage(child, message.sequence);
+        renderStudents();
+      }
       failures = 0; error = ''; reconnect.hidden = true; section.dataset.messageLoad = 'ready'; render();
       note(pending.has(child) ? 'Send status is uncertain. The draft is retained; Retry uses the same message ID.' : 'Messages updated.');
     } catch (failure) {
@@ -243,9 +257,10 @@ export function setupCloudMessages({ endpoint }) {
     messageAll.disabled = recipients().length === 0;
     messageAll.setAttribute('aria-pressed', String(selected === ALL_KIDS));
     messageAll.querySelector('small').textContent = `Send once to ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
-    const matches = students.filter(student => student.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()));
+    const matches = recipients().filter(student => student.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))
+      .sort((a, b) => { const left = recentChildMessages.get(a.id) || 0n, right = recentChildMessages.get(b.id) || 0n; return left === right ? 0 : left > right ? -1 : 1; });
     el('messages-student-list').replaceChildren(...matches.map(student => {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary cloud-chat-person';
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary cloud-chat-person'; button.dataset.studentId = student.id;
       const count=unread.get(student.id)||0;
       const avatar = document.createElement('span'); avatar.className = 'cloud-chat-avatar'; avatar.setAttribute('aria-hidden', 'true'); avatar.textContent = initials(student.name);
       const copy = document.createElement('span'); copy.className = 'cloud-chat-person-copy';
@@ -439,11 +454,11 @@ export function setupCloudMessages({ endpoint }) {
   window.addEventListener('beforeunload', event => { if (pending.has(ALL_KIDS)) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
-    setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));renderStudents();},
+    setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));for(const item of items)rememberChildMessage(item.studentId,item.sequence);renderStudents();},
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if (studentId === selected && active) return refresh(); },
-    update(value) { students = value || []; renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && !students.some(student => student.id === selected)) choose(null); },
+    update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && !students.some(student => student.id === selected)) choose(null); },
     setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }
   };
 }

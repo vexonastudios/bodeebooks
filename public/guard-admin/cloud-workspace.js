@@ -43,7 +43,8 @@ import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
 import { setupNotificationNavigation } from './cloud-notification-navigation.js';
 const endpoint = '/guard/dashboard/bridge/';
-const messaging = setupCloudMessages({ endpoint });
+let currentTab = 'overview', messageReturnTab = 'overview';
+const messaging = setupCloudMessages({ endpoint, onBack: () => selectTab(messageReturnTab) });
 const byId = id => document.getElementById(id);
 let snapshot = null;
 let inFlight = null;
@@ -84,6 +85,8 @@ function selectTab(id) {
   if(id==='science-spelling')id='spelling';
   const item = document.querySelector(`.nav-item[data-tab="${id}"]`);
   if (!item || !byId(`tab-${id}`)) return;
+  if (id === 'messages' && currentTab !== 'messages') messageReturnTab = currentTab;
+  currentTab = id;
   document.querySelectorAll('.nav-item').forEach(nav => {
     nav.classList.toggle('active', nav === item);
     if (nav === item) nav.setAttribute('aria-current', 'page'); else nav.removeAttribute('aria-current');

@@ -7,7 +7,7 @@ import ts from 'typescript';
 
 function load(file, mocks={}) {
   const filename=path.resolve(file), localRequire=createRequire(filename), mod=new Module(filename);
-  mod.filename=filename;mod.require=name=>mocks[name]||(name==='./visible-viewport'?load('app/guard/dashboard/visible-viewport.ts'):localRequire(name));
+  mod.filename=filename;mod.require=name=>mocks[name]||(name==='./visible-viewport'?load('app/guard/dashboard/visible-viewport.ts'):name==='./navigation'?load('app/guard/dashboard/navigation.ts'):localRequire(name));
   mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,filename);
   return mod.exports;
 }
