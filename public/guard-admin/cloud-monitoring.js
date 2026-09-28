@@ -1,5 +1,5 @@
 import { parentActionFeedback } from './cloud-action-feedback.js';
-import { connectionState, connectionExpiresAt, todaySeconds, subjectProgress, assignmentFor } from './cloud-workspace-model.js';
+import { connectionState, connectionExpiresAt, todaySeconds, subjectProgress, assignmentFor, abekaCourseLabel } from './cloud-workspace-model.js';
 import { studentAvatar } from './cloud-student-profile.js';
 import { cardColor, activityAccent } from './cloud-activity-colors.js';
 
@@ -195,7 +195,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const list=node('div','monitor-activity-list');
       for(const item of model.activity){const row=node('div','monitor-activity-row');row.append(icon(item.icon),node('span','monitor-activity-name',item.label));if(item.complete)row.append(node('span','monitor-activity-done','✓'));row.append(node('span','monitor-activity-time',duration(item.seconds)));list.append(row);}
       if(!model.activity.length)list.append(node('p','monitor-activity-empty','No activity received today.'));activity.append(list);card.append(activity);
-      if(model.courses.length){const lessons=node('div','cloud-abeka-courses');lessons.setAttribute('aria-label',"Today's Abeka lessons");for(const c of model.courses)lessons.append(node('span',`cloud-abeka-course${c.completed?' complete':''}`,`${c.completed?'✓':'○'} ${c.courseName}`));card.append(lessons);}
+      if(model.courses.length){const lessons=node('div','cloud-abeka-courses');lessons.setAttribute('aria-label',"Today's Abeka lessons");for(const c of model.courses)lessons.append(node('span',`cloud-abeka-course${c.completed?' complete':''}`,`${c.completed?'✓':'○'} ${abekaCourseLabel(c)}`));card.append(lessons);}
       const actions=node('div','cloud-monitor-actions');
       actions.inert=!model.online;actions.setAttribute('aria-disabled',String(!model.online));
       actions.addEventListener('click',event=>{

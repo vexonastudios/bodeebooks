@@ -88,3 +88,11 @@ export function subjectProgress(snapshot, studentId, subjectId, date) {
   const goalSeconds = assignment.dailyGoalMinutes * 60;
   return { seconds, goalMinutes: assignment.dailyGoalMinutes, percent: goalSeconds > 0 ? Math.min(100, Math.floor(seconds * 100 / goalSeconds)) : null };
 }
+
+// Keep grade and lesson number distinct. Old snapshots can contain several
+// lessons: show all reported numbers until the updated child selects its day.
+export function abekaCourseLabel(course) {
+  const tokens = [...String(course.lessonLabel || '').matchAll(/(?:^| · )Lesson\s+([A-Za-z0-9-]+)\s*\(/gi)].map(match => match[1]);
+  const lessons = [...new Set(tokens)];
+  return String(course.courseName || '') + (lessons.length ? ` · ${lessons.length === 1 ? 'Lesson' : 'Lessons'} ${lessons.join(', ')}` : '');
+}

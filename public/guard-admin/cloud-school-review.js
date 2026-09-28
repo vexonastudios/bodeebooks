@@ -1,4 +1,5 @@
 import { localDate } from './cloud-records-model.js';
+import { abekaCourseLabel } from './cloud-workspace-model.js';
 
 export function setupCloudSchoolReview({ before, endpoint, getSnapshot, onApplied = () => {} }) {
   const node = (tag, text = '') => { const e = document.createElement(tag); e.textContent = text; return e; };
@@ -36,7 +37,7 @@ export function setupCloudSchoolReview({ before, endpoint, getSnapshot, onApplie
       row.append(node('p', subject.isSchoolPortal ? 'Review the provider lesson before marking it complete.' : subject.dailyGoalMinutes > 0 ? 'The original time rule still applies: a saved completion counts after 80% of the goal, or study time completes the goal at 100%.' : 'This subject has no time goal. Completion needs an explicit review or the child’s Finish action.'));
       if (subject.portalCourses?.length) {
         const courses=node('div'); courses.className='cloud-abeka-courses';
-        for(const course of subject.portalCourses) { const chip=node('span',(course.completed?'✓ ':'○ ')+course.courseName); chip.className=course.completed?'cloud-abeka-course complete':'cloud-abeka-course'; chip.title=course.lessonLabel; courses.append(chip); }
+        for(const course of subject.portalCourses) { const chip=node('span',(course.completed?'✓ ':'○ ')+abekaCourseLabel(course)); chip.className=course.completed?'cloud-abeka-course complete':'cloud-abeka-course'; chip.title=course.lessonLabel; courses.append(chip); }
         row.append(courses);
       }
       if (loaded.student.archived_at) { row.append(node('p', 'Restore this child before changing completion.')); rows.append(row); continue; }
