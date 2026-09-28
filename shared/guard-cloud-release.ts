@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.262": {
+  "title": "School links and family plans",
+  "sections": [
+    {
+      "heading": "Version 1.2.262",
+      "headline": "School plans apply to the intended activities",
+      "summary": "Corrects imported Quizlet and Science Spelling plan matching and improves Abeka assessment navigation.",
+      "highlights": [
+        "Quizlet follows its own saved family choice instead of inheriting Abeka requirements.",
+        "Science Spelling no longer inherits the regular Spelling requirement. Refresh Daily Plan and apply your default once to correct previously applied plans.",
+        "Abeka can use the documented LinkIt student entry, and blocked links keep the current approved school page open.",
+        "Quiz submissions are never automatically replayed. The 1.2.261 installer recovery fixes remain included."
+      ]
+    }
+  ]
+},
   "1.2.261": {
   "title": "More reliable update recovery",
   "sections": [
