@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.259": {
+  "title": "Abeka volume controls work in full screen",
+  "sections": [
+    {
+      "heading": "Version 1.2.259",
+      "headline": "Lesson volume stays where your child sets it",
+      "summary": "Abeka native volume and mute controls remain responsive in normal and full-screen lessons.",
+      "highlights": [
+        "Player redraws, speed changes and breaks no longer restore an old volume.",
+        "The BodeeGuard toolbar still adjusts volume, including nested lesson players.",
+        "Updates continue to wait while school or another activity is open."
+      ]
+    }
+  ]
+},
   "1.2.258": {
   "title": "Updates wait for school",
   "sections": [
