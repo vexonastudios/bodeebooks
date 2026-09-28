@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.258": {
+  "title": "Updates wait for school",
+  "sections": [
+    {
+      "heading": "Version 1.2.258",
+      "headline": "Choose when the child app restarts",
+      "summary": "Downloaded updates wait during school and open activities. Children can restart when ready or postpone.",
+      "highlights": [
+        "Restart now and Later (30 minutes) are available on the ready-update notice.",
+        "Automatic restart requires ten minutes on an unused dashboard, followed by a sixty-second warning.",
+        "School, writing, drafts and other open activities keep the update waiting.",
+        "The installer retries brief Windows file contention and reports specific Windows error codes to staff.",
+        "Includes automatic computer-protection reconnection from version 1.2.256."
+      ]
+    }
+  ]
+},
   "1.2.257": {
   "title": "School time sync recovers cleanly",
   "sections": [
