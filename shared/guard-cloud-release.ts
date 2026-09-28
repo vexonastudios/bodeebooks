@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.252": {
+  "title": "Clearer help when pairing cannot finish",
+  "sections": [
+    {
+      "heading": "Version 1.2.252",
+      "headline": "Know what is installed and what needs attention",
+      "summary": "Connection help explains when an incorrect Windows clock makes a new pairing code appear expired.",
+      "highlights": [
+        "Confirms BodeeGuard is already installed when setup needs a clock correction.",
+        "Explains the ten-minute pairing code and gives the exact date/time and Retry pairing steps.",
+        "Fixes garbled apostrophes throughout connection help and keeps private support reports available."
+      ]
+    }
+  ]
+},
   "1.2.251": {
   "title": "More ways to create in Art Studio",
   "sections": [
