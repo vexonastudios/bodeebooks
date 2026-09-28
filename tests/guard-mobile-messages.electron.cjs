@@ -105,7 +105,9 @@ async function run() {
   await js('document.querySelector(".cloud-chat-back").click();document.querySelector(".cloud-chat-person").click()');
   assert.equal(await js('document.querySelector("#messages-reply-input").value'),'Draft for Alex');
   await wait('document.querySelector("#messages-cloud-status").textContent==="Messages updated."');
-  await js('document.querySelector("#messages-reply-box").requestSubmit()');
+  await js('document.querySelector("#messages-reply-input").focus()');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Enter'});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter'});
   await wait('document.querySelector("#messages-cloud-status").textContent.includes("Draft retained")');
   assert.equal(await js('document.querySelector("#messages-reply-btn").getAttribute("aria-label")'),'Retry same message');
   await js('document.querySelector("#messages-reply-box").requestSubmit()');
@@ -123,6 +125,27 @@ async function run() {
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   win.setContentSize(1365,900);await wait('!document.body.classList.contains("cloud-mobile")');
   assert.notEqual((await layout()).people,'none');assert.notEqual((await layout()).chat,'none');await capture('desktop');
-  console.log('Mobile messages passed: latest student first/read-stable order, previous-section back, nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
+  // Desktop keyboard sends through the same composer; Shift+Enter keeps multiline drafts.
+  await js('document.querySelector(".cloud-chat-person").click()');
+  await wait('!document.querySelector("#messages-reply-input").disabled');
+  await js('document.querySelector("#messages-reply-input").value="First line";document.querySelector("#messages-reply-input").focus();document.querySelector("#messages-reply-input").setSelectionRange(10,10)');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Enter',modifiers:['shift']});
+  win.webContents.sendInputEvent({type:'char',keyCode:'\r',modifiers:['shift']});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter',modifiers:['shift']});
+  await wait('document.querySelector("#messages-reply-input").value.includes(String.fromCharCode(10))');
+  assert.equal(await js('document.querySelector("#messages-reply-input").value'), 'First line\n');
+  await js('document.querySelector("#messages-reply-input").value+="Second line";for(const options of [{isComposing:true},{keyCode:229},{repeat:true}])document.querySelector("#messages-reply-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true,...options}))');
+  assert.equal(calls.filter(x=>x.action==='send-message').length,2,'newline, IME and held Enter do not send');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Enter'});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter'});
+  await wait('document.querySelector("#messages-reply-input").value===""');
+  assert.equal(calls.filter(x=>x.action==='send-message').length,3);
+  assert.equal(calls.filter(x=>x.action==='send-message')[2].body,'First line\nSecond line');
+  await js('document.querySelector("#messages-reply-input").focus()');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Enter'});
+  win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter'});
+  await new Promise(r=>setTimeout(r,100));
+  assert.equal(calls.filter(x=>x.action==='send-message').length,3,'empty Enter does not send');
+  console.log('Mobile messages passed: desktop/phone Enter sends, Shift+Enter multiline, IME/repeat/empty guards, latest student first/read-stable order, previous-section back, nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
 }
 run().then(() => { server.close(); app.quit(); }).catch(error => { console.error(error.stack); server.close(); app.exit(1); });

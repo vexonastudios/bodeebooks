@@ -1,0 +1,11 @@
+# Parent messages: Enter to send — September 28, 2026
+
+The parent message textarea now submits its existing form with the Send button when Enter is pressed. Shift+Enter keeps a new line. Composition/IME confirmation, modified Enter and held-key repeats do not submit. Disabled/sending/unfinished-recording states use the existing Send guard. Empty messages remain unsent. Text, private attachments, all-kids broadcasts and exact-ID retries retain the existing transport and receipts. Keyboard help is available as the textarea title and accessible description; the layout is unchanged.
+
+Only the parent message modules and isolated fixtures changed. The website module keeps its own relative imports. No child runtime, installer, service, household setting or real message was changed. Installer/download version remains 1.2.259.
+
+Verification: isolated website fixtures passed desktop/phone Enter sends, real Shift+Enter character insertion, multiline body preservation, IME/repeat/empty guards, retained drafts, exact-ID retry, Enter-triggered all-kids text/attachments, duplicate suppression and unfinished-recording guard. Existing website account tests passed 13 cases; production build passed. Canonical focused message verification passed static/lint/workspace checks and 95 unit cases; startup and parent exit passed. The first keyboard fixture omitted the physical Shift+Enter character event; that fixture was corrected and syntax checked again. Remaining canonical Electron results and deployment identity are recorded below after completion.
+
+Previous healthy parent website: dpl_Cib5MvdGRChLuhwmiPda33hNZzJ4 / https://bodeebooks-8cd33fm40-vexonastudios-3984s-projects.vercel.app. No real family message was sent during verification.
+
+Final canonical verification: corrected parent Admin keyboard scenario, voice capture/playback and message notification scenarios passed. Together with the retained startup/parent-exit results, all five selected Electron scenarios passed. This is a focused message-area pass, not a full-product suite. Evidence: bodee-guard/.tmp/enter-send-verify.log, enter-send-syntax-resumed.log and enter-send-electron-resumed.log; bodee-books/.tmp/enter-send-guard-mobile-messages.log, enter-send-guard-broadcast-messages.log, enter-send-account.log and enter-send-build.log.

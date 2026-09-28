@@ -92,7 +92,7 @@ async function run() {
     assert.equal(bounds.overflow,false);assert.ok(bounds.composer.bottom<=bounds.h+1);assert.ok(bounds.composer.top>bounds.head.bottom);await capture(label);
   }
   win.setContentSize(390,844);
-  await js('document.querySelector("#messages-reply-input").value="Dinner in ten minutes <img src=x onerror=alert(1)>";document.querySelector("#messages-reply-box").requestSubmit();document.querySelector("#messages-reply-box").requestSubmit()');
+  await js('document.querySelector("#messages-reply-input").value="Dinner in ten minutes <img src=x onerror=alert(1)>";for(let i=0;i<2;i++)document.querySelector("#messages-reply-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))');
   await wait('document.querySelector("#messages-reply-btn").getAttribute("aria-label")==="Retry remaining"');
   assert.equal(calls.filter(c=>c.action==='send-message').length,3,'double tap must not start another batch');
   assert.equal(await js('document.querySelectorAll(".cloud-broadcast-recipients .is-saved").length'),2);
@@ -120,7 +120,7 @@ async function run() {
   await js('document.querySelector("#messages-reply-input").value="Private draft";document.querySelector(".cloud-chat-back").click();document.querySelector("#messages-all-kids").click()');
   assert.equal(await js('document.querySelector("#messages-reply-input").value'),'');
   // Attachments use one stable upload/message ID per child, even after a lost upload reply.
-  await js(`{const d=new DataTransfer();d.items.add(new File(['%PDF-1.7 synthetic'],'school.pdf',{type:'application/pdf'}));const f=document.querySelector('#messages-attachment');f.files=d.files;f.dispatchEvent(new Event('change'));document.querySelector('#messages-reply-box').requestSubmit();}`);
+  await js(`{const d=new DataTransfer();d.items.add(new File(['%PDF-1.7 synthetic'],'school.pdf',{type:'application/pdf'}));const f=document.querySelector('#messages-attachment');f.files=d.files;f.dispatchEvent(new Event('change'));document.querySelector('#messages-reply-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));}`);
   await wait('document.querySelector("#messages-reply-btn").getAttribute("aria-label")==="Retry remaining"');
   await js('document.querySelector("#messages-reply-box").requestSubmit()');
   await wait('document.querySelector(".cloud-broadcast h3").textContent==="Sent to all 9 kids"');
@@ -130,6 +130,9 @@ async function run() {
   // Actual voice recording uses the same all-kids path, then its private copies.
   await js('document.querySelector("#messages-record").click()');
   await wait('document.querySelector("#messages-record").classList.contains("recording")');
+  const beforeRecordingSends = calls.filter(c=>c.action==='send-message').length;
+  await js('document.querySelector("#messages-reply-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))');
+  assert.equal(calls.filter(c=>c.action==='send-message').length,beforeRecordingSends,'Enter does not submit an unfinished voice recording');
   await new Promise(r=>setTimeout(r,1200));
   await js('document.querySelector("#messages-record").click()');
   await wait('!document.querySelector("#messages-voice-preview").hidden');
@@ -145,6 +148,6 @@ async function run() {
   assert.equal(await js('getComputedStyle(document.querySelector("#messages-all-kids")).display'),'flex');
   assert.ok(dinner.some(c=>c.studentId==='child-8'),'offline child still receives a saved message');
   assert.ok(!calls.some(c=>c.studentId==='all-kids'),'never send pseudo-recipient to API');
-  win.destroy();console.log('Broadcast passed: visible mobile/desktop, nine-child layout, archived exclusion, filtered list, partial/lost replies, exact retries, frozen recipients, separate histories/drafts, child-scoped attachments, real voice capture and offline recipients.');
+  win.destroy();console.log('Broadcast passed: Enter sends text/attachments once, unfinished voice guard, visible mobile/desktop, nine-child layout, archived exclusion, filtered list, partial/lost replies, exact retries, frozen recipients, separate histories/drafts, child-scoped attachments, real voice capture and offline recipients.');
 }
 run().then(()=>{server.close();app.quit();}).catch(error=>{console.error(error.stack);server.close();app.exit(1);});

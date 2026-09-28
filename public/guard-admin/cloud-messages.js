@@ -70,6 +70,15 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (selected === ALL_KIDS && broadcastResult && !pending.has(ALL_KIDS)) { broadcastResult = null; note(''); renderBroadcast(); }
   }
   el('messages-reply-input').addEventListener('input', () => { sizeInput(); newBroadcastDraft(); });
+  el('messages-reply-input').title = 'Enter to send; Shift+Enter for a new line.';
+  el('messages-reply-input').setAttribute('aria-description', 'Enter to send; Shift+Enter for a new line.');
+  el('messages-reply-input').addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey || event.isComposing || event.keyCode === 229) return;
+    event.preventDefault();
+    const send = el('messages-reply-btn');
+    if (event.repeat || event.currentTarget.disabled || send.disabled) return;
+    el('messages-reply-box').requestSubmit(send);
+  });
   mobile.addEventListener('change', () => { sizeInput(); if (conversationVisible()) void refresh(); else { clearTimeout(timer); pauseMedia(); } });
   let previewFile = null, previewUrl = null, recordingChild = null;
   const voicePanel = document.createElement('div'); voicePanel.className = 'cloud-chat-voice';
