@@ -1,25 +1,26 @@
 // Photos are prepared locally and sent only when the parent chooses Scan.
-export function createSpellingPhotoTray({input,status,onScan,onBusy}) {
+export function createSpellingPhotoTray({input,status,onScan,onBusy,prefix='spelling'}) {
   const make=(tag,cls,text='')=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el;};
   const icon=name=>{const el=make('i','');el.dataset.lucide=name;el.setAttribute('aria-hidden','true');return el;};
   const button=(label,glyph,fn)=>{const el=make('button','btn btn-secondary');el.type='button';el.append(icon(glyph),document.createTextNode(label));el.onclick=fn;return el;};
   const root=make('section','spelling-photo-tray'),actions=make('div','spelling-photo-actions'),pages=make('div','spelling-photo-pages');
-  root.setAttribute('aria-label','Spelling photos');
-  const title=make('strong','','Scan a spelling list'),hint=make('p','','Add up to 6 photos. All pages become one list to review.');
+  root.setAttribute('aria-label',prefix==='vocabulary'?'Vocabulary photos':'Spelling photos');
+  const title=make('strong','',prefix==='vocabulary'?'Photograph your vocabulary page':'Scan a spelling list'),hint=make('p','',prefix==='vocabulary'?'Capture words, definitions and examples from up to 6 pages. Review before assigning.':'Add up to 6 photos. All pages become one list to review.');
   input.multiple=true;input.accept='image/jpeg,image/png,image/webp';input.hidden=true;input.removeAttribute('capture');
   const camera=make('input','');camera.type='file';camera.accept=input.accept;camera.setAttribute('capture','environment');camera.hidden=true;
   const choose=button('Add photos','images',()=>input.click()),take=button('Take photo','camera',()=>camera.click());
   const scan=button('Scan photos together','scan-text',()=>void scanPages());scan.classList.replace('btn-secondary','btn-primary');
-  const box=input.closest('.spelling-scan-box');
+  const box=input.closest('.'+prefix+'-scan-box');
   if(box){box.before(root);box.hidden=true;}else input.before(root);
-  document.getElementById('spelling-list-student')?.closest('.form-group')?.after(root);
+  if(prefix==='spelling')document.getElementById('spelling-list-student')?.closest('.form-group')?.after(root);
+  if(prefix==='vocabulary')input.closest('.modal-card')?.querySelector('.vocabulary-form-grid')?.before(root);
   const promptLabel=make('label','spelling-scan-prompt-label','What should we include? (optional)');
-  const prompt=make('textarea','admin-input');prompt.id='spelling-scan-prompt';prompt.rows=2;prompt.maxLength=500;
+  const prompt=make('textarea','admin-input');prompt.id=prefix+'-scan-prompt';prompt.rows=2;prompt.maxLength=500;
   prompt.placeholder='Include the main vocabulary words in the right-hand column.';
   promptLabel.htmlFor=prompt.id;
   root.append(title,hint,actions,pages,promptLabel,prompt,scan,camera);actions.append(take,choose);
   let selected=[],busy=false,enabled=false,locked=false,preparing=false,epoch=0;
-  const notice=message=>{status.textContent=message;status.className='spelling-scan-status';};
+  const notice=message=>{status.textContent=message;status.className=prefix+'-scan-status';};
   function render(){
     pages.replaceChildren();
     selected.forEach((page,index)=>{

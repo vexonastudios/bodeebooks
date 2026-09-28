@@ -1,4 +1,5 @@
 // Mechanically adapted original Vocabulary parent editor.
+import { createVocabularyPhotoScan } from './cloud-vocabulary-scan.js?v=20260928-photo1';
 export function setupCloudVocabulary(){
 let state = { students: [], lists: [], defaults: {} };
 let editingId = null; let editorOpener = null;
@@ -11,17 +12,22 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
 })[character]);
 
-let pending=null,busy=false,loading=false,offset=0,loadEpoch=0;
+let pending=null,busy=false,loading=false,offset=0,loadEpoch=0,scanBusy=false,photoScan=null,sourceNotes='';
 function notice(message){byId('vocabulary-admin-status').textContent=message;byId('vocabulary-form-error').textContent=message;}
-function controls(){retry.hidden=retryModal.hidden=!pending;retry.disabled=retryModal.disabled=busy;for(const e of byId('vocabulary-list-modal').querySelectorAll('input,select,textarea,button'))e.disabled=busy||!!pending;if(!busy&&!pending){byId('vocabulary-list-student').disabled=!!editingId;byId('vocabulary-list-photos').disabled=true;}retryModal.disabled=busy;}
+function controls(){
+  retry.hidden=retryModal.hidden=!pending;retry.disabled=retryModal.disabled=busy;
+  for(const e of byId('vocabulary-list-modal').querySelectorAll('input,select,textarea,button'))e.disabled=busy||!!pending||scanBusy;
+  if(!busy&&!pending){byId('vocabulary-list-student').disabled=scanBusy||!!editingId;byId('vocabulary-list-close').disabled=byId('vocabulary-list-cancel').disabled=false;}
+  retryModal.disabled=busy;photoScan?.setState({enabled:state.photoScanningAvailable===true,locked:busy||!!pending});
+}
 async function send(action,input={}){const response=await fetch('/guard/dashboard/vocabulary/',{method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(28000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...input})});const result=await response.json();if(!response.ok){const error=new Error(result.error||'Vocabulary could not connect.');error.status=response.status;throw error;}return result;}
 async function request(route,options={}){
   if(!options.method){const studentId=byId('vocabulary-student-filter').value;return send('list',{offset,...(studentId?{studentId}:{})});}
-  if(busy)throw Error('Vocabulary is still saving.');
+  if(busy||scanBusy)throw Error('Finish or cancel the current scan or save first.');
   const input=options.body?JSON.parse(options.body):{},fingerprint=JSON.stringify([route,options.method,input]);if(pending&&pending.fingerprint!==fingerprint)throw Error('Retry the saved Vocabulary change first.');
   if(!pending){const old=editingId?state.lists.find(l=>l.id===editingId):null,archive=options.method==='DELETE';if(editingId&&!old)throw Error('Refresh this Vocabulary list.');
     const value=archive?{...old,status:'archived',required_daily:false}:input;
-    pending={fingerprint,command:{id:crypto.randomUUID(),kind:'list',studentId:old?.student_id||value.student_id,listId:old?.id||crypto.randomUUID(),revision:old?.revision||0,title:value.title,start_date:old?.start_date||state.defaults.startDate,test_date:value.test_date,status:value.status,required_daily:value.required_daily,daily_term_limit:value.daily_term_limit,retention_enabled:old?.retention_enabled??true,source_notes:old?.source_notes||'',terms:value.terms}};
+    pending={fingerprint,command:{id:crypto.randomUUID(),kind:'list',studentId:old?.student_id||value.student_id,listId:old?.id||crypto.randomUUID(),revision:old?.revision||0,title:value.title,start_date:old?.start_date||state.defaults.startDate,test_date:value.test_date,status:value.status,required_daily:value.required_daily,daily_term_limit:value.daily_term_limit,retention_enabled:old?.retention_enabled??true,source_notes:archive?old?.source_notes||'':sourceNotes,terms:value.terms}};
   }
   busy=true;controls();try{const result=await send('command',pending.command);pending=null;return result;}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}
 }
@@ -58,7 +64,7 @@ function normalizeTerm(source = {}) {
     source_sentence: String(source.source_sentence || source.example_sentence || source.sentence || source.example || '').trim(),
     synonyms: csv(source.synonyms),
     antonyms: csv(source.antonyms),
-    related_forms: csv(source.related_forms || source.forms),
+    related_forms: csv(source.related_forms || source.forms),source_notes:String(source.source_notes||source.notes||''),
     review_fields: reviewFields,
     completeness: sourceCompleteness || (reviewFields.length ? 'needs_review' : 'complete')
   };
@@ -177,7 +183,7 @@ async function loadVocabularyTab() {
     const result = await request(`/admin/lists`);
     if(epoch!==loadEpoch)return;previous.disabled=offset===0;next.disabled=!result.hasMore;
     state = {
-      familySummary: result.familySummary||[],
+      familySummary: result.familySummary||[],photoScanningAvailable:result.photoScanningAvailable===true,
       students: Array.isArray(result.students) ? result.students : [],
       lists: Array.isArray(result.lists) ? result.lists : [],
       defaults: result.defaults || {}
@@ -198,7 +204,7 @@ function fieldClass(term, field) {
 function renderTermEditor() {
   const root = byId('vocabulary-term-editor');
   if (!terms.length) {
-    root.innerHTML = '<div class="vocabulary-empty-terms">No words yet. Use Add word to enter your curriculum words and definitions.</div>';
+    root.innerHTML = '<div class="vocabulary-empty-terms">Take a photo of your vocabulary page, add saved photos, or use Add word.</div>';
     return;
   }
   root.innerHTML = terms.map((term, index) => {
@@ -219,6 +225,7 @@ function openModal(list = null, studentId = '') {
   if(busy||pending){notice('Retry the saved Vocabulary change first.');return;}
   editorOpener = document.activeElement;
   editingId = list?.id || null;
+  photoScan.reset();sourceNotes=list?.source_notes||'';
   listSource = list?.source || 'manual';
   archiveArmedUntil = 0;
   terms = list ? listTerms(list) : [];
@@ -244,11 +251,12 @@ function openModal(list = null, studentId = '') {
   byId('vocabulary-list-photos').value = '';
   byId('vocabulary-list-save').textContent=list?'Save changes':'Save & assign';
   renderTermEditor();
-  byId('vocabulary-list-modal').classList.add('active');byId('vocabulary-list-modal').querySelector('.modal-card').scrollTop=0;byId('vocabulary-list-close').focus();controls();byId('vocabulary-scan-status').textContent='Enter the exact curriculum text. Photo scanning is not available here yet.';
+  byId('vocabulary-list-modal').classList.add('active');byId('vocabulary-list-modal').querySelector('.modal-card').scrollTop=0;byId('vocabulary-list-close').focus();controls();byId('vocabulary-scan-status').textContent=state.photoScanningAvailable?'Scan photos or enter the exact words and definitions below.':'Photo scanning is temporarily unavailable. You can still enter words and definitions.';
 }
 
 function closeModal() {
   if(busy||pending){notice('Keep this editor open and retry the saved Vocabulary change.');return;}
+  photoScan.reset();
   byId('vocabulary-list-modal').classList.remove('active');
   editorOpener?.focus();editorOpener=null;
   editingId = null;
@@ -262,7 +270,7 @@ function cleanTerms() {
     ...(term.id ? { id: term.id } : {}), word: term.word.trim(), pronunciation: term.pronunciation.trim(),
     part_of_speech: term.part_of_speech.trim(), definition: term.definition.trim(), source_sentence: term.source_sentence.trim(),
     synonyms: parseList(term.synonyms), antonyms: parseList(term.antonyms), related_forms: parseList(term.related_forms),
-    missing_fields: [...term.review_fields], completeness: termCompleteness(term)
+    source_notes:term.source_notes,missing_fields: [...term.review_fields], completeness: termCompleteness(term)
   })).filter(term => term.word || term.definition);
 }
 
@@ -317,8 +325,6 @@ async function archiveList() {
   finally { controls(); }
 }
 
-function scanPhotos(){notice('Photo scanning is unavailable. Add the exact curriculum terms manually.');}
-
 function setupVocabulary() {
   byId('vocabulary-add-list')?.addEventListener('click', () => openModal(null, byId('vocabulary-student-filter').value));
   byId('vocabulary-family-summary').addEventListener('click', event => { const child=event.target.closest('[data-vocabulary-child]'); if(child){byId('vocabulary-student-filter').value=child.dataset.vocabularyChild;offset=0;void loadVocabularyTab();} });
@@ -331,7 +337,7 @@ function setupVocabulary() {
   byId('vocabulary-list-archive')?.addEventListener('click', archiveList);
   byId('vocabulary-student-filter')?.addEventListener('change',()=>{offset=0;void loadVocabularyTab();});
   byId('vocabulary-add-term')?.addEventListener('click', () => { listSource = listSource === 'photo' ? 'photo' : 'manual'; terms.push(blankTerm()); renderTermEditor(); });
-  byId('vocabulary-list-photos')?.addEventListener('change', event => scanPhotos(event.currentTarget.files));
+
   byId('vocabulary-term-editor')?.addEventListener('input', event => {
     const input = event.target.closest('[data-vocabulary-field]');
     if (!input) return;
@@ -364,6 +370,17 @@ async function retryChange(){if(!pending||busy)return;busy=true;controls();try{a
 const retry=button('Retry saved Vocabulary change',retryChange),retryModal=button('Retry saved Vocabulary change',retryChange);retryModal.id='vocabulary-retry-modal';retry.hidden=retryModal.hidden=true;byId('vocabulary-admin-status').after(retry);byId('vocabulary-form-error').after(retryModal);
 const previous=button('Newer Vocabulary lists',async()=>{offset=Math.max(0,offset-2);await loadVocabularyTab();}),next=button('Older Vocabulary lists',async()=>{offset+=2;await loadVocabularyTab();});previous.disabled=next.disabled=true;byId('vocabulary-pagination').append(previous,next);
 const archived=document.createElement('option');archived.value='archived';archived.textContent='Archived — retained history and older-word reviews';byId('vocabulary-list-status').append(archived);
-setupVocabulary();window.addEventListener('beforeunload',event=>{if(pending||busy){event.preventDefault();event.returnValue='';}});
+photoScan=createVocabularyPhotoScan({input:byId('vocabulary-list-photos'),status:byId('vocabulary-scan-status'),onBusy(value){scanBusy=value;controls();},onResult(result){
+  if(!result.is_vocabulary_list||!result.terms.length)return 'No vocabulary words were found. Take a clearer photo with the words and definitions visible.';
+  const key=word=>word.trim().normalize('NFKC').toLocaleLowerCase('en-US'),seen=new Set(terms.map(t=>key(t.word))),added=[];let skipped=0;
+  for(const source of result.terms){const term=normalizeTerm(source);if(seen.has(key(term.word))){skipped++;continue;}seen.add(key(term.word));added.push(term);}
+  if(terms.length+added.length>60)return 'This scan would exceed 60 words. Your current words are kept. Remove unneeded entries, then scan fewer words.';
+  const first=terms.length;terms.push(...added);listSource='photo';sourceNotes=[sourceNotes,result.notes].filter(Boolean).join(' ').slice(0,800);
+  if(!editingId&&first===0&&result.title&&byId('vocabulary-list-title').value==='Weekly Vocabulary')byId('vocabulary-list-title').value=result.title;
+  renderTermEditor();byId('vocabulary-form-error').textContent='';
+  requestAnimationFrame(()=>{if(byId('vocabulary-list-modal').classList.contains('active'))byId('vocabulary-term-editor').querySelectorAll('[data-vocabulary-field="word"]')[first]?.focus();});
+  return added.length+' words added with their printed definitions and context. Review before Save & assign.'+(skipped?' '+skipped+' duplicate words skipped; your existing entries were kept.':'')+(result.notes?' '+result.notes:'');
+}});
+setupVocabulary();window.addEventListener('beforeunload',event=>{if(pending||busy||scanBusy){event.preventDefault();event.returnValue='';}});
 return{update(){},setActive(active){if(active&&!loading){loading=true;void loadVocabularyTab().finally(()=>{loading=false;});}if(!active)closeModal();}};
 }

@@ -109,7 +109,7 @@ test('notification navigation waits for the authorized child list and ignores fo
   const messaging={openStudent:id=>opened.push(id)},navigated=[];
   const source=fs.readFileSync('public/guard-admin/cloud-notification-navigation.js','utf8').replace(/^import .*\r?\n/,'').replace('export function','function');
   const context={setupMessageUnread:()=>{},window:{parent,addEventListener:(_name,fn)=>listeners.push(fn)},location,
-    document:{querySelector:()=>({after:button=>buttons.push(button)}),createElement:()=>({addEventListener(_name,fn){this.click=fn;}})}};
+    document:{querySelector:()=>({after:button=>buttons.push(button),append:button=>buttons.push(button)}),createElement:()=>({addEventListener(_name,fn){this.click=fn;}})}};
   vm.createContext(context);vm.runInContext(source+';this.setup=setupNotificationNavigation',context);
   const nav=context.setup({messaging,navigate:tab=>navigated.push(tab),getStudents:()=>students});
   const event={source:parent,origin:location.origin,data:{type:'bodeeguard-open-messages',studentId}};
