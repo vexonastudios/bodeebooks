@@ -26,5 +26,24 @@ recovery helper for a push-ticket POST; this was corrected before publishing.
 Adding a synthetic incoming reply also required updating expected history counts.
 No family messages/test pushes, real phone enrollment or settings changes occurred.
 
-Deployments and public release/asset checks will be appended after publication.
-Physical Android/iPhone foreground/background acceptance remains unconfirmed.
+## Published receipt
+
+- Exact website source: 304dbe5fa6fb2bb4848399f18ea7e94bbcb6760e.
+- API exact source: 6e5a22a9f7645497468c8d28579978ff94e3c441.
+  Production dpl_C4G5YJ7m52ix54pgFmStax7TRk3c, healthy before/after promotion;
+  anonymous notification access 401; scoped additive schema gate passed.
+- Website production: dpl_9Y6xw3qDKVVe5AUJbSjwNZjnocgR /
+  https://bodeebooks-5nlh6xyvp-vexonastudios-3984s-projects.vercel.app.
+  Vercel Turbopack build/type check passed. Candidate release identity, exact
+  archive bytes for both changed modules and bridge sign-in protection passed.
+- Promoted guard.bodeebooks.com/dashboard/release/ returned the same deployment
+  ID with no-store. Both live dashboard modules match the released Git archive.
+  Evidence: .tmp/active-chat-site-live-release.json and
+  .tmp/active-chat-live-assets.json. Git's Windows archive uses CRLF; normalized
+  deployed content also matches the tested working files.
+- Clean tracked archive: .tmp/active-chat-release/site. Build/runtime installer
+  selection remains 1.2.260. API was promoted before the parent website.
+- Healthy rollback: dpl_GU2wodWwSvPzsKDsW46eW2q27nRw.
+- Physical Android/iPhone foreground/background acceptance remains unconfirmed.
+  Parent should reopen/refresh the app to load the changed frontend. No real
+  message/test push, phone enrollment or notification preference was changed.
