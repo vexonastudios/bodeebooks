@@ -66,6 +66,12 @@ export default function ParentNotifications() {
       if(event.data?.type==='bodeeguard-notifications-attention'){void controller.load();return;}
       if(event.data?.type!=='bodeeguard-open-messages')return;
       pendingMessage=validId(event.data.studentId)?event.data.studentId:'';
+      // A warm notification must survive reauthentication just like a cold launch.
+      const destination = new URL(window.location.href);
+      if (pendingMessage) destination.searchParams.set('conversation', pendingMessage);
+      else destination.searchParams.delete('conversation');
+      destination.hash = 'messages' + (pendingMessage ? '/' + pendingMessage : '');
+      window.history.replaceState(window.history.state, '', destination.pathname + destination.search + destination.hash);
       frame()?.postMessage({type:'bodeeguard-open-messages',studentId:pendingMessage},location.origin);
     };
     const visible=()=>{if(!document.hidden){void controller.renew().catch(()=>{});navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-replies-resume',accountUserId:userId});}};

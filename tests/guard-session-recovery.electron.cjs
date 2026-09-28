@@ -12,17 +12,17 @@ const site = path.resolve(__dirname, '..');
 const fixture = {
   serverTime: new Date().toISOString(),
   schoolActivities: [],
-  students: [{ id: 'child-1', name: 'Test Child', grade: '5' }],
-  devices: [{ id: 'device-1', student_id: 'child-1', computer_name: 'Test PC', current_subject: 'school-1', last_seen_at: new Date().toISOString(), app_version: 'test', revision: 1, acknowledged_revision: 1, locked: false, recovery_configured: true }],
-  rules: { revision: 1, schedule: { enabled: false, timeZone: 'America/Chicago', days: [1,2,3,4,5], start: '08:00', end: '15:00', breaks: [], exceptions: [] }, subjects: [{ id: 'school-1', title: 'Abeka Academy', url: 'https://school.example', assignments: [{ studentId: 'child-1', dailyGoalMinutes: 120 }] }] },
-  activity: [{ student_id: 'child-1', subject_id: 'school-1', date_utc: new Date().toISOString().slice(0, 10), seconds: 4200 }]
+  students: [{ id: '11111111-1111-4111-8111-111111111111', name: 'Test Child', grade: '5' }],
+  devices: [{ id: 'device-1', student_id: '11111111-1111-4111-8111-111111111111', computer_name: 'Test PC', current_subject: 'school-1', last_seen_at: new Date().toISOString(), app_version: 'test', revision: 1, acknowledged_revision: 1, locked: false, recovery_configured: true }],
+  rules: { revision: 1, schedule: { enabled: false, timeZone: 'America/Chicago', days: [1,2,3,4,5], start: '08:00', end: '15:00', breaks: [], exceptions: [] }, subjects: [{ id: 'school-1', title: 'Abeka Academy', url: 'https://school.example', assignments: [{ studentId: '11111111-1111-4111-8111-111111111111', dailyGoalMinutes: 120 }] }] },
+  activity: [{ student_id: '11111111-1111-4111-8111-111111111111', subject_id: 'school-1', date_utc: new Date().toISOString().slice(0, 10), seconds: 4200 }]
 };
-fixture.screenshotAvailability = { known: true, availableStudentIds: ['child-1'], checkedAt: new Date().toISOString() };
-fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Casey', 'Riley', 'Sam'].map((name, i) => ({id:'child-'+(i+1),name,grade:'5'}));
+fixture.screenshotAvailability = { known: true, availableStudentIds: ['11111111-1111-4111-8111-111111111111'], checkedAt: new Date().toISOString() };
+fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Casey', 'Riley', 'Sam'].map((name, i) => ({id:i===0?'11111111-1111-4111-8111-111111111111':'child-'+(i+1),name,grade:'5'}));
 const history = new Map();
-history.set('child-1', [{id:'incoming-1', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
+history.set('11111111-1111-4111-8111-111111111111', [{id:'incoming-1', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 let failSend = true;
-let authFailures = 0, dashboardReads = 0;
+let authFailures = 0, dashboardReads = 0, messageFailures = 0;
 const calls = [];
 const server = http.createServer(async (req, res) => {
   if (req.url === '/') {
@@ -44,6 +44,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') { dashboardReads++;fixture.serverTime = new Date().toISOString(); res.end(JSON.stringify(fixture)); return; }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const input = JSON.parse(raw); calls.push(input);
+    if (input.action === 'list-messages' && messageFailures > 0) { messageFailures--;res.statusCode=401;res.end(JSON.stringify({error:'Please sign in.'}));return; }
     let output = {};
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
@@ -55,7 +56,7 @@ const server = http.createServer(async (req, res) => {
       output = { id: input.id, studentId: input.studentId, saved: true };
     }
     if (input.action === 'screenshots-overview') output = { retention_days: 3, screenshots: [], availability: fixture.screenshotAvailability };
-    if (input.action === 'request-screenshot') output = { id: 'request-1', student_id: 'child-1', status: 'pending', request_expires_at: new Date(Date.now() + 60000).toISOString() };
+    if (input.action === 'request-screenshot') output = { id: 'request-1', student_id: '11111111-1111-4111-8111-111111111111', status: 'pending', request_expires_at: new Date(Date.now() + 60000).toISOString() };
     if (input.action === 'upload-file') output = { saved: true, file: { id: input.id } };
     res.end(JSON.stringify(output)); return;
   }
@@ -94,6 +95,41 @@ async function run() {
   assert.equal(await js('document.querySelector("#messages-reply-input").value'),'Keep this draft');
   assert.ok(!calls.some(call=>call.action==='send-message'),'reconnection never submits a draft');
   assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true);
+  // A notification opens an existing PWA with a stale message session.
+  const studentId='11111111-1111-4111-8111-111111111111';
+  messageFailures=1;
+  const beforeMessages=calls.filter(call=>call.action==='list-messages').length;
+  await win.webContents.executeJavaScript(`document.querySelector('iframe').contentWindow.postMessage({type:'bodeeguard-open-messages',studentId:'${studentId}'},location.origin)`);
+  const messageDeadline=Date.now()+10000;
+  while(calls.filter(call=>call.action==='list-messages').length<beforeMessages+2 && Date.now()<messageDeadline) await new Promise(resolve=>setTimeout(resolve,50));
+  await wait('document.querySelector("#messages-cloud-status").textContent==="Messages updated." && document.body.classList.contains("cloud-conversation-open")');
+  assert.equal(calls.filter(call=>call.action==='list-messages').length,beforeMessages+2);
+  assert.equal(await js('document.querySelector("#messages-reply-input").value'),'Keep this draft');
+  assert.match(await js('document.querySelector("#messages-thread-content").textContent'),/I finished my reading/);
+  assert.equal(await js('document.querySelector(".cloud-chat-reconnect").hidden'),true);
+  messageFailures=1000;
+  await win.webContents.executeJavaScript(`document.querySelector('iframe').contentWindow.postMessage({type:'bodeeguard-open-messages',studentId:'${studentId}'},location.origin)`);
+  await wait('!document.querySelector(".cloud-chat-reconnect").hidden');
+  const signIn=await js('document.querySelector(".cloud-chat-reconnect a").getAttribute("href")');
+  assert.equal(new URL(signIn,origin).searchParams.get('redirect_url'),'/guard/dashboard/?conversation='+studentId+'#messages');
+  assert.equal(await js('document.querySelector(".cloud-chat-reconnect a").hidden'),false);
+  fs.writeFileSync(path.join(site,'.tmp','message-recovery-phone.png'),(await win.webContents.capturePage()).toPNG());
+  assert.equal(await js('document.querySelector(".cloud-chat-reconnect button").getBoundingClientRect().height>=44'),true);
+  assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true);
+  fs.writeFileSync(path.join(site,'.tmp','message-recovery-phone.png'),(await win.webContents.capturePage()).toPNG());
+  await wait('!document.querySelector(".cloud-chat-reconnect button").disabled');
+  await win.webContents.executeJavaScript(`window.signInRequest=null;addEventListener('message',event=>{if(event.data?.type==='bodeeguard-sign-in')window.signInRequest={data:event.data,active:navigator.userActivation.isActive};});`);
+  await js('document.querySelector(".cloud-chat-reconnect a").click()');
+  await new Promise(resolve=>setTimeout(resolve,50));
+  const signInRequest=await win.webContents.executeJavaScript('window.signInRequest');
+  assert.deepEqual(signInRequest,{data:{type:'bodeeguard-sign-in',studentId},active:true});
+  assert.equal(await js('document.querySelector("#messages-reply-input").value'),'Keep this draft');
+  messageFailures=0;
+  await wait('!document.querySelector(".cloud-chat-reconnect button").disabled');
+  await js('document.querySelector(".cloud-chat-reconnect button").click()');
+  await wait('document.querySelector(".cloud-chat-reconnect").hidden && document.querySelector("#messages-cloud-status").textContent==="Messages updated."');
+  assert.ok(!calls.some(call=>call.action==='send-message'),'message recovery never sends a draft');
+  assert.equal(await js('document.querySelector("#messages-reply-input").value'),'Keep this draft');
   win.destroy();console.log('Real iframe recovery passed: 401/renew/authorized read, quiet status, no expired-sign-in toast, disabled controls until fresh data, retained draft, failed retry and no automatic writes.');
 }
 run().then(() => { server.close(); app.quit(); }).catch(error => { console.error(error.stack); server.close(); app.exit(1); });

@@ -342,3 +342,10 @@
 .cloud-mobile .cloud-chat-people .cloud-chat-all { min-height: 70px; }
 
 .cloud-broadcast-retry { margin: 0 0 16px; min-height: 44px; }
+
+/* Recovery stays inside the conversation, including the full-screen phone view. */
+.cloud-chat-reconnect { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; padding: 8px 16px; background: #1b2239; }
+.cloud-chat-reconnect[hidden] { display: none; }
+.cloud-chat-reconnect .btn, .cloud-mobile .cloud-chat-reconnect .btn { min-height: 44px; text-decoration: none; }
+.cloud-mobile [data-message-load="loading"] #messages-thread-content:empty::after { content: 'Opening conversation…'; }
+.cloud-mobile [data-message-load="error"] #messages-thread-content:empty::after { content: 'Reconnect to load this conversation.'; }

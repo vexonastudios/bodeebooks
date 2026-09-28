@@ -2,6 +2,7 @@
 import { useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { dashboardQuery } from "./navigation";
 import { fitParentViewport } from "./visible-viewport";
 import styles from "./workspace.module.css";
 
@@ -19,7 +20,12 @@ export default function ParentWorkspace({ query = "" }: { query?: string }) {
         const token = await Promise.race([getToken({ skipCache: true }), new Promise<undefined>(resolve => setTimeout(resolve, 6000))]);
         if (disposed || document.hidden) return;
         if (token === null && isSignedIn === false) {
-          const target = '/guard/dashboard/' + query;
+          if (frame.current?.contentDocument?.body.classList.contains('cloud-messages-active')) {
+            // The conversation provides sign-in without throwing away an unsent draft.
+            frame.current?.contentWindow?.postMessage({type:'bodeeguard-session-required'}, window.location.origin); return;
+          }
+          const current = new URLSearchParams(window.location.search);
+          const target = '/guard/dashboard/' + dashboardQuery({ setup: current.get('setup') || undefined, conversation: current.get('conversation') || undefined });
           window.location.assign('/guard/sign-in/?redirect_url=' + encodeURIComponent(target)); return;
         }
         opened = true; setReady(true);
@@ -28,7 +34,12 @@ export default function ParentWorkspace({ query = "" }: { query?: string }) {
       finally { pending = false; }
     }
     const message = (event: MessageEvent) => {
-      if (event.origin === window.location.origin && event.source === frame.current?.contentWindow && event.data?.type === 'bodeeguard-renew-session') void renew(Boolean(event.data.manual || event.data.reason === 'authentication'));
+      if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
+      if (event.data?.type === 'bodeeguard-renew-session') void renew(Boolean(event.data.manual || event.data.reason === 'authentication'));
+      if (event.data?.type === 'bodeeguard-sign-in' && navigator.userActivation?.isActive) {
+        const target = '/guard/dashboard/' + dashboardQuery({ conversation: event.data.studentId });
+        window.open('/guard/sign-in/?redirect_url=' + encodeURIComponent(target), '_blank', 'noopener');
+      }
     };
     const visible = () => { if (!document.hidden) void renew(); };
     window.addEventListener('message', message);

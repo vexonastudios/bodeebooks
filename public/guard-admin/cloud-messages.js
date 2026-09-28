@@ -1,6 +1,7 @@
 // Existing Admin conversation layout, with only the cloud transport replaced.
 import { createVoiceRecorder } from './voice-recording.js';
 import { createMessageThread } from './message-thread.js';
+import { createParentSessionRecovery } from './cloud-parent-session.js';
 export function setupCloudMessages({ endpoint }) {
   const el = id => document.getElementById(id);
   const ALL_KIDS = 'all-kids';
@@ -92,12 +93,42 @@ export function setupCloudMessages({ endpoint }) {
     el('messages-voice-preview').hidden = !file;
     el('messages-voice-duration').textContent = value ? `${value.seconds}s · Ready to send` : '';
   }
+  const reconnect = document.createElement('div'); reconnect.className = 'cloud-chat-reconnect'; reconnect.hidden = true;
+  const retry = textNode('button', 'Retry connection', 'btn btn-secondary'); retry.type = 'button';
+  const signIn = textNode('a', 'Sign in', 'btn btn-primary'); signIn.rel = 'noopener';
+  reconnect.append(retry, signIn); el('messages-cloud-status').after(reconnect);
+  const session = createParentSessionRecovery({ onState: state => {
+    if (state === 'checking') note('Reconnecting to your messages…');
+  } });
+  retry.addEventListener('click', () => { reconnect.hidden = true; void refresh(); });
+  signIn.target = '_top';
+  signIn.addEventListener('click', event => {
+    if (el('messages-reply-input').value.trim() || [...drafts.values()].some(Boolean) || pending.size || localFiles.size || recordingBusy()) {
+      // The trusted outer page opens sign-in; the sandboxed conversation stays
+      // in place with its unsent text/files. No draft goes into storage or a URL.
+      event.preventDefault();
+      window.parent.postMessage({ type: 'bodeeguard-sign-in', studentId: selected === ALL_KIDS ? '' : selected }, location.origin);
+      note('Sign in in the new window, then return here and retry. Your draft stays here.');
+    }
+  });
+  function recoveryActions(authentication = false) {
+    reconnect.hidden = false; signIn.hidden = !authentication;
+    const target = '/guard/dashboard/' + (selected && selected !== ALL_KIDS ? '?conversation=' + encodeURIComponent(selected) : '') + '#messages';
+    signIn.href = '/guard/sign-in/?redirect_url=' + encodeURIComponent(target);
+  }
   function note(text) { el('messages-cloud-status').textContent = text; el('messages-cloud-status').classList.toggle('is-routine', text === 'Messages updated.'); }
   async function request(action, input) {
-    const response = await fetch(action === 'upload-file' ? endpoint.replace(/bridge\/?$/, 'upload/') : endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(28000),
-      redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
+    const options = { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(28000),
+      redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, action }) };
+    let response;
+    try {
+      response = ['list-messages', 'read-file'].includes(action)
+        ? await session.readMessages(endpoint, { ...input, action }, options)
+        : await fetch(action === 'upload-file' ? endpoint.replace(/bridge\/?$/, 'upload/') : endpoint, options);
+    } catch (failure) { if (failure.sessionRecovery) recoveryActions(true); throw failure; }
     const value = await response.json();
     if (!response.ok) {
+      if (response.status === 401) recoveryActions(true);
       const failure = new Error(response.status === 401 ? 'Sign in again to open messages.' : value.error || 'Messages could not sync.');
       failure.status = response.status;
       throw failure;
@@ -118,6 +149,7 @@ export function setupCloudMessages({ endpoint }) {
     el('messages-reply-btn').innerHTML = `<i data-lucide="send" aria-hidden="true"></i><span>${sendLabel}</span>`;
     el('messages-reply-btn').setAttribute('aria-label', sendLabel);
     el('messages-record').setAttribute('aria-label', el('messages-record').querySelector('span').textContent);
+    retry.disabled = loading || sending;
     el('messages-older').disabled = !selected || loading || !(cursor === undefined ? page?.nextBefore : cursor);
     el('messages-older').hidden = !(cursor === undefined ? page?.nextBefore : cursor);
     sizeInput(); preview(); window.lucide?.createIcons();
@@ -180,12 +212,13 @@ export function setupCloudMessages({ endpoint }) {
         version: page?.version, receivedIds: page?.messages.filter(message => message.sender === 'child' && !message.receivedAt).map(message => message.id) || [] });
       if (ticket !== generation || result.studentId !== child) return;
       if (!result.notModified) page = result;
-      failures = 0; error = ''; render();
+      failures = 0; error = ''; reconnect.hidden = true; section.dataset.messageLoad = 'ready'; render();
       note(pending.has(child) ? 'Send status is uncertain. The draft is retained; Retry uses the same message ID.' : 'Messages updated.');
     } catch (failure) {
       if (ticket !== generation) return;
-      failures++; error = failure.message;
-      note(`${error} Showing the last received messages; your draft remains here.`);
+      failures++; error = failure.message; section.dataset.messageLoad = 'error';
+      recoveryActions(Boolean(failure.sessionRecovery || failure.status === 401));
+      note(`${error} ${page ? 'Previously loaded messages are still shown. ' : ''}Your draft stays here while you reconnect.`);
     } finally {
       loading = false; controls();
       if (conversationVisible() && (refreshQueued || ticket !== generation || !live || failures)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(15 * 60000, 5 * 60000 * 2 ** Math.min(failures, 2)));
@@ -199,6 +232,7 @@ export function setupCloudMessages({ endpoint }) {
     voice.cancel(); threadRows.clear(); delete el('messages-thread-content').dataset.rendered;
     if (selected) drafts.set(selected, el('messages-reply-input').value);
     selected = child; generation++; page = null; older = []; cursor = undefined;
+    reconnect.hidden = true; section.dataset.messageLoad = 'loading';
     window.cloudFileTools.close(); el('messages-attachment').value = '';
     el('messages-reply-input').value = drafts.get(child) || '';
     const name = child === ALL_KIDS ? 'Message all kids' : students.find(student => student.id === child)?.name || 'Conversation';
@@ -400,6 +434,8 @@ export function setupCloudMessages({ endpoint }) {
   });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
+  window.addEventListener('focus', () => { if (error && !loading) void refresh(); });
+  window.addEventListener('online', () => { if (error && !loading) void refresh(); });
   window.addEventListener('beforeunload', event => { if (pending.has(ALL_KIDS)) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {

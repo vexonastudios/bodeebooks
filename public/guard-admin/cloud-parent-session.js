@@ -1,10 +1,12 @@
-// Recover a rejected dashboard READ through the signed-in outer page. Never replay writes.
+// Recover rejected dashboard reads through the signed-in outer page. Never replay sends or uploads.
 export function createParentSessionRecovery({ window: win = window, document: doc = document,
   request = fetch, onPause = () => {}, onState = () => {}, setTimer = setTimeout, clearTimer = clearTimeout }) {
   let pending = null;
   function finish(ready) { pending?.finish(ready); }
   const message = event => {
-    if (event.origin === win.location.origin && event.source === win.parent && event.data?.type === 'bodeeguard-session-ready') finish(true);
+    if (event.origin !== win.location.origin || event.source !== win.parent) return;
+    if (event.data?.type === 'bodeeguard-session-ready') finish(true);
+    if (event.data?.type === 'bodeeguard-session-required') finish(false);
   };
   const hidden = () => { if (doc.hidden) finish(false); };
   const leave = () => finish(false);
@@ -31,21 +33,30 @@ export function createParentSessionRecovery({ window: win = window, document: do
     const error = new Error('We couldn’t reconnect right now. Please try again.');
     error.sessionRecovery = true; return error;
   }
+  async function recoverRead(url, options) {
+    let response;
+    try { response = await request(url, options); }
+    catch (error) { onState('idle'); throw error; }
+    if (response.status === 401) {
+      if (!await renew(options.signal) || doc.hidden || options.signal?.aborted) throw unavailable();
+      // A renewed token is only a hint. The server must authorize the new read.
+      try { response = await request(url, options); }
+      catch { throw unavailable(); }
+      if (response.status === 401) throw unavailable();
+    }
+    onState('idle');
+    return response;
+  }
   return {
     async read(url, options = {}) {
       if (options.method && options.method.toUpperCase() !== 'GET') throw new Error('Session recovery can only repeat a dashboard read.');
-      let response;
-      try { response = await request(url, options); }
-      catch (error) { onState('idle'); throw error; }
-      if (response.status === 401) {
-        if (!await renew(options.signal) || doc.hidden || options.signal?.aborted) throw unavailable();
-        // A renewed token is only a hint. The server must authorize the new read.
-        try { response = await request(url, options); }
-        catch { throw unavailable(); }
-        if (response.status === 401) throw unavailable();
-      }
-      onState('idle');
-      return response;
+      return recoverRead(url, options);
+    },
+    async readMessages(url, input, options = {}) {
+      // These bridge reads use POST. Receipt acknowledgement in list-messages is
+      // idempotent; sending, uploading and all other actions must never replay.
+      if (!['list-messages', 'read-file'].includes(input?.action)) throw new Error('Only message reads can be recovered.');
+      return recoverRead(url, { ...options, method: 'POST', body: JSON.stringify(input) });
     },
     stop() { finish(false); win.removeEventListener('message', message); doc.removeEventListener('visibilitychange', hidden); win.removeEventListener('pagehide', leave); }
   };
