@@ -96,8 +96,8 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     editDefault.hidden = isFamily; editDefault.disabled = busy; copyDefault.hidden = isFamily; copyDefault.disabled = busy || !captured;
     applyDefault.disabled = busy || !hasDefault || newDefault || changes.size > 0 || !getSnapshot()?.students.some(s => !s.archived_at);
     familyText.textContent = isFamily
-      ? newDefault && hasDefault ? `New activities are available in your default plan: ${missingDefaults.map(card => card.title).join(', ')}. Save default, then apply it to the children who should receive them.` : 'Save a reusable plan, then apply it to all or selected children. Changes here leave their current plans in place until you apply them.'
-      : 'Apply the family plan to this child, then change only what they need. Applying is a saved copy; later family edits do not overwrite their choices.';
+      ? newDefault && hasDefault ? `New activities are available in your default plan: ${missingDefaults.map(card => card.title).join(', ')}. Save default, then apply it to the children who should receive them.` : 'Built-in activities are allowed for every child by default. Apply this plan to assign its allowed activities to all or selected children. Move any activity to Not allowed to exclude it.'
+      : 'Apply the family plan to assign its allowed activities to this child. Excluded activities stay visible below in Not allowed. Later family edits take effect when you apply them again.';
     differencesLabel.hidden = isFamily || !hasDefault;
     preview.disabled = busy || !captured;
     preview.hidden = isFamily;
@@ -146,6 +146,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
     else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
+    if (isBlocked && card.notAssigned) el.append(make('p', 'daily-plan-off', 'Not assigned to this child. Move to an allowed group, or apply the family default.'));
     if (isBlocked && (card.disabled || card.globallyDisabled)) el.append(make('p', 'daily-plan-off', 'Move to an allowed group to enable it for this child.'));
     const select = make('select', 'admin-select'); select.setAttribute('aria-label', `Move ${card.title} to`);
     const prompt = make('option', '', 'Move to…'); prompt.value = ''; prompt.disabled = true; select.append(prompt);
@@ -228,7 +229,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     const selected = new Set(loadedChild === 'family' ? students.map(s => s.id) : [loadedChild]);
     const dialog = make('dialog', 'daily-plan-apply'); dialog.setAttribute('aria-labelledby', 'daily-plan-apply-title');
     const title = make('h2', '', 'Apply family default'); title.id = 'daily-plan-apply-title'; title.prepend(icon('users-round'));
-    const description = make('p', '', 'This applies the family plan, including activities marked Not allowed, to the selected children. Activities you explicitly allowed can be added to their plans. Their own school websites, saved work and earned time are kept.');
+    const description = make('p', '', 'Every built-in activity allowed in this family plan will be enabled and assigned to the selected children, even if it was previously unchecked in activity details. Not allowed activities will be hidden. Their own school websites, saved work and earned time are kept.');
     const choices = make('div', 'daily-plan-children'), info = make('p', 'daily-plan-status'); info.setAttribute('role', 'status');
     const buttons = make('div', 'daily-plan-apply-actions'), cancel = action('Cancel', 'x', () => dialog.close()), accept = action('Apply', 'check', () => void apply(), 'btn btn-primary');
     const all = action('Select all', 'check-check', () => { students.forEach(s => selected.add(s.id)); redraw(); });
@@ -249,7 +250,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
         const payload = applyFamilyPlan(review, review.rules.dailyPlanTemplate, [...selected]);
         busy = true; dialog.querySelectorAll('input,button').forEach(el => { el.disabled = true; }); render(); info.textContent = 'Applying plan…';
         await mutate('save-subjects', payload); const count = selected.size; busy = false; dialog.close(); await load();
-        notify(`Default applied to ${count} ${count === 1 ? 'child' : 'children'}. Choose a child to customize their plan.`);
+        notify(`Default applied to ${count} ${count === 1 ? 'child' : 'children'}. Allowed built-in activities are assigned; Not allowed choices are kept. Choose a child to customize.`);
       } catch (error) {
         busy = false; info.textContent = error.message; info.dataset.error = 'true';
         dialog.querySelectorAll('input,button').forEach(el => { el.disabled = false; }); updateCount(); render();

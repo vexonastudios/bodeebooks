@@ -50,13 +50,14 @@ export function dailyPlanCards(snapshot, details, studentId) {
     // in the catalog even before they have an assignment.
     if (!assignment && subject.isSchoolPortal) continue;
     const module = activities.find(a => a.url === subject.url)?.module;
-    if (!assignment && module && subject.planOnly) continue;
+    // Keep unassigned built-ins in Not allowed so parents can see and fix
+    // exclusions. Hiding them here also prevented a family apply from finding them.
     if (module) seen.add(module);
     const stats = details.media?.[mediaKinds[module]], plan = assignment?.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
     cards.push({ key: subject.id, subjectId: subject.id, module, ...(subject.planOnly && subject.portalProvider === 'quizlet' ? {preset:'quizlet'} : subject.planOnly && isHandwriting(subject.url) ? {preset:'handwriting'} : subject.planOnly && isNumerals(subject.url) ? {preset:'numerals'} : {}), title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
       goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment?.dailyGoalMinutes ?? 0, portal: subject.isSchoolPortal,
-      placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false,
+      placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false, notAssigned:!assignment,
       days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
       limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: plan?.enabled !== true && (details.features?.[module] === false || stats?.enabled === false),
@@ -135,6 +136,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
 export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTemplate) {
   const baseline = dailyPlanCards({ ...snapshot, rules: { ...snapshot.rules, subjects: [] } }, {}, 'family');
   for (const card of baseline) {
+    if (card.module) card.enabled = true;
     if (['handwriting','numerals'].includes(card.preset)) { card.placement = 'anytime'; card.enabled = true; }
     if (mediaKinds[card.module]) { card.limitMinutes = { music: 60, videos: 20, audiobooks: 120, games:60 }[card.module]; card.placement = 'after_school'; }
   }
@@ -166,7 +168,7 @@ export function templateFromCards(cards) {
   for (const card of cards) {
     const key = card.portal ? 'school' : card.preset ? `preset:${card.preset}` : card.module ? `module:${card.module}` : card.key.startsWith('subject:') ? card.key : `subject:${card.subjectId}`;
     if (!entries.has(key)) entries.set(key, { key, goal: card.portal ? 0 : card.goal, placement: card.placement === 'blocked' ? card.previousPlacement || 'anytime' : card.placement,
-      ...(card.placement === 'blocked' || card.accessChanged || typeof card.enabled === 'boolean' ? { enabled:card.placement !== 'blocked' } : {}),
+      ...(card.module || card.preset || card.placement === 'blocked' || card.accessChanged || typeof card.enabled === 'boolean' ? { enabled:card.placement !== 'blocked' } : {}),
       days: [...card.days], start: card.start || null, end: card.end || null, limitMinutes: card.limitMinutes ?? null });
   }
   return { version: 1, activities: [...entries.values()] };
@@ -183,11 +185,14 @@ export function applyFamilyPlan(snapshot, template, studentIds, newId = () => cr
       const key = card.portal ? 'school' : card.preset ? `preset:${card.preset}` : card.module ? `module:${card.module}` : `subject:${card.subjectId}`;
       const entry = template.activities.find(item => item.key === key || item.key === 'preset:quizlet' && (card.preset === 'quizlet' || current.rules.subjects.find(s => s.id === card.subjectId)?.portalProvider === 'quizlet'));
       if (!entry) continue;
-      if (card.placement === 'blocked' && entry.enabled !== true && entry.enabled !== false) continue;
+      // Older family templates omitted enabled for an allowed built-in. Apply
+      // what the family board shows, including assignments previously missing.
+      const enabled = entry.enabled ?? (card.module ? true : undefined);
+      if (card.placement === 'blocked' && enabled === undefined) continue;
       // A fallback module card must not reactivate an explicitly hidden subject.
-      if (entry.enabled !== true && !card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
+      if (enabled !== true && !card.subjectId && current.rules.subjects.some(subject => current.schoolActivities.some(a => a.url === subject.url && a.module === card.module)
         && (subject.active === false || subject.assignments?.some(a => a.studentId === studentId && a.active === false)))) continue;
-      changes.push({ ...card, ...structuredClone(entry), key: card.key, accessChanged:typeof entry.enabled === 'boolean', placement:entry.enabled === false ? 'blocked' : entry.placement, previousPlacement:entry.placement, goal: card.portal || card.assignedWork ? 0 : entry.goal });
+      changes.push({ ...card, ...structuredClone(entry), key: card.key, accessChanged:typeof enabled === 'boolean', placement:enabled === false ? 'blocked' : entry.placement, previousPlacement:entry.placement, goal: card.portal || card.assignedWork ? 0 : entry.goal });
     }
     current = { ...current, rules: { ...current.rules, ...saveDailyPlan(current, studentId, changes, newId) } };
   }

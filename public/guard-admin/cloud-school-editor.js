@@ -10,9 +10,11 @@ export function quizletSubjectPreset() {
 export function cloudSubjectEdit(captured, subjectId, form) {
   const subject = captured.rules.subjects.find(item => item.id === subjectId), kind = form.get('kind');
   const assignments = captured.students.flatMap(student => {
-    const current = subject ? assignmentFor(subject, student.id) : null, active = form.get(`assigned-${student.id}`) === 'on';
+    const current = subject ? assignmentFor(subject, student.id) : null;
+    if (student.archived_at) return current ? [structuredClone(current)] : [];
+    const active = form.get(`assigned-${student.id}`) === 'on';
     if (!active && !current) return [];
-    return [{ ...(current?.dailyPlan ? { dailyPlan: current.dailyPlan } : {}), studentId: student.id, active,
+    return [{ ...(current?.dailyPlan ? { dailyPlan: { ...current.dailyPlan, ...((current.active !== false) !== active || typeof current.dailyPlan.enabled === 'boolean' ? {enabled:active} : {}) } } : {}), studentId: student.id, active,
       dailyGoalMinutes: active ? Number(form.get(`goal-${student.id}`)) : current.dailyGoalMinutes,
       displayOrder: active ? Number(form.get(`order-${student.id}`)) : current.displayOrder ?? subject?.displayOrder ?? 0 }];
   });
@@ -41,7 +43,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   };
   // A previous dialog's close event may still be queued when this one opens.
   document.querySelectorAll('#cloud-editor .cloud-subject-remove').forEach(control => control.remove());
-  if (!document.getElementById('cloud-subject-editor-style')) { const style = document.createElement('link'); style.id = 'cloud-subject-editor-style'; style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-school-editor.css?v=20260910-wide1'; document.head.append(style); }
+  if (!document.getElementById('cloud-subject-editor-style')) { const style = document.createElement('link'); style.id = 'cloud-subject-editor-style'; style.rel = 'stylesheet'; style.href = '/guard-admin/cloud-school-editor.css?v=20260928-assignments'; document.head.append(style); }
   const glyph = name => { const el = node('i'); el.dataset.lucide = name; el.setAttribute('aria-hidden', 'true'); return el; };
   const panel = (title, symbol, ...fields) => { const el = node('section', 'cloud-subject-panel'), heading = node('h3', '', title); heading.prepend(glyph(symbol)); el.append(heading, ...fields); return el; };
   const pair = (...fields) => { const el = node('div', 'cloud-subject-pair'); el.append(...fields); return el; };
@@ -104,18 +106,27 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   websiteExtras = node('div', 'cloud-subject-website'); const websiteHeading = node('h4', '', 'Website access'); websiteHeading.prepend(glyph('globe')); websiteExtras.append(websiteHeading, domainsLabel, domainsHelp);
   const retained = node('details', 'cloud-subject-retained'), retainedHeading = node('summary', '', 'Retained monitoring settings'); retainedHeading.prepend(glyph('history')); retained.append(retainedHeading, capture, idle, node('p', 'cloud-note', 'Original grade capture and idle settings are retained for transfer. Automatic provider capture and idle monitoring are still being connected. Use Daily school completion for parent review.'));
   const appearance = panel('Appearance & website', 'palette', iconPicker, pair(color, numberField('Default order', 'displayOrder', subject?.displayOrder || 0)), websiteExtras, retained);
-  const assignmentFields = node('fieldset', 'cloud-assignment-fields cloud-subject-assignments'), legend = node('legend', '', 'Children & daily goals'); legend.prepend(glyph('users')); assignmentFields.append(legend, node('p', 'cloud-note', 'Choose who uses this subject. 0 minutes means no time goal; it does not mark schoolwork complete.'));
+  const assignmentFields = node('fieldset', 'cloud-assignment-fields cloud-subject-assignments'), legend = node('legend', '', 'Children & daily goals'); legend.prepend(glyph('users')); assignmentFields.append(legend, node('p', 'cloud-note', 'Choose who can use this activity. Unchecked children see it in Daily plan → Not allowed. Apply family default can enable it for them. 0 minutes means no time goal.'));
+  const children = captured.students.filter(student => !student.archived_at);
+  const selection = node('div', 'cloud-subject-child-actions'), selectionStatus = node('p', 'cloud-note'); selectionStatus.setAttribute('role','status');
+  const childInputs = [];
+  const updateSelection = () => { selectionStatus.textContent = `${childInputs.filter(input => input.checked).length} of ${children.length} children assigned`; };
+  const selectChildren = checked => { for (const input of childInputs) { input.checked = checked; input.dispatchEvent(new Event('change')); } };
+  const all = button('All children', () => selectChildren(true)), none = button('Clear selection', () => selectChildren(false));
+  all.type = none.type = 'button'; all.prepend(glyph('users-round')); none.prepend(glyph('minus'));
+  selection.append(all, none, selectionStatus); assignmentFields.append(selection);
   const assignmentGrid = node('div', 'cloud-subject-children'); assignmentFields.append(assignmentGrid);
-  for (const student of captured.students) {
+  for (const student of children) {
     const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 }, row = node('div', 'cloud-assignment-row');
     const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current && current.active !== false); enabled.setAttribute('aria-label', `Assign to ${student.name}`);
     const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? (subject?.portalProvider === 'quizlet' ? 0 : 30), 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
     const update = () => { for (const wrapper of [goal, order]) { const input = wrapper.querySelector('input'); input.disabled = !enabled.checked; input.required = enabled.checked; } };
     const childLabel = node('label', 'cloud-subject-child'); childLabel.append(enabled, node('span', '', student.name + (student.archived_at ? ' (archived; settings retained)' : '')));
-    enabled.addEventListener('change', update); update(); row.append(childLabel, goal, order); assignmentGrid.append(row);
+    childInputs.push(enabled); enabled.addEventListener('change', () => { update(); updateSelection(); }); update(); row.append(childLabel, goal, order); assignmentGrid.append(row);
   }
+  updateSelection();
   if (subject?.assignments?.some(a => a.dailyPlan)) assignmentFields.append(node('p', 'cloud-note', 'This subject has individual Daily plan settings. Change its placement and days in Daily plan.'));
-  if (!captured.students.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
+  if (!children.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
   if (subject?.portalProvider === 'quizlet') basics.append(node('p', 'cloud-note', 'Choose the children who may use Quizlet. You can use its home page or paste a specific Quizlet set link. Sign in to Quizlet on the child computer if needed; BodeeGuard does not create a Quizlet account or subscription.'));
   const grid = node('div', 'cloud-subject-grid'); grid.append(basics, availability, appearance, assignmentFields);
   let remove = null;

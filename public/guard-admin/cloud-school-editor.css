@@ -48,3 +48,7 @@
   .cloud-subject-panel { padding: 14px; }
 }
 @media(pointer: coarse) { #cloud-editor .cloud-subject-grid .admin-input { min-height: 44px; font-size: 16px; } #cloud-editor .cloud-subject-grid .cloud-schedule-toggle,#cloud-editor .cloud-subject-grid .cloud-subject-child,.cloud-subject-retained summary,#cloud-editor:has(.cloud-subject-grid) .modal-actions .btn { min-height: 44px; } }
+
+.cloud-subject-child-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
+.cloud-subject-child-actions .btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; }
+.cloud-subject-child-actions .cloud-note { flex:1 1 220px; }
