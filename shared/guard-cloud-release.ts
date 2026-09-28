@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.255": {
+  "title": "Easier touchscreen learning",
+  "sections": [
+    {
+      "heading": "Version 1.2.255",
+      "headline": "Larger controls and better tablet layouts",
+      "summary": "Touch controls, portrait layouts and typing input are improved throughout the child app.",
+      "highlights": [
+        "Common child controls have larger tap targets on touch and hybrid devices.",
+        "Logic questions and music playlists offer up/down buttons for reordering.",
+        "Typing exercises accept touch keyboard text and count active practice time.",
+        "Piano supports simultaneous touches and a scrollable keyboard in portrait.",
+        "Art Studio protects an active stroke from other fingers and adds Hand to move zoomed paper."
+      ]
+    }
+  ]
+},
   "1.2.254": {
   "title": "Voice messages keep the child app in place",
   "sections": [
