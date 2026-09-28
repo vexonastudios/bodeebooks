@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.253": {
+  "title": "Math Coach follows each child's settings",
+  "sections": [
+    {
+      "heading": "Version 1.2.253",
+      "headline": "Only enabled children see Math Coach",
+      "summary": "The child dashboard now checks the saved Math Coach setting for that child before showing its card.",
+      "highlights": [
+        "Disabled Math Coach stays off both assigned activities and extra shortcuts.",
+        "Enabled children who need approval for today see a clear locked card.",
+        "Changes refresh on the next sync; another child's or an outdated snapshot cannot expose Math Coach."
+      ]
+    }
+  ]
+},
   "1.2.252": {
   "title": "Clearer help when pairing cannot finish",
   "sections": [
