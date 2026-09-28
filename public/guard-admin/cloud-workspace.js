@@ -405,7 +405,7 @@ const monitoring = setupMonitoring({
   mobile: () => mobile
 });
 const approvedApps = setupApprovedApps({ endpoint });
-const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editSubject, setControls });
+const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editBreak: addSchoolBreak, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange: id => files.setStudent(id), onGradeSaved: () => files.refresh() });
 const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, editSubject, canEdit: () => usable && !mutating });
 const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });

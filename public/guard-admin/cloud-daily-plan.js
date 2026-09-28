@@ -27,7 +27,8 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
   const save = action('Save plan', 'save', () => void commit(), 'btn btn-primary'), discard = action('Discard changes', 'undo-2', () => { changes.clear(); void load(); });
   const status = make('p', 'daily-plan-status'); status.setAttribute('role', 'status');
   const retry = action('Reload plan', 'refresh-cw', () => void load());
-  controls.append(label, status, retry, discard, save);
+  const saveApply = action('Save & apply…', 'users-round', async () => { if (await commit()) reviewApply(); }, 'btn btn-primary');
+  controls.append(label, status, retry, discard, save, saveApply);
   const help = make('p', 'cloud-note', 'Choose what your children can use here. Drag activities, or use “Move to.” Put anything you do not want them using in Not allowed.');
   const family = make('div', 'daily-plan-family'), familyCopy = make('div'), familyTitle = make('strong'), familyText = make('p');
   familyTitle.append(icon('users-round'), document.createTextNode('Family default')); familyCopy.append(familyTitle, familyText);
@@ -88,7 +89,10 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     const missingDefaults = isFamily ? cards.filter(card => ['handwriting','numerals'].includes(card.preset) && !card.subjectId && !captured?.rules.dailyPlanTemplate?.activities?.some(entry => entry.key === `preset:${card.preset}`)) : [];
     const newDefault = missingDefaults.length > 0;
     save.replaceChildren(icon('save'), document.createTextNode(isFamily ? 'Save default' : 'Save plan'));
+    saveApply.hidden = !isFamily;
+    save.classList.toggle('btn-primary', !isFamily); save.classList.toggle('btn-secondary', isFamily);
     save.disabled = busy || !captured || (!changes.size && (!isFamily || hasDefault && !newDefault)); discard.hidden = !changes.size; child.disabled = busy; retry.disabled = busy || changes.size > 0;
+    saveApply.disabled = save.disabled || !getSnapshot()?.students.some(s => !s.archived_at);
     editDefault.hidden = isFamily; editDefault.disabled = busy; copyDefault.hidden = isFamily; copyDefault.disabled = busy || !captured;
     applyDefault.disabled = busy || !hasDefault || newDefault || changes.size > 0 || !getSnapshot()?.students.some(s => !s.archived_at);
     familyText.textContent = isFamily
@@ -209,7 +213,8 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
         : saveDailyPlan(captured, loadedChild, [...changes.values()]);
       busy = true; render(); notify(isFamily ? 'Saving family default…' : 'Saving plan…');
       await mutate('save-subjects', payload); changes.clear(); busy = false; await load();
-      notify(isFamily ? 'Family default saved. Apply it to all or selected children when ready.' : 'Plan saved. Connected computers receive the change automatically.');
+      notify(isFamily ? 'Family default saved. Children’s plans have not changed. Choose Apply default to send it to them.' : 'Plan saved. Connected computers receive the change automatically.');
+      return !!captured;
     } catch (error) { busy = false; notify(error.message, true); render(); }
   }
   function selectPlan(value) {
@@ -261,7 +266,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
       if (!snapshot) return;
       const selected = child.value;
       child.replaceChildren();
-      const defaultOption = make('option', '', 'Family default · all children');
+      const defaultOption = make('option', '', 'Family default · template');
       defaultOption.value = 'family';
       child.append(defaultOption);
       for (const student of snapshot.students.filter(s => !s.archived_at)) {
