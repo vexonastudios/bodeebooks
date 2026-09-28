@@ -65,3 +65,40 @@
 .cloud-mobile .header-actions .icon-button { width: 44px; height: 44px; }
 .cloud-mobile .mobile-account-button { max-width: 76px; }
 .cloud-mobile .cloud-assistant-help .assistant-ai-setting input { width: 18px; height: 18px; min-height: 18px; }
+
+/* Phone controls and spelling keep the work ahead of explanatory copy. */
+.mobile-spelling-coach > summary { display: none; }
+.cloud-mobile #tab-overview > .tab-header > h1 { display: none; }
+.cloud-mobile .monitor-card-top { align-items: center; }
+.cloud-mobile .mobile-card-toggle { align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; }
+.cloud-mobile .mobile-card-toggle svg { display: block; width: 20px; height: 20px; }
+.cloud-mobile .mobile-card-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.cloud-mobile .mobile-card-time { font-variant-numeric: tabular-nums; }
+.cloud-mobile #tab-spelling.active { display: flex; flex-direction: column; }
+.cloud-mobile #tab-spelling .spelling-header-copy,
+.cloud-mobile #tab-spelling .spelling-policy-note { display: none; }
+.cloud-mobile #tab-spelling .spelling-tab-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-bottom: 14px; }
+.cloud-mobile #tab-spelling .spelling-tab-header > div:first-child { grid-column: 1; grid-row: 1; min-width: 0; }
+.cloud-mobile #tab-spelling .spelling-tab-header h1 { margin: 0; font-size: 22px; }
+.cloud-mobile #tab-spelling .spelling-header-actions { display: contents; }
+.cloud-mobile #spelling-student-filter { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; min-height: 46px; }
+.cloud-mobile #spelling-add-list { grid-column: 2; grid-row: 1; justify-content: center; min-height: 44px; margin: 0; padding: 10px 12px; font-size: 13px; }
+.cloud-mobile #spelling-add-list svg { width: 18px; height: 18px; }
+.cloud-mobile #tab-spelling .spelling-view-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; overflow: visible; }
+.cloud-mobile #tab-spelling .spelling-view-tab { justify-content: center; min-width: 0; min-height: 44px; padding: 8px 6px; font-size: 12px; }
+.cloud-mobile #tab-spelling .spelling-admin-status { min-height: 0; margin: 0 0 12px; font-size: 12px; color: #adb9cc; }
+.cloud-mobile #tab-spelling .spelling-list-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.cloud-mobile #tab-spelling .spelling-list-card { min-width: 0; padding: 16px; }
+.cloud-mobile #tab-spelling .spelling-list-title { overflow-wrap: anywhere; font-size: 17px; }
+.cloud-mobile #tab-spelling .spelling-list-meta span,
+.cloud-mobile #tab-spelling .spelling-list-progress span,
+.cloud-mobile #tab-spelling .spelling-pretest-row,
+.cloud-mobile #tab-spelling .spelling-history-row { color: #adb9cc; }
+.cloud-mobile #tab-spelling .spelling-coach-panel { order: 2; display: block; margin: 16px 0 0; padding: 0; border-radius: 16px; }
+.cloud-mobile .mobile-spelling-coach > summary { display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 12px 14px; color: #dbeafe; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none; }
+.cloud-mobile .mobile-spelling-coach > summary::-webkit-details-marker { display: none; }
+.cloud-mobile .mobile-spelling-coach > summary span { flex: 1; }
+.cloud-mobile .mobile-spelling-coach > summary svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.cloud-mobile .mobile-spelling-coach[open] > summary > svg:last-child { transform: rotate(180deg); }
+.cloud-mobile .mobile-spelling-coach-body { padding: 0 14px 14px; }
+.cloud-mobile .mobile-spelling-coach .spelling-coach-heading h2 { font-size: 17px; }

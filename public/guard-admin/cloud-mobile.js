@@ -6,6 +6,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   const button = (label, action, className = 'secondary') => {
     const el = make('button', className, label); el.type = 'button'; el.addEventListener('click', action); return el;
   };
+  const icon = name => { const el = make('i', ''); el.dataset.lucide = name; el.setAttribute('aria-hidden', 'true'); return el; };
   const root = byId('admin-dashboard');
   const main = root.querySelector('.main-content');
   const media = window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)');
@@ -104,9 +105,20 @@ export function setupCloudMobile({ navigate, refresh }) {
       finally { camera.value = ''; takePhoto.disabled = false; submit.disabled = wasDisabled; }
     });
   }
+  const spellingCoach = byId('tab-spelling')?.querySelector('.spelling-coach-panel');
+  let coachDetails;
+  if (spellingCoach) {
+    coachDetails = make('details', 'mobile-spelling-coach');
+    const summary = make('summary', '');
+    summary.append(icon('brain-circuit'), make('span', '', 'Spelling coach settings'), icon('chevron-down'));
+    const content = make('div', 'mobile-spelling-coach-body');
+    while (spellingCoach.firstChild) content.append(spellingCoach.firstChild);
+    coachDetails.append(summary, content); spellingCoach.append(coachDetails);
+  }
   const heading = byId('tab-overview').querySelector('h1'); const desktopHeading = heading?.textContent;
   function resize() {
     document.body.classList.toggle('cloud-mobile', media.matches);
+    if (coachDetails) coachDetails.open = !media.matches;
     if (assistant) { if (media.matches) actions.prepend(assistant); else assistantHome.after(assistant); }
     if (heading) heading.textContent = media.matches ? 'Quick controls' : desktopHeading;
     if (!media.matches && document.querySelector('.cloud-mobile-menu.active')) navigate('overview');
@@ -129,11 +141,11 @@ export function setupCloudMobile({ navigate, refresh }) {
       const shortcuts = make('div', 'cloud-actions cloud-mobile-only');
       shortcuts.append(button('Screenshots', () => navigate('screenshots'), 'btn btn-secondary'));
       body.append(shortcuts);
-      const toggle = button(expanded.has(id) ? '⌃' : '⌄', () => {
+      const toggle = button('', () => {
         if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
         card.classList.toggle('is-open', expanded.has(id)); toggle.setAttribute('aria-expanded', String(expanded.has(id)));
-        toggle.textContent = expanded.has(id) ? '⌃' : '⌄';
-      }, 'icon-button cloud-mobile-only');
+      }, 'icon-button cloud-mobile-only mobile-card-toggle');
+      toggle.append(icon('chevron-down'));
       toggle.setAttribute('aria-label', `Controls for ${card.querySelector('.monitor-name').textContent}`);
       toggle.setAttribute('aria-controls', body.id); toggle.setAttribute('aria-expanded', String(expanded.has(id)));
       const total = body.querySelector('.monitor-timer-value');
