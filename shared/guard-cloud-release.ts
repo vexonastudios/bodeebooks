@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.261": {
+  "title": "More reliable update recovery",
+  "sections": [
+    {
+      "heading": "Version 1.2.261",
+      "headline": "Updates recover from temporary Windows file locks",
+      "summary": "Improves installation and recovery when Windows is still releasing application files.",
+      "highlights": [
+        "The installer waits for computer protection to finish closing before replacing files.",
+        "Temporary file locks during rollback retry automatically while keeping the verified previous app.",
+        "A healthy reopened app can clear the update screen after a delayed protection connection.",
+        "Updates continue to wait during school and open activities; restart choices remain available."
+      ]
+    }
+  ]
+},
   "1.2.260": {
   "title": "Music while studying in Quizlet",
   "sections": [
