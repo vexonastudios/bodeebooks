@@ -9,6 +9,10 @@
 .cloud-mobile .bottom-nav { display: grid !important; width: 100%; }
 .cloud-mobile .bottom-nav .nav-button { min-height: 48px; }
 .cloud-mobile .bottom-nav small { font-size: 10px; }
+/* Unread counts overlay the icon without changing navigation or label height. */
+.cloud-mobile .bottom-nav .nav-button { position: relative; }
+.cloud-mobile .bottom-nav .cloud-unread-badge { position: absolute; top: 1px; right: calc(50% - 24px); left: auto; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; margin: 0; border: 2px solid #080b18; border-radius: 999px; background: #dc2626; color: #fff; font: 800 11px/1 system-ui, sans-serif; box-sizing: border-box; pointer-events: none; }
+.cloud-mobile .bottom-nav .cloud-unread-badge[hidden] { display: none; }
 .cloud-mobile .cloud-migration-note { display: none; }
 .cloud-mobile #tab-overview > .cloud-note { display: none; }
 .cloud-mobile .cloud-feedback { font-size: 12px; margin-bottom: 14px; }
