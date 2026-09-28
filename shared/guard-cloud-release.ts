@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.254": {
+  "title": "Voice messages keep the child app in place",
+  "sections": [
+    {
+      "heading": "Version 1.2.254",
+      "headline": "Listen and reply inside BodeeGuard",
+      "summary": "Voice playback and message pop-up activation now restore the protected full-screen layer without taking focus away from the message controls.",
+      "highlights": [
+        "Restores the child app above the Windows shell when a message pop-up is activated or audio starts.",
+        "Keeps Play/Pause and the reply field usable while the message window stays compact.",
+        "Parent locks, authorized exit and approved external games retain their existing behavior."
+      ]
+    }
+  ]
+},
   "1.2.253": {
   "title": "Math Coach follows each child's settings",
   "sections": [
