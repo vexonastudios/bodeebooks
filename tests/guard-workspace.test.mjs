@@ -46,7 +46,7 @@ test('dashboard removes its initial loading cover after success or a visible con
       document: { hidden: false }, inFlight: null, timer: null, endpoint: '/synthetic', snapshot: null, usable: false, failures: 0,
       AbortController, setTimeout: () => 1, clearTimeout() {}, byId: id => elements[id], setControls() {},
       feedback: (message, error) => messages.push({ message, error }), showSnapshot: () => { rendered = true; },
-      connectionRefresh: { start() {} },
+      connectionRefresh: { start() {} }, livePush: {start() {}},
       parentSession: { read: async () => ({ ok, status: ok ? 200 : 503, json: async () => ok ? { serverTime: '2026-09-22T14:00:00Z' } : { error: 'Synthetic connection failure' } }) },
     });
     assert.equal(removed, true);
@@ -572,4 +572,14 @@ test('attendance controls are reachable in the calendar and bridge ignores submi
   assert.deepEqual(calls[1], { path: '/attendance/list', body: { date: input.date } });
   assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
   assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+});
+
+test('active chat proxy preserves device/window identity but strips forged family authority and requires parent origin',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {active:true};}});
+  const input={action:'phone-notifications',operation:'view',accountUserId:'parent',deviceId:'a'.repeat(64),viewId:deviceId,studentId:deviceId,householdId:'forged',activeUntil:'2099-01-01',read:true};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls[0],{path:'/notifications',body:{operation:'view',accountUserId:'parent',deviceId:input.deviceId,viewId:deviceId,studentId:deviceId}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.test'}))).status,403);
+  await route.POST(request({...input,studentId:null}));assert.equal(calls[1].body.studentId,null);
 });

@@ -1,3 +1,4 @@
+import './cloud-push-client.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { createParentSessionRecovery, createParentSessionNotice } from './cloud-parent-session.js';
 import { createStudentAssignment, createAssignmentConfirmation } from './cloud-student-assignment.js';
@@ -159,7 +160,7 @@ async function refresh() {
       byId('live-indicator').dataset.connected = 'true';
       feedback('');
       showSnapshot();
-      if (!document.hidden) connectionRefresh.start();
+      if (!document.hidden) { connectionRefresh.start(); livePush.start(); }
     } catch (error) {
       usable = false;
       failures++;
@@ -487,12 +488,31 @@ const connectionRefresh = createConnectionRefresh({
   },
   onError: () => { monitoring.render(); setControls(); },
 });
+let pushTicketController=null;
+const livePush=window.CloudPush.createCloudPushClient({
+  getIdentity:()=>usable&&!document.hidden?'parent':null,
+  getTicket:async()=>{
+    pushTicketController=new AbortController();
+    const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',
+      signal:AbortSignal.any([pushTicketController.signal,AbortSignal.timeout(15000)]),
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'push-ticket'})});
+    if(!response.ok)throw Error('Live delivery is reconnecting');
+    return response.json();
+  },
+  onConnection:connected=>{byId('live-indicator').dataset.messagesConnected=String(connected);messaging.setLive(connected);},
+  onReady:()=>window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin),
+  onSignal:hint=>{
+    if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
+    if(hint.kind==='screenshots')screenshots.refresh();
+  }
+});
+
 document.addEventListener('visibilitychange', () => {
   clearTimeout(timer);
-  if (document.hidden) { connectionRefresh.stop(); clearRecovery(); byId('cloud-recovery').close(); }
+  if (document.hidden) { connectionRefresh.stop(); pushTicketController?.abort(); livePush.stop(); clearRecovery(); byId('cloud-recovery').close(); }
   else refresh();
 });
-window.addEventListener('pagehide', () => { connectionRefresh.stop(); clearTimeout(timer); clearRecovery(); });
+window.addEventListener('pagehide', () => { connectionRefresh.stop(); pushTicketController?.abort(); livePush.stop(); clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); if (feature === 'games') { void games.refresh(); void refresh(); } if (feature === 'music') { void refresh(); } } });
 mobile = setupCloudMobile({ navigate: selectTab, refresh });

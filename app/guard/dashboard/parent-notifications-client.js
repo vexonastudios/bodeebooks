@@ -1,7 +1,7 @@
 const markerKey = 'bodeeguard-phone-notifications';
 export async function notificationRequest(operation, subscription, accountUserId, details = {}) {
   const response = await fetch('/guard/dashboard/bridge/', { method:'POST', cache:'no-store', credentials:'same-origin',
-    signal:AbortSignal.timeout(12000), headers:{'Content-Type':'application/json'},
+    signal:AbortSignal.timeout(12000), keepalive:operation==='view'&&details.studentId===null, headers:{'Content-Type':'application/json'},
     body:JSON.stringify({action:'phone-notifications',operation,accountUserId,...details,...(subscription?{subscription}:{})}) });
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Notifications could not be updated. Try again.');
@@ -118,6 +118,14 @@ export function createParentNotifications({userId,browser=window,request=notific
     });},
     async refreshUnread(){if(disposed||browser.document.hidden)return;update(await call('unread'));},
     async read(studentId,messageId){if(disposed||browser.document.hidden)return;const result=await call('read',null,{studentId,messageId});update(result);return result;},
+    async view(studentId,viewId){
+      // Presence cannot enroll a device or change another parent's registration.
+      const stored=marker(),deviceId=state.deviceId||stored?.deviceId;
+      if(!state.enabled||stored?.userId!==userId||!/^[a-f0-9]{64}$/.test(deviceId||'')||disposed&&studentId!==null)return false;
+      // A queued final clear can finish after React disposes the old account.
+      // The API still authenticates this captured account and its own device.
+      await request('view',null,userId,{deviceId,viewId,studentId});return true;
+    },
     dispose(){disposed=true;},
   };
 }

@@ -28,7 +28,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url === '/') {
     const workspace = JSON.parse(fs.readFileSync(path.join(site, 'app/guard/dashboard/generated/workspace.json'), 'utf8'));
     res.setHeader('Content-Type', 'text/html');
-    res.end(workspace.html.replace('</head>', '<link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width:900px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"></head>')); return;
+    res.end(workspace.html.replace('</head>', '<script>window.chatViews=[];addEventListener("message",event=>{if(event.source===window&&event.origin===location.origin&&event.data?.type==="bodeeguard-conversation-view")chatViews.push(event.data.studentId);});window.WebSocket=class{constructor(){window.fixtureSocket=this;setTimeout(()=>this.onopen?.(),0)}send(){this.onmessage?.({data:"pong"})}close(){}};</script><link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width:900px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"></head>')); return;
   }
   const assetPath = new URL(req.url, 'http://fixture.local').pathname;
   if (/^\/guard-admin\/[a-z0-9.-]+$/.test(assetPath)) {
@@ -41,6 +41,7 @@ const server = http.createServer(async (req, res) => {
     let raw = ''; for await (const chunk of req) raw += chunk;
     const input = JSON.parse(raw); calls.push(input);
     let output = {};
+    if(input.action==='push-ticket')output={url:'wss://bodeeguard-cloud-assets.james-7f8.workers.dev/v1/push/connect?fixture=synthetic'};
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
     if (input.action === 'list-files') output = { files: [], usage: { bytes: 0 } };
@@ -94,6 +95,19 @@ async function run() {
   assert.equal(await js('document.querySelectorAll(".cloud-chat-person").length'),0);
   await js(`{const s=document.querySelector('.cloud-chat-search');s.value='';s.dispatchEvent(new Event('input'));document.querySelector('.cloud-chat-person').click();}`);
   await wait('document.querySelectorAll(".cloud-message").length===2');
+  await wait('window.chatViews.at(-1)==="11111111-1111-4111-8111-000000000001"');
+  const activeChild=fixture.students[0].id;
+  history.get(activeChild).push({id:'incoming-live',sequence:'32',sender:'child',body:'Synthetic live reply',createdAt:new Date().toISOString()});
+  await js('window.fixtureSocket.onmessage({data:JSON.stringify({kind:"messages",studentId:"11111111-1111-4111-8111-000000000001"})})');
+  await wait('document.querySelectorAll(".cloud-message").length===3');
+  await js('document.querySelector(".cloud-chat-back").click()');
+  await wait('window.chatViews.at(-1)===null');
+  await js('document.querySelector(".cloud-chat-person").click()');
+  await wait('window.chatViews.at(-1)==="11111111-1111-4111-8111-000000000001"');
+  await js('window.fixtureSocket.onerror()');
+  await wait('window.chatViews.at(-1)===null');
+  await wait('window.chatViews.at(-1)==="11111111-1111-4111-8111-000000000001"');
+
   for(const [label,width,height]of [['chat',390,844],['small',320,568],['keyboard',390,420],['landscape',844,390]]){
     win.setContentSize(width,height);await new Promise(r=>setTimeout(r,150));
     const state=await layout();assert.equal(state.people,'none');assert.equal(state.nav,'none');assert.equal(state.overflow,false);assert.ok(state.composer.bottom<=state.height+1,JSON.stringify(state));assert.ok(state.composer.top>state.header.bottom);assert.ok(state.input.width>70);await capture(label);
@@ -113,8 +127,8 @@ async function run() {
   await js('document.querySelector("#messages-reply-box").requestSubmit()');
   await wait('document.querySelector("#messages-reply-input").value===""');
   const sends=calls.filter(x=>x.action==='send-message');assert.equal(sends.length,2);assert.equal(sends[0].id,sends[1].id);assert.equal(sends[0].studentId,'11111111-1111-4111-8111-000000000001');
-  await wait('document.querySelectorAll(".cloud-message").length===3');
-  await js('document.querySelector("#messages-older").click()');await wait('document.querySelectorAll(".cloud-message").length===4');
+  await wait('document.querySelectorAll(".cloud-message").length===4');
+  await js('document.querySelector("#messages-older").click()');await wait('document.querySelectorAll(".cloud-message").length===5');
   await js(`{const d=new DataTransfer();d.items.add(new File(['synthetic'],'school.pdf',{type:'application/pdf'}));const f=document.querySelector('#messages-attachment');f.files=d.files;f.dispatchEvent(new Event('change'));}`);
   assert.equal(await js('document.querySelector("#messages-attachment-status").textContent'),'school.pdf');
   await js('document.querySelector("#messages-attachment-clear").click()');assert.equal(await js('document.querySelector("#messages-attachment-clear").hidden'),true);
@@ -146,6 +160,6 @@ async function run() {
   win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter'});
   await new Promise(r=>setTimeout(r,100));
   assert.equal(calls.filter(x=>x.action==='send-message').length,3,'empty Enter does not send');
-  console.log('Mobile messages passed: desktop/phone Enter sends, Shift+Enter multiline, IME/repeat/empty guards, latest student first/read-stable order, previous-section back, nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
+  console.log('Mobile messages passed: visible chat leases, incoming live reply, list/connection-loss release, reconnect, desktop/phone Enter sends, Shift+Enter multiline, IME/repeat/empty guards, latest student first/read-stable order, previous-section back, nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
 }
 run().then(() => { server.close(); app.quit(); }).catch(error => { console.error(error.stack); server.close(); app.exit(1); });

@@ -60,7 +60,14 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const summary = document.createElement('summary'); summary.textContent = 'About messages';
   const helpNote = document.querySelector('.cloud-messages-panel > .cloud-note');
   helpNote.before(help); help.append(summary, helpNote);
-  function showConversation(value) { section.dataset.messageView = value ? 'thread' : 'list'; document.body.classList.toggle('cloud-conversation-open', active && value); sizeInput(); }
+  function showConversation(value) { section.dataset.messageView = value ? 'thread' : 'list'; document.body.classList.toggle('cloud-conversation-open', active && value); sizeInput(); publishConversationView(); }
+  function publishConversationView() {
+    const studentId = conversationVisible() && live && !error && section.dataset.messageLoad === 'ready' ? selected : null;
+    window.parent.postMessage({type:'bodeeguard-conversation-view',studentId},location.origin);
+  }
+  window.addEventListener('message', event => {
+    if(event.origin===location.origin && event.source===window.parent && event.data?.type==='bodeeguard-conversation-view-request') publishConversationView();
+  });
   function conversationVisible() { return active && !document.hidden && selected && selected !== ALL_KIDS && (!mobile.matches || section.dataset.messageView === 'thread'); }
   function sizeInput() {
     const input = el('messages-reply-input'); input.style.removeProperty('height');
@@ -79,7 +86,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (event.repeat || event.currentTarget.disabled || send.disabled) return;
     el('messages-reply-box').requestSubmit(send);
   });
-  mobile.addEventListener('change', () => { sizeInput(); if (conversationVisible()) void refresh(); else { clearTimeout(timer); pauseMedia(); } });
+  mobile.addEventListener('change', () => { publishConversationView(); sizeInput(); if (conversationVisible()) void refresh(); else { clearTimeout(timer); pauseMedia(); } });
   let previewFile = null, previewUrl = null, recordingChild = null;
   const voicePanel = document.createElement('div'); voicePanel.className = 'cloud-chat-voice';
   voicePanel.innerHTML = '<div class="cloud-chat-voice-actions"><button id="messages-record" class="btn btn-secondary" type="button" disabled><i data-lucide="mic"></i><span>Record voice</span></button><span id="messages-record-status" role="status"></span></div><div id="messages-voice-preview" class="cloud-chat-voice-preview" hidden><audio id="messages-voice-audio" controls preload="metadata" aria-label="Preview your voice message"></audio><span id="messages-voice-duration"></span><button id="messages-voice-discard" class="btn btn-secondary" type="button"><i data-lucide="trash-2"></i>Discard</button></div>';
@@ -243,7 +250,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       recoveryActions(Boolean(failure.sessionRecovery || failure.status === 401));
       note(`${error} ${page ? 'Previously loaded messages are still shown. ' : ''}Your draft stays here while you reconnect.`);
     } finally {
-      loading = false; controls();
+      loading = false; controls(); publishConversationView();
       if (conversationVisible() && (refreshQueued || ticket !== generation || !live || failures)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : Math.min(15 * 60000, 5 * 60000 * 2 ** Math.min(failures, 2)));
       refreshQueued = false;
     }
@@ -255,7 +262,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     voice.cancel(); threadRows.clear(); delete el('messages-thread-content').dataset.rendered;
     if (selected) drafts.set(selected, el('messages-reply-input').value);
     selected = child; generation++; page = null; older = []; cursor = undefined;
-    reconnect.hidden = true; section.dataset.messageLoad = 'loading';
+    reconnect.hidden = true; section.dataset.messageLoad = 'loading'; publishConversationView();
     window.cloudFileTools.close(); el('messages-attachment').value = '';
     el('messages-reply-input').value = drafts.get(child) || '';
     const name = child === ALL_KIDS ? 'Message all kids' : students.find(student => student.id === child)?.name || 'Conversation';
@@ -457,15 +464,15 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     finally { loading = false; controls(); if (conversationVisible() && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 5 * 60000); refreshQueued = false; }
   });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
-  document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
+  document.addEventListener('visibilitychange', () => { publishConversationView(); clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('focus', () => { if (error && !loading) void refresh(); });
   window.addEventListener('online', () => { if (error && !loading) void refresh(); });
   window.addEventListener('beforeunload', event => { if (pending.has(ALL_KIDS)) { event.preventDefault(); event.returnValue = ''; } });
-  window.addEventListener('pagehide', () => { clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
+  window.addEventListener('pagehide', () => { window.parent.postMessage({type:'bodeeguard-conversation-view',studentId:null},location.origin); clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
     setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));for(const item of items)rememberChildMessage(item.studentId,item.sequence);renderStudents();},
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
-    setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); clearTimeout(timer); if (active) return refresh(); },
+    setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); publishConversationView(); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if (studentId === selected && active) return refresh(); },
     update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && !students.some(student => student.id === selected)) choose(null); },
     setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }

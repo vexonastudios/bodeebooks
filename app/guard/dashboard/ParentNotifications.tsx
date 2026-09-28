@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/nextjs";
 import { Bell, BellOff, Send, X, Smartphone, Save, AlertTriangle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createParentNotifications, defaultNotificationLabel, stopParentPhoneNotifications } from "./parent-notifications-client.js";
+import { createConversationPresence } from "./conversation-presence.js";
 import styles from "./workspace.module.css";
 import NotificationReply, { type NotificationDraft } from "./NotificationReply";
 type Device={id:string;label:string;revokedAt:string|null;lastAcceptedAt:string|null;lastFailure:string|null};
@@ -22,7 +23,7 @@ export default function ParentNotifications() {
   },[isLoaded,userId]);
   useEffect(()=>{
     if(!userId)return;
-    setLabel(defaultNotificationLabel());
+    void Promise.resolve().then(()=>setLabel(defaultNotificationLabel()));
     const frame=()=>document.querySelector<HTMLIFrameElement>('iframe[title="BodeeGuard Parent Dashboard"]')?.contentWindow;
     const query = new URLSearchParams(location.search).get('conversation');
     let unread:Unread[]=[],pendingMessage:string|null=validId(query)?query:null,checkingUnread=false,checkAgain=false;
@@ -31,7 +32,16 @@ export default function ParentNotifications() {
       frame()?.postMessage({type:'bodeeguard-unread',items:unread},location.origin);
       navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-notifications-unread',totalUnread:unread.reduce((sum,item)=>sum+item.count,0)});
     };
-    const controller=createParentNotifications({userId,onChange:value=>{setState(value);if(value.unread!==unread){unread=value.unread;sendUnread();}}});client.current=controller;
+    let notificationEnabled=false,lastView=0;
+    const askView=()=>frame()?.postMessage({type:'bodeeguard-conversation-view-request'},location.origin);
+    const controller=createParentNotifications({userId,onChange:value=>{
+      setState(value);if(value.unread!==unread){unread=value.unread;sendUnread();}
+      if(value.enabled!==notificationEnabled){notificationEnabled=value.enabled;presence?.refresh();askView();}
+    }});client.current=controller;
+    const presence=createConversationPresence({
+      send:(studentId,viewId)=>{askView();return controller.view(studentId,viewId);},
+      isVisible:()=>!document.hidden&&document.hasFocus()&&Date.now()-lastView<25000
+    });
     const refreshUnread=async()=>{
       if(checkingUnread){checkAgain=true;return;}checkingUnread=true;
       try{await controller.refreshUnread();}catch{/* Keep the last counts while offline. */}
@@ -40,9 +50,10 @@ export default function ParentNotifications() {
     const request=(event:MessageEvent)=>{
       if(event.origin!==location.origin||event.source!==frame())return;
       if(event.data?.type==='bodeeguard-messages-ready'){
-        sendUnread();if(pendingMessage!==null)frame()?.postMessage({type:'bodeeguard-open-messages',studentId:pendingMessage},location.origin);
+        askView();sendUnread();if(pendingMessage!==null)frame()?.postMessage({type:'bodeeguard-open-messages',studentId:pendingMessage},location.origin);
         navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-replies-resume',accountUserId:userId});
       }
+      if(event.data?.type==='bodeeguard-conversation-view'&&(event.data.studentId===null||validId(event.data.studentId))){lastView=Date.now();presence?.set(event.data.studentId);}
       if(event.data?.type==='bodeeguard-message-opened')pendingMessage=null;
       if(event.data?.type==='bodeeguard-message-hint')void refreshUnread();
       if(event.data?.type==='bodeeguard-conversation-read'&&validId(event.data.studentId)&&validId(event.data.messageId)&&!document.hidden){
@@ -74,10 +85,14 @@ export default function ParentNotifications() {
       window.history.replaceState(window.history.state, '', destination.pathname + destination.search + destination.hash);
       frame()?.postMessage({type:'bodeeguard-open-messages',studentId:pendingMessage},location.origin);
     };
-    const visible=()=>{if(!document.hidden){void controller.renew().catch(()=>{});navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-replies-resume',accountUserId:userId});}};
+    const visible=()=>{presence?.refresh();if(!document.hidden){askView();void controller.renew().catch(()=>{});navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-replies-resume',accountUserId:userId});}};
+    const hidden=()=>presence?.set(null);
+    const blur=()=>presence?.refresh();
     window.addEventListener('message',request);document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
+    window.addEventListener('focus',visible);window.addEventListener('blur',blur);
+    window.addEventListener('pagehide',hidden);window.addEventListener('pageshow',visible);
     navigator.serviceWorker?.addEventListener('message',notification);visible();
-    return()=>{controller.dispose();client.current=null;window.removeEventListener('message',request);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);navigator.serviceWorker?.removeEventListener('message',notification);};
+    return()=>{presence?.dispose();controller.dispose();client.current=null;window.removeEventListener('message',request);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);window.removeEventListener('focus',visible);window.removeEventListener('blur',blur);window.removeEventListener('pagehide',hidden);window.removeEventListener('pageshow',visible);navigator.serviceWorker?.removeEventListener('message',notification);};
   },[userId]);
   const openSettings=()=>{setOpen(true);void client.current?.load();};
   const reply = replies.find(item=>item.accountUserId===userId);

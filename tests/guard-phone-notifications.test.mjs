@@ -13,7 +13,7 @@ function fixture({ ios = false, standalone = true, permission = 'default', owner
   const browser = { document: { hidden: false }, Notification: { permission, requestPermission: () => { state.permissionCalls++; browser.Notification.permission = 'granted'; return Promise.resolve('granted'); } }, PushManager: {},
     navigator: { userAgent: ios ? 'iPhone' : 'Chrome', platform: 'fixture', serviceWorker: { ready: Promise.resolve({ pushManager: manager }),getRegistration:async()=>({pushManager:manager}) } },
     matchMedia: () => ({ matches: standalone }), atob, localStorage: { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) } };
-  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); return {supported:true,publicKey,deviceId:'fixture-device',devices:owner||state.sub?[{id:'fixture-device',label:'Phone',revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
+  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); return {supported:true,publicKey,deviceId:'a'.repeat(64),devices:owner||state.sub?[{id:'a'.repeat(64),label:'Phone',revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
   const client = createParentNotifications({ userId: 'parent', browser, request, onChange: value => states.push(value) });
   return { client, browser, state, calls, states, data,request };
 }
@@ -106,4 +106,35 @@ test('an unavailable service worker leaves usable settings and an explicit error
   const f=fixture({owner:'parent',permission:'granted'});
   f.browser.navigator.serviceWorker.ready=Promise.reject(Error('Worker unavailable'));
   await f.client.load();assert.equal(f.client.state().busy,false);assert.match(f.client.state().message,/unavailable/);assert.ok(f.client.state().attention);
+});
+
+test('chat presence uses only this enabled account device, without prompting or changing unread counts',async()=>{
+  const f=fixture({owner:'parent',permission:'granted'});
+  const sid='11111111-1111-4111-8111-111111111111',vid='22222222-2222-4222-8222-222222222222';
+  assert.equal(await f.client.view(sid,vid),false);
+  await f.client.load();const before=f.calls.length;
+  assert.equal(await f.client.view(sid,vid),true);
+  assert.deepEqual(f.calls.at(-1),{operation:'view',subscription:null,userId:'parent',details:{deviceId:'a'.repeat(64),studentId:sid,viewId:vid}});
+  assert.equal(f.calls.length,before+1);assert.equal(f.state.permissionCalls,0);assert.deepEqual(f.client.state().unread,[]);
+  f.client.dispose();assert.equal(await f.client.view(sid,vid),false);
+  assert.equal(await f.client.view(null,vid),true);assert.equal(f.calls.at(-1).details.studentId,null);
+  f.data.set('bodeeguard-phone-notifications',JSON.stringify({userId:'different-parent',deviceId:'a'.repeat(64)}));
+  assert.equal(await f.client.view(null,vid),false);
+});
+test('an unenrolled or removed notification device cannot send chat presence',async()=>{
+  const off=fixture();await off.client.load();assert.equal(await off.client.view(null,'anything'),false);
+  const f=fixture({owner:'parent',permission:'granted'});await f.client.load();await f.client.disable();
+  const before=f.calls.length;assert.equal(await f.client.view(null,'anything'),false);assert.equal(f.calls.length,before);
+});
+test('chat closure is a bounded same-origin keepalive request with no subscription keys',async()=>{
+  const {notificationRequest}=await import('data:text/javascript;base64,'+fs.readFileSync('app/guard/dashboard/parent-notifications-client.js').toString('base64'));
+  const previous=globalThis.fetch;let captured;
+  globalThis.fetch=async(url,options)=>{captured={url,...options};return Response.json({active:false});};
+  try{
+    await notificationRequest('view',null,'parent',{deviceId:'a'.repeat(64),viewId:'fixture',studentId:null});
+    assert.equal(captured.url,'/guard/dashboard/bridge/');assert.equal(captured.keepalive,true);
+    assert.equal(captured.credentials,'same-origin');assert.equal(captured.cache,'no-store');assert.ok(!captured.body.includes('subscription'));
+    await notificationRequest('view',null,'parent',{deviceId:'a'.repeat(64),viewId:'fixture',studentId:'child'});
+    assert.equal(captured.keepalive,false);
+  }finally{globalThis.fetch=previous;}
 });

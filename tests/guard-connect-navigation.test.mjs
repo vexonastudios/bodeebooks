@@ -99,6 +99,7 @@ test('a reused PWA remembers the newest notified child before forwarding to the 
       '@clerk/nextjs':{useAuth:()=>({userId:'fixture-parent',isLoaded:true})},
       react:{...React,useRef:value=>({current:value}),useState:value=>[value,()=>{}],useEffect:fn=>effects.push(fn)},
       './parent-notifications-client.js':{defaultNotificationLabel:()=>'',createParentNotifications:()=>({renew:async()=>{},dispose(){}})},
+      './conversation-presence.js':{createConversationPresence:()=>({refresh(){},set(){},dispose(){}})},
       './NotificationReply':{__esModule:true,default:()=>null}
     }).default;
     renderToStaticMarkup(React.createElement(Notifications));const stop=effects[2]();
@@ -108,4 +109,35 @@ test('a reused PWA remembers the newest notified child before forwarding to the 
     b.dispatch(b.worker,b.worker.controller,{type:'bodeeguard-open-messages',studentId:'https://evil.example'});
     assert.equal(new URL(b.win.location.href).searchParams.get('conversation'),null);assert.equal(b.posted.at(-1).studentId,'');stop();
   } finally {b.restore();}
+});
+
+test('only trusted, visible, freshly confirmed chats renew this parent window; hidden, stale and disposed pages release alerts',async()=>{
+  const {createConversationPresence}=await import('data:text/javascript;base64,'+fs.readFileSync('app/guard/dashboard/conversation-presence.js').toString('base64'));
+  const b=browser(),effects=[],calls=[],timers=new Map();let focused=true,clock=100000,number=0;
+  const oldNow=Date.now;Date.now=()=>clock;b.doc.hasFocus=()=>focused;
+  const timerBrowser={crypto:{randomUUID:()=> 'window-id'},setTimeout:(cb,ms)=>{timers.set(++number,{cb,ms});return number;},clearTimeout:id=>timers.delete(id)};
+  try{
+    const Notifications=load('app/guard/dashboard/ParentNotifications.tsx',{
+      '@clerk/nextjs':{useAuth:()=>({userId:'fixture-parent',isLoaded:true})},
+      react:{...React,useRef:value=>({current:value}),useState:value=>[value,()=>{}],useEffect:fn=>effects.push(fn)},
+      './parent-notifications-client.js':{defaultNotificationLabel:()=>'',createParentNotifications:()=>({renew:async()=>{},view:async(studentId,viewId)=>{calls.push({studentId,viewId});return true;},dispose(){}})},
+      './conversation-presence.js':{createConversationPresence:options=>createConversationPresence({...options,browser:timerBrowser})},
+      './NotificationReply':{__esModule:true,default:()=>null}
+    }).default;
+    renderToStaticMarkup(React.createElement(Notifications));const stop=effects[2]();await settle();calls.length=0;
+    const report={type:'bodeeguard-conversation-view',studentId:conversation};
+    b.dispatch(b.win,{},report);b.dispatch(b.win,b.contentWindow,report,'https://foreign.example');await settle();assert.equal(calls.length,0);
+    b.dispatch(b.win,b.contentWindow,{...report,studentId:'all-kids'});await settle();assert.equal(calls.length,0);
+    b.dispatch(b.win,b.contentWindow,report);await settle();assert.deepEqual(calls,[{studentId:conversation,viewId:'window-id'}]);
+    clock+=15000;timers.values().next().value.cb();await settle();assert.equal(calls.at(-1).studentId,conversation);
+    // A dead/reloaded iframe no longer confirms its view: do not mute forever.
+    clock+=15000;timers.values().next().value.cb();await settle();assert.equal(calls.at(-1).studentId,null);
+    b.dispatch(b.win,b.contentWindow,report);await settle();assert.equal(calls.at(-1).studentId,conversation);
+    b.doc.hidden=true;b.doc.dispatchEvent(new Event('visibilitychange'));await settle();assert.equal(calls.at(-1).studentId,null);
+    b.doc.hidden=false;b.doc.dispatchEvent(new Event('visibilitychange'));await settle();assert.equal(calls.at(-1).studentId,conversation);
+    focused=false;b.win.dispatchEvent(new Event('blur'));await settle();assert.equal(calls.at(-1).studentId,null);
+    focused=true;b.win.dispatchEvent(new Event('focus'));await settle();assert.equal(calls.at(-1).studentId,conversation);
+    stop();await settle();assert.equal(calls.at(-1).studentId,null);assert.equal(timers.size,0);
+    const count=calls.length;b.dispatch(b.win,b.contentWindow,report);await settle();assert.equal(calls.length,count);
+  }finally{Date.now=oldNow;b.restore();}
 });
