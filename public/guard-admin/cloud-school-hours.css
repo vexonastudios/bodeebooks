@@ -39,3 +39,10 @@
 @media(max-width:400px){.school-hours-form>.setup-field{grid-column:1/-1}.school-hours-days{gap:2px}}
 
 @media(max-width:700px){.setup-embedded-panel .cloud-calendar-toolbar .cloud-actions{width:100%;flex-wrap:nowrap;gap:6px}.setup-embedded-panel .cloud-calendar-toolbar h2{font-size:19px;min-width:0;flex:1}.setup-embedded-panel .cloud-calendar-toolbar .btn{padding:8px 12px}.setup-embedded-panel .cloud-calendar-toolbar{justify-content:flex-end}}
+
+.school-hours-preview{margin:12px 0;padding:12px;border-radius:10px;background:rgba(52,211,153,.08);color:#d1fae5;font-size:14px;line-height:1.6}
+#cloud-editor.cloud-hours-editor .setup-field{flex-direction:column;gap:5px}
+#cloud-editor.cloud-hours-editor #cloud-editor-fields{display:block}
+.school-hours-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:700px){.school-hours-options{grid-template-columns:1fr 1fr}}
+@media(max-width:400px){.school-hours-options{grid-template-columns:1fr}}

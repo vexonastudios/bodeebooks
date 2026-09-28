@@ -1,3 +1,4 @@
+import { setupCloudAttendance } from './cloud-attendance.js';
 // The preview uses the same calendar decisions as the API and child app.
 const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts, cloudSubjectAlwaysOpen } = globalThis.BODEE_CLOUD_SCHEDULE;
 const byId = id => document.getElementById(id);
@@ -19,6 +20,7 @@ function dayLabel(state) {
 }
 
 export function setupCloudCalendar({ getSnapshot, editException, editSubject, setControls }) {
+  const attendance = setupCloudAttendance();
   let month = null;
   let selectedDate = null;
   let renderedKey = null;
@@ -34,6 +36,8 @@ export function setupCloudCalendar({ getSnapshot, editException, editSubject, se
     selectedDate ||= currentDate;
     month ||= selectedDate.slice(0, 7);
     const key = JSON.stringify([snapshot.rules, currentDate, month, selectedDate]);
+    const host = byId('cloud-calendar-attendance');
+    if (host && byId('tab-calendar')?.classList.contains('active')) void attendance.render(host, selectedDate, snapshot);
     if (!force && key === renderedKey) return;
     renderedKey = key;
     const focusedDate = byId('cloud-calendar-days').contains(document.activeElement) ? document.activeElement.dataset.date : null;

@@ -555,3 +555,21 @@ test('notebook recovery bridge authenticates, validates operations and strips su
   const source = fs.readFileSync('public/guard-admin/cloud-workspace.js', 'utf8');
   assert.match(source, /setupRecoveryBackups/); assert.match(source, /recoveryBackups.setActive\(id === 'settings'\)/);
 });
+
+
+test('attendance controls are reachable in the calendar and bridge ignores submitted coin authority', async () => {
+  const response = await load('workspace/route.ts').GET(new Request(`${origin}/guard/dashboard/workspace/`));
+  const html = await response.text();
+  assert.match(html, /School start time &amp; late coins/);
+  assert.match(html, /id="cloud-calendar-attendance"/);
+  assert.match(html, /cloud-school-hours.css/);
+  assert.doesNotMatch(html, /have not moved to this calendar/);
+  const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { enabled: true, rows: [] }; } });
+  const input = { action: 'attendance-excuse', date: '2026-09-28', studentId: deviceId, householdId: 'forged', coins: 999, penaltyCoins: 0 };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(calls[0], { path: '/attendance/excuse', body: { date: input.date, studentId: deviceId } });
+  assert.equal((await route.POST(request({ action: 'attendance-list', date: input.date }))).status, 200);
+  assert.deepEqual(calls[1], { path: '/attendance/list', body: { date: input.date } });
+  assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+});

@@ -1,3 +1,4 @@
+import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { createParentSessionRecovery, createParentSessionNotice } from './cloud-parent-session.js';
 import { createStudentAssignment, createAssignmentConfirmation } from './cloud-student-assignment.js';
 import { setupRecoveryBackups } from './cloud-retention.js';
@@ -108,6 +109,7 @@ function selectTab(id) {
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
   byId(`tab-${id}`).querySelector('h1')?.focus();
   mobile?.setActive(id);
+  if (id === 'calendar') calendar.render(true);
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
@@ -323,33 +325,9 @@ function selectField(label, name, choices, value) {
 }
 function editSchoolSchedule() {
   const captured = structuredClone(snapshot);
-  const current = scheduleValue(captured.rules.schedule);
-  const fields = [];
-  const enabledLabel = node('label', 'cloud-schedule-toggle');
-  const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = 'enabled'; enabled.checked = Boolean(current.enabled);
-  enabledLabel.append(enabled, node('span', '', 'Enable the school calendar'));
-  fields.push(enabledLabel);
-  const zoneLabel = node('label', '', 'School time zone');
-  const zone = node('select', 'admin-input'); zone.name = 'timeZone';
-  const zones = [...new Set([current.timeZone, Intl.DateTimeFormat().resolvedOptions().timeZone,
-    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu'])].filter(Boolean);
-  for (const value of zones) { const option = node('option', '', value.replaceAll('_', ' ')); option.value = value; zone.append(option); }
-  zone.value = current.timeZone;
-  zoneLabel.append(zone); fields.push(zoneLabel);
-  const days = node('fieldset', 'cloud-schedule-days'); days.append(node('legend', '', 'School days'));
-  ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].forEach((name, index) => {
-    const label = node('label'); const input = node('input'); input.type = 'checkbox'; input.name = `day-${index}`; input.checked = current.days.includes(index);
-    label.append(input, node('span', '', name.slice(0, 3))); days.append(label);
-  });
-  fields.push(days, field('School opens', 'start', current.start, { type: 'time' }), field('School closes', 'end', current.end, { type: 'time' }),
-    field('First school date (optional)', 'termStart', current.termStart || '', { type: 'date', required: false }),
-    field('Last school date (optional)', 'termEnd', current.termEnd || '', { type: 'date', required: false }),
-    node('p', 'cloud-note', 'The signed calendar is cached on each child computer, so it still applies during a temporary internet outage.'));
-  editor('School Year & Weekly Hours', fields, form => mutate('save-subjects', editSchedule(captured, {
-    ...current, enabled: form.get('enabled') === 'on', timeZone: form.get('timeZone'),
-    days: [0, 1, 2, 3, 4, 5, 6].filter(day => form.get(`day-${day}`) === 'on'), start: form.get('start'), end: form.get('end'),
-    termStart: form.get('termStart') || null, termEnd: form.get('termEnd') || null
-  })));
+  const fields = schoolHoursForm(captured.rules.schedule);
+  editor('School start time & late coins', [fields.form], () => mutate('save-subjects', editSchedule(captured, fields.read())));
+  byId('cloud-editor').classList.add('cloud-hours-editor');
 }
 function addSchoolBreak(existing = null) {
   const captured = structuredClone(snapshot); const current = scheduleValue(captured.rules.schedule);
@@ -374,6 +352,7 @@ function addDayException(date = '', existing = null) {
 }
 function editor(title, fields, save) {
   if (!usable || mutating) return;
+  byId('cloud-editor').classList.remove('cloud-hours-editor');
   byId('cloud-editor-title').textContent = title;
   byId('cloud-editor-fields').replaceChildren(...fields);
   byId('cloud-editor-error').textContent = '';
