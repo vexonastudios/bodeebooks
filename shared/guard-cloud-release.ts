@@ -20,7 +20,8 @@ const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>>
         "New study intervals never begin before the signed parent approval timestamp.",
         "Older intervals affected by this timing bug are repaired after an explicit server rejection; exact originals stay encrypted on the child computer.",
         "Only authorized time is uploaded. Other permission checks and saved work remain in place.",
-        "Recovered sync warnings disappear automatically, and staff diagnostics identify persistent checkpoint failures."
+        "Recovered sync warnings disappear automatically, and staff diagnostics identify persistent checkpoint failures.",
+        "Logic Coach vocabulary stays readable on light and dark themes."
       ]
     }
   ]
