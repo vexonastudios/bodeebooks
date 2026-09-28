@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.257": {
+  "title": "School time sync recovers cleanly",
+  "sections": [
+    {
+      "heading": "Version 1.2.257",
+      "headline": "Clearer school time and fewer confusing warnings",
+      "summary": "Fixes a timestamp error that could leave a school-time warning visible over Abeka even while the approved school page worked.",
+      "highlights": [
+        "New study intervals never begin before the signed parent approval timestamp.",
+        "Older intervals affected by this timing bug are repaired after an explicit server rejection; exact originals stay encrypted on the child computer.",
+        "Only authorized time is uploaded. Other permission checks and saved work remain in place.",
+        "Recovered sync warnings disappear automatically, and staff diagnostics identify persistent checkpoint failures."
+      ]
+    }
+  ]
+},
   "1.2.256": {
   "title": "Computer protection reconnects automatically",
   "sections": [
