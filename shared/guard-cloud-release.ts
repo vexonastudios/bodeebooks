@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.256": {
+  "title": "Computer protection reconnects automatically",
+  "sections": [
+    {
+      "heading": "Version 1.2.256",
+      "headline": "Routine protection recovery no longer needs a parent restart",
+      "summary": "BodeeGuard retries its local protection helper automatically, then restores activities and lets a waiting update proceed when work is saved.",
+      "highlights": [
+        "A missed protection heartbeat or helper exit triggers automatic reconnection without a parent password.",
+        "Clock corrections and delayed heartbeat reads no longer cause false protection failures.",
+        "Open writing and art drafts remain in place while access is paused.",
+        "Updates still verify protection and saved work before restarting; persistent faults keep retrying and appear in staff diagnostics."
+      ]
+    }
+  ]
+},
   "1.2.255": {
   "title": "Easier touchscreen learning",
   "sections": [
