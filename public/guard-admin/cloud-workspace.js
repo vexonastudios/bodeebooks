@@ -10,6 +10,7 @@ import { setupDailyPlan } from './cloud-daily-plan.js';
 import { setupParentStart } from './cloud-parent-start.js?v=20260927-finish1';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
+import { setupCloudChores } from './cloud-chores.js';
 import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupActivityLibrary } from './cloud-activity-library.js';
@@ -82,6 +83,7 @@ function feedback(text, error = false) {
   parentActionFeedback().page(text,error);
 }
 function selectTab(id) {
+  chores.setActive(id === 'chores');
   weeklyActivity.setActive(id === 'overview');
   approvedApps.setActive(id === 'apps');
   dailyPlan.setActive(id === 'daily-plan');
@@ -125,6 +127,7 @@ function setControls() {
 }
 function showSnapshot() {
   if (!snapshot) return;
+  queueMicrotask(()=>void chores.refresh());
   // Refresh action labels immediately; monitoring restores any open action menu.
   monitoring.render();
   weeklyActivity.update();
@@ -414,6 +417,7 @@ const monitoring = setupMonitoring({
   mobile: () => mobile
 });
 const approvedApps = setupApprovedApps({ endpoint });
+const chores = setupCloudChores({endpoint,navigate:selectTab});
 const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editBreak: addSchoolBreak, setControls });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange: id => files.setStudent(id), onGradeSaved: () => files.refresh() });
 const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, editSubject, canEdit: () => usable && !mutating });
@@ -509,6 +513,7 @@ const livePush=window.CloudPush.createCloudPushClient({
   onConnection:connected=>{byId('live-indicator').dataset.messagesConnected=String(connected);messaging.setLive(connected);},
   onReady:()=>{window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
   onSignal:hint=>{
+    if(hint.kind==='settings')void chores.refresh(true);
     if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
     if(hint.kind==='screenshots')screenshots.refresh();
     if(hint.kind==='media')void songRequests.refreshPending(true);

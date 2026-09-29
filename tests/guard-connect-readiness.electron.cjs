@@ -3,6 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const site=path.resolve(__dirname,'..'),studentId='11111111-1111-4111-8111-111111111111';
 let writes=0,failSave=false,failFinish=false,finishWrites=0;
+const choreWrites=[];
 const setup={revision:1,step:0,completed:false,features:{},contentChoices:{},catalog:{version:1}};
 const snapshot={students:[{id:studentId,name:'Test Child',main_school:null}],devices:[{id:'test-computer',computer_name:'Study laptop',student_id:null,revision:1,acknowledged_revision:1,recovery_configured:true,last_seen_at:new Date().toISOString(),locked:false}],rules:{revision:1,subjects:[],schedule:{enabled:false}}};
 const server=http.createServer(async(req,res)=>{
@@ -17,6 +18,10 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/setup'){
   let raw='';for await(const part of req)raw+=part;const input=JSON.parse(raw);res.setHeader('Content-Type','application/json');
   if(input.action==='get-setup')return res.end(JSON.stringify(setup));
+  if(input.action==='chores'){
+   assert.equal(input.operation,'settings');assert.equal(input.revision,setup.chores?.revision||0);
+   choreWrites.push(input);setup.chores={enabled:input.enabled,chosen:true,revision:(setup.chores?.revision||0)+1};return res.end(JSON.stringify(setup.chores));
+  }
   if(input.action==='save-setup'){
    finishWrites++;
    if(failFinish){failFinish=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not finish setup. Try again.'}));}
@@ -40,7 +45,7 @@ else {
   await app.whenReady();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
   session.defaultSession.webRequest.onBeforeRequest((details,callback)=>callback({cancel:!details.url.startsWith(origin)&&!details.url.startsWith('data:')}));
   const win=new BrowserWindow({show:false,width:390,height:844,webPreferences:{offscreen:true,sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}}),js=source=>win.webContents.executeJavaScript(source,true).catch(error=>{throw Error(source+'\n'+error.message);});
-  const wait=async source=>{const end=Date.now()+8000;while(Date.now()<end){if(await js(source))return;await new Promise(resolve=>setTimeout(resolve,30));}throw Error('Timed out: '+source);};
+  const wait=async source=>{const end=Date.now()+8000;while(Date.now()<end){if(await js(source))return;await new Promise(resolve=>setTimeout(resolve,30));}throw Error('Timed out: '+source+'\n'+await js('document.body.innerText'));};
   const click=async text=>js(`[...document.querySelectorAll('dialog[open] button')].find(b=>b.textContent===${JSON.stringify(text)}&&!b.disabled).click()`);
   await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
   assert.equal(await js('document.querySelector("#parent-start-title").textContent'),'Connect & check readiness','pairing goes directly to readiness even before school choices');
@@ -63,7 +68,11 @@ else {
    assert.ok(await js('{const d=document.querySelector("dialog[open]"),r=d.getBoundingClientRect(),f=d.querySelector("footer").getBoundingClientRect();r.left>=0&&r.right<=innerWidth&&f.bottom<=innerHeight&&d.scrollWidth<=d.clientWidth+1}'));
    fs.writeFileSync(path.join(site,'.tmp','connect-readiness-'+name+'.png'),(await win.webContents.capturePage()).toPNG());
   }
+  assert.equal(await js('document.querySelectorAll(".setup-chores input:checked").length'),0,'new families must choose explicitly');
+  await click('Save & finish later');await wait('document.querySelector(".setup-error").textContent.includes("Choose Use Chores")');assert.equal(choreWrites.length,0);
+  await js('document.querySelectorAll(".setup-chores input")[1].click()');
   await click('Save & finish later');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,false);
+  assert.equal(choreWrites.length,1);assert.equal(choreWrites[0].enabled,false,'skip persists as off');
   assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),false,'missing school remains actionable');
   snapshot.students[0].main_school={provider:'abeka'};
   snapshot.rules.subjects=[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}},{studentId:'later-child',dailyPlan:{placement:'school'}}]}];
@@ -97,6 +106,14 @@ else {
   snapshot.devices[0].recovery_configured=false;
   await win.loadURL(origin);await wait('!!window.guide');await wait('!document.querySelector(".parent-start-welcome").hidden');
   assert.ok(await js('document.querySelector(".parent-start-welcome").textContent.includes("set up parent recovery")'),'required recovery loss resurfaces a specific action');
+  snapshot.schoolActivities=[];
+  await win.loadURL(origin);await wait('!!window.guide');
+  await js('guide.open(2)');await wait('!!document.querySelector(".setup-chores")');
+  assert.equal(await js('document.querySelectorAll(".setup-chores input")[1].checked'),true,'saved skip is retained in the activities flow');
+  await js('document.querySelectorAll(".setup-chores input")[0].click()');
+  assert.equal(choreWrites.length,1,'selecting is still a draft');
+  await click('Save and close');await wait('!document.querySelector("dialog[open]")');
+  assert.equal(choreWrites.length,2);assert.equal(choreWrites[1].enabled,true,'parent can opt in from the active activities flow');
   win.destroy();
   console.log('Connect readiness passed: direct step, named computer, draft/save/retry, matching student, real acknowledgement check, missing prerequisites preserved and phone/desktop fit.');
  }

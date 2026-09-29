@@ -82,6 +82,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "coloring-image": path = "/coloring-studio/image"; method = "POST"; body = { requestId: input.requestId, delivery: "url", thumbnail: input.thumbnail === true }; break;
     case "computer-command": path = "/computers/command"; method = "POST"; body = { kind: input.kind, locked: input.locked, deviceId: input.deviceId, studentId: input.studentId, subjectId: input.subjectId, unlocked: input.unlocked, revision: input.revision, requestId: input.requestId }; break;
     case "refresh-computers": path = "/refresh"; method = "POST"; body = {}; break;
+    case "chores": path = "/chores"; method = "POST"; body = {operation:input.operation,requestId:input.requestId,enabled:input.enabled,revision:input.revision,id:input.id,date:input.date,studentIds:input.studentIds,definition:input.definition,studentId:input.studentId,minutes:input.minutes,targets:input.targets,note:input.note,editScope:input.editScope}; break;
     case "connection-status": path = "/connections"; method = "GET"; body = undefined; break;
     case "screenshots-overview": path = "/screenshots/overview"; method = "POST"; body = {}; break;
     case "request-screenshot": path = "/screenshots/request"; method = "POST"; body = { studentId: input.studentId }; break;

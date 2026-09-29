@@ -23,6 +23,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{draft=null;render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null,reviewing=false;
+  let choreChoice=null,choreRequest=null;
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
   const launch=button('Family setup',()=>open(),true);launch.id='parent-start-guide';
   (document.querySelector('#overview-actions')||document.querySelector('#tab-overview .tab-header'))?.append(launch);
@@ -56,6 +57,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     busy=true;launch.disabled=settingsLaunch.disabled=true;previousFocus=document.activeElement;
     try {
       state=await request('get-setup');
+      choreChoice=state.chores?.chosen?state.chores.enabled:null;choreRequest=null;
       index=Number.isInteger(startAt)?startAt:state.completed?(nextSetupStep(getSnapshot(),state)?.step??0):Math.max(0,steps.findIndex(step=>step.id>=state.step));
       // Pairing returns directly to the computer checklist. Missing school or plan
       // choices remain visible there and never become complete just by opening it.
@@ -68,6 +70,12 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const unlock=lockControls(body);
     try {
       for(const commit of pending)await commit();
+      validateChoreChoice();
+      if(choreChoice!==null&&(!state.chores?.chosen||choreChoice!==state.chores.enabled)){
+        choreRequest ||= {operation:'settings',requestId:crypto.randomUUID(),revision:state.chores?.revision||0,enabled:choreChoice};
+        const saved=await request('chores',choreRequest);state.chores={enabled:saved.enabled,revision:saved.revision,chosen:true};choreRequest=null;
+        window.dispatchEvent(new Event('cloud-chores-setting-saved'));
+      }
       state=await request('save-setup',{revision:state.revision,guideVersion:2,catalogVersion:state.catalog.version,step:steps[target].id,
         completed:complete||state.completed,features:state.features,contentChoices:state.contentChoices});
       updateWelcome();
@@ -88,6 +96,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     busy=true;const unlock=lockControls(footer);error.textContent='';
     try {
       for(const commit of pending)await commit();
+      validateChoreChoice();
       if(direction>0&&index===0&&!children().length)throw Error('Add at least one child to continue. You can also save and close.');
       if(direction>0&&index===1&&children().some(child=>!child.main_school?.provider))throw Error('Choose a school for each child, or select No online school.');
       if(index===2&&direction>0){
@@ -225,6 +234,17 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(node('p','After saving a student, keep BodeeGuard open on that computer. Tap Check again to see when it confirms the assignment and parent controls.','setup-copy'));
     body.append(button('Review Daily Plan',()=>section('daily-plan')));
   }
+  function validateChoreChoice(){
+    if((index===2||index===3&&!state.completed)&&choreChoice===null)throw Error('Choose Use Chores & Routines or Skip for now.');
+  }
+  function choreOptions(){
+    const section=node('fieldset','','setup-chores');section.append(node('legend','Track chores and routines in BodeeGuard?'),node('p','Assign chores, reward completion, and require them before entertainment. Skip if your family uses another chore system.'));
+    for(const [value,label]of [[true,'Use Chores & Routines'],[false,'Skip for now']]){
+      const row=node('label','','setup-choice'),input=node('input');input.type='radio';input.name='family-start-chores';input.checked=choreChoice===value;
+      input.onchange=()=>{choreChoice=value;choreRequest=null;};row.append(input,node('span',label));section.append(row);
+    }
+    body.append(section);
+  }
   function render() {
     footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
     if(index===0){body.append(node('p','Add everyone now. Start with one family plan, then adjust only what each child needs.','setup-copy'));pending.push(inlineChildren({host:body,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}}));}
@@ -234,6 +254,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       const optional=node('details');optional.append(node('summary','School hours and days off (optional)'),button('School calendar',()=>section('calendar')));body.append(optional);
     }else if(index===2){if(reviewing)reviewPlan();else activityPicker();}
     else readiness();
+    if(index===2||index===3&&!state.chores?.chosen&&!state.completed)choreOptions();
     body.scrollTop=0;decorateSetup(dialog);
   }
   dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy)dialog.close();});

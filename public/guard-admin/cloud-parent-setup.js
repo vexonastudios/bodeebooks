@@ -105,6 +105,17 @@ export function setupParentGuide({ endpoint, getSnapshot, navigate, mutate }) {
       body.append(link('View calendar & add days off','calendar'));
     }else if(state.step===3){text('Choose the default for all children. You can change it for each child later. The questions are built in.');
       toggle('verse','Daily Verse','A Bible verse and question each day.');toggle('riddle','Brain Teaser','A daily thinking challenge.');
+      body.append(node('h3','Track chores and routines in BodeeGuard?'));
+      text('Assign chores, approve completed work, and optionally require them before games and videos. You can skip this if your family uses another chore system.');
+      let choreChoice=state.chores?.chosen?state.chores.enabled:null,choreRequest=null;
+      for(const [value,label]of [[true,'Use Chores & Routines'],[false,'Skip for now']]){const row=node('label','','setup-choice'),input=node('input');input.type='radio';input.name='setup-chores';input.checked=choreChoice===value;input.onchange=()=>{choreChoice=value;choreRequest=null;};row.append(input,node('span',label));body.append(row);}
+      pendingFields.push(async()=>{
+        if(choreChoice===null)throw Error('Choose Use Chores & Routines or Skip for now.');
+        if(state.chores?.chosen&&state.chores.enabled===choreChoice)return;
+        choreRequest ||= {operation:'settings',requestId:crypto.randomUUID(),revision:state.chores?.revision||0,enabled:choreChoice};
+        const saved=await request('chores',choreRequest);state.chores={enabled:saved.enabled,revision:saved.revision,chosen:true};choreRequest=null;
+        window.dispatchEvent(new Event('cloud-chores-setting-saved'));
+      });
     }else if(state.step===4){text('Choose family defaults. A child’s personal choices take priority. Assignments and limits still apply.');learning.forEach(([id,title,copy,tab])=>toggle(id,title,copy,tab));
     }else if(state.step===5){text('Approve items for your family library. In child setup, choose which ones each child can use.');
       for(const collection of state.catalog.collections){const section=node('section','','setup-collection');section.append(node('h3',collection.title));
