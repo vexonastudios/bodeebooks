@@ -91,8 +91,20 @@ export function subjectProgress(snapshot, studentId, subjectId, date) {
 
 // Keep grade and lesson number distinct. Old snapshots can contain several
 // lessons: show all reported numbers until the updated child selects its day.
+function abekaLessonTokens(course) {
+  return [...new Set([...String(course.lessonLabel || '').matchAll(/(?:^| · )Lesson\s+([A-Za-z0-9-]+)\s*\(/gi)].map(match => match[1]))];
+}
 export function abekaCourseLabel(course) {
-  const tokens = [...String(course.lessonLabel || '').matchAll(/(?:^| · )Lesson\s+([A-Za-z0-9-]+)\s*\(/gi)].map(match => match[1]);
-  const lessons = [...new Set(tokens)];
+  const lessons = abekaLessonTokens(course);
   return String(course.courseName || '') + (lessons.length ? ` · ${lessons.length === 1 ? 'Lesson' : 'Lessons'} ${lessons.join(', ')}` : '');
 }
+
+// Older reports combine different lesson days into one boolean. A false value
+// cannot tell us whether the earlier lesson is done; wait for a fresh child scan.
+export function abekaCourseStatus(course) {
+  if (course.completed === true) return 'complete';
+  const days = new Set(abekaLessonTokens(course).filter(token => /^\d+$/.test(token)).map(Number));
+  return days.size > 1 ? 'refresh-needed' : 'incomplete';
+}
+
+export const abekaRefreshMessage = 'Waiting for an Abeka lesson refresh. Open My Lessons Today in the updated child app to refresh these classes.';

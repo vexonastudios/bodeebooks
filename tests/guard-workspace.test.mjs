@@ -583,3 +583,18 @@ test('active chat proxy preserves device/window identity but strips forged famil
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.test'}))).status,403);
   await route.POST(request({...input,studentId:null}));assert.equal(calls[1].body.studentId,null);
 });
+
+
+test('Abeka mixed-day reports remain pending until a corrected child completion arrives', async () => {
+  const source=fs.readFileSync('public/guard-admin/cloud-workspace-model.js','utf8');
+  const {abekaCourseLabel,abekaCourseStatus}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+  const old={courseName:'English 7',lessonLabel:'Lesson 22 (English 7) · Lesson 20 (English 7)',completed:false};
+  assert.equal(abekaCourseStatus(old),'refresh-needed');
+  assert.equal(abekaCourseLabel(old),'English 7 · Lessons 22, 20');
+  assert.equal(abekaCourseStatus({...old,completed:true}),'complete');
+  const refreshed={...old,lessonLabel:'Lesson 20 (English 7)',completed:true};
+  assert.equal(abekaCourseStatus(refreshed),'complete');
+  assert.equal(abekaCourseLabel(refreshed),'English 7 · Lesson 20');
+  assert.equal(abekaCourseStatus({...refreshed,completed:false}),'incomplete');
+  assert.equal(abekaCourseStatus({...old,lessonLabel:'Lesson 20 (English) · Lesson 20 (Practice)'}),'incomplete');
+});

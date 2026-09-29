@@ -221,3 +221,6 @@
 .cloud-session-notice span { flex: 1; min-width: 0; }
 .cloud-session-notice button { flex: 0 0 auto; min-height: 44px; }
 .cloud-mobile .cloud-session-notice { margin: 8px; padding: 10px 12px; font-size: 13px; flex-wrap: wrap; }
+
+.cloud-abeka-course.refresh-needed{color:#fcd34d;background:rgba(251,191,36,.1)}
+.cloud-abeka-refresh-note{margin:0;color:#fcd34d;font-size:12px;line-height:1.5}
