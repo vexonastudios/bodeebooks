@@ -21,6 +21,7 @@ import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
+import { setupCloudDocuments } from './cloud-documents.js?v=20260929-documents2';
 import { setupCloudGames } from './cloud-games-ui.js';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js';
@@ -108,6 +109,7 @@ function selectTab(id) {
   legacy.setActive(id === 'settings');
   recoveryBackups.setActive(id === 'settings');
   files.setActive(id === 'grades');
+  documents.setActive(id === 'documents');
   games.setActive(id === 'family-games');
   learningVideos.setActive(id === 'learning-videos');
   byId(`tab-${id}`).querySelector('h1')?.setAttribute('tabindex', '-1');
@@ -136,6 +138,7 @@ function showSnapshot() {
   reading.update(); dailyQuestions.update(); practice.update(); geography.update(); spanish.update();
   economy.update(); typing.update(snapshot.students);
   files.update(snapshot.students);
+  documents.update();
   renderSchedule();
   renderSchoolCalendar();
   screenshots.update(snapshot);
@@ -415,6 +418,7 @@ const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, edit
 const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
 const recoveryBackups = setupRecoveryBackups({ endpoint, root: byId('cloud-settings-backups') || byId('tab-settings') });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
+const documents = setupCloudDocuments({ request: files.request, gradePaper: records.gradePaper, getStudents: () => snapshot?.students || [] });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
 const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
