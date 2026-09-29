@@ -82,6 +82,7 @@ const until = async (win, expression) => {
   assert.equal(calls.filter(x=>x.operation==='test').length,1);
   assert.equal(await win.webContents.executeJavaScript("document.querySelector('a[href=\"ms-settings:notifications\"]').textContent"),'Open Windows notification settings');
   assert.ok(await win.webContents.executeJavaScript("document.querySelector('[aria-label=\"Windows notification settings\"]').textContent.includes('Turn on Notifications at the top')"));
+  assert.equal(await win.webContents.executeJavaScript("document.querySelectorAll('.notificationPreview').length"),1,'one preview switch for this device, never duplicated on remote devices');
   assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').checked"),false);
   await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').click()");
   await until(win,"document.querySelector('.notificationPreview input').checked&&!document.querySelector('.notificationPreview input').disabled");

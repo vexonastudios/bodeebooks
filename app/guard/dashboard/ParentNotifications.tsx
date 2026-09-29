@@ -149,11 +149,7 @@ export default function ParentNotifications() {
           {state.devices.filter(device=>!device.revokedAt).map(device=><form key={device.id} className={styles.notificationDevice} onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget);void client.current?.rename(device.id,String(data.get('label')||''));}}>
             <label className={styles.notificationLabel}>{device.id===state.deviceId?'This device':'Device name'}<input name="label" defaultValue={device.label} maxLength={60} required aria-label={'Name for '+device.label}/></label>
             <small>{device.lastFailure?'Recent delivery needs attention':device.lastAcceptedAt?'Last alert accepted '+new Date(device.lastAcceptedAt).toLocaleString():'No alert accepted yet'}</small>
-            {state.enabled&&<label className={styles.notificationPreview}>
-            <input type="checkbox" checked={state.devices.find(device=>device.id===state.deviceId)?.messagePreview===true} disabled={state.busy} onChange={event=>void client.current?.setPreview(event.target.checked)}/>
-            <span>Show child name and message preview<small>For this device. Names and message text may also appear on its lock screen.</small></span>
-          </label>}
-          <div className={styles.notificationActions}><button type="submit" disabled={state.busy}><Save size={16}/>Save name</button><button type="button" disabled={state.busy} onClick={()=>void client.current?.revoke(device.id)}><BellOff size={16}/>Turn off device</button></div>
+            <div className={styles.notificationActions}><button type="submit" disabled={state.busy}><Save size={16}/>Save name</button><button type="button" disabled={state.busy} onClick={()=>void client.current?.revoke(device.id)}><BellOff size={16}/>Turn off device</button></div>
           </form>)}
           {!state.devices.some(device=>!device.revokedAt)&&<p>No notification devices connected to your account.</p>}
         </div>
