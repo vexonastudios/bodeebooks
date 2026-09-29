@@ -46,7 +46,7 @@
 .cloud-computer-settings{margin-top:14px}
 .cloud-computer-controls{display:grid;gap:8px;min-width:0}
 .cloud-computer-controls .cloud-actions{margin:0}
-@media(min-width:769px){.cloud-monitor-card .mobile-card-body{display:flex;flex-direction:column;gap:12px}}
+@media(min-width:769px){.cloud-monitor-card .mobile-card-body{display:flex;flex-direction:column;gap:12px}.cloud-monitor-card .monitor-primary-actions{order:1}.cloud-monitor-card .monitor-connect-link,.cloud-monitor-card .monitor-offline-note{order:2}}
 @media(max-width:768px){.cloud-workspace #tab-overview .monitor-grid{grid-template-columns:1fr}.cloud-overview-assistant{flex-wrap:wrap}.cloud-overview-assistant-title{width:100%}.cloud-monitor-stats{padding:14px 10px;gap:14px}.cloud-monitor-stats .cc-stat{min-width:100px;padding:0;border:0;gap:8px}.cloud-monitor-stats .cc-stat-value{font-size:19px}.cloud-monitor-asof{width:100%;flex-direction:row;justify-content:flex-end;align-items:center}.cloud-computer-setting{grid-template-columns:1fr}}
 /* Overview controls share the same placement on phones and desktop. */
 #tab-overview > .tab-header { flex-wrap:wrap; gap:16px; align-items:center; }
@@ -56,13 +56,14 @@
 #cloud-lock-all svg { width:17px; height:17px; flex-shrink:0; }
 .cloud-overview-updated { color:var(--text-muted,#9996b7); font-size:13px; white-space:nowrap; }
 #cloud-feedback:empty { display:none; }
+.cloud-mobile .monitor-primary-actions { margin:0 0 12px; }
 .monitor-power-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
 .monitor-power-actions .monitor-control { min-height:44px; }
 .monitor-control--sleep { color:#c4b5fd; background:#211b35; border-color:#554471; }
 .monitor-control--close { color:#ffba66; background:#281c18; border-color:#664026; }
 .monitor-control--lock-media { color:#ff6969; background:#27131b; border-color:#63303c; }
 .monitor-control-note { color:var(--text-muted,#9996b7); font-size:11px; text-align:center; }
-.monitor-quick-unlock { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; padding:9px; border:1px solid #603359; border-radius:8px; background:#26162b; color:#f472b6; cursor:pointer; font-weight:600; font-size:13px; }
+.monitor-quick-unlock { min-height:44px; display:flex; align-items:center; justify-content:center; gap:7px; width:100%; padding:9px; border:1px solid #603359; border-radius:8px; background:#26162b; color:#f472b6; cursor:pointer; font-weight:600; font-size:13px; }
 .monitor-quick-unlock svg { width:15px; height:15px; flex-shrink:0; }
 #cloud-quick-unlock-dialog { margin:auto; width:min(680px,calc(100vw - 28px)); max-width:none; max-height:calc(100dvh - 28px); padding:0; overflow:hidden; border:1px solid #5d536d; border-radius:20px; background:#171827; color:#eeeefa; box-shadow:0 24px 80px #000a; }
 #cloud-quick-unlock-dialog::backdrop { background:rgba(5,6,15,.78); }

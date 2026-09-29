@@ -209,12 +209,15 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
         card.append(lessons);
         if(model.courses.some(course=>abekaCourseStatus(course)==='refresh-needed'))card.append(node('p','cloud-abeka-refresh-note',abekaRefreshMessage));
       }
-      const actions=node('div','cloud-monitor-actions');
-      actions.inert=!model.online;actions.setAttribute('aria-disabled',String(!model.online));
-      actions.addEventListener('click',event=>{
-        if(studentOnline(student.id))return;
-        event.preventDefault();event.stopImmediatePropagation();render();setControls();
-      },true);
+      const actions=node('div','cloud-monitor-actions'),primary=node('div','cloud-monitor-actions monitor-primary-actions');
+      top.after(primary);
+      for(const group of [actions,primary]){
+        group.inert=!model.online;group.setAttribute('aria-disabled',String(!model.online));
+        group.addEventListener('click',event=>{
+          if(studentOnline(student.id))return;
+          event.preventDefault();event.stopImmediatePropagation();render();setControls();
+        },true);
+      }
       const shot=button('Snap Screen','camera',el=>run(el,async()=>{if(!canScreenshot(student.id)){el.dataset.requiresDevice='false';throw Error('The child app must be online. Refresh to check its connection.');}await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');},{pending:'Requesting a screenshot from '+student.name+'…',title:'Screenshot requested for '+student.name,detail:'Opening Screenshots. The image appears when the child app sends it.'}),'monitor-control monitor-control--screenshot');notices.bind(shot,student.id+':screenshot');shot.disabled=!canScreenshot(student.id);shot.dataset.requiresDevice=String(!shot.disabled);shot.dataset.cloudMutation='true';shot.title=shot.disabled?'Open the child app, then refresh to check its connection.':'Capture the child’s BodeeGuard screen';actions.append(shot);notices.mount(actions,student.id+':screenshot');
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
       if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
@@ -235,10 +238,9 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const supportsSleep=parts.length===3&&parts.every(Number.isSafeInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=265));
       notices.bind(sleep,student.id+':sleep');sleep.disabled=!supportsSleep;sleep.dataset.requiresDevice=String(supportsSleep);sleep.dataset.cloudMutation='true';
       sleep.title=!device?'Connect a computer first.':!supportsSleep?'Available after this computer updates to 1.2.265.':'Put Windows to sleep. BodeeGuard and open work remain ready when it wakes.';
-      const power=node('div','monitor-power-actions');power.append(close,sleep);actions.append(power);notices.mount(actions,student.id+':close');notices.mount(actions,student.id+':sleep');
-      if(device&&model.online&&!supportsSleep)actions.append(node('small','monitor-control-note','Remote sleep needs child app 1.2.265 or newer.'));
-      if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
-      actions.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'));
+      const power=node('div','monitor-power-actions');power.append(close,sleep);primary.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'),power);notices.mount(primary,student.id+':close');notices.mount(primary,student.id+':sleep');
+      if(device&&model.online&&!supportsSleep)primary.append(node('small','monitor-control-note','Remote sleep needs child app 1.2.265 or newer.'));
+      if(device&&!supportsClose)primary.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
       if(!model.online)card.append(node('p','monitor-offline-note',model.connection==='Connection not checked'?'The connection check is unavailable. Refresh to check again.':'Controls are available when this child’s computer is online.'));
       mobile()?.decorateCard(card,student.id,model);
