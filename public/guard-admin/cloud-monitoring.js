@@ -230,7 +230,13 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       notices.bind(close,student.id+':close');
       const parts=String(device?.app_version||'').split('.').map(Number),supportsClose=parts.length===3&&parts.every(Number.isInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=201));
       close.disabled=!supportsClose;close.dataset.requiresDevice=String(supportsClose);close.dataset.cloudMutation='true';
-      close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';actions.append(close);notices.mount(actions,student.id+':close');
+      close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';
+      const sleep=button('Sleep computer','moon',el=>run(el,()=>mutate('computer-command',{kind:'sleep',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a sleep request to '+student.name+'…',title:'Sleep requested for '+student.name,detail:'The request expires in two minutes. BodeeGuard stays open for when the computer wakes.'}),'monitor-control monitor-control--sleep');
+      const supportsSleep=parts.length===3&&parts.every(Number.isSafeInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=265));
+      notices.bind(sleep,student.id+':sleep');sleep.disabled=!supportsSleep;sleep.dataset.requiresDevice=String(supportsSleep);sleep.dataset.cloudMutation='true';
+      sleep.title=!device?'Connect a computer first.':!supportsSleep?'Available after this computer updates to 1.2.265.':'Put Windows to sleep. BodeeGuard and open work remain ready when it wakes.';
+      const power=node('div','monitor-power-actions');power.append(close,sleep);actions.append(power);notices.mount(actions,student.id+':close');notices.mount(actions,student.id+':sleep');
+      if(device&&model.online&&!supportsSleep)actions.append(node('small','monitor-control-note','Remote sleep needs child app 1.2.265 or newer.'));
       if(device&&!supportsClose)actions.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       actions.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}

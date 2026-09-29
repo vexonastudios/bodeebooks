@@ -598,3 +598,13 @@ test('Abeka mixed-day reports remain pending until a corrected child completion 
   assert.equal(abekaCourseStatus({...refreshed,completed:false}),'incomplete');
   assert.equal(abekaCourseStatus({...old,lessonLabel:'Lesson 20 (English) · Lesson 20 (Practice)'}),'incomplete');
 });
+
+
+test('remote sleep bridge forwards only the selected computer and parent request identity', async () => {
+  const calls=[], route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {delivery:'pending'};}});
+  const input={action:'computer-command',kind:'sleep',deviceId,revision:2,requestId:deviceId,householdId:'forged',userId:'forged',command:'shutdown'};
+  const response=await route.POST(request(input));assert.equal(response.status,200);
+  assert.deepEqual(calls,[{path:'/computers/command',body:{kind:'sleep',deviceId,revision:2,requestId:deviceId}}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+});

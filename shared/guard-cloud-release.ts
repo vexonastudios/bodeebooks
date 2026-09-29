@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.265": {
+  "title": "Put a child computer to sleep remotely",
+  "sections": [
+    {
+      "heading": "Version 1.2.265",
+      "headline": "Put a child computer to sleep from your phone",
+      "summary": "Adds Sleep computer beside Close BodeeGuard on each child card in the parent dashboard.",
+      "highlights": [
+        "Expand a child card to find Sleep computer beside Close BodeeGuard.",
+        "Connected computers with child app 1.2.265 or newer can receive sleep requests.",
+        "BodeeGuard and open work remain ready when Windows wakes.",
+        "Unreceived requests expire in two minutes, and waking does not replay a previous request."
+      ]
+    }
+  ]
+},
   "1.2.264": {
   "title": "School progress keeps syncing",
   "sections": [

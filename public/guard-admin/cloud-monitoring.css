@@ -56,6 +56,9 @@
 #cloud-lock-all svg { width:17px; height:17px; flex-shrink:0; }
 .cloud-overview-updated { color:var(--text-muted,#9996b7); font-size:13px; white-space:nowrap; }
 #cloud-feedback:empty { display:none; }
+.monitor-power-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+.monitor-power-actions .monitor-control { min-height:44px; }
+.monitor-control--sleep { color:#c4b5fd; background:#211b35; border-color:#554471; }
 .monitor-control--close { color:#ffba66; background:#281c18; border-color:#664026; }
 .monitor-control--lock-media { color:#ff6969; background:#27131b; border-color:#63303c; }
 .monitor-control-note { color:var(--text-muted,#9996b7); font-size:11px; text-align:center; }
