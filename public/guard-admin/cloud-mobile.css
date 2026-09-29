@@ -16,6 +16,7 @@
 .cloud-mobile .cloud-migration-note { display: none; }
 .cloud-mobile #tab-overview > .cloud-note { display: none; }
 .cloud-mobile #cloud-monitor-stats { display: none; }
+.cloud-mobile #tab-overview .cloud-overview-refresh { display: none; }
 .cloud-mobile .cloud-feedback { font-size: 12px; margin-bottom: 14px; }
 .cloud-mobile .tab-header { flex-wrap: wrap; margin-bottom: 18px; }
 .cloud-mobile .tab-header h1, .cloud-mobile-menu > h1 { font-size: 22px; }
