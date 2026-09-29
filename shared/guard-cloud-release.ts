@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.264": {
+  "title": "School progress keeps syncing",
+  "sections": [
+    {
+      "heading": "Version 1.2.264",
+      "headline": "An older time record will not hold up new work",
+      "summary": "Keeps approved school time and completion reports syncing when an older saved record needs review.",
+      "highlights": [
+        "Valid records receive their own upload receipts instead of waiting behind a rejected record.",
+        "Original rejected records remain encrypted on the computer for review.",
+        "School permissions and completion requirements still apply.",
+        "Updates continue to wait during school and open activities."
+      ]
+    }
+  ]
+},
   "1.2.262": {
   "title": "School links and family plans",
   "sections": [
