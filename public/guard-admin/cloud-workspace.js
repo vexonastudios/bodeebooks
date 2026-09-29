@@ -17,6 +17,7 @@ import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js';
+import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
 import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
@@ -163,6 +164,7 @@ async function refresh() {
       byId('live-indicator').dataset.connected = 'true';
       feedback('');
       showSnapshot();
+      void songRequests.refreshPending();
       if (!document.hidden) { connectionRefresh.start(); livePush.start(); }
     } catch (error) {
       usable = false;
@@ -419,6 +421,7 @@ const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-rev
 const recoveryBackups = setupRecoveryBackups({ endpoint, root: byId('cloud-settings-backups') || byId('tab-settings') });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
 const documents = setupCloudDocuments({ request: files.request, gradePaper: records.gradePaper, getStudents: () => snapshot?.students || [] });
+const songRequests = setupSongRequests({ endpoint, navigate: selectTab });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
 const geography = setupCloudGeography({ endpoint, getSnapshot: () => snapshot });
@@ -504,10 +507,11 @@ const livePush=window.CloudPush.createCloudPushClient({
     return response.json();
   },
   onConnection:connected=>{byId('live-indicator').dataset.messagesConnected=String(connected);messaging.setLive(connected);},
-  onReady:()=>window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin),
+  onReady:()=>{window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
   onSignal:hint=>{
     if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
     if(hint.kind==='screenshots')screenshots.refresh();
+    if(hint.kind==='media')void songRequests.refreshPending(true);
   }
 });
 

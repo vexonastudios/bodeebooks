@@ -1,4 +1,4 @@
-import {initMusicAdmin} from './media-music.js';
+import {initMusicAdmin} from './media-music.js?v=20260929-song-requests1';
 import {setupVideoTab,loadVideoTab} from './media-video.js';
 import {setupAudiobookTab,loadAudiobookTab} from './media-audiobooks.js';
 import {setupLearningVideosTab,loadLearningVideosTab} from './media-learning-videos.js';

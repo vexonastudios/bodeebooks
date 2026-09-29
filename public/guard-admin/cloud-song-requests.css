@@ -1,0 +1,13 @@
+.song-request-card{padding:18px;border:1px solid var(--border,#39364f);border-radius:16px;background:var(--card-bg,#171626);display:grid;gap:8px;min-width:0}
+.song-request-card h3,.song-request-card p{margin:0;overflow-wrap:anywhere}.song-request-card small{color:var(--text-muted,#a5a0bb)}
+.song-request-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.song-request-actions h2{flex:1;margin:0}
+.song-request-actions .btn,.song-review-dialog .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.song-request-actions svg,.song-review-dialog svg{width:18px;height:18px;flex:none}.song-request-status{font-size:14px;min-height:20px}
+.song-request-card.is-reviewed{border-color:#34d399}.song-request-card.is-reviewed .song-request-status{color:#34d399}
+.song-request-badge{margin-left:auto;border-radius:20px;background:#a78bfa;color:#100d1e;padding:2px 7px;font-size:12px;font-weight:700}
+.song-review-dialog{box-sizing:border-box;margin:auto;width:min(960px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:24px;border:1px solid #56516e;border-radius:20px;color:var(--text,#eeeaf9);background:#131220}
+.song-review-dialog::backdrop{background:rgba(0,0,0,.75)}.song-review-dialog input:not([type=checkbox]),.song-review-dialog select{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #56516e;border-radius:10px;background:#201e30;color:#f1eefa;font:inherit}
+.song-review-source{display:grid;gap:10px}.song-review-source p{margin:0;color:#b8b2cc}.song-review-preview iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;margin-top:14px}
+.song-review-consent{display:flex;gap:12px;align-items:flex-start;margin-top:18px;line-height:1.5}.song-review-consent input{width:22px;height:22px;flex:none;accent-color:#34d399}
+@media(max-width:600px){.song-review-dialog{padding:16px}.song-request-actions .btn{flex:1}.song-review-dialog> .btn{width:100%}.song-review-dialog h2{font-size:20px}}
+@media(min-width:760px){.song-review-dialog[open]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px}.song-review-dialog>.song-request-actions,.song-review-dialog>p,.song-review-dialog>.song-review-consent,.song-review-dialog>.btn{grid-column:1/-1}.song-review-preview iframe{margin:0;height:auto}.song-review-dialog>.btn{justify-self:end}.song-review-dialog>.song-review-consent{margin:0}}
