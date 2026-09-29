@@ -394,7 +394,13 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     const thread = el('messages-thread-content'), scrollTop = thread.scrollTop;
     thread.replaceChildren(panel); thread.scrollTop = scrollTop;
   }
-  async function sendBroadcast() {
+  function restoreComposerFocus(recipient, wasComposing) {
+    const input = el('messages-reply-input');
+    if (!wasComposing || selected !== recipient || !active || document.hidden || input.disabled) return;
+    if (![document.body, document.documentElement, input, el('messages-reply-btn')].includes(document.activeElement)) return;
+    try { input.focus({ preventScroll: true }); } catch { input.focus(); }
+  }
+  async function sendBroadcast(wasComposing) {
     const file = localFiles.get(ALL_KIDS) || el('messages-attachment').files[0];
     const body = el('messages-reply-input').value.trim() || (voices.has(ALL_KIDS) ? `Voice message · ${voices.get(ALL_KIDS).seconds}s` : '');
     if (!pending.has(ALL_KIDS) && (!recipients().length || !body && !file)) return;
@@ -435,11 +441,13 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       if (selected === ALL_KIDS) note(pending.has(ALL_KIDS) ? 'Some messages still need confirmation. Retry remaining uses the same messages without duplicating them.' : 'Message saved for every child. Open their conversation to see delivery and replies.');
     } catch (failure) {
       if (selected === ALL_KIDS) note(`${failure.message} Your draft is retained.`);
-    } finally { sending = false; if (selected === ALL_KIDS) render(); else controls(); }
+    } finally { sending = false; if (selected === ALL_KIDS) render(); else controls(); if (!pending.has(ALL_KIDS)) restoreComposerFocus(ALL_KIDS, wasComposing); }
   }
   el('messages-reply-box').addEventListener('submit', async event => {
     event.preventDefault(); if (!selected || sending || recordingBusy()) return;
-    if (selected === ALL_KIDS) { await sendBroadcast(); return; }
+    const composer = el('messages-reply-input');
+    const wasComposing = [composer, el('messages-reply-btn')].includes(document.activeElement);
+    if (selected === ALL_KIDS) { await sendBroadcast(wasComposing); return; }
     const child = selected;
     const file = localFiles.get(child) || el('messages-attachment').files[0];
     const body = el('messages-reply-input').value.trim() || (voices.has(child) ? `Voice message · ${voices.get(child).seconds}s` : ''); if (!body && !attachments.has(child) && !file) return;
@@ -463,7 +471,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         pending.delete(child);
         if (selected === child) note(`${failure.message} Nothing was sent. Your draft is retained so you can edit it.`);
       } else if (selected === child) note(`${failure.message} Draft retained. Retry sends the same message without duplicating it; keep this page open until confirmed.`);
-    } finally { sending = false; controls(); }
+    } finally { sending = false; controls(); if (!pending.has(child)) restoreComposerFocus(child, wasComposing); }
   });
   el('messages-older').addEventListener('click', async () => {
     const before = cursor === undefined ? page?.nextBefore : cursor; if (!selected || loading || !before) return;
