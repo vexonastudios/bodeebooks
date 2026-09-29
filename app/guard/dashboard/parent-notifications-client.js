@@ -1,4 +1,5 @@
 const markerKey = 'bodeeguard-phone-notifications';
+const reminderKey = 'bodeeguard-notification-reminder';
 export async function notificationRequest(operation, subscription, accountUserId, details = {}) {
   const response = await fetch('/guard/dashboard/bridge/', { method:'POST', cache:'no-store', credentials:'same-origin',
     signal:AbortSignal.timeout(12000), keepalive:operation==='view'&&details.studentId===null, headers:{'Content-Type':'application/json'},
@@ -31,14 +32,16 @@ export async function stopParentPhoneNotifications({browser=window,userId=savedM
 }
 export function defaultNotificationLabel(browser=window) {
   const ua=browser.navigator.userAgent;
-  return /iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':/Android/.test(ua)?'Android phone':/Windows/.test(ua)?'Windows browser':/Mac/.test(ua)?'Mac browser':'Parent device';
+  return /iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':/Android/.test(ua)?'Android phone':/Windows/.test(ua)?/Edg\//.test(ua)?'Windows · Edge':/Chrome\//.test(ua)?'Windows · Chrome':'Windows browser':/Mac/.test(ua)?'Mac browser':'Parent device';
 }
 /** @param {{userId:string,browser?:Window,request?:typeof notificationRequest,onChange?:(value:any)=>void}} options */
 export function createParentNotifications({userId,browser=window,request=notificationRequest,onChange=()=>{}}) {
   const nav=browser.navigator,ios=/iPhone|iPad|iPod/.test(nav.userAgent)||nav.platform==='MacIntel'&&nav.maxTouchPoints>1;
   const standalone=browser.matchMedia('(display-mode: standalone)').matches||nav.standalone;
   const supported=Boolean(browser.Notification&&browser.PushManager&&nav.serviceWorker&&(!ios||standalone));
-  let state={supported,enabled:false,busy:false,message:'',iosInstall:Boolean(ios&&!standalone),attention:'',devices:[],unread:[],deviceId:null};
+  const desktopApp=Boolean(standalone&&!ios&&!/Android/.test(nav.userAgent));
+  let reminder=null;try{reminder=JSON.parse(browser.localStorage.getItem(reminderKey)||'null');}catch{/* Optional reminder. */}
+  let state={supported,desktopApp,ready:false,permission:browser.Notification?.permission||'default',setupDismissed:Boolean(reminder?.userId===userId&&reminder.until>Date.now()),enabled:false,busy:false,message:'',iosInstall:Boolean(ios&&!standalone),attention:'',devices:[],unread:[],deviceId:null};
   let publicKey=null,pending=false,disposed=false,lastCheck=0;
   const marker=()=>savedMarker(browser);
   const publish=value=>{state={...state,...value};if(!disposed)onChange(state);};
@@ -50,7 +53,7 @@ export function createParentNotifications({userId,browser=window,request=notific
   async function run(work) {
     if(pending||disposed)return;
     pending=true;publish({busy:true,message:''});
-    try{await work();}catch(error){publish({message:error.message||'Please try again.'});}
+    try{await work();}catch(error){publish({message:error.message||'Please try again.',...(desktopApp?{attention:'Notification settings could not be confirmed. Open settings to check this computer.'}:{})});}
     finally{pending=false;publish({busy:false});}
   }
   function matchingKey(sub) {
@@ -61,6 +64,7 @@ export function createParentNotifications({userId,browser=window,request=notific
   async function status(sub) {
     const data=await call('status',sub?.toJSON());update(data);
     publicKey=data.supported&&/^[A-Za-z0-9_-]{87}$/.test(data.publicKey)?data.publicKey:null;
+    publish({ready:Boolean(publicKey)});
     return data.devices?.find(item=>item.id===data.deviceId);
   }
   async function check(force=false) {
@@ -68,14 +72,24 @@ export function createParentNotifications({userId,browser=window,request=notific
     if(supported){
       const stored=marker(),worker=await registration(browser),sub=await worker.pushManager.getSubscription();
       if(stored&&stored.userId!==userId){if(sub)await sub.unsubscribe();clearMarker(browser);publish({enabled:false,attention:''});return;}
-      const permitted=browser.Notification.permission==='granted';
+      const permission=browser.Notification.permission,permitted=permission==='granted';
+      publish({permission});
       if(stored&&!permitted)publish({enabled:false,attention:'Notifications are blocked. Allow alerts in your browser or device settings, then reconnect here.'});
       else if(stored&&!sub)publish({enabled:false,attention:'Notifications need attention. Reconnect this device to receive child messages.'});
       if(!force&&Date.now()-lastCheck<300000)return;lastCheck=Date.now();
       await run(async()=>{
         const device=await status(sub);
         if(!publicKey){publish({enabled:false,attention:stored?'Notification delivery is unavailable. Your messages are still saved.':'',message:'Message notifications are not available right now.'});return;}
-        if(!stored){publish({enabled:false,attention:''});return;}
+        if(!stored){
+          // Restore only an existing, permitted subscription that the server
+          // confirms belongs to this signed-in parent. Never enroll on load.
+          if(sub&&permitted&&device&&!device.revokedAt&&matchingKey(sub).matches){
+            const result=await call('renew',sub.toJSON());update(result);saveMarker(result.deviceId);
+            publish({enabled:true,attention:device.lastFailure==='permanent'||device.lastFailure==='exhausted'?'Recent alerts could not be delivered. Use Send test notification to check this device.':''});return;
+          }
+          if(sub&&(!device||device.revokedAt))await sub.unsubscribe();
+          publish({enabled:false,attention:permission==='denied'&&desktopApp?'Notifications are blocked for this computer. Allow BodeeGuard in your browser settings, then reconnect here.':''});return;
+        }
         if(!device||device.revokedAt){
           if(sub)await sub.unsubscribe();clearMarker(browser);
           publish({enabled:false,attention:device?.revokedReason==='remote'?'Alerts on this device were turned off remotely.':'This device’s notification registration expired. Enable alerts again.'});return;
@@ -90,13 +104,18 @@ export function createParentNotifications({userId,browser=window,request=notific
   }
   return {
     state:()=>state,
-    load:()=>check(true).catch(error=>publish({busy:false,message:error.message||'Reopen BodeeGuard and try again.',attention:marker()?'This device needs attention. Reopen notification settings to reconnect.':''})),
-    renew:()=>check().catch(error=>publish({busy:false,message:error.message||'Reopen BodeeGuard and try again.',attention:marker()?'This device needs attention. Reopen notification settings to reconnect.':''})),
+    dismissSetup(){
+      try{browser.localStorage.setItem(reminderKey,JSON.stringify({userId,until:Date.now()+7*86400000}));}catch{/* Optional reminder. */}
+      publish({setupDismissed:true});
+    },
+    load:()=>check(true).catch(error=>publish({busy:false,message:error.message||'Reopen BodeeGuard and try again.',attention:marker()||desktopApp?'This device needs attention. Reopen notification settings to reconnect.':''})),
+    renew:()=>check().catch(error=>publish({busy:false,message:error.message||'Reopen BodeeGuard and try again.',attention:marker()||desktopApp?'This device needs attention. Reopen notification settings to reconnect.':''})),
     enable(label=defaultNotificationLabel(browser)) {
       if(!supported||pending||disposed||!publicKey)return Promise.resolve();
       const permission=browser.Notification.requestPermission(); // Must be in the parent's click.
       return run(async()=>{
-        if(await permission!=='granted'){publish({message:'Allow BodeeGuard notifications in your browser or device settings to receive alerts.'});return;}
+        const resultPermission=await permission;publish({permission:resultPermission});
+        if(resultPermission!=='granted'){publish({message:'Allow BodeeGuard notifications in your browser or device settings to receive alerts.'});return;}
         const manager=(await registration(browser)).pushManager;let sub=await manager.getSubscription();
         if(sub&&(!state.enabled||marker()?.userId!==userId||!matchingKey(sub).matches)){await sub.unsubscribe();sub=null;}
         sub=sub||await manager.subscribe({userVisibleOnly:true,applicationServerKey:matchingKey(null).expected});
@@ -104,7 +123,7 @@ export function createParentNotifications({userId,browser=window,request=notific
         publish({enabled:true,attention:'',message:'Message notifications are on for this device.'});
       });
     },
-    disable(){return run(async()=>{await stopParentPhoneNotifications({browser,userId,request});publish({enabled:false,attention:'',deviceId:null,message:'Message notifications are off for this device.'});try{update(await call('devices'));}catch{/* Local removal succeeded even while offline. */}});},
+    disable(){this.dismissSetup();return run(async()=>{await stopParentPhoneNotifications({browser,userId,request});publish({enabled:false,attention:'',deviceId:null,message:'Message notifications are off for this device.'});try{update(await call('devices'));}catch{/* Local removal succeeded even while offline. */}});},
     revoke(deviceId){return run(async()=>{
       update(await call('revoke',null,{deviceId}));
       if(deviceId===state.deviceId){await stopParentPhoneNotifications({browser,userId,request});publish({enabled:false,deviceId:null,attention:''});}

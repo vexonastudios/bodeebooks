@@ -2,18 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const { createParentNotifications,stopParentPhoneNotifications } = await import('data:text/javascript;base64,' + fs.readFileSync('app/guard/dashboard/parent-notifications-client.js').toString('base64'));
+const { createParentNotifications,stopParentPhoneNotifications,defaultNotificationLabel } = await import('data:text/javascript;base64,' + fs.readFileSync('app/guard/dashboard/parent-notifications-client.js').toString('base64'));
 function fixture({ ios = false, standalone = true, permission = 'default', owner = null } = {}) {
   const calls = [], states = [], data = new Map(); if (owner) data.set('bodeeguard-phone-notifications', JSON.stringify({ userId: owner, renewed: 0 }));
   const key = Buffer.alloc(65, 4), publicKey = key.toString('base64url');
-  const state = { sub: null, permissionCalls: 0, subscriptions: 0, unsubscriptions: 0, offline: false, revoked: false };
+  const state = { sub: null, permissionCalls: 0, subscriptions: 0, unsubscriptions: 0, offline: false, revoked: false, owned: true, configured: true };
   const sub = () => ({ options: { applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) }, toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/fixture', keys: {} }), unsubscribe: async () => { state.unsubscriptions++; state.sub = null; return true; } });
   const manager = { getSubscription: async () => state.sub, subscribe: async options => { assert.equal(options.userVisibleOnly, true); assert.deepEqual(Buffer.from(options.applicationServerKey), key); state.sub = sub(); state.subscriptions++; return state.sub; } };
   if (owner) state.sub = sub();
   const browser = { document: { hidden: false }, Notification: { permission, requestPermission: () => { state.permissionCalls++; browser.Notification.permission = 'granted'; return Promise.resolve('granted'); } }, PushManager: {},
     navigator: { userAgent: ios ? 'iPhone' : 'Chrome', platform: 'fixture', serviceWorker: { ready: Promise.resolve({ pushManager: manager }),getRegistration:async()=>({pushManager:manager}) } },
     matchMedia: () => ({ matches: standalone }), atob, localStorage: { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) } };
-  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); return {supported:true,publicKey,deviceId:'a'.repeat(64),devices:owner||state.sub?[{id:'a'.repeat(64),label:'Phone',revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
+  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); return {supported:state.configured,publicKey:state.configured?publicKey:null,deviceId:'a'.repeat(64),devices:state.owned&&(owner||state.sub)?[{id:'a'.repeat(64),label:'Phone',revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
   const client = createParentNotifications({ userId: 'parent', browser, request, onChange: value => states.push(value) });
   return { client, browser, state, calls, states, data,request };
 }
@@ -41,7 +41,7 @@ test('switching parent accounts invalidates the old device and does not opt the 
 });
 test('turning notifications off invalidates the local endpoint even when the server is unreachable', async () => {
   const f = fixture({ permission: 'granted', owner: 'parent' }); f.state.offline = true;
-  await f.client.disable(); assert.equal(f.state.unsubscriptions, 1); assert.equal(f.client.state().enabled, false); assert.equal(f.data.size, 0);
+  await f.client.disable(); assert.equal(f.state.unsubscriptions, 1); assert.equal(f.client.state().enabled, false); assert.equal(f.data.has('bodeeguard-phone-notifications'), false);assert.equal(f.client.state().setupDismissed,true);
 });
 function worker() {
   const handlers = new Map(), notifications = [], opened = [], posted = []; let tabs = [];
@@ -137,4 +137,46 @@ test('chat closure is a bounded same-origin keepalive request with no subscripti
     await notificationRequest('view',null,'parent',{deviceId:'a'.repeat(64),viewId:'fixture',studentId:'child'});
     assert.equal(captured.keepalive,false);
   }finally{globalThis.fetch=previous;}
+});
+
+
+test('desktop installation exposes setup without silently enrolling or requesting permission',async()=>{
+  const f=fixture();f.browser.navigator.userAgent='Windows Chrome/140.0.0.0';await f.client.load();
+  assert.equal(f.client.state().desktopApp,true);assert.equal(f.client.state().ready,true);
+  assert.equal(f.client.state().enabled,false);assert.equal(f.client.state().permission,'default');
+  assert.deepEqual(f.calls.map(c=>c.operation),['status']);assert.equal(f.state.permissionCalls,0);assert.equal(f.state.subscriptions,0);
+  f.client.dismissSetup();assert.equal(f.client.state().setupDismissed,true);
+  const again=createParentNotifications({userId:'parent',browser:f.browser,request:f.request});assert.equal(again.state().setupDismissed,true);
+  const other=createParentNotifications({userId:'different-parent',browser:f.browser,request:f.request});assert.equal(other.state().setupDismissed,false);
+  f.data.set('bodeeguard-notification-reminder',JSON.stringify({userId:'parent',until:Date.now()-1}));
+  assert.equal(createParentNotifications({userId:'parent',browser:f.browser,request:f.request}).state().setupDismissed,false);
+  assert.equal(defaultNotificationLabel(f.browser),'Windows · Chrome');
+  f.browser.navigator.userAgent+=' Edg/140.0.0.0';assert.equal(defaultNotificationLabel(f.browser),'Windows · Edge');
+  const phone=fixture({ios:true});await phone.client.load();assert.equal(phone.client.state().desktopApp,false);
+  const tab=fixture({standalone:false});await tab.client.load();assert.equal(tab.client.state().desktopApp,false);
+});
+
+test('lost local marker recovers and renews only an already permitted server-owned subscription',async()=>{
+  const f=fixture({owner:'parent',permission:'granted'});f.data.clear();await f.client.load();
+  assert.equal(f.client.state().enabled,true);assert.equal(JSON.parse(f.data.get('bodeeguard-phone-notifications')).userId,'parent');
+  assert.deepEqual(f.calls.map(c=>c.operation),['status','renew']);assert.equal(f.state.permissionCalls,0);assert.equal(f.state.subscriptions,0);assert.equal(f.state.unsubscriptions,0);
+  await f.client.renew();assert.equal(f.calls.length,2);
+});
+
+test('lost marker never enrolls revoked, foreign or denied devices and does not mistake offline status for approval',async()=>{
+  for(const mode of ['revoked','foreign','denied','offline','key']){
+    const f=fixture({owner:'parent',permission:mode==='denied'?'denied':'granted'});f.data.clear();
+    if(mode==='revoked')f.state.revoked=true;if(mode==='foreign')f.state.owned=false;if(mode==='offline')f.state.offline=true;
+    if(mode==='key')f.state.sub.options.applicationServerKey=new Uint8Array(65).buffer;
+    await f.client.load();assert.equal(f.client.state().enabled,false,mode);assert.equal(f.data.has('bodeeguard-phone-notifications'),false,mode);
+    assert.equal(f.state.permissionCalls,0);assert.equal(f.state.subscriptions,0);assert.ok(!f.calls.some(c=>c.operation==='renew'||c.operation==='subscribe'));
+    if(mode==='revoked'||mode==='foreign')assert.equal(f.state.unsubscriptions,1);
+    if(mode==='denied'||mode==='offline')assert.ok(f.client.state().attention);
+  }
+});
+
+test('denied permission and unavailable delivery are explicit and cannot silently enable desktop alerts',async()=>{
+  const f=fixture({permission:'denied'});await f.client.load();assert.match(f.client.state().attention,/blocked for this computer/);
+  const off=fixture();off.state.configured=false;await off.client.load();assert.equal(off.client.state().ready,false);await off.client.enable();
+  assert.equal(off.state.permissionCalls,0);assert.equal(off.state.subscriptions,0);assert.match(off.client.state().message,/not available/);
 });

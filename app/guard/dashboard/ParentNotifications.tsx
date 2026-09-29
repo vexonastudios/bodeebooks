@@ -14,7 +14,7 @@ export default function ParentNotifications() {
   const client=useRef<ReturnType<typeof createParentNotifications>|null>(null),dialog=useRef<HTMLDialogElement>(null);
   const [open,setOpen]=useState(false),[dismissed,setDismissed]=useState(''),[label,setLabel]=useState('This device');
   const [replies,setReplies]=useState<NotificationDraft[]>([]);
-  const [state,setState]=useState({supported:false,enabled:false,busy:true,message:'',iosInstall:false,attention:'',devices:[] as Device[],unread:[] as Unread[],deviceId:null as string|null});
+  const [state,setState]=useState({supported:false,desktopApp:false,ready:false,permission:'default',setupDismissed:false,enabled:false,busy:true,message:'',iosInstall:false,attention:'',devices:[] as Device[],unread:[] as Unread[],deviceId:null as string|null});
   useEffect(()=>{if(open)dialog.current?.showModal();},[open]);
   useEffect(()=>{
     if(!isLoaded)return;
@@ -95,9 +95,16 @@ export default function ParentNotifications() {
     return()=>{presence?.dispose();controller.dispose();client.current=null;window.removeEventListener('message',request);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);window.removeEventListener('focus',visible);window.removeEventListener('blur',blur);window.removeEventListener('pagehide',hidden);window.removeEventListener('pageshow',visible);navigator.serviceWorker?.removeEventListener('message',notification);};
   },[userId]);
   const openSettings=()=>{setOpen(true);void client.current?.load();};
+  const enableHere=()=>void client.current?.enable(label).then(()=>setOpen(true));
+  const suggestSetup=state.desktopApp&&state.supported&&state.ready&&!state.enabled&&!state.busy&&!state.setupDismissed&&state.permission!=='denied'&&!state.attention;
   const reply = replies.find(item=>item.accountUserId===userId);
   return <>
     {reply&&<NotificationReply key={reply.replyId} draft={reply} done={()=>setReplies(items=>items.filter(item=>item.replyId!==reply.replyId))} />}
+    {!open&&suggestSetup&&<aside className={styles.notificationSetup} aria-label="Desktop message notifications">
+      <Bell size={22} aria-hidden="true"/><div><strong>Get alerts from your kids</strong><span>Enable message notifications on this computer.</span></div>
+      <button type="button" onClick={enableHere}>Enable notifications</button>
+      <button type="button" onClick={()=>client.current?.dismissSetup()}>Not now</button>
+    </aside>}
     {!open&&state.attention&&dismissed!==state.attention&&<aside className={styles.notificationWarning} role="status">
       <AlertTriangle size={20} aria-hidden="true"/><span>{state.attention}</span><button type="button" onClick={openSettings}>Review</button>
       <button type="button" aria-label="Dismiss notification reminder" onClick={()=>setDismissed(state.attention)}><X size={18}/></button>
@@ -106,19 +113,26 @@ export default function ParentNotifications() {
       <section className={[styles.installCard,styles.notificationCard].join(' ')}>
         <div className={styles.notificationHeading}><Bell size={26} aria-hidden="true"/><h2 id="phone-notifications-title">Message notifications</h2></div>
         <p>Get desktop or phone alerts when your children send messages. Message contents stay off your lock screen.</p>
+        {state.desktopApp&&<p className={styles.notificationHint}>Installing BodeeGuard and enabling alerts are separate steps. This computer needs its own notification permission, even if alerts already work on your phone.</p>}
         <p className={styles.notificationHint}>Chrome and Edge on Windows can offer a quick reply in the alert. On other devices, tap the notification to open that child’s conversation. Replies require your parent sign-in.</p>
         {state.attention&&<p className={styles.notificationAttention} role="status">{state.attention}</p>}
         {state.iosInstall?<p>Add BodeeGuard to your Home Screen and open that icon to enable phone alerts.</p>:!state.supported?<p>Use Chrome or Edge on desktop, Chrome on Android, or the Home Screen app on iPhone for notifications.</p>:<>
           <p className={styles.notificationStatus}>{state.enabled?'On for this device':'Off for this device'}</p>
           {!state.enabled&&<label className={styles.notificationLabel}>Device name<input maxLength={60} value={label} onChange={event=>setLabel(event.target.value)} autoComplete="off"/></label>}
           <div className={styles.notificationActions}>
-            <button type="button" disabled={state.busy} onClick={()=>void(state.enabled?client.current?.disable():client.current?.enable(label))}>
+            <button type="button" disabled={state.busy||!state.enabled&&!state.ready} onClick={()=>void(state.enabled?client.current?.disable():client.current?.enable(label))}>
               {state.enabled?<BellOff size={18}/>:<Bell size={18}/>} {state.enabled?'Turn off':'Enable notifications'}
             </button>
             {state.enabled&&<button type="button" disabled={state.busy} onClick={()=>void client.current?.test()}><Send size={18}/>Send test notification</button>}
           </div>
         </>}
         <p role="status" aria-live="polite">{state.busy?'Updating notification settings…':state.message}</p>
+        {state.desktopApp&&<details className={styles.installSteps}>
+          <summary>If the test alert does not appear</summary>
+          <p>Allow notifications for guard.bodeebooks.com in the browser that installed this app. In Windows Settings → System → Notifications, allow BodeeGuard or that browser and turn off Do not disturb.</p>
+          <p>Keep BodeeGuard open or minimized while checking. Alerts while the app is closed depend on your browser’s background settings.</p>
+          <a href="https://support.microsoft.com/en-us/windows/experience/notifications-and-do-not-disturb-in-windows" target="_blank" rel="noopener noreferrer">Windows notification help</a>
+        </details>}
         <h3 className={styles.notificationSubheading}><Smartphone size={18}/>Your notification devices</h3>
         <p className={styles.notificationHint}>Turn off an old or lost device here. This list is for your parent account.</p>
         <div className={styles.notificationDevices}>

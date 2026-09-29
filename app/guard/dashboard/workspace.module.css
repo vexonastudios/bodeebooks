@@ -49,3 +49,13 @@
 .notificationLabel textarea { box-sizing: border-box; width: 100%; resize: vertical; padding: 12px; border: 1px solid #596078; border-radius: 9px; background: #090d1e; color: #fff; font: 16px/1.5 system-ui; }
 .notificationDevice { padding: 14px; border: 1px solid #38435a; border-radius: 12px; }
 .notificationDevice small { display: block; color: #b4bfd2; margin-bottom: 12px; }
+
+.notificationSetup { position: fixed; z-index: 190; bottom: 24px; right: 24px; max-width: min(680px,calc(100vw - 48px)); box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px; border: 1px solid #8177cb; border-radius: 14px; background: #20223d; color: #f8fafc; font: 14px/1.5 system-ui; box-shadow: 0 8px 30px #0006; }
+.notificationSetup > svg { flex-shrink: 0; color: #c4b5fd; }
+.notificationSetup strong, .notificationSetup span { display: block; }
+.notificationSetup span { color: #b4bfd2; }
+.notificationSetup button { min-height: 44px; border: 1px solid #8177cb; border-radius: 8px; color: #fff; background: #5952ad; padding: 10px 14px; font: 600 14px system-ui; cursor: pointer; }
+.notificationSetup button:last-child { background: transparent; }
+.notificationSetup button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.notificationCard a { color: #c4b5fd; }
+@media (max-width: 900px) { .notificationSetup { bottom: max(90px,env(safe-area-inset-bottom)); } }
