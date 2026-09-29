@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.267": {
+    "title": "Keep typing after sending a message",
+    "sections": [
+      {
+        "heading": "Version 1.2.267",
+        "headline": "Send another message without clicking the box",
+        "summary": "After Enter or Send confirms a message, the cursor returns to that conversation’s message field.",
+        "highlights": [
+          "Type several messages in a row from the parent dashboard.",
+          "The child Messages composer behaves the same way.",
+          "Switching conversations or clicking another control during a send keeps your new focus."
+        ]
+      }
+    ]
+  },
   "1.2.265": {
   "title": "Put a child computer to sleep remotely",
   "sections": [
