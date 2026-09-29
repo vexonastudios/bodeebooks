@@ -187,6 +187,8 @@ async function dismissVideoFlag(id) {
 // Shared students list (loaded once)
 let _students = [];
 let _channelSyncPollTimer = null;
+let _channelSyncInFlight = false;
+const _channelSyncPaused = new Map();
 
 async function loadStudents() {
   try {
@@ -504,8 +506,30 @@ async function loadVideoChannels() {
 async function loadApprovedChannels() {
   try {
     const response = await fetch(`${API}/video/channels`, { headers: { 'x-kiosk-key': apiKey() } });
-    renderChannelList(await response.json());
+    const channels = await response.json();
+    if (!response.ok || !Array.isArray(channels)) throw new Error(channels.error || 'Could not load channels.');
+    renderChannelList(channels);
+    const pending = channels.find(channel => channel.cloud_import_batches &&
+      ['pending', 'syncing', 'screening'].includes(channel.sync_status) && !_channelSyncPaused.has(channel.id));
+    if (pending && !_channelSyncInFlight) continueChannelImport(pending.id);
   } catch(e) { logger.warn('video', 'Failed to load video channels', e); }
+}
+
+async function continueChannelImport(id) {
+  if (_channelSyncInFlight) return;
+  _channelSyncInFlight = true;
+  try {
+    const response = await fetch(`${API}/video/channels/${id}/sync`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ continue: true })
+    });
+    const value = await response.json();
+    if (!response.ok) throw new Error(value.error || 'Channel import paused. Retry Sync.');
+  } catch (error) {
+    _channelSyncPaused.set(id, error.message || 'Channel import paused. Retry Sync.');
+  } finally {
+    _channelSyncInFlight = false;
+    loadApprovedChannels();
+  }
 }
 
 async function addChannel() {
@@ -533,7 +557,7 @@ async function addChannel() {
     document.getElementById('channel-name-input').value = '';
     document.getElementById('channel-id-input').value = '';
     loadVideoChannels();
-    if (window.showToast) window.showToast('Channel added. BodeeGuard is importing and screening the complete channel in the background.');
+    if (window.showToast) window.showToast(result.sync_status === 'ready' ? 'Channel added and ready.' : 'Channel added. Keep this dashboard open to finish importing; you can resume later.');
   } catch(e) {
     if (window.showToast) window.showToast(e.message || 'Failed to add channel.', true);
   } finally {
@@ -551,10 +575,11 @@ function renderChannelList(channels) {
     return;
   }
 
-  const hasActiveSync = channels.some(channel => ['pending', 'syncing', 'screening'].includes(channel.sync_status || 'pending'));
+  const hasActiveSync = channels.some(channel => !_channelSyncPaused.has(channel.id) && ['pending', 'syncing', 'screening'].includes(channel.sync_status || 'pending'));
   if (hasActiveSync) _channelSyncPollTimer = setTimeout(loadApprovedChannels, 2500);
 
   const describeSync = channel => {
+    if (_channelSyncPaused.has(channel.id)) return { color: '#f87171', text: _channelSyncPaused.get(channel.id) + ' Your imported videos are saved.' };
     const status = channel.sync_status || 'pending';
     const processed = Number(channel.sync_processed_count || 0);
     const total = Number(channel.source_video_count || 0);
@@ -563,7 +588,7 @@ function renderChannelList(channels) {
       const unavailable = Number(channel.unavailable_video_count || 0);
       return {
         color: '#34d399',
-        text: `${playable.toLocaleString()} playable video${playable === 1 ? '' : 's'}${total ? ` from ${total.toLocaleString()} public uploads` : ''}${unavailable ? ` · ${unavailable.toLocaleString()} unavailable skipped` : ''}`
+        text: `${playable.toLocaleString()} playable video${playable === 1 ? '' : 's'}${total ? ` from ${total.toLocaleString()} public uploads` : ''}${unavailable ? ` · ${unavailable.toLocaleString()} unavailable skipped` : ''}${channel.exclude_shorts !== 0 && channel.shorts_video_count ? ` · ${Number(channel.shorts_video_count).toLocaleString()} Shorts hidden` : ''}${channel.exclude_shorts !== 0 && channel.unverified_video_count ? ` · ${Number(channel.unverified_video_count).toLocaleString()} awaiting Shorts verification` : ''}`
       };
     }
     if (status === 'syncing') {
@@ -580,7 +605,7 @@ function renderChannelList(channels) {
 
   list.innerHTML = channels.map(ch => {
     const sync = describeSync(ch);
-    const syncActive = ['pending', 'syncing', 'screening'].includes(ch.sync_status || 'pending');
+    const syncActive = !_channelSyncPaused.has(ch.id) && ['pending', 'syncing', 'screening'].includes(ch.sync_status || 'pending');
     return `
     <div style="display:flex; align-items:center; gap:12px; padding:12px; background:rgba(255,255,255,0.03); border:1px solid ${ch.is_global ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.07)'}; border-radius:10px;">
       <div style="width:48px;height:48px;background:rgba(99,102,241,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -608,7 +633,7 @@ function renderChannelList(channels) {
         </a>
         <button onclick="window._channelSync('${ch.id}')" ${syncActive ? 'disabled' : ''}
           style="font-size:11px;padding:3px 9px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#7dd3fc;border-radius:6px;cursor:${syncActive ? 'wait' : 'pointer'};opacity:${syncActive ? '.55' : '1'};">
-          ${syncActive ? 'Syncing…' : 'Sync Now'}
+          ${syncActive ? 'Syncing…' : _channelSyncPaused.has(ch.id) ? 'Retry Sync' : 'Sync Now'}
         </button>
         <button onclick="window._channelManageExclusions('${ch.id}')"
           style="font-size:11px;padding:3px 9px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#fbbf24;border-radius:6px;cursor:pointer;">
@@ -643,17 +668,26 @@ window._channelToggleShorts = async (id, exclude_shorts) => {
 };
 
 window._channelSync = async id => {
+  if (_channelSyncInFlight) return;
+  _channelSyncInFlight = true;
+  const resume = _channelSyncPaused.has(id);
+  _channelSyncPaused.delete(id);
   try {
     const response = await fetch(`${API}/video/channels/${id}/sync`, {
       method: 'POST',
-      headers: authHeaders()
+      headers: authHeaders(),
+      body: JSON.stringify({ continue: resume })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Could not start channel sync');
     loadApprovedChannels();
-    if (window.showToast) window.showToast(result.queued ? 'Complete channel sync started.' : 'That channel is already syncing.');
+    if (window.showToast) window.showToast(result.sync_status === 'ready' ? 'Channel is up to date.' : 'Channel import started. Keep this dashboard open to finish.');
   } catch (error) {
+    _channelSyncPaused.set(id, error.message || 'Could not start channel sync.');
     if (window.showToast) window.showToast(error.message || 'Could not start channel sync.', true);
+  } finally {
+    _channelSyncInFlight = false;
+    loadApprovedChannels();
   }
 };
 
