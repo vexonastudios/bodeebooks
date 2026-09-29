@@ -34,7 +34,7 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
       const progress=subjectProgress(snapshot,student.id,subject.id);
       const claim=snapshot.monitoring?.completions?.find(c=>c.student_id===student.id&&c.subject_id===subject.id);
       const portal=subject.isSchoolPortal===true;
-      const module=subject.kind==='activity'&&({'app://spelling':'spelling','app://science-spelling':'spelling','app://vocabulary':'vocabulary','app://poems':'poems'})[subject.url];
+      const module=subject.kind==='activity'&&({'app://spelling':'spelling','app://vocabulary':'vocabulary','app://poems':'poems'})[subject.url];
       const curriculum=snapshot.monitoring?.date&&snapshot.monitoring.date===snapshot.activityDate
         ? snapshot.monitoring.requirements?.find(row=>row.student_id===student.id&&row.module===module) : null;
       const plan=assignmentFor(subject,student.id)?.dailyPlan||subject.dailyPlan;

@@ -87,7 +87,7 @@
     "renderer/lib/lucide.min.js": "9723deed8adf7dbc3a2579927d7b724e44001ba12280025d66defc57d1cd8316",
     "reference/lan/renderer/admin.html": "09c25952f33f231e6488b6db437efb76d2cc0d87d66b2308e9a0e932125fdebf",
     "shared/adminWorkspaceTemplate.js": "1f6d136ec53cb6eb561bfa1bdf84b3bfb51769d0cb9fcacb493e7bb08e82400d",
-    "renderer/js/admin/cloud-monitoring.js": "6ae856df9ca509b2336361f92537e00cda9c4fe8894f9ad79d8a3c6d353c19c9",
+    "renderer/js/admin/cloud-monitoring.js": "6cab0e7ee895e2ba3f0401dba1292e45b9a8158598a237f181deeba2515bbca3",
     "renderer/css/admin/cloud-monitoring.css": "00e5993ab147ac61136b97af56112e9e6537f74f3a577ca24ac5421e910e2a05",
     "renderer/js/admin/cloud-activity-colors.js": "6eec5abb3a358e3eaf06f1ccdaf13d0c385973c14d0283befbb33771e72e395f",
     "renderer/js/admin/cloud-retention.js": "b7f467bc7dcd847516f68b0d327a3a627b48f6820fb7edc5774ca4f2f43827ee",
