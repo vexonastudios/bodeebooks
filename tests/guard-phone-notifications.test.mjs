@@ -6,14 +6,14 @@ const { createParentNotifications,stopParentPhoneNotifications,defaultNotificati
 function fixture({ ios = false, standalone = true, permission = 'default', owner = null } = {}) {
   const calls = [], states = [], data = new Map(); if (owner) data.set('bodeeguard-phone-notifications', JSON.stringify({ userId: owner, renewed: 0 }));
   const key = Buffer.alloc(65, 4), publicKey = key.toString('base64url');
-  const state = { sub: null, permissionCalls: 0, subscriptions: 0, unsubscriptions: 0, offline: false, revoked: false, owned: true, configured: true };
+  const state = { sub: null, permissionCalls: 0, subscriptions: 0, unsubscriptions: 0, offline: false, revoked: false, owned: true, configured: true, messagePreview: false };
   const sub = () => ({ options: { applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) }, toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/fixture', keys: {} }), unsubscribe: async () => { state.unsubscriptions++; state.sub = null; return true; } });
   const manager = { getSubscription: async () => state.sub, subscribe: async options => { assert.equal(options.userVisibleOnly, true); assert.deepEqual(Buffer.from(options.applicationServerKey), key); state.sub = sub(); state.subscriptions++; return state.sub; } };
   if (owner) state.sub = sub();
   const browser = { document: { hidden: false }, Notification: { permission, requestPermission: () => { state.permissionCalls++; browser.Notification.permission = 'granted'; return Promise.resolve('granted'); } }, PushManager: {},
     navigator: { userAgent: ios ? 'iPhone' : 'Chrome', platform: 'fixture', serviceWorker: { ready: Promise.resolve({ pushManager: manager }),getRegistration:async()=>({pushManager:manager}) } },
     matchMedia: () => ({ matches: standalone }), atob, localStorage: { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) } };
-  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); return {supported:state.configured,publicKey:state.configured?publicKey:null,deviceId:'a'.repeat(64),devices:state.owned&&(owner||state.sub)?[{id:'a'.repeat(64),label:'Phone',revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
+  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); if(operation==='preview')state.messagePreview=details.messagePreview; return {supported:state.configured,publicKey:state.configured?publicKey:null,deviceId:'a'.repeat(64),devices:state.owned&&(owner||state.sub)?[{id:'a'.repeat(64),label:'Phone',messagePreview:state.messagePreview,revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
   const client = createParentNotifications({ userId: 'parent', browser, request, onChange: value => states.push(value) });
   return { client, browser, state, calls, states, data,request };
 }
@@ -45,7 +45,7 @@ test('turning notifications off invalidates the local endpoint even when the ser
 });
 function worker() {
   const handlers = new Map(), notifications = [], opened = [], posted = []; let tabs = [];
-  const self = { location: { origin: 'https://guard.bodeebooks.com' }, addEventListener: (name, handler) => handlers.set(name, handler),
+  const self = { crypto:{randomUUID:()=> '22222222-2222-4222-8222-222222222222'}, location: { origin: 'https://guard.bodeebooks.com' }, addEventListener: (name, handler) => handlers.set(name, handler),
     navigator:{setAppBadge:async value=>{self.badge=value;},clearAppBadge:async()=>{self.badge=0;}}, registration: { getNotifications:async()=>notifications.map(row=>row[1]),showNotification: async (...args) => {args[1].close=()=>{args[1].closed=true;};notifications.push(args);} }, clients: { matchAll: async () => tabs, openWindow: async url => opened.push(url) } };
   vm.runInNewContext(fs.readFileSync('public/guard-parent-sw.js', 'utf8'), { self, URL, Response });
   return { self,notifications, opened, posted, setTabs: value => { tabs = value; },
@@ -179,4 +179,38 @@ test('denied permission and unavailable delivery are explicit and cannot silentl
   const f=fixture({permission:'denied'});await f.client.load();assert.match(f.client.state().attention,/blocked for this computer/);
   const off=fixture();off.state.configured=false;await off.client.load();assert.equal(off.client.state().ready,false);await off.client.enable();
   assert.equal(off.state.permissionCalls,0);assert.equal(off.state.subscriptions,0);assert.match(off.client.state().message,/not available/);
+});
+
+
+test('preview preferences apply only to this signed-in enabled device and report failures without toggling',async()=>{
+  const f=fixture({owner:'parent',permission:'granted'});await f.client.load();
+  await f.client.setPreview(true);
+  assert.deepEqual(f.calls.at(-1),{operation:'preview',subscription:null,userId:'parent',details:{deviceId:'a'.repeat(64),messagePreview:true}});
+  assert.equal(f.client.state().devices[0].messagePreview,true);
+  f.state.offline=true;await f.client.setPreview(false);assert.equal(f.client.state().devices[0].messagePreview,true);
+  f.state.offline=false;await f.client.setPreview(false);assert.equal(f.client.state().devices[0].messagePreview,false);
+  const off=fixture();await off.client.load();const count=off.calls.length;await off.client.setPreview(true);
+  assert.equal(off.calls.length,count);assert.match(off.client.state().message,/Enable notifications/);
+});
+
+test('opted-in real alerts show bounded names and messages, keep quick reply, and retain no preview in notification data',async()=>{
+  const w=worker(),studentId='11111111-1111-4111-8111-111111111111';
+  await w.event('push',{data:{json:()=>({type:'message',studentId,accountUserId:'parent',sequence:'12',unread:2,totalUnread:2,preview:{studentName:'Fixture\nChild\u202e',message:'I need help\n'+ 'x'.repeat(200)}})}});
+  const [title,options]=w.notifications[0];assert.equal(title,'Fixture Child · BodeeGuard');
+  assert.equal(options.body.length,160);assert.ok(options.body.startsWith('I need help '));assert.ok(options.body.endsWith('…'));
+  assert.equal(options.actions[0].type,'text');assert.equal(options.actions[0].action,'reply');
+  assert.equal(options.data.studentId,studentId);assert.ok(!JSON.stringify(options.data).includes('Fixture'));assert.ok(!JSON.stringify(options.data).includes('I need help'));
+  await w.event('push',{data:{json:()=>({type:'test',studentId,accountUserId:'parent',preview:{studentName:'Fixture Child',message:'Private text'}})}});
+  assert.equal(w.notifications[1][0],'BodeeGuard');assert.equal(w.notifications[1][1].actions.length,0);assert.ok(!JSON.stringify(w.notifications[1]).includes('Private text'));
+  await w.event('push',{data:{json:()=>({type:'message',studentId:'invalid',accountUserId:'parent',preview:{studentName:'Fixture Child',message:'Private text'}})}});
+  assert.equal(w.notifications[2][0],'BodeeGuard');assert.ok(!JSON.stringify(w.notifications[2]).includes('Private text'));
+});
+
+test('Windows help is available in ordinary browser windows as well as the installed PWA, but not on mobile',()=>{
+  for(const standalone of [true,false]){
+    const f=fixture({standalone});f.client.dispose();f.browser.navigator.userAgent='Windows Chrome/140';
+    const client=createParentNotifications({userId:'parent',browser:f.browser,request:f.request});
+    assert.equal(client.state().windows,true);assert.equal(client.state().desktopApp,standalone);client.dispose();
+  }
+  assert.equal(fixture({ios:true}).client.state().windows,false);
 });

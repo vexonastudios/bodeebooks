@@ -6,7 +6,7 @@ import { createParentNotifications, defaultNotificationLabel, stopParentPhoneNot
 import { createConversationPresence } from "./conversation-presence.js";
 import styles from "./workspace.module.css";
 import NotificationReply, { type NotificationDraft } from "./NotificationReply";
-type Device={id:string;label:string;revokedAt:string|null;lastAcceptedAt:string|null;lastFailure:string|null};
+type Device={id:string;label:string;messagePreview?:boolean;revokedAt:string|null;lastAcceptedAt:string|null;lastFailure:string|null};
 type Unread={studentId:string;count:number;sequence:string};
 const validId=(value:unknown):value is string=>typeof value==='string'&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(value);
 export default function ParentNotifications() {
@@ -14,7 +14,7 @@ export default function ParentNotifications() {
   const client=useRef<ReturnType<typeof createParentNotifications>|null>(null),dialog=useRef<HTMLDialogElement>(null);
   const [open,setOpen]=useState(false),[dismissed,setDismissed]=useState(''),[label,setLabel]=useState('This device');
   const [replies,setReplies]=useState<NotificationDraft[]>([]);
-  const [state,setState]=useState({supported:false,desktopApp:false,ready:false,permission:'default',setupDismissed:false,enabled:false,busy:true,message:'',iosInstall:false,attention:'',devices:[] as Device[],unread:[] as Unread[],deviceId:null as string|null});
+  const [state,setState]=useState({supported:false,desktopApp:false,windows:false,ready:false,permission:'default',setupDismissed:false,enabled:false,busy:true,message:'',iosInstall:false,attention:'',devices:[] as Device[],unread:[] as Unread[],deviceId:null as string|null});
   useEffect(()=>{if(open)dialog.current?.showModal();},[open]);
   useEffect(()=>{
     if(!isLoaded)return;
@@ -112,13 +112,17 @@ export default function ParentNotifications() {
     {open&&<dialog ref={dialog} className={styles.installBackdrop} aria-labelledby="phone-notifications-title" onCancel={event=>{if(state.busy)event.preventDefault();else setOpen(false);}}>
       <section className={[styles.installCard,styles.notificationCard].join(' ')}>
         <div className={styles.notificationHeading}><Bell size={26} aria-hidden="true"/><h2 id="phone-notifications-title">Message notifications</h2></div>
-        <p>Get desktop or phone alerts when your children send messages. Message contents stay off your lock screen.</p>
+        <p>Get desktop or phone alerts when your children send messages. Choose whether alerts show your child’s name and a message preview.</p>
         {state.desktopApp&&<p className={styles.notificationHint}>Installing BodeeGuard and enabling alerts are separate steps. This computer needs its own notification permission, even if alerts already work on your phone.</p>}
-        <p className={styles.notificationHint}>Chrome and Edge on Windows can offer a quick reply in the alert. On other devices, tap the notification to open that child’s conversation. Replies require your parent sign-in.</p>
+        <p className={styles.notificationHint}>Chrome and Edge on Windows can offer a quick reply in the alert. On other devices, tap the notification to open that child’s conversation. Replies require your parent sign-in. Test alerts have no reply button.</p>
         {state.attention&&<p className={styles.notificationAttention} role="status">{state.attention}</p>}
         {state.iosInstall?<p>Add BodeeGuard to your Home Screen and open that icon to enable phone alerts.</p>:!state.supported?<p>Use Chrome or Edge on desktop, Chrome on Android, or the Home Screen app on iPhone for notifications.</p>:<>
           <p className={styles.notificationStatus}>{state.enabled?'On for this device':'Off for this device'}</p>
           {!state.enabled&&<label className={styles.notificationLabel}>Device name<input maxLength={60} value={label} onChange={event=>setLabel(event.target.value)} autoComplete="off"/></label>}
+          {state.enabled&&<label className={styles.notificationPreview}>
+            <input type="checkbox" checked={state.devices.find(device=>device.id===state.deviceId)?.messagePreview===true} disabled={state.busy} onChange={event=>void client.current?.setPreview(event.target.checked)}/>
+            <span>Show child name and message preview<small>For this device. Names and message text may also appear on its lock screen.</small></span>
+          </label>}
           <div className={styles.notificationActions}>
             <button type="button" disabled={state.busy||!state.enabled&&!state.ready} onClick={()=>void(state.enabled?client.current?.disable():client.current?.enable(label))}>
               {state.enabled?<BellOff size={18}/>:<Bell size={18}/>} {state.enabled?'Turn off':'Enable notifications'}
@@ -127,6 +131,12 @@ export default function ParentNotifications() {
           </div>
         </>}
         <p role="status" aria-live="polite">{state.busy?'Updating notification settings…':state.message}</p>
+        {state.windows&&<section className={styles.notificationWindows} aria-label="Windows notification settings">
+          <strong>No alert after sending a test?</strong>
+          <a className={styles.notificationSettingsLink} href="ms-settings:notifications">Open Windows notification settings</a>
+          <p className={styles.notificationHint}>Turn on Notifications at the top of that page. Then allow notification banners for BodeeGuard or the browser that installed it, and turn off Do not disturb.</p>
+          <p className={styles.notificationHint}>If the shortcut does not open, go to Windows Settings → System → Notifications.</p>
+        </section>}
         {state.desktopApp&&<details className={styles.installSteps}>
           <summary>If the test alert does not appear</summary>
           <p>Allow notifications for guard.bodeebooks.com in the browser that installed this app. In Windows Settings → System → Notifications, allow BodeeGuard or that browser and turn off Do not disturb.</p>
@@ -139,7 +149,11 @@ export default function ParentNotifications() {
           {state.devices.filter(device=>!device.revokedAt).map(device=><form key={device.id} className={styles.notificationDevice} onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget);void client.current?.rename(device.id,String(data.get('label')||''));}}>
             <label className={styles.notificationLabel}>{device.id===state.deviceId?'This device':'Device name'}<input name="label" defaultValue={device.label} maxLength={60} required aria-label={'Name for '+device.label}/></label>
             <small>{device.lastFailure?'Recent delivery needs attention':device.lastAcceptedAt?'Last alert accepted '+new Date(device.lastAcceptedAt).toLocaleString():'No alert accepted yet'}</small>
-            <div className={styles.notificationActions}><button type="submit" disabled={state.busy}><Save size={16}/>Save name</button><button type="button" disabled={state.busy} onClick={()=>void client.current?.revoke(device.id)}><BellOff size={16}/>Turn off device</button></div>
+            {state.enabled&&<label className={styles.notificationPreview}>
+            <input type="checkbox" checked={state.devices.find(device=>device.id===state.deviceId)?.messagePreview===true} disabled={state.busy} onChange={event=>void client.current?.setPreview(event.target.checked)}/>
+            <span>Show child name and message preview<small>For this device. Names and message text may also appear on its lock screen.</small></span>
+          </label>}
+          <div className={styles.notificationActions}><button type="submit" disabled={state.busy}><Save size={16}/>Save name</button><button type="button" disabled={state.busy} onClick={()=>void client.current?.revoke(device.id)}><BellOff size={16}/>Turn off device</button></div>
           </form>)}
           {!state.devices.some(device=>!device.revokedAt)&&<p>No notification devices connected to your account.</p>}
         </div>

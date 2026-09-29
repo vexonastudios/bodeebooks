@@ -620,3 +620,14 @@ test('school reward settings cross the authenticated bridge without accepting su
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
   assert.equal(calls.length,1);
 });
+
+
+test('notification preview preferences cross the authenticated parent bridge without supplied household or message text',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return {devices:[]};}});
+  const input={action:'phone-notifications',operation:'preview',accountUserId:'parent',deviceId:'a'.repeat(64),messagePreview:true,householdId:'forged',preview:{studentName:'forged',message:'forged'}};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls,[{path:'/notifications',body:{operation:'preview',accountUserId:'parent',deviceId:input.deviceId,messagePreview:true}}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.test'}))).status,403);
+  assert.equal(calls.length,1);
+});

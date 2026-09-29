@@ -4,6 +4,11 @@ const sequence = value => typeof value === 'string' && /^\d{1,19}$/.test(value) 
 const count = value => Number.isSafeInteger(value) && value >= 0 ? Math.min(value, 9999) : 0;
 const validAccount = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,200}$/.test(value);
 const recent = value => Number.isFinite(value) && value <= Date.now() + 60000 && Date.now() - value < 86400000;
+const previewText = (value, limit) => {
+  if (typeof value !== 'string') return '';
+  const chars = Array.from(value.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim());
+  return chars.length > limit ? chars.slice(0, limit - 1).join('') + '…' : chars.join('');
+};
 const replyJobs = new Map();
 function replyDraft(data) {
   return validAccount(data?.accountUserId) && validId(data?.studentId) && validId(data?.replyId) && recent(data.createdAt) &&
@@ -58,9 +63,12 @@ self.addEventListener('push', event => {
   const studentId = validId(data.studentId) ? data.studentId : '';
   const unread = count(data.unread), test = data.type === 'test';
   const replyId = !test && studentId && validAccount(data.accountUserId) ? self.crypto?.randomUUID?.() : undefined;
+  // Only the server's opt-in preview field is displayed; do not retain it in data.
+  const studentName = !test && data.type === 'message' && studentId && validAccount(data.accountUserId) ? previewText(data.preview?.studentName,80) : '';
+  const message = studentName ? previewText(data.preview?.message,160) : '';
   event.waitUntil(Promise.all([
-    self.registration.showNotification('BodeeGuard', {
-      body: test ? 'Notifications are working on this device.' : unread > 1 ? unread + ' unread messages from your child. Tap to open Messages.' : 'New message from your child. Tap to open Messages.',
+    self.registration.showNotification(studentName && message ? studentName + ' · BodeeGuard' : 'BodeeGuard', {
+      body: test ? 'Notifications are working on this device.' : studentName && message ? message : unread > 1 ? unread + ' unread messages from your child. Tap to open Messages.' : 'New message from your child. Tap to open Messages.',
       icon: '/guard-icons/bodeeguard-parent-192.png',
       tag: test ? 'bodeeguard-test' : 'bodeeguard-messages' + (studentId ? '-' + studentId : ''),
       renotify: true,

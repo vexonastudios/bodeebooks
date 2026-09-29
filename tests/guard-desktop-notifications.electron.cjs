@@ -25,7 +25,7 @@ modules['./NotificationReply'] = 'exports.__esModule=true;exports.default=()=>nu
 modules['./workspace.module.css'] = 'exports.__esModule=true;exports.default=new Proxy({},{get:(_,key)=>key});';
 modules['lucide-react'] = `const React=require('react');for(const name of ['Bell','BellOff','Send','X','Smartphone','Save','AlertTriangle'])exports[name]=props=>React.createElement('svg',{...props,width:props.size||24,height:props.size||24,viewBox:'0 0 24 24'},React.createElement('circle',{cx:12,cy:12,r:8,fill:'none',stroke:'currentColor'}));`;
 const bundle = Object.entries(modules).map(([id, source]) => `factories[${JSON.stringify(id)}]=function(module,exports,require){\n${source}\n};`).join('\n');
-let mode = 'setup', registered = false;
+let mode = 'setup', registered = false, messagePreview = false;
 const calls = [], errors = [];
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://fixture.local');
@@ -54,9 +54,10 @@ const server = http.createServer(async (req, res) => {
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = JSON.parse(raw); calls.push(body);
     if (body.operation === 'subscribe') registered = true;
-    const devices = registered || mode === 'recovery' ? [{id:'a'.repeat(64),label:'Windows · Chrome',revokedAt:null,lastAcceptedAt:null,lastFailure:null}] : [];
+    if (body.operation === 'preview') messagePreview = body.messagePreview;
+    const devices = registered || mode === 'recovery' ? [{id:'a'.repeat(64),label:'Windows · Chrome',messagePreview,revokedAt:null,lastAcceptedAt:null,lastFailure:null}] : [];
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({supported:true,publicKey:Buffer.alloc(65,4).toString('base64url'),deviceId:body.subscription?'a'.repeat(64):null,devices,unread:[],sent:true})); return;
+    res.end(JSON.stringify({supported:true,publicKey:Buffer.alloc(65,4).toString('base64url'),...(body.subscription?{deviceId:'a'.repeat(64)}:{}),devices,unread:[],sent:true})); return;
   }
   res.writeHead(404);res.end();
 });
@@ -79,12 +80,25 @@ const until = async (win, expression) => {
   await win.webContents.executeJavaScript("[...document.querySelectorAll('button')].find(x=>x.textContent.includes('Send test notification')).click()");
   await until(win,"document.querySelector('dialog').textContent.includes('Test accepted')");
   assert.equal(calls.filter(x=>x.operation==='test').length,1);
-  fs.mkdirSync(path.join(site,'.tmp/desktop-notifications-20260928'),{recursive:true});
-  fs.writeFileSync(path.join(site,'.tmp/desktop-notifications-20260928/desktop-notification-settings.png'),(await win.webContents.capturePage()).toPNG());
+  assert.equal(await win.webContents.executeJavaScript("document.querySelector('a[href=\"ms-settings:notifications\"]').textContent"),'Open Windows notification settings');
+  assert.ok(await win.webContents.executeJavaScript("document.querySelector('[aria-label=\"Windows notification settings\"]').textContent.includes('Turn on Notifications at the top')"));
+  assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').checked"),false);
+  await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').click()");
+  await until(win,"document.querySelector('.notificationPreview input').checked&&!document.querySelector('.notificationPreview input').disabled");
+  assert.equal(calls.filter(x=>x.operation==='preview').length,1);assert.equal(messagePreview,true);
+  fs.mkdirSync(path.join(site,'.tmp/notification-previews-20260929'),{recursive:true});
+  fs.writeFileSync(path.join(site,'.tmp/notification-previews-20260929/desktop-notification-settings.png'),(await win.webContents.capturePage()).toPNG());
   mode='recovery';registered=false;calls.length=0;await win.loadURL(base);await until(win,"Boolean(localStorage.getItem('bodeeguard-phone-notifications'))");
   assert.deepEqual(await win.webContents.executeJavaScript('({...fixture})'),{permissionCalls:0,subscriptions:0,unsubscriptions:0});
   assert.deepEqual(calls.filter(x=>x.operation!=='view').map(x=>x.operation),['status','renew']);assert.ok(calls.filter(x=>x.operation==='view').every(x=>x.studentId===null));
-  assert.equal(await win.webContents.executeJavaScript("Boolean(document.querySelector('[aria-label=\"Desktop message notifications\"]'))"),false);
+  // Supply the trusted dashboard frame identity in this isolated UI fixture.
+  await win.webContents.executeJavaScript("window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:document.querySelector('iframe').contentWindow,data:{type:'bodeeguard-phone-notifications'}}))");
+  await until(win,"Boolean(document.querySelector('dialog[open]'))");
+  assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').checked"),true);
+  await win.setSize(390,844);
+  assert.ok(await win.webContents.executeJavaScript("document.querySelector('dialog section').scrollWidth<=document.querySelector('dialog section').clientWidth"));
+  fs.writeFileSync(path.join(site,'.tmp/notification-previews-20260929/phone-notification-settings.png'),(await win.webContents.capturePage()).toPNG());
+  win.setSize(1400,900);
   mode='foreign';registered=false;calls.length=0;await win.loadURL(base);await until(win,'fixture.unsubscriptions===1');
   assert.equal(await win.webContents.executeJavaScript('fixture.subscriptions'),0);assert.ok(!calls.some(x=>x.operation==='renew'));
   mode='blocked';calls.length=0;await win.loadURL(base);await until(win,"document.body.textContent.includes('blocked for this computer')");
@@ -92,7 +106,7 @@ const until = async (win, expression) => {
   await win.webContents.executeJavaScript("[...document.querySelectorAll('button')].find(x=>x.textContent==='Review').click()");await until(win,"Boolean(document.querySelector('dialog[open]'))");
   assert.ok(await win.webContents.executeJavaScript("document.querySelector('dialog').textContent.includes('If the test alert does not appear')"));
   mode='setup';registered=false;await win.loadURL(base);await until(win,"Boolean(document.querySelector('[aria-label=\"Desktop message notifications\"]'))");
-  fs.writeFileSync(path.join(site,'.tmp/desktop-notifications-20260928/desktop-notification-setup.png'),(await win.webContents.capturePage()).toPNG());
+  fs.writeFileSync(path.join(site,'.tmp/notification-previews-20260929/desktop-notification-setup.png'),(await win.webContents.capturePage()).toPNG());
   await win.webContents.executeJavaScript("[...document.querySelectorAll('button')].find(x=>x.textContent==='Not now').click()");
   await until(win,"!document.querySelector('[aria-label=\"Desktop message notifications\"]')");
   mode='dismissed';await win.loadURL(base);await until(win,'localStorage.getItem("bodeeguard-notification-reminder")!==null');
