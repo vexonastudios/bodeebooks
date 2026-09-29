@@ -26,9 +26,24 @@ export async function POST(request: Request) {
   // The account in the notification is only a comparison; never an authority.
   if (!input || input.accountUserId !== session.userId) return result({ error: 'Sign in with the parent account that received this notification.' }, 409);
   if (typeof input.studentId !== 'string' || !uuid.test(input.studentId) || typeof input.id !== 'string' || !uuid.test(input.id) || typeof input.body !== 'string' || !input.body.trim() || input.body.length > 2000) return result({ error: 'Use a reply of 1–2,000 characters.' }, 400);
+  const sequence = input.sequence;
+  if (sequence !== undefined && sequence !== '0' && (typeof sequence !== 'string' || !/^[1-9][0-9]{0,18}$/.test(sequence) || BigInt(sequence) >= BigInt('9223372036854775807'))) return result({ error: 'This notification has an invalid message reference. Open Messages to reply.' }, 400);
   try {
     const receipt = await cloudApi('/messages/send', { method: 'POST', body: JSON.stringify({ studentId: input.studentId, id: input.id, body: input.body.trim() }) }) as { saved?: boolean; id?: string; studentId?: string };
     if (receipt.saved !== true || receipt.id !== input.id || receipt.studentId !== input.studentId) return result({ error: 'Sending was not confirmed. Retry the same reply.' }, 503);
-    return result({ saved: true, id: receipt.id, studentId: receipt.studentId });
+    let read;
+    if (sequence && sequence !== '0') {
+      // Resolve only the child message shown in this notification. Paging before
+      // sequence+1 excludes newer arrivals, even if the reply took a long time.
+      // Use the existing authorized read API; never guess a read cursor or mark
+      // the latest message read merely because the parent sent a response.
+      const page = await cloudApi('/messages/list', { method: 'POST', body: JSON.stringify({ studentId: input.studentId, before: String(BigInt(sequence) + BigInt(1)) }) }) as { studentId?: string; messages?: {id: string; sequence: string; sender: string}[] };
+      const shown = page.studentId === input.studentId && page.messages?.find(message => message.sequence === sequence && message.sender === 'child' && uuid.test(message.id));
+      if (shown) {
+        read = await cloudApi('/notifications', { method: 'POST', body: JSON.stringify({ operation: 'read', accountUserId: session.userId, studentId: input.studentId, messageId: shown.id }) }) as { studentId?: string; throughSequence?: string; unread?: unknown[] };
+        if (read.studentId !== input.studentId || read.throughSequence !== sequence || !Array.isArray(read.unread)) throw new Error('Unread status was not confirmed. Retry the same reply.');
+      }
+    }
+    return result({ saved: true, id: receipt.id, studentId: receipt.studentId, ...(read ? { read } : {}) });
   } catch (error) { return result({ error: error instanceof CloudApiError ? error.message : 'Sending was not confirmed. Retry the same reply.' }, error instanceof CloudApiError ? error.status : 503); }
 }

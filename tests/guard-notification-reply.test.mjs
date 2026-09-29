@@ -37,13 +37,13 @@ test('quick replies require same-origin JSON, current parent account, bounded co
   receipt={ saved:true,id:'wrong',studentId }; assert.equal((await route.POST(request())).status,503);
 });
 function worker(fetch = async () => Response.json({saved:true,id,studentId})) {
-  const handlers = new Map(), notifications = [], opened = [], posted = []; let tabs=[];
+  const handlers = new Map(), notifications = [], opened = [], posted = [], badges = []; let tabs=[];
   const self = { crypto: { randomUUID:()=>id }, location:{origin:'https://guard.example'},
     addEventListener:(name,fn)=>handlers.set(name,fn),
     registration:{getNotifications:async()=>notifications.filter(n=>!n.closed),showNotification:async(title,options)=>{for(const n of notifications)if(n.tag===options.tag)n.closed=true;notifications.push({title,...options,close(){this.closed=true;}});}},
-    clients:{matchAll:async()=>tabs,openWindow:async url=>{opened.push(url);}},navigator:{} };
+    clients:{matchAll:async()=>tabs,openWindow:async url=>{opened.push(url);}},navigator:{setAppBadge:async value=>badges.push(value),clearAppBadge:async()=>badges.push(0)} };
   vm.runInNewContext(fs.readFileSync('public/guard-parent-sw.js','utf8'),{self,fetch,URL,Response,AbortSignal,Date,console});
-  return {notifications,opened,posted,setTabs:value=>{tabs=value;},event:async(name,event)=>{let work;handlers.get(name)({...event,waitUntil:promise=>{work=promise;}});await work;}};
+  return {notifications,opened,posted,badges,setTabs:value=>{tabs=value;},event:async(name,event)=>{let work;handlers.get(name)({...event,waitUntil:promise=>{work=promise;}});await work;}};
 }
 async function alert(w) { await w.event('push',{data:{json:()=>({type:'message',accountUserId:'parent',studentId,sequence:'7',unread:1,totalUnread:1})}}); return w.notifications.at(-1); }
 test('notification offers inline Reply only with account binding; unsupported inline input opens the conversation',async()=>{
@@ -56,7 +56,7 @@ test('inline reply sends exactly the typed content with the saved ID and require
   let requests=0;
   const w=worker(async(url,options)=>{
     requests++;assert.equal(url,'/guard/dashboard/notification-reply/');assert.equal(options.credentials,'same-origin');assert.equal(options.redirect,'error');assert.equal(options.cache,'no-store');
-    assert.deepEqual(JSON.parse(options.body),{accountUserId:'parent',studentId,id,body:'On my way'});return Response.json({saved:true,id,studentId});
+    assert.deepEqual(JSON.parse(options.body),{accountUserId:'parent',studentId,id,body:'On my way',sequence:'7'});return Response.json({saved:true,id,studentId});
   });
   const n=await alert(w);await w.event('notificationclick',{notification:n,action:'reply',reply:'On my way'});
   assert.equal(requests,1);assert.equal(w.notifications.at(-1).body,'Reply sent.');assert.equal(w.opened.length,0);
@@ -118,4 +118,84 @@ test('notification navigation waits for the authorized child list and ignores fo
   students=[{id:studentId}];nav.update();assert.deepEqual(opened,[studentId]);assert.deepEqual(navigated,['messages']);
   nav.update();assert.equal(opened.length,1);assert.equal(posted.at(-1).type,'bodeeguard-message-opened');
   assert.equal(buttons.length,2);buttons[0].click();assert.equal(posted.at(-1).type,'bodeeguard-phone-notifications');
+});
+
+test('a confirmed notification reply marks only its displayed child message read and returns authoritative unread state',async()=>{
+  const incomingId='33333333-3333-4333-8333-333333333333',calls=[];
+  const read={studentId,throughSequence:'7',unread:[{studentId,count:1,sequence:'8'}]};
+  const route=load('app/guard/dashboard/notification-reply/route.ts',{
+    '@clerk/nextjs/server':{auth:async()=>({isAuthenticated:true,userId:'parent'})},
+    '../cloud-api':{CloudApiError:class extends Error{},cloudApi:async(path,options)=>{
+      const body=JSON.parse(options.body);calls.push({path,body});
+      if(path==='/messages/send')return {saved:true,id,studentId};
+      if(path==='/messages/list')return {studentId,messages:[{id:incomingId,sequence:'7',sender:'child'}]};
+      if(path==='/notifications')return read;
+      assert.fail('Unexpected API request');
+    }}
+  });
+  const request=(sequence='7')=>new Request('https://guard.example/guard/dashboard/notification-reply/',{method:'POST',headers:{origin:'https://guard.example','Content-Type':'application/json'},body:JSON.stringify({accountUserId:'parent',studentId,id,body:'Reply',sequence})});
+  const response=await route.POST(request());assert.equal(response.status,200);assert.deepEqual((await response.json()).read,read);
+  assert.deepEqual(calls,[{path:'/messages/send',body:{studentId,id,body:'Reply'}},{path:'/messages/list',body:{studentId,before:'8'}},{path:'/notifications',body:{operation:'read',accountUserId:'parent',studentId,messageId:incomingId}}]);
+  for(const invalid of ['-1','7.5',7,'9223372036854775807',{},'x'])assert.equal((await route.POST(request(invalid))).status,400);
+  assert.equal(calls.length,3,'Invalid notification references cannot send or advance read state');
+});
+test('a read-sync failure keeps the same reply retry ID and cannot falsely confirm unread state',async()=>{
+  const saved=new Set(),messageId='33333333-3333-4333-8333-333333333333';let fail=true,reads=0;
+  const route=load('app/guard/dashboard/notification-reply/route.ts',{
+    '@clerk/nextjs/server':{auth:async()=>({isAuthenticated:true,userId:'parent'})},
+    '../cloud-api':{CloudApiError:class extends Error{},cloudApi:async(path,options)=>{
+      if(path==='/messages/send'){saved.add(JSON.parse(options.body).id);return {saved:true,id,studentId};}
+      if(path==='/messages/list')return {studentId,messages:[{id:messageId,sequence:'7',sender:'child'}]};
+      reads++;if(fail)throw Error('Temporary read failure');return {studentId,throughSequence:'7',unread:[]};
+    }}
+  });
+  const request=()=>new Request('https://guard.example/guard/dashboard/notification-reply/',{method:'POST',headers:{origin:'https://guard.example','Content-Type':'application/json'},body:JSON.stringify({accountUserId:'parent',studentId,id,body:'Reply',sequence:'7'})});
+  assert.equal((await route.POST(request())).status,503);fail=false;
+  assert.deepEqual((await (await route.POST(request())).json()).read,{studentId,throughSequence:'7',unread:[]});
+  assert.equal(saved.size,1);assert.equal(reads,2);
+});
+test('missing or retained-away notification messages never mark a newer or parent message read',async()=>{
+  let candidate={id,sequence:'8',sender:'child'},readCalls=0;
+  const route=load('app/guard/dashboard/notification-reply/route.ts',{
+    '@clerk/nextjs/server':{auth:async()=>({isAuthenticated:true,userId:'parent'})},
+    '../cloud-api':{CloudApiError:class extends Error{},cloudApi:async(path)=>{
+      if(path==='/messages/send')return {saved:true,id,studentId};
+      if(path==='/messages/list')return {studentId,messages:[candidate]};
+      readCalls++;assert.fail('No displayed child message to mark read');
+    }}
+  });
+  for(const message of [candidate,{id,sequence:'7',sender:'parent'}]){
+    candidate=message;
+    const request=new Request('https://guard.example/guard/dashboard/notification-reply/',{method:'POST',headers:{origin:'https://guard.example','Content-Type':'application/json'},body:JSON.stringify({accountUserId:'parent',studentId,id,body:'Reply',sequence:'7'})});
+    const response=await route.POST(request);assert.equal(response.status,200);assert.equal((await response.json()).read,undefined);
+  }
+  assert.equal(readCalls,0);
+});
+test('inline reply synchronizes the dashboard hint and OS badge while keeping a later message unread',async()=>{
+  const posted=[];let newer;
+  const w=worker(async()=>{
+    await w.event('push',{data:{json:()=>({type:'message',accountUserId:'parent',studentId,sequence:'8',unread:2,totalUnread:2})}});newer=w.notifications.at(-1);
+    return Response.json({saved:true,id,studentId,read:{studentId,throughSequence:'7',unread:[{studentId,count:1,sequence:'8'}]}});
+  });
+  w.setTabs([{url:'https://guard.example/dashboard/',postMessage:value=>posted.push(value)}]);
+  const n=await alert(w);await w.event('notificationclick',{notification:n,action:'reply',reply:'Reply to seven'});
+  assert.equal(w.badges.at(-1),1);assert.ok(!newer.closed,'Message eight arrived after the viewed notification and stays unread');
+  assert.equal(posted.at(-1).type,'bodeeguard-message-hint','Open dashboards fetch the changed authoritative unread cursor');
+});
+test('replying to the only unread message clears the badge and wakes all open dashboards',async()=>{
+  const posted=[],w=worker(async()=>Response.json({saved:true,id,studentId,read:{studentId,throughSequence:'7',unread:[]}}));
+  w.setTabs([{url:'https://guard.example/dashboard/',postMessage:value=>posted.push(value)}]);
+  await w.event('notificationclick',{notification:await alert(w),action:'reply',reply:'Reply'});
+  assert.equal(w.badges.at(-1),0);assert.equal(posted.at(-1).type,'bodeeguard-message-hint');
+});
+test('a successfully retried reply in the dashboard clears unread state, while discarding a draft cannot advance it',async()=>{
+  const posted=[],w=worker(async()=>{throw Error('Offline');});
+  w.setTabs([{url:'https://guard.example/dashboard/',postMessage:value=>posted.push(value)}]);
+  await w.event('notificationclick',{notification:await alert(w),action:'reply',reply:'Preserve reply'});
+  const source={url:'https://guard.example/dashboard/'};
+  await w.event('message',{source,data:{type:'bodeeguard-reply-complete',accountUserId:'parent',replyId:id,studentId,sequence:'7',read:{studentId,throughSequence:'7',unread:[]}}});
+  assert.equal(w.badges.at(-1),0);assert.equal(posted.at(-1).type,'bodeeguard-message-hint');
+  await alert(w);const before=w.badges.length;
+  await w.event('message',{source,data:{type:'bodeeguard-reply-complete',accountUserId:'parent',replyId:id,studentId,sequence:'7'}});
+  assert.equal(w.badges.length,before,'Discard does not clear unread alerts or badges');
 });

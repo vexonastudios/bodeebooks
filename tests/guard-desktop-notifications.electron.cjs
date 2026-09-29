@@ -25,13 +25,20 @@ modules['./NotificationReply'] = 'exports.__esModule=true;exports.default=()=>nu
 modules['./workspace.module.css'] = 'exports.__esModule=true;exports.default=new Proxy({},{get:(_,key)=>key});';
 modules['lucide-react'] = `const React=require('react');for(const name of ['Bell','BellOff','Send','X','Smartphone','Save','AlertTriangle'])exports[name]=props=>React.createElement('svg',{...props,width:props.size||24,height:props.size||24,viewBox:'0 0 24 24'},React.createElement('circle',{cx:12,cy:12,r:8,fill:'none',stroke:'currentColor'}));`;
 const bundle = Object.entries(modules).map(([id, source]) => `factories[${JSON.stringify(id)}]=function(module,exports,require){\n${source}\n};`).join('\n');
-let mode = 'setup', registered = false, messagePreview = false;
+let mode = 'setup', registered = false, messagePreview = false, unreadItems = [];
 const calls = [], errors = [];
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://fixture.local');
   if (url.pathname === '/') {
     res.setHeader('Content-Type', 'text/html');
-    res.end(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0d0d1a;color:#fff;font:16px system-ui}h1{padding:30px}.workspace{position:fixed;inset:0;background:#0d0d1a}${fs.readFileSync(path.join(site,'app/guard/dashboard/workspace.module.css'),'utf8')}</style></head><body><div class="workspace"><h1>Parent dashboard · Synthetic notification check</h1><iframe title="BodeeGuard Parent Dashboard" hidden></iframe><div id="root"></div></div><script src="/fixture.js"></script></body></html>`); return;
+    res.end(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0d0d1a;color:#fff;font:16px system-ui}h1{padding:30px}.workspace{position:fixed;inset:0;background:#0d0d1a}${fs.readFileSync(path.join(site,'app/guard/dashboard/workspace.module.css'),'utf8')}</style></head><body><div class="workspace"><h1>Parent dashboard · Synthetic notification check</h1><iframe title="BodeeGuard Parent Dashboard" ${mode==='unread-sync'?'src="/message-frame/"':''} hidden></iframe><div id="root"></div></div><script src="/fixture.js"></script></body></html>`); return;
+  }
+  if (url.pathname === '/message-frame/') {
+    res.setHeader('Content-Type', 'text/html');
+    res.end(`<!doctype html><html><body><button data-tab="messages">Messages</button><button data-mobile-tab="messages">Messages</button><script type="module">import {setupMessageUnread} from '/cloud-message-unread.js';setupMessageUnread({setUnread(items){window.unreadItems=items;}});window.parent.postMessage({type:'bodeeguard-messages-ready'},location.origin);</script></body></html>`);return;
+  }
+  if (url.pathname === '/cloud-message-unread.js') {
+    res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync(path.join(site,'public/guard-admin/cloud-message-unread.js'),'utf8'));return;
   }
   if (url.pathname === '/fixture.js') {
     res.setHeader('Content-Type', 'text/javascript');
@@ -46,7 +53,9 @@ const server = http.createServer(async (req, res) => {
       Object.defineProperty(navigator,'userAgent',{configurable:true,value:mode==='mobile'?'Android Chrome/140':'Windows Chrome/140'});
       const media=window.matchMedia.bind(window);window.matchMedia=query=>query==='(display-mode: standalone)'?{matches:true}:media(query);
       const worker={pushManager:{getSubscription:async()=>sub,subscribe:async()=>{fixture.subscriptions++;sub=makeSub();return sub;}}};
-      Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{ready:Promise.resolve(worker),getRegistration:async()=>worker,controller:null,addEventListener(){},removeEventListener(){}}});
+      const listeners=new Set(),controller=mode==='unread-sync'?{postMessage(){}}:null;
+      window.emitUnreadHint=()=>{for(const listener of listeners)listener({source:controller,data:{type:'bodeeguard-message-hint'}});};
+      Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{ready:Promise.resolve(worker),getRegistration:async()=>worker,controller,addEventListener(name,listener){if(name==='message')listeners.add(listener);},removeEventListener(name,listener){if(name==='message')listeners.delete(listener);}}});
       require('react-dom/client').createRoot(document.getElementById('root')).render(require('react').createElement(require('component').default));
     `); return;
   }
@@ -57,7 +66,7 @@ const server = http.createServer(async (req, res) => {
     if (body.operation === 'preview') messagePreview = body.messagePreview;
     const devices = registered || mode === 'recovery' ? [{id:'a'.repeat(64),label:'Windows · Chrome',messagePreview,revokedAt:null,lastAcceptedAt:null,lastFailure:null}] : [];
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({supported:true,publicKey:Buffer.alloc(65,4).toString('base64url'),...(body.subscription?{deviceId:'a'.repeat(64)}:{}),devices,unread:[],sent:true})); return;
+    res.end(JSON.stringify({supported:true,publicKey:Buffer.alloc(65,4).toString('base64url'),...(body.subscription?{deviceId:'a'.repeat(64)}:{}),devices,unread:unreadItems,sent:true})); return;
   }
   res.writeHead(404);res.end();
 });
@@ -114,8 +123,20 @@ const until = async (win, expression) => {
   await new Promise(resolve=>setTimeout(resolve,200));assert.equal(await win.webContents.executeJavaScript("Boolean(document.querySelector('[aria-label=\"Desktop message notifications\"]'))"),false);
   mode='mobile';await win.loadURL(base);await until(win,"document.body.textContent.includes('Parent dashboard')");await new Promise(resolve=>setTimeout(resolve,200));
   assert.equal(await win.webContents.executeJavaScript("Boolean(document.querySelector('[aria-label=\"Desktop message notifications\"]'))"),false);
+  // Actual React/controller and iframe unread UI: a quick-reply hint updates the
+  // visible badge from authoritative server state without reloading the page.
+  mode='unread-sync';registered=false;unreadItems=[{studentId:'11111111-1111-4111-8111-111111111111',count:1,sequence:'7'}];
+  await win.loadURL(base);await until(win,`document.querySelector('iframe').contentDocument?.querySelector('[data-tab="messages"]')?.getAttribute('aria-label')==='Messages, 1 unread'`);
+  const navigationURL=win.webContents.getURL(),beforeUnread=calls.filter(x=>x.operation==='unread').length;
+  unreadItems=[];await win.webContents.executeJavaScript('emitUnreadHint()');
+  await until(win,`document.querySelector('iframe').contentDocument.querySelector('[data-tab="messages"]').getAttribute('aria-label')==='Messages'`);
+  assert.equal(win.webContents.getURL(),navigationURL);assert.ok(calls.filter(x=>x.operation==='unread').length>beforeUnread);
+  assert.equal(await win.webContents.executeJavaScript(`Array.from(document.querySelector('iframe').contentDocument.querySelectorAll('.cloud-unread-badge')).every(badge=>badge.hidden)`),true,'desktop and mobile badges clear together');
+  unreadItems=[{studentId:'11111111-1111-4111-8111-111111111111',count:1,sequence:'8'}];await win.webContents.executeJavaScript('emitUnreadHint()');
+  await until(win,`document.querySelector('iframe').contentDocument.querySelector('[data-mobile-tab="messages"]').getAttribute('aria-label')==='Messages, 1 unread'`);
+  assert.equal(await win.webContents.executeJavaScript(`document.querySelector('iframe').contentWindow.unreadItems[0].sequence`),'8','a later unread message returns its badge');
   assert.deepEqual(errors,[]);
-  win.destroy();server.close();console.log('Desktop notification UI passed: explicit setup/test, approved subscription recovery, foreign rejection, blocked guidance, dismissal and mobile separation. No real permission or push changed.');app.quit();
+  win.destroy();server.close();console.log('Desktop notification UI passed: explicit setup/test, approved subscription recovery, foreign rejection, blocked guidance, dismissal, mobile separation and live unread badge synchronization. No real permission or push changed.');app.quit();
 })().catch(error=>{console.error(error);server.close();app.exit(1);});
 
 })().catch(error=>{console.error(error);process.exit(1);});

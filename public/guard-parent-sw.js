@@ -32,9 +32,10 @@ async function sendReply(data) {
       if (data.pendingReply.length > 2000) throw Error('Reply too long');
       const response = await fetch('/guard/dashboard/notification-reply/', { method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error',
         signal: AbortSignal.timeout(12000), headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountUserId: data.accountUserId, studentId: data.studentId, id: data.replyId, body: data.pendingReply }) });
+        body: JSON.stringify({ accountUserId: data.accountUserId, studentId: data.studentId, id: data.replyId, body: data.pendingReply, sequence: data.sequence }) });
       const receipt = await response.json();
       if (!response.ok || receipt.saved !== true || receipt.id !== data.replyId || receipt.studentId !== data.studentId) throw Error('Reply not confirmed');
+      await syncReplyRead(data, receipt.read);
       await self.registration.showNotification('BodeeGuard', { body: 'Reply sent.', tag: 'bodeeguard-reply-' + data.replyId,
         icon: '/guard-icons/bodeeguard-parent-192.png', data: { studentId: data.studentId } });
       for (const client of await self.clients.matchAll({ type: 'window' })) client.postMessage({ type: 'bodeeguard-message-hint' });
@@ -54,6 +55,15 @@ async function sendReply(data) {
 }
 async function badge(value) {
   try { if(value)await self.navigator?.setAppBadge?.(value);else await self.navigator?.clearAppBadge?.(); } catch { /* Optional OS support. */ }
+}
+// Read receipts come from the authenticated reply route. Keep later incoming
+// alerts and every unconfirmed reply draft; refresh open dashboards from the API.
+async function syncReplyRead(data, read) {
+  if (!read || read.studentId !== data.studentId || sequence(read.throughSequence) !== sequence(data.sequence) || !Array.isArray(read.unread)) return;
+  await badge(read.unread.reduce((sum, item) => sum + count(item?.count), 0));
+  for (const alert of await self.registration.getNotifications()) {
+    if (!alert.data?.pendingReply && alert.data?.studentId === data.studentId && BigInt(sequence(alert.data.sequence)) <= BigInt(sequence(read.throughSequence))) alert.close();
+  }
 }
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
@@ -95,6 +105,10 @@ self.addEventListener('message', event => {
         if (alert.data.accountUserId !== data.accountUserId) continue;
         if (data.type === 'bodeeguard-reply-complete') { if (alert.data.replyId === data.replyId) alert.close(); }
         else if (replyDraft(alert.data)) event.source.postMessage({ type: 'bodeeguard-reply-draft', draft: alert.data });
+      }
+      if (data.type === 'bodeeguard-reply-complete') {
+        await syncReplyRead(data, data.read);
+        for (const client of await self.clients.matchAll({ type: 'window' })) client.postMessage({ type: 'bodeeguard-message-hint' });
       }
       return;
     }

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import styles from "./workspace.module.css";
-export type NotificationDraft = { accountUserId: string; studentId: string; replyId: string; pendingReply: string; createdAt: number };
+export type NotificationDraft = { accountUserId: string; studentId: string; replyId: string; pendingReply: string; createdAt: number; sequence?: string };
 
 export default function NotificationReply({ draft, done }: { draft: NotificationDraft; done: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null), pending = useRef(false);
@@ -14,16 +14,16 @@ export default function NotificationReply({ draft, done }: { draft: Notification
     try {
       const response = await fetch('/guard/dashboard/notification-reply/', { method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error',
         signal: AbortSignal.timeout(12000), headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountUserId: draft.accountUserId, studentId: draft.studentId, id: draft.replyId, body: draft.pendingReply }) });
+        body: JSON.stringify({ accountUserId: draft.accountUserId, studentId: draft.studentId, id: draft.replyId, body: draft.pendingReply, sequence: draft.sequence }) });
       const receipt = await response.json();
       if (!response.ok) { setSignIn(response.status === 401 || response.status === 409); throw Error(receipt.error || 'Sending was not confirmed. Try again.'); }
       if (receipt.saved !== true || receipt.id !== draft.replyId || receipt.studentId !== draft.studentId) throw Error('Sending was not confirmed. Retry the same reply.');
-      complete();
+      complete(receipt.read);
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'Reconnect and retry this reply.'); }
     finally { pending.current = false; setBusy(false); }
   }
-  function complete() {
-    navigator.serviceWorker?.controller?.postMessage({ type: 'bodeeguard-reply-complete', accountUserId: draft.accountUserId, replyId: draft.replyId });
+  function complete(read?: { studentId: string; throughSequence: string; unread: unknown[] }) {
+    navigator.serviceWorker?.controller?.postMessage({ type: 'bodeeguard-reply-complete', accountUserId: draft.accountUserId, replyId: draft.replyId, studentId: draft.studentId, sequence: draft.sequence, ...(read ? { read } : {}) });
     done();
   }
   const target = '/dashboard/?conversation=' + draft.studentId;
