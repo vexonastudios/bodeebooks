@@ -1,6 +1,7 @@
 // Existing Admin conversation layout, with only the cloud transport replaced.
 import { createVoiceRecorder } from './voice-recording.js';
 import { createMessageThread } from './message-thread.js';
+import { createMessageReactions } from './message-reactions.js';
 import { createParentSessionRecovery } from './cloud-parent-session.js';
 export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const el = id => document.getElementById(id);
@@ -196,6 +197,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
       threadRows.update(unique, { fingerprint: message => JSON.stringify([selected, message.sender, message.body, message.attachment]), refresh: (row, message) => {
         row.querySelector('.cloud-message-meta').textContent = messageMeta(message);
+        row.messageReactions.update(message.reactions);
       }, create: message => {
         const row = document.createElement('article'); row.className = `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`;
         const meta = document.createElement('small'); meta.className = 'cloud-message-meta'; meta.textContent = messageMeta(message);
@@ -209,7 +211,18 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
         if (attachment) row.append(attachment);
         row.append(meta);
-        return { node: row, dispose: () => attachment?.dispose?.() };
+        const child = selected;
+        const reactions = createMessageReactions({ otherChild: students.find(student => student.id === child)?.name || 'Child', onReact: async emoji => {
+          if (selected !== child || !conversationVisible()) throw new Error('Reopen this conversation before reacting.');
+          const result = await request('react-message', { studentId: child, messageId: message.id, emoji });
+          if (selected !== child || result.id !== message.id || result.studentId !== child || !result.saved || !Array.isArray(result.reactions)) throw new Error('The reaction could not be confirmed. Reopen this conversation.');
+          older = older.map(item => item.id === message.id ? { ...item, reactions: result.reactions } : item);
+          if (page) page = { ...page, version: null, messages: page.messages.map(item => item.id === message.id ? { ...item, reactions: result.reactions } : item) };
+          render();
+          return result.reactions;
+        } });
+        row.messageReactions = reactions; row.append(reactions.node);
+        return { node: row, dispose: () => { reactions.dispose(); attachment?.dispose?.(); } };
       } });
       thread.dataset.rendered = key;
       if (atBottom) thread.scrollTop = thread.scrollHeight;

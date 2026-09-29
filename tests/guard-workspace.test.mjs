@@ -631,3 +631,16 @@ test('notification preview preferences cross the authenticated parent bridge wit
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.test'}))).status,403);
   assert.equal(calls.length,1);
 });
+
+test('reaction bridge preserves message/emoji only, with normal parent authentication and origin checks', async () => {
+  const calls = [], api = async (...args) => { calls.push(args); return { saved: true }; };
+  const route = load('bridge/route.ts', { api });
+  const input = { action: 'react-message', studentId: deviceId, messageId: deviceId, emoji: '👍', householdId: 'foreign', actor: 'forged', deviceCredential: 'secret' };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.equal(calls[0][0], '/messages/react');
+  assert.deepEqual(JSON.parse(calls[0][1].body), { studentId: deviceId, messageId: deviceId, emoji: '👍' });
+  await route.POST(request({ ...input, emoji: null })); assert.equal(JSON.parse(calls[1][1].body).emoji, null);
+  assert.equal((await load('bridge/route.ts', { authenticated: false, api }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+  assert.equal((await route.POST(request({ ...input, studentId: '../other' }))).status, 400);
+});

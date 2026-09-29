@@ -154,6 +154,12 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
         : { studentId: input.studentId, before: input.before, receivedIds: input.receivedIds, version: input.version };
       break;
     }
+    case "react-message": {
+      if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
+      path = "/messages/react"; method = "POST";
+      body = { studentId: input.studentId, messageId: input.messageId, emoji: input.emoji };
+      break;
+    }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
     case "edit-student": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
