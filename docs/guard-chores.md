@@ -1,7 +1,9 @@
 # Optional parent Chores & Routines
 
+Published to the private Family Beta parent website on September 29, 2026 with child 1.2.269 and the compatible commercial API. Existing families remain off until a parent chooses the feature. See the matching BodeeGuard `docs/cloud-release-1.2.269.md` receipt. Real Windows child-computer chore timing remains to be checked.
+
 September 29, 2026. Parent source paired with bodee-guard commit `caeca3d8`.
-This is implemented and verified source, not a production deployment.
+The implementation and verification described below preceded production publication.
 
 The parent bridge forwards chore operations through existing account authority
 to `/v1/account/dashboard/chores`. No family or user identifier from the browser
@@ -31,9 +33,10 @@ chore JS/CSS hashes match that source. It also passed the cloud repository's
 2,152 unit tests, native checks and all 46 Electron scenarios, with final
 targeted rechecks recorded in its `docs/cloud-chores-implementation.md`.
 
-Deploy the additive chore schema and compatible API before this parent site.
-Publish a compatible child and complete physical playback/time-boundary
-acceptance through the existing release procedure. An explicit old-computer
-warning is included; do not imply those computers can enforce timed restrictions.
-No family was opted in during development. Background approval notifications,
-starter suggestions and general desktop-app reward categorization are deferred.
+The additive chore schema and compatible API were published before this parent
+site, and the compatible child was published to Family Beta. Physical
+playback/time-boundary acceptance remains. An explicit old-computer warning is
+included; do not imply those computers can enforce timed restrictions. No
+family was opted in during development or publication. Background approval
+notifications, starter suggestions and general desktop-app reward
+categorization are deferred.
