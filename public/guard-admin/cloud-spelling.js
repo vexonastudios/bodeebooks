@@ -54,7 +54,7 @@ function renderCompletedSession(session) {
   const missedFirstTry = Math.max(0, total - firstTry);
   const eventual = Number(session.eventual_correct) || 0;
   return `<div class="spelling-session-status is-complete">
-    <strong>✓ ${escapeHtml(modeLabel(session.mode))} completed ${escapeHtml(sessionDateLabel(session.session_date))}</strong>
+    <strong>✓ ${escapeHtml(modeLabel(session.mode))} completed ${escapeHtml(sessionDateLabel(session.completed_date || session.session_date))}</strong>
     <span>${session.guided_practice ? `${Number(session.unaided_first_try)||0}/${total} spelled from memory on the first try · Guided practice includes copying and letter hints` : `${firstTry}/${total} right first try · ${missedFirstTry} missed first try · ${eventual}/${total} eventually correct`}</span>
   </div>`;
 }

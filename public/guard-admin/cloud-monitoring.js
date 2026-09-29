@@ -34,14 +34,20 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
       const progress=subjectProgress(snapshot,student.id,subject.id);
       const claim=snapshot.monitoring?.completions?.find(c=>c.student_id===student.id&&c.subject_id===subject.id);
       const portal=subject.isSchoolPortal===true;
+      const module=subject.kind==='activity'&&({'app://spelling':'spelling','app://science-spelling':'spelling','app://vocabulary':'vocabulary','app://poems':'poems'})[subject.url];
+      const curriculum=snapshot.monitoring?.date&&snapshot.monitoring.date===snapshot.activityDate
+        ? snapshot.monitoring.requirements?.find(row=>row.student_id===student.id&&row.module===module) : null;
+      const plan=assignmentFor(subject,student.id)?.dailyPlan||subject.dailyPlan;
+      const today=snapshot.activityDate?new Date(snapshot.activityDate+'T00:00:00Z').getUTCDay():null;
+      const plannedToday=!plan||plan.placement==='school'&&(today===null||plan.days.includes(today));
       const elapsed=progress?.seconds??0,goal=progress?.goalMinutes??30;
-      const complete=portal ? !!claim?.completed&&['provider','parent','legacy-saved'].includes(claim.source)
+      const complete=module ? curriculum?.assigned===true&&curriculum.completed===true : portal ? !!claim?.completed&&['provider','parent','legacy-saved'].includes(claim.source)
         : goal>0&&elapsed>=goal*60||!!claim?.completed&&(goal<=0||elapsed>=Math.ceil(goal*48));
       return {id:subject.id,label:subject.title,icon:subject.icon||'book-open',url:subject.url,color:cardColor(subject),accent:activityAccent(subject),seconds:elapsed,complete,
-        required:!subject.isReward&&(subject.accessTier||'school')==='school'};
+        required:!subject.isReward&&plannedToday&&(plan?plan.placement==='school':(subject.accessTier||'school')==='school')&&(!module||curriculum?.assigned===true&&curriculum.required===true)};
     });
     const media=Object.fromEntries(mediaTypes.map(([kind])=>[kind,snapshot.monitoring?.media?.find(row=>row.studentId===student.id&&row.kind===kind)||{seconds:0,unlocked:false}]));
-    const activity=goals.filter(g=>g.seconds>0).map(g=>({...g}));
+    const activity=goals.filter(g=>g.seconds>0||g.complete).map(g=>({...g}));
     for(const [kind,label,icon]of mediaTypes){const used=seconds(media[kind].seconds);if(!used)continue;
       const existing=activity.find(row=>row.url===`app://${({video:'videos',audiobook:'audiobooks'})[kind]||kind}`);
       if(existing)existing.seconds=Math.max(existing.seconds,used);else activity.push({label,icon,seconds:used});
