@@ -44,3 +44,19 @@
  #tab-economy .reward-catalog-list, #tab-economy #econ-balances, .cloud-typing-ranking, .cloud-typing-settings-grid { grid-template-columns:1fr; }
  #tab-economy .btn, #tab-typing .btn { min-height:44px; }
 }
+
+#tab-economy .cloud-school-earnings h2 { display:flex; align-items:center; gap:10px; }
+#tab-economy .cloud-earnings-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:20px; }
+#tab-economy .cloud-earnings-field { display:flex; flex-direction:column; gap:8px; }
+#tab-economy .cloud-earnings-field:has(input[type=checkbox]) { flex-direction:row; align-items:center; justify-content:space-between; }
+#tab-economy .cloud-earnings-field input:not([type=checkbox]), #economy-earning-child { width:100%; min-height:44px; padding:10px 12px; border-radius:10px; border:1px solid var(--border,#2d2c43); background:var(--bg-input,#1b1b2e); color:var(--text-primary,#eee); font:inherit; color-scheme:dark; }
+#tab-economy .cloud-earnings-field input[type=checkbox] { width:24px; height:24px; accent-color:#34d399; }
+#tab-economy .cloud-earnings-field input:disabled { opacity:.6; }
+#tab-economy .cloud-earnings-wide { grid-column:1/-1; margin:0; }
+#tab-economy .cloud-earnings-status { align-self:center; margin:0; }
+#tab-economy details.settings-section > summary { cursor:pointer; min-height:44px; font-weight:700; font-size:18px; }
+#tab-economy details.settings-section .cloud-panel { margin-top:12px; }
+@media(max-width:600px) { #tab-economy .cloud-earnings-form { grid-template-columns:minmax(0,1fr); } }
+
+#tab-economy .cloud-school-earnings .settings-hint { color:var(--text-secondary,#a7a6bc); font-size:14px; line-height:1.5; margin:10px 0; }
+#cloud-economy-earnings > label { display:block; margin:16px 0 8px; }

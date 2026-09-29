@@ -101,7 +101,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "list-store": path = "/store/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
     case "store-command": path = "/store/command"; method = "POST"; body = { id: input.id, kind: input.kind, studentId: input.studentId, itemId: input.itemId, revision: input.revision, name: input.name,
       description: input.description, icon: input.icon, type: input.type, price: input.price, mediaType: input.mediaType, minutes: input.minutes, dailyLimit: input.dailyLimit,
-      order: input.order, active: input.active, redemptionId: input.redemptionId, amount: input.amount, reason: input.reason }; break;
+      order: input.order, active: input.active, redemptionId: input.redemptionId, amount: input.amount, reason: input.reason, settings: input.settings }; break;
     case "list-reading": path = "/reading/list"; method = "POST"; body = { studentId: input.studentId }; break;
     case "reading-history": path = "/reading/history"; method = "POST"; body = { studentId: input.studentId, bookId: input.bookId, offset: input.offset }; break;
     case "reading-command": path = "/reading/command"; method = "POST"; body = { studentId: input.studentId, id: input.id, kind: input.kind, bookId: input.bookId, revision: input.revision,

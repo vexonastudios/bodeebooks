@@ -608,3 +608,15 @@ test('remote sleep bridge forwards only the selected computer and parent request
   assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
   assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });
+
+
+test('school reward settings cross the authenticated bridge without accepting supplied household or coin awards', async () => {
+  const calls=[], route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true}}});
+  const settings={school:{coins:200,bonusEnabled:true,bonusCoins:50,finishBy:'15:00'},children:{[deviceId]:{coins:300,bonusEnabled:true,bonusCoins:75,finishBy:'17:00'}}};
+  const input={action:'store-command',kind:'earnings',id:deviceId,revision:2,settings,householdId:'forged',wallet:{balance:999999},base_coins:99999};
+  assert.equal((await route.POST(request(input))).status,200);
+  assert.deepEqual(calls,[{path:'/store/command',body:{kind:'earnings',id:deviceId,revision:2,settings}}]);
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal(calls.length,1);
+});

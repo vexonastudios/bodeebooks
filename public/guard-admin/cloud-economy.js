@@ -1,4 +1,4 @@
-/* global document, fetch, AbortSignal, crypto, window */
+/* global document, fetch, AbortSignal, crypto, window, structuredClone */
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
 const mediaLabels = { music:'Music', video:'Videos', audiobook:'Audiobooks', family_game:'Family Games' };
 const mediaIcons = { music:'music', video:'video', audiobook:'headphones', family_game:'gamepad-2' };
@@ -40,7 +40,84 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
     try { await mutate('store-command', input); await load(); }
     catch (error) { el('cloud-economy-status').textContent = error.message; }
   }
+  let earningsSelected = '', earningsDirty = false, earningsSaving = false, earningsRetry = null;
+  function renderEarnings(value) {
+    const root = el('cloud-economy-earnings');
+    if (!root || !value.earnings) return;
+    const earnings = value.earnings, children = value.balances;
+    if (!children.some(child => child.studentId === earningsSelected)) earningsSelected = '';
+    root.replaceChildren();
+    const choice = node('select', 'admin-select'); choice.id = 'economy-earning-child';
+    for (const child of [{studentId:'', name:'Family default'}, ...children]) {
+      const option = node('option', '', child.name); option.value = child.studentId; choice.append(option);
+    }
+    choice.value = earningsSelected;
+    const choiceLabel = node('label', '', 'Reward settings for'); choiceLabel.htmlFor = choice.id;
+    root.append(choiceLabel, choice);
+    const form = node('form', 'cloud-earnings-form');
+    const settings = earnings.settings.children[earningsSelected] || earnings.settings.school;
+    function input(label, name, type, value) {
+      const wrap = node('label', 'cloud-earnings-field', label), control = node('input');
+      control.name = name; control.type = type;
+      if (type === 'checkbox') control.checked = value; else control.value = value;
+      if (type === 'number') { control.min = '0'; control.max = '10000'; control.step = '1'; }
+      if (type !== 'checkbox') control.required = true;
+      wrap.append(control); form.append(wrap); return control;
+    }
+    const inherit = earningsSelected ? input('Use family settings', 'inherit', 'checkbox', !earnings.settings.children[earningsSelected]) : null;
+    const coins = input('Coins for completing school', 'coins', 'number', settings.coins);
+    const enabled = input('Add a finish-by bonus', 'bonusEnabled', 'checkbox', settings.bonusEnabled);
+    const deadline = input('Finish by', 'finishBy', 'time', settings.finishBy);
+    const bonus = input('Bonus coins', 'bonusCoins', 'number', settings.bonusCoins);
+    const hint = node('p', 'settings-hint', `Times use ${earnings.timeZone}. Give older children a later deadline. Missing it never reduces their school coins.`);
+    hint.classList.add('cloud-earnings-wide'); form.append(hint);
+    form.append(node('p', 'settings-hint cloud-earnings-wide', 'New settings affect unpaid days. Bonuses require online confirmation before the deadline.'));
+    const status = node('p', 'cloud-earnings-status'); status.setAttribute('role','status');
+    const save = node('button', 'btn btn-primary', 'Save school rewards'); save.type = 'submit';
+    function disabled() {
+      coins.disabled = enabled.disabled = !!inherit?.checked || earningsSaving;
+      deadline.disabled = bonus.disabled = !!inherit?.checked || !enabled.checked || earningsSaving;
+      if (inherit) inherit.disabled = earningsSaving;
+      choice.disabled = earningsSaving; save.disabled = earningsSaving;
+    }
+    inherit?.addEventListener('change', () => {
+      if (inherit.checked) { coins.value = earnings.settings.school.coins; enabled.checked = earnings.settings.school.bonusEnabled; deadline.value = earnings.settings.school.finishBy; bonus.value = earnings.settings.school.bonusCoins; }
+      disabled();
+    });
+    enabled.addEventListener('change', disabled);
+    form.addEventListener('input', () => { earningsDirty = true; status.textContent = 'Unsaved changes'; });
+    choice.addEventListener('change', () => { earningsSelected = choice.value; earningsDirty = false; renderEarnings(value); });
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); if (earningsSaving || !active) return;
+      const config = structuredClone(earnings.settings);
+      const updated = { coins: Number(coins.value), bonusEnabled: enabled.checked, bonusCoins: Number(bonus.value), finishBy: deadline.value };
+      if (!earningsSelected) config.school = updated;
+      else if (inherit.checked) delete config.children[earningsSelected];
+      else config.children[earningsSelected] = updated;
+      const body = {kind:'earnings',revision:earnings.revision,settings:config}, key = JSON.stringify(body);
+      if (earningsRetry?.key !== key) earningsRetry = {key,id:crypto.randomUUID()};
+      earningsSaving = true; disabled(); status.textContent = 'Saving…';
+      try {
+        const saved = await mutate('store-command', {...body,id:earningsRetry.id});
+        value.earnings = {...earnings,...saved.earnings}; earningsDirty = false; earningsRetry = null;
+        earningsSaving = false; renderEarnings(value);
+        el('cloud-economy-earnings').querySelector('[role=status]').textContent = 'School rewards saved.';
+      } catch (error) { status.textContent = `${error.message} Your changes remain here.`; }
+      finally { earningsSaving = false; disabled(); }
+    });
+    form.append(save, status); root.append(form); disabled();
+    el('cloud-economy-automatic').replaceChildren(...earnings.automaticRewards.map(row => {
+      const line = node('div','cloud-panel'); line.append(node('strong','',row.name),node('p','settings-hint',row.detail)); return line;
+    }));
+    el('cloud-economy-school-history').replaceChildren(...earnings.history.map(row => {
+      const child = children.find(child => child.studentId === row.student_id), line = node('div','cloud-panel');
+      line.append(node('strong','',`${child?.name || 'Archived student'} · ${row.date} · ${row.base_coins + row.bonus_coins} coins`),
+        node('p','settings-hint',`${row.base_coins} for school + ${row.bonus_coins} bonus · Confirmed ${new Date(row.confirmed_at).toLocaleTimeString([], {timeZone:row.time_zone,hour:'numeric',minute:'2-digit'})} (${row.time_zone})`)); return line;
+    }));
+    if (!earnings.history.length) el('cloud-economy-school-history').append(node('p','settings-hint','Payments appear here when a child finishes their required schoolwork.'));
+  }
   function render(value) {
+    renderEarnings(value);
     el('econ-balances').replaceChildren(...value.balances.map(row => {
       const line = node('div', 'cloud-panel'); line.append(node('strong', '', row.name), node('p', '', `${row.wallet.balance} coins · ${row.wallet.totalEarned} earned in total`));
       line.append(button('+ / − Adjust coins', () => adjust(row, 'adjust')));
@@ -75,7 +152,7 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
     window.lucide?.createIcons();
   }
   async function load() {
-    if (!active || loading) return;
+    if (!active || loading || earningsSaving) return;
     const epoch = generation, studentId = el('econ-purchase-sel').value;
     loading = true; el('cloud-economy-refresh').disabled = true; el('reward-catalog-add').disabled = true;
     el('cloud-economy-status').textContent = 'Loading balances and rewards…';
@@ -104,5 +181,5 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
   });
   el('cloud-economy-refresh').addEventListener('click', load);
   el('econ-purchase-sel').addEventListener('change', () => { offset = 0; generation++; void load(); });
-  return { update() { if (active && !saving && !modal.classList.contains('active')) void load(); }, setActive(value) { active = value; generation++; if (value) void load(); else { close(); data = null; } } };
+  return { update() { if (active && !saving && !earningsSaving && !earningsDirty && !modal.classList.contains('active')) void load(); }, setActive(value) { active = value; generation++; if (value) void load(); else { close(); data = null; } } };
 }
