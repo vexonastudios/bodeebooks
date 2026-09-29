@@ -77,20 +77,41 @@
   }
   function voiceAttachment(file, load) {
     const item = element('div'); item.className = 'cloud-inline-audio';
-    const audio = element('audio'); audio.controls = true; audio.preload = 'none'; audio.hidden = true;
+    item.setAttribute('role', 'group'); item.setAttribute('aria-label', 'Voice message player');
+    const audio = element('audio'); audio.preload = 'none'; audio.hidden = true;
     audio.setAttribute('aria-label', 'Voice message');
     const status = element('span'); status.className = 'cloud-inline-audio-status'; status.setAttribute('role', 'status');
-    const play = button('', () => void start()); play.className = 'btn btn-secondary cloud-inline-audio-play';
-    const glyph = element('i'); glyph.dataset.lucide = 'play'; glyph.setAttribute('aria-hidden', 'true');
-    const label = element('span', 'Play voice message'); play.append(glyph, label); item.append(play, audio, status);
+    const controls = element('div'); controls.className = 'cloud-inline-audio-controls';
+    const play = button('', () => { if (!audio.paused) audio.pause(); else void start(); }); play.className = 'cloud-inline-audio-play';
+    play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="voice-play-icon" d="m9 5 11 7-11 7Z" fill="currentColor"/><path class="voice-pause-icon" d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="4"/></svg>';
+    const timeline = element('div'); timeline.className = 'cloud-inline-audio-timeline';
+    const seek = element('input'); seek.type = 'range'; seek.min = '0'; seek.max = '1'; seek.step = '0.1'; seek.value = '0'; seek.disabled = true;
+    seek.setAttribute('aria-label', 'Seek voice message');
+    const time = element('span', '0:00 / —'); time.className = 'cloud-inline-audio-time';
+    const mute = button('', () => { audio.muted = !audio.muted; }); mute.className = 'cloud-inline-audio-mute'; mute.disabled = true;
+    mute.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m11 5-6 4H2v6h3l6 4Z"/><path class="voice-sound-icon" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="voice-muted-icon" d="m16 9 5 6m0-6-5 6"/></svg>';
+    timeline.append(seek, time); controls.append(play, timeline, mute); item.append(controls, audio, status);
     let url = null, loading = false, disposed = false;
     const visible = () => !disposed && item.isConnected && !document.hidden && item.getClientRects().length > 0;
+    const clock = value => { const seconds = Math.max(0, Math.floor(value || 0)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; };
+    function paint() {
+      const duration = Number.isFinite(audio.duration) ? audio.duration : 0, position = audio.currentTime || 0;
+      play.dataset.playing = String(!audio.paused); play.setAttribute('aria-label', status.textContent && !url ? 'Retry voice message' : audio.paused ? 'Play voice message' : 'Pause voice message');
+      mute.dataset.muted = String(audio.muted); mute.setAttribute('aria-label', audio.muted ? 'Unmute voice message' : 'Mute voice message'); mute.setAttribute('aria-pressed', String(audio.muted)); mute.disabled = !url;
+      seek.disabled = !duration; seek.max = String(duration || 1); seek.value = String(position);
+      seek.style.setProperty('--voice-position', `${duration ? Math.min(100, position / duration * 100) : 0}%`);
+      seek.setAttribute('aria-valuetext', `${clock(position)} of ${duration ? clock(duration) : 'unknown duration'}`);
+      time.textContent = `${clock(position)} / ${duration ? clock(duration) : '—'}`;
+    }
+    seek.addEventListener('input', () => { if (visible() && Number.isFinite(audio.duration)) { audio.currentTime = Math.min(audio.duration, Math.max(0, Number(seek.value))); paint(); } });
+    for (const name of ['loadedmetadata', 'durationchange', 'timeupdate', 'play', 'pause', 'ended', 'volumechange']) audio.addEventListener(name, paint);
+    paint();
     async function start() {
       if (loading || !visible()) return;
       loading = true; play.disabled = true; item.setAttribute('aria-busy', 'true'); status.textContent = '';
       try {
         if (!url) {
-          label.textContent = 'Loading voice message…';
+          status.textContent = 'Loading voice message…';
           const value = await load(); if (!visible()) return;
           const saved = value?.file;
           if (saved?.id !== file.id || saved.removed || saved.mime !== file.mime || !types.has(saved.mime) || !saved.mime.startsWith('audio/') || typeof value.data !== 'string' || value.data.length > Math.ceil(maximum / 3) * 4) throw new Error('The voice message response was invalid.');
@@ -100,29 +121,27 @@
           audio.src = url;
         }
         if (!visible()) return;
-        audio.hidden = false; label.textContent = 'Play voice message';
-        try { await audio.play(); play.hidden = true; }
+        status.textContent = '';
+        try { await audio.play(); }
         catch (error) {
           if (error.name === 'NotAllowedError') status.textContent = 'Ready to play. Tap Play.';
           else if (error.name !== 'AbortError') throw new Error('This voice message could not play. Please try again.');
         }
       } catch (error) {
-        if (!disposed) { status.textContent = error.message || 'Could not load this voice message. Try again.'; label.textContent = 'Retry voice message'; }
+        if (!disposed) status.textContent = error.message || 'Could not load this voice message. Try again.';
       } finally {
-        loading = false; play.disabled = false; item.removeAttribute('aria-busy');
-        if (!status.textContent) label.textContent = 'Play voice message';
+        loading = false; play.disabled = false; item.removeAttribute('aria-busy'); paint();
       }
     }
     audio.addEventListener('playing', () => {
       if (!visible()) { audio.pause(); return; }
       for (const other of document.querySelectorAll('.cloud-inline-audio audio')) if (other !== audio) other.pause();
-      play.hidden = true; status.textContent = '';
+      status.textContent = ''; paint();
     });
     audio.addEventListener('error', () => {
       if (disposed) return;
-      audio.hidden = true; play.hidden = false; label.textContent = 'Retry voice message';
       status.textContent = 'This voice message could not play. Try again.';
-      audio.removeAttribute('src'); if (url) URL.revokeObjectURL(url); url = null;
+      audio.removeAttribute('src'); if (url) URL.revokeObjectURL(url); url = null; paint();
     });
     // The keyed message row owns the URL; receipt updates leave this player intact.
     item.dispose = () => { disposed = true; audio.pause(); audio.removeAttribute('src'); audio.load(); if (url) URL.revokeObjectURL(url); url = null; };
