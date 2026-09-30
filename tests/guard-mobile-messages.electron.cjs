@@ -20,6 +20,8 @@ const fixture = {
 fixture.screenshotAvailability = { known: true, availableStudentIds: ['11111111-1111-4111-8111-000000000001'], checkedAt: new Date().toISOString() };
 fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Casey', 'Riley', 'Sam'].map((name, i) => ({id:'11111111-1111-4111-8111-'+String(i+1).padStart(12,'0'),name,grade:'5'}));
 fixture.students.forEach((student,i) => { student.last_child_message_sequence = i===0 ? '9' : i===1 ? '8' : null; });
+fixture.students[0].main_school = { provider: 'abeka' };
+let choresEnabled = true;
 const history = new Map();
 history.set('11111111-1111-4111-8111-000000000001', [{id:'incoming-1', sequence:'9', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 let failSend = true;
@@ -41,6 +43,7 @@ const server = http.createServer(async (req, res) => {
     let raw = ''; for await (const chunk of req) raw += chunk;
     const input = JSON.parse(raw); calls.push(input);
     let output = {};
+    if (input.action === 'chores') output = { enabled: choresEnabled, revision: 1, date: new Date().toISOString().slice(0,10), timeZone: 'America/Chicago', students: fixture.students, items: [], history: [], computers: [] };
     if(input.action==='push-ticket')output={url:'wss://bodeeguard-cloud-assets.james-7f8.workers.dev/v1/push/connect?fixture=synthetic'};
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
@@ -68,6 +71,49 @@ async function run() {
   win.webContents.on('console-message', (_event, level, message) => { if (level >= 3 && !message.includes('ERR_BLOCKED_BY_CLIENT') && !message.includes('404')) console.error(message); });
   await win.loadURL(origin);
   await wait('document.querySelectorAll(".monitor-card").length===9');
+  await wait('document.querySelectorAll(".chore-child-summary").length===9');
+  const visible = selector => js(`!!document.querySelector(${JSON.stringify(selector)})?.getClientRects().length`);
+  for (const width of [320,390,768]) {
+    win.setContentSize(width,844); await new Promise(r=>setTimeout(r,100));
+    const tools = await js(`[...document.querySelector('.mobile-overview-shortcuts').children].filter(el=>el.getClientRects().length).map(el=>({box:el.getBoundingClientRect().toJSON(),icon:!!el.querySelector('svg'),label:el.getAttribute('aria-label')}))`);
+    assert.equal(tools.length,3,'all three parent tools share the mobile row');
+    assert.ok(tools.every(tool=>tool.box.top===tools[0].box.top && tool.box.width>=44 && tool.box.height>=44 && tool.box.height<=100 && tool.icon && tool.label),'compact, labeled touch targets with Lucide icons');
+    assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'no horizontal overflow');
+    assert.equal(await visible('.monitor-card .monitor-quick-unlock'),true,'Quick Unlock is available without expanding');
+    assert.equal(await visible('.monitor-card .chore-child-summary'),false,'chores stay out of collapsed cards');
+    assert.equal(await visible('.monitor-card .monitor-control--close'),false,'only Quick Unlock remains in collapsed controls');
+    await js('document.querySelector(".mobile-card-toggle").click()');
+    assert.equal(await visible('.monitor-card .chore-child-summary'),true,'expansion reveals chores');
+    assert.equal(await visible('.monitor-card .monitor-control--close'),true,'expansion reveals computer controls');
+    await js('document.querySelector(".mobile-card-toggle").click()');
+  }
+  win.setContentSize(390,844); await new Promise(r=>setTimeout(r,100));
+  fs.mkdirSync(path.join(site,'.tmp'),{recursive:true});
+  fs.writeFileSync(path.join(site,'.tmp','mobile-overview-compact.png'),(await win.webContents.capturePage()).toPNG());
+  await js('document.querySelector(".monitor-quick-unlock").click()');
+  assert.equal(await js('document.querySelector("#cloud-quick-unlock-dialog").open'),true,'collapsed Quick Unlock opens the existing dialog');
+  await js('document.querySelector("#cloud-quick-unlock-dialog").close();document.querySelector(".chore-summary").click()');
+  assert.equal(await js('document.querySelector("#tab-chores").classList.contains("active")'),true);
+  await js('document.querySelector("[data-mobile-tab=overview]").click();document.querySelector(".mobile-paper-shortcut").click()');
+  assert.equal(await js('document.querySelector("#tab-grades").classList.contains("active")'),true);
+  await js('document.querySelector("[data-mobile-tab=overview]").click()');
+  assert.equal(await js('document.querySelector("#cloud-abeka-parent-shortcut").pathname'),'/Account/Students/AssessmentPermissions.aspx');
+  choresEnabled=false;
+  await js('window.dispatchEvent(new Event("cloud-chores-setting-saved"))');
+  await wait('document.querySelector(".chore-summary").hidden');
+  assert.equal(await visible('.chore-summary'),false,'disabled chores are not exposed by the compact layout');
+  assert.equal(await js('document.querySelectorAll(".chore-child-summary").length'),0);
+  choresEnabled=true;
+  await js('window.dispatchEvent(new Event("cloud-chores-setting-saved"))');
+  await wait('document.querySelectorAll(".chore-child-summary").length===9');
+  win.setContentSize(1280,900); await new Promise(r=>setTimeout(r,100));
+  assert.equal(await visible('.mobile-overview-shortcuts'),false,'mobile tool row disappears on desktop');
+  assert.equal(await visible('.chore-summary'),true,'desktop keeps its chore summary');
+  assert.equal(await visible('#cloud-abeka-parent-shortcut'),true,'desktop keeps Abeka access');
+  assert.equal(await visible('.monitor-card .chore-child-summary'),true,'desktop card details remain visible');
+  win.setContentSize(390,844); await new Promise(r=>setTimeout(r,100));
+  assert.equal(await visible('.monitor-card .chore-child-summary'),false,'returning to mobile restores collapsed details');
+  console.log('Mobile overview passed: 320/390/768px compact icon row, collapsed Quick Unlock, expanded chores and power controls, existing shortcut actions, optional chores visibility and desktop restoration.');
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   await wait('document.querySelectorAll(".cloud-chat-person").length===9');
   assert.equal(await js('document.querySelector(".cloud-chat-person").dataset.studentId'),'11111111-1111-4111-8111-000000000001');

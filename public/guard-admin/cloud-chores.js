@@ -41,7 +41,7 @@ export function setupCloudChores({endpoint,navigate}) {
       if(!data?.enabled){badge?.remove();continue;}
       const rows=data.items.filter(r=>r.studentId===card.dataset.studentId&&r.date&&r.date<=data.date);
       const waiting=rows.filter(r=>r.status==='submitted').length;
-      if(!badge){badge=button('',()=>navigate('chores'),'btn btn-secondary chore-child-summary');card.querySelector('.monitor-card-top')?.after(badge);}
+      if(!badge){badge=button('',()=>navigate('chores'),'btn btn-secondary chore-child-summary');card.querySelector('.monitor-primary-actions')?.after(badge);}
       badge.textContent=`Chores: ${rows.length} remaining${waiting?` · ${waiting} awaiting approval`:''}`;
     }
   }
@@ -57,7 +57,9 @@ export function setupCloudChores({endpoint,navigate}) {
   }
   function render(){
     if(!data)return;showVisibility();updateCards();list.replaceChildren();
-    summary.replaceChildren(icon('list-checks'),node('span',`Chores · ${data.items.filter(r=>r.status==='submitted').length} waiting for approval · ${data.items.filter(r=>r.blocking).length} requiring attention`),icon('chevron-right'));
+    const summaryText=`Chores · ${data.items.filter(r=>r.status==='submitted').length} waiting for approval · ${data.items.filter(r=>r.blocking).length} requiring attention`;
+    summary.setAttribute('aria-label',summaryText);summary.title=summaryText;
+    summary.replaceChildren(icon('list-checks'),node('span',summaryText,'chore-summary-copy'),node('span','Chores','mobile-overview-shortcut-label cloud-mobile-only'),icon('chevron-right'));
     for(const tab of tabs.children)tab.setAttribute('aria-pressed',String(tab.dataset.view===view));
     if(!data.enabled){emptyState('Start a routine that works for your family','Enable Chores & Routines in Settings to get started.','list-checks',button('Open Settings',()=>navigate('settings')));paintIcons();return;}
     const old=(data.computers||[]).filter(c=>c.studentId&&c.protocol!==1);

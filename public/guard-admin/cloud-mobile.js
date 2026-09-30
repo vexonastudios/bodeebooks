@@ -80,8 +80,25 @@ export function setupCloudMobile({ navigate, refresh }) {
   }
   root.append(bottom);
   const shortcut = button('', () => navigate('grades'), 'mobile-paper-shortcut cloud-mobile-only');
-  shortcut.append(make('span', 'mobile-paper-shortcut-icon', '▣'), make('strong', '', 'Photograph school papers'), make('b', '', '›'));
+  const paperIcon = make('span', 'mobile-paper-shortcut-icon'); paperIcon.append(icon('camera'));
+  shortcut.append(paperIcon, make('strong', '', 'Papers'));
+  shortcut.setAttribute('aria-label', 'Photograph school papers'); shortcut.title = 'Photograph school papers';
   byId('overview-grid').before(shortcut);
+  const overviewShortcuts = make('nav', 'mobile-overview-shortcuts cloud-mobile-only');
+  overviewShortcuts.setAttribute('aria-label', 'Parent tools');
+  const abekaShortcut = byId('cloud-abeka-parent-shortcut');
+  if (abekaShortcut) {
+    abekaShortcut.append(make('span', 'mobile-overview-shortcut-label cloud-mobile-only', 'Abeka unlocks'));
+    abekaShortcut.setAttribute('aria-label', 'Abeka test unlocks — Assessment permissions');
+    abekaShortcut.title = 'Abeka test unlocks — Parent sign-in';
+  }
+  // Move the existing controls, so their handlers and optional visibility stay intact.
+  // Anchors return them to their original desktop positions when the viewport grows.
+  const overviewTools = [abekaShortcut, root.querySelector('.chore-summary'), shortcut].filter(Boolean).map(control => {
+    const anchor = document.createComment('Parent tool position'); control.before(anchor);
+    return { control, anchor };
+  });
+  overviewTools[0].anchor.before(overviewShortcuts);
   // Camera input feeds the existing upload form and its normal validation.
   const file = byId('cloud-paper-file');
   if (file && !file.dataset.gradebookCamera) {
@@ -118,6 +135,9 @@ export function setupCloudMobile({ navigate, refresh }) {
   const heading = byId('tab-overview').querySelector('h1'); const desktopHeading = heading?.textContent;
   function resize() {
     document.body.classList.toggle('cloud-mobile', media.matches);
+    for (const { control, anchor } of overviewTools) {
+      if (media.matches) overviewShortcuts.append(control); else anchor.after(control);
+    }
     if (coachDetails) coachDetails.open = !media.matches;
     if (assistant) { if (media.matches) actions.prepend(assistant); else assistantHome.after(assistant); }
     if (heading) heading.textContent = media.matches ? 'Quick controls' : desktopHeading;
