@@ -141,7 +141,16 @@ export function setupCloudMobile({ navigate, refresh }) {
     if (coachDetails) coachDetails.open = !media.matches;
     if (assistant) { if (media.matches) actions.prepend(assistant); else assistantHome.after(assistant); }
     if (heading) heading.textContent = media.matches ? 'Quick controls' : desktopHeading;
+    for (const card of document.querySelectorAll('.monitor-card')) placeQuickUnlock(card);
     if (!media.matches && document.querySelector('.cloud-mobile-menu.active')) navigate('overview');
+  }
+  function placeQuickUnlock(card) {
+    const quick = card.querySelector('.monitor-quick-unlock');
+    const top = card.querySelector('.monitor-card-top');
+    const primary = card.querySelector('.monitor-primary-actions');
+    if (!quick || !top || !primary) return;
+    if (media.matches) top.insertBefore(quick, top.querySelector('.mobile-card-toggle'));
+    else primary.prepend(quick);
   }
   media.addEventListener('change', resize); resize();
   return {
@@ -168,9 +177,10 @@ export function setupCloudMobile({ navigate, refresh }) {
       toggle.append(icon('chevron-down'));
       toggle.setAttribute('aria-label', `Controls for ${card.querySelector('.monitor-name').textContent}`);
       toggle.setAttribute('aria-controls', body.id); toggle.setAttribute('aria-expanded', String(expanded.has(id)));
-      const total = body.querySelector('.monitor-timer-value');
-      if (total) top.append(make('span', 'mobile-card-time cloud-mobile-only', total.textContent));
       top.append(toggle); card.append(body); card.classList.toggle('is-open', expanded.has(id));
+      const quick = card.querySelector('.monitor-quick-unlock');
+      if (quick) { quick.setAttribute('aria-label', `Quick Unlock for ${card.querySelector('.monitor-name').textContent}`); quick.title = `Quick Unlock for ${card.querySelector('.monitor-name').textContent}`; }
+      placeQuickUnlock(card);
     }
   };
 }

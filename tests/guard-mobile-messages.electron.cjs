@@ -80,10 +80,18 @@ async function run() {
     assert.ok(tools.every(tool=>tool.box.top===tools[0].box.top && tool.box.width>=44 && tool.box.height>=44 && tool.box.height<=100 && tool.icon && tool.label),'compact, labeled touch targets with Lucide icons');
     assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'no horizontal overflow');
     assert.equal(await visible('.monitor-card .monitor-quick-unlock'),true,'Quick Unlock is available without expanding');
+    const quick = await js(`(()=>{const card=document.querySelector('.monitor-card'),control=card.querySelector('.monitor-quick-unlock'),toggle=card.querySelector('.mobile-card-toggle');return {inHeader:control.parentElement===card.querySelector('.monitor-card-top'),icon:!!control.querySelector('svg'),label:control.getAttribute('aria-label'),button:control.getBoundingClientRect().toJSON(),toggle:toggle.getBoundingClientRect().toJSON(),ring:card.querySelector('.monitor-completion-ring').getBoundingClientRect().toJSON(),card:card.getBoundingClientRect().toJSON()};})()`);
+    assert.ok(quick.inHeader && quick.icon && quick.label.includes('Quick Unlock') && quick.button.width>=44 && quick.button.height>=44,'the labeled icon control replaces the header timer');
+    assert.equal(quick.button.top,quick.toggle.top,'Quick Unlock and expand are in the same header row');
+    assert.ok(quick.button.left>=quick.ring.right,'Quick Unlock does not overlap the school progress ring');
+    assert.ok(quick.card.height<100,'collapsed mobile card is one compact row');
+    assert.equal(await js('document.querySelector(".mobile-card-time")'),null,'school duration is removed from the mobile header');
     assert.equal(await visible('.monitor-card .chore-child-summary'),false,'chores stay out of collapsed cards');
+    assert.equal(await visible('.monitor-card .monitor-timer-row'),false,'school durations stay in expanded details');
     assert.equal(await visible('.monitor-card .monitor-control--close'),false,'only Quick Unlock remains in collapsed controls');
     await js('document.querySelector(".mobile-card-toggle").click()');
     assert.equal(await visible('.monitor-card .chore-child-summary'),true,'expansion reveals chores');
+    assert.equal(await visible('.monitor-card .monitor-timer-row'),true,'expansion reveals school durations');
     assert.equal(await visible('.monitor-card .monitor-control--close'),true,'expansion reveals computer controls');
     await js('document.querySelector(".mobile-card-toggle").click()');
   }
@@ -111,6 +119,7 @@ async function run() {
   assert.equal(await visible('.chore-summary'),true,'desktop keeps its chore summary');
   assert.equal(await visible('#cloud-abeka-parent-shortcut'),true,'desktop keeps Abeka access');
   assert.equal(await visible('.monitor-card .chore-child-summary'),true,'desktop card details remain visible');
+  assert.equal(await js('document.querySelector(".monitor-quick-unlock").parentElement.classList.contains("monitor-primary-actions")'),true,'desktop restores the full Quick Unlock button');
   win.setContentSize(390,844); await new Promise(r=>setTimeout(r,100));
   assert.equal(await visible('.monitor-card .chore-child-summary'),false,'returning to mobile restores collapsed details');
   console.log('Mobile overview passed: 320/390/768px compact icon row, collapsed Quick Unlock, expanded chores and power controls, existing shortcut actions, optional chores visibility and desktop restoration.');

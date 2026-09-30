@@ -26,12 +26,9 @@
 .cloud-mobile .monitor-card-identity { flex: 1; min-width: 0; }
 .cloud-mobile .monitor-name { font-size: 16px; overflow-wrap: anywhere; }
 .cloud-mobile .monitor-avatar { width: 38px; height: 38px; font-size: 22px; }
-.cloud-mobile .mobile-card-time { font-size: 12px; color: #c7d2fe; white-space: nowrap; }
 .cloud-mobile .mobile-card-body { display: block; padding-top: 14px; }
 .cloud-mobile .is-open .mobile-card-body { display: block; }
-.cloud-mobile .monitor-card:not(.is-open) .mobile-card-body > :not(.monitor-primary-actions),
-.cloud-mobile .monitor-card:not(.is-open) .monitor-primary-actions > :not(.monitor-quick-unlock) { display: none !important; }
-.cloud-mobile .monitor-card:not(.is-open) .monitor-primary-actions { margin: 0; }
+.cloud-mobile .monitor-card:not(.is-open) .mobile-card-body { display: none; }
 .cloud-mobile .chore-child-summary { width: 100%; margin: 0 0 12px; }
 .cloud-mobile .monitor-card .cloud-actions { display: grid; grid-template-columns: 1fr 1fr; }
 .cloud-mobile .cloud-panel { padding: 16px; }
@@ -93,10 +90,12 @@
 .mobile-spelling-coach > summary { display: none; }
 .cloud-mobile #tab-overview > .tab-header > h1 { display: none; }
 .cloud-mobile .monitor-card-top { align-items: center; }
-.cloud-mobile .mobile-card-toggle { align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; }
+.cloud-mobile .mobile-card-toggle { align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; }
 .cloud-mobile .mobile-card-toggle svg { display: block; width: 20px; height: 20px; }
 .cloud-mobile .mobile-card-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
-.cloud-mobile .mobile-card-time { font-variant-numeric: tabular-nums; }
+.cloud-mobile .monitor-card-top .monitor-quick-unlock { flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 12px; }
+.cloud-mobile .monitor-card-top .monitor-quick-unlock span { display: none; }
+.cloud-mobile .monitor-card-top .monitor-quick-unlock svg { width: 19px; height: 19px; }
 .cloud-mobile #tab-spelling.active { display: flex; flex-direction: column; }
 .cloud-mobile #tab-spelling .spelling-header-copy,
 .cloud-mobile #tab-spelling .spelling-policy-note { display: none; }
