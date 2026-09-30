@@ -6,10 +6,14 @@ import { createParentSessionRecovery } from './cloud-parent-session.js';
 export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const el = id => document.getElementById(id);
   const ALL_KIDS = 'all-kids';
+  const FAMILY = 'family-conversation';
+  const groupKey = id => `group:${id}`;
+  const groupId = key => key?.startsWith('group:') ? key.slice(6) : null;
   let broadcastResult = null;
   const recipients = () => students.filter(student => !student.archived_at);
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
+  let groups = [], chosenKids = new Set(), chosenInitialized = false, groupDraftId = null;
   let unread = new Map();
   const recentChildMessages = new Map();
   const sequence = value => typeof value === 'string' && /^[1-9][0-9]{0,18}$/.test(value) ? BigInt(value) : 0n;
@@ -38,6 +42,23 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const familyRows = textNode('div', '', 'cloud-family-thread-rows');
   const familyEmpty = textNode('p', 'No family messages yet. Send the first one below.', 'cloud-family-thread-empty');
   const familyThreadRows = createMessageThread(familyRows);
+  const groupPanel = textNode('div', '', 'cloud-group-panel');
+  const groupTitle = textNode('h3', 'New group message');
+  const groupDescription = textNode('p', 'Choose who belongs. Everyone selected can see and reply in one shared chat.');
+  const groupPeople = textNode('div', '', 'cloud-group-people');
+  const groupClose = textNode('button', 'Close group', 'btn btn-secondary cloud-group-close'); groupClose.type = 'button';
+  const groupStatus = textNode('p', '', 'cloud-group-status');
+  groupPanel.append(groupTitle, groupDescription, groupPeople, groupClose, groupStatus);
+  groupClose.addEventListener('click', async () => {
+    const id = groupId(selected); if (!id || sending) return;
+    groupClose.disabled = true;
+    try { const result = await request('close-message-group', { groupId: id });
+      groups = groups.map(group => group.id === id ? result.group : group);
+      if (page) page.group = result.group;
+      render(); renderStudents(); note('Group closed. Children can still read its history, but cannot reply.');
+    } catch (failure) { note(failure.message); }
+    finally { groupClose.disabled = false; }
+  });
   const familyTitle = textNode('h3', 'Family conversation');
   const familyDescription = textNode('p', 'Everyone can read this thread. Only parents can post unless you turn on children’s replies.');
   const familyToggleLabel = textNode('label', '', 'cloud-family-thread-setting');
@@ -71,7 +92,10 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const messageAll = document.createElement('button'); messageAll.type = 'button'; messageAll.id = 'messages-all-kids'; messageAll.className = 'btn cloud-chat-all';
   messageAll.innerHTML = '<i data-lucide="users" aria-hidden="true"></i><span><strong>Message all kids</strong><small></small></span><i data-lucide="chevron-right" aria-hidden="true"></i>';
   messageAll.addEventListener('click', () => choose(ALL_KIDS));
-  el('messages-student-list').before(messageAll, search); search.addEventListener('input', renderStudents);
+  const familyButton = textNode('button', 'Family conversation', 'btn btn-secondary cloud-family-conversation-link'); familyButton.type = 'button';
+  familyButton.addEventListener('click', () => choose(FAMILY));
+  const groupList = textNode('div', '', 'cloud-group-list');
+  el('messages-student-list').before(messageAll, familyButton, groupList, search); search.addEventListener('input', renderStudents);
   back.addEventListener('click', () => { pauseMedia(); clearTimeout(timer); showConversation(false); renderStudents(); (selected === ALL_KIDS ? messageAll : el('messages-student-list').querySelector('[aria-pressed="true"]'))?.focus(); });
   el('messages-reply-input').placeholder = 'Message…';
   el('messages-attachment').setAttribute('aria-label', 'Attach an image, PDF or audio file');
@@ -83,7 +107,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   helpNote.before(help); help.append(summary, helpNote);
   function showConversation(value) { section.dataset.messageView = value ? 'thread' : 'list'; document.body.classList.toggle('cloud-conversation-open', active && value); sizeInput(); publishConversationView(); }
   function publishConversationView() {
-    const studentId = conversationVisible() && selected !== ALL_KIDS && live && !error && section.dataset.messageLoad === 'ready' ? selected : null;
+    const studentId = conversationVisible() && selected !== ALL_KIDS && selected !== FAMILY && !groupId(selected) && live && !error && section.dataset.messageLoad === 'ready' ? selected : null;
     window.parent.postMessage({type:'bodeeguard-conversation-view',studentId},location.origin);
   }
   window.addEventListener('message', event => {
@@ -95,7 +119,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (mobile.matches) { input.style.height = '44px'; input.style.height = `${Math.min(112, Math.max(44, input.scrollHeight + 2))}px`; }
   }
   function newBroadcastDraft() {
-    if (selected === ALL_KIDS && broadcastResult && !pending.has(ALL_KIDS)) { broadcastResult = null; note(''); renderFamily(); }
+    if (selected === FAMILY && broadcastResult && !pending.has(FAMILY)) { broadcastResult = null; note(''); renderFamily(); }
   }
   el('messages-reply-input').addEventListener('input', () => { sizeInput(); newBroadcastDraft(); });
   el('messages-reply-input').title = 'Enter to send; Shift+Enter for a new line.';
@@ -154,13 +178,13 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       // The trusted outer page opens sign-in; the sandboxed conversation stays
       // in place with its unsent text/files. No draft goes into storage or a URL.
       event.preventDefault();
-      window.parent.postMessage({ type: 'bodeeguard-sign-in', studentId: selected === ALL_KIDS ? '' : selected }, location.origin);
+      window.parent.postMessage({ type: 'bodeeguard-sign-in', studentId: selected === ALL_KIDS || selected === FAMILY || groupId(selected) ? '' : selected }, location.origin);
       note('Sign in in the new window, then return here and retry. Your draft stays here.');
     }
   });
   function recoveryActions(authentication = false) {
     reconnect.hidden = false; signIn.hidden = !authentication;
-    const target = '/guard/dashboard/' + (selected && selected !== ALL_KIDS ? '?conversation=' + encodeURIComponent(selected) : '') + '#messages';
+    const target = '/guard/dashboard/' + (selected && selected !== ALL_KIDS && selected !== FAMILY && !groupId(selected) ? '?conversation=' + encodeURIComponent(selected) : '') + '#messages';
     signIn.href = '/guard/sign-in/?redirect_url=' + encodeURIComponent(target);
   }
   function note(text) { el('messages-cloud-status').textContent = text; el('messages-cloud-status').classList.toggle('is-routine', text === 'Messages updated.'); }
@@ -183,8 +207,10 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     return value;
   }
   function controls() {
-    el('messages-reply-input').disabled = !selected || sending || pending.has(selected);
-    el('messages-reply-btn').disabled = !selected || sending || recordingBusy();
+    const closed = Boolean(groupId(selected) && (page?.group || groups.find(group => group.id === groupId(selected)))?.closedAt);
+    el('messages-reply-box').hidden = closed;
+    el('messages-reply-input').disabled = !selected || closed || sending || pending.has(selected);
+    el('messages-reply-btn').disabled = !selected || closed || sending || recordingBusy() || (selected === ALL_KIDS && !chosenKids.size);
     el('messages-attachment').disabled = !selected || sending || recordingBusy() || pending.has(selected) || Boolean(attachments.get(selected)) || Boolean(voices.get(selected));
     el('messages-attachment-clear').disabled = !selected || sending || recordingBusy() || pending.has(selected);
     el('messages-voice-discard').disabled = sending || pending.has(selected);
@@ -192,7 +218,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     el('messages-attachment-status').textContent = attachments.get(selected)?.name || localFiles.get(selected)?.name || '';
     el('messages-attachment-status').hidden = voices.has(selected);
     el('messages-attachment-clear').hidden = !attachments.has(selected) && !localFiles.has(selected) || voices.has(selected);
-    const sendLabel = sending ? 'Sending…' : selected === ALL_KIDS ? (pending.has(selected) ? 'Retry remaining' : 'Send to all kids') : pending.has(selected) ? 'Retry same message' : 'Send';
+    const sendLabel = sending ? 'Sending…' : selected === ALL_KIDS || groupId(selected) ? (pending.has(selected) ? 'Retry remaining' : 'Send to group') : selected === FAMILY ? (pending.has(selected) ? 'Retry remaining' : 'Send to family') : pending.has(selected) ? 'Retry same message' : 'Send';
     el('messages-reply-btn').innerHTML = `<i data-lucide="send" aria-hidden="true"></i><span>${sendLabel}</span>`;
     el('messages-reply-btn').setAttribute('aria-label', sendLabel);
     el('messages-record').setAttribute('aria-label', el('messages-record').querySelector('span').textContent);
@@ -208,7 +234,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     return `${today ? '' : date.toLocaleDateString([], { month: 'short', day: 'numeric', year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }) + ' · '}${time}${message.sender === 'parent' ? ' · ' + (message.receivedAt ? 'Received' : 'Saved online') : ''}`;
   }
   function render() {
-    if (selected === ALL_KIDS) { renderFamily(); controls(); return; }
+    if (selected === ALL_KIDS || selected === FAMILY || groupId(selected)) { renderFamily(); controls(); return; }
     const messages = [...older, ...(page?.messages || [])];
     const unique = [...new Map(messages.map(message => [message.id, message])).values()];
     const thread = el('messages-thread-content');
@@ -255,7 +281,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     markVisibleConversation();
   }
   function markVisibleConversation() {
-    if (selected === ALL_KIDS) return;
+    if (selected === ALL_KIDS || selected === FAMILY || groupId(selected)) return;
     const thread=el('messages-thread-content');
     if(!conversationVisible()||thread.scrollHeight-thread.scrollTop-thread.clientHeight>=40)return;
     const latest=page?.messages.filter(message=>message.sender==='child').at(-1);
@@ -264,20 +290,22 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   el('messages-thread-content').addEventListener('scroll',markVisibleConversation,{passive:true});
   async function refresh() {
     if (!conversationVisible()) return;
+    if (selected === ALL_KIDS) { render(); return; }
     if (loading) { refreshQueued = true; return; }
     clearTimeout(timer); loading = true; controls();
     const child = selected; const ticket = generation;
     try {
-      const result = child === ALL_KIDS
+      const result = child === FAMILY
         ? await request('list-family-messages', { version: page?.version })
+        : groupId(child) ? await request('list-group-messages', { groupId: groupId(child), version: page?.version })
         : await request('list-messages', { studentId: child,
           version: page?.version, receivedIds: page?.messages.filter(message => message.sender === 'child' && !message.receivedAt).map(message => message.id) || [] });
-      if (ticket !== generation || child !== selected || child !== ALL_KIDS && result.studentId !== child) return;
+      if (ticket !== generation || child !== selected || child !== FAMILY && !groupId(child) && result.studentId !== child) return;
       if (!result.notModified) {
         page = result;
-        for (const message of result.messages || []) if (message.sender === 'child') rememberChildMessage(child, message.sequence);
+        if (child !== FAMILY && !groupId(child)) for (const message of result.messages || []) if (message.sender === 'child') rememberChildMessage(child, message.sequence);
         renderStudents();
-      }
+      } else if (groupId(child) && page && result.group) page.group = result.group;
       failures = 0; error = ''; reconnect.hidden = true; section.dataset.messageLoad = 'ready'; render();
       note(pending.has(child) ? 'Send status is uncertain. The draft is retained; Retry uses the same message ID.' : 'Messages updated.');
     } catch (failure) {
@@ -298,17 +326,33 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     voice.cancel(); threadRows.clear(); familyThreadRows.clear(); delete el('messages-thread-content').dataset.rendered;
     if (selected) drafts.set(selected, el('messages-reply-input').value);
     selected = child; generation++; page = null; older = []; cursor = undefined;
+    if (child === ALL_KIDS && !chosenInitialized && !pending.has(ALL_KIDS)) { chosenKids = new Set(recipients().map(student => student.id)); chosenInitialized = true; }
     reconnect.hidden = true; section.dataset.messageLoad = 'loading'; publishConversationView();
     window.cloudFileTools.close(); el('messages-attachment').value = '';
     el('messages-reply-input').value = drafts.get(child) || '';
-    const name = child === ALL_KIDS ? 'Message all kids' : students.find(student => student.id === child)?.name || 'Conversation';
-    el('messages-thread-header').textContent = name; threadAvatar.textContent = child === ALL_KIDS ? 'All' : child ? initials(name) : ''; threadAvatar.hidden = !child;
-    render(); renderStudents(); note(child === ALL_KIDS ? 'Loading family conversation…' : 'Loading conversation…'); void refresh();
+    const group = groups.find(item => item.id === groupId(child));
+    const name = child === ALL_KIDS ? 'New group message' : child === FAMILY ? 'Family conversation' : group ? 'Group conversation' : students.find(student => student.id === child)?.name || 'Conversation';
+    el('messages-thread-header').textContent = name; threadAvatar.textContent = child === ALL_KIDS || child === FAMILY || group ? 'All' : child ? initials(name) : ''; threadAvatar.hidden = !child;
+    render(); renderStudents(); note(child === ALL_KIDS ? 'Choose recipients and send a group message.' : 'Loading conversation…'); void refresh();
+  }
+  async function loadGroups() {
+    try { const result = await request('list-message-groups', {}); groups = result.groups || []; renderStudents();
+      if (groupId(selected) && !groups.some(group => group.id === groupId(selected))) choose(null);
+    } catch (failure) { if (groupId(selected)) note(`Group conversations could not load. ${failure.message}`); }
   }
   function renderStudents() {
     messageAll.disabled = false;
     messageAll.setAttribute('aria-pressed', String(selected === ALL_KIDS));
-    messageAll.querySelector('small').textContent = `Shared family conversation · ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
+    messageAll.querySelector('strong').textContent = 'New group message';
+    messageAll.querySelector('small').textContent = `Choose from ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
+    familyButton.setAttribute('aria-pressed', String(selected === FAMILY));
+    groupList.replaceChildren(...groups.map(group => {
+      const names = group.members.map(member => member.name).join(', ');
+      const button = textNode('button', `${names}${group.closedAt ? ' · Closed' : ''}`, 'btn btn-secondary cloud-group-list-item');
+      button.type = 'button'; button.setAttribute('aria-pressed', String(groupKey(group.id) === selected));
+      button.addEventListener('click', () => choose(groupKey(group.id)));
+      return button;
+    }));
     const matches = recipients().filter(student => student.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))
       .sort((a, b) => { const left = recentChildMessages.get(a.id) || 0n, right = recentChildMessages.get(b.id) || 0n; return left === right ? 0 : left > right ? -1 : 1; });
     el('messages-student-list').replaceChildren(...matches.map(student => {
@@ -386,28 +430,44 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     else if (canChooseAttachment() && !localFiles.has(selected)) { recordingChild = selected; void voice.start(); }
   });
   function renderFamily() {
-    const batch = pending.get(ALL_KIDS) || broadcastResult;
-    const people = batch?.recipients || recipients().map(student => ({ studentId: student.id, name: student.name }));
+    const family = selected === FAMILY, newGroup = selected === ALL_KIDS;
+    const currentGroup = page?.group || groups.find(item => item.id === groupId(selected));
+    const batch = pending.get(selected) || (family ? broadcastResult : null);
+    const people = batch?.recipients || (currentGroup ? currentGroup.members : recipients().filter(student => chosenKids.has(student.id)).map(student => ({ studentId: student.id, name: student.name })));
     const total = people.length, saved = people.filter(person => person.saved).length;
     const thread = el('messages-thread-content');
     const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
-    if (familyPanel.parentElement !== thread) thread.replaceChildren(familyPanel, familyRows);
+    if ((family ? familyPanel : groupPanel).parentElement !== thread) thread.replaceChildren(family ? familyPanel : groupPanel, familyRows);
     familyToggle.checked = Boolean(page?.childrenCanPost);
     familyToggle.disabled = !page;
-    familyProgress.replaceChildren();
-    if (batch) familyProgress.append(textNode('p', saved === total ? `Last message saved for all ${total} kids.` : `${saved} of ${total} copies saved online. Keep this page open and retry the rest.`));
+    const progress = family ? familyProgress : groupStatus;
+    progress.replaceChildren();
+    if (!family) {
+      groupTitle.textContent = newGroup ? 'Who should receive this?' : 'Group conversation';
+      groupDescription.textContent = newGroup ? `${total} selected · Tap a name to include or remove them.` : currentGroup?.closedAt ? 'This group is closed. Everyone can still read its history.' : 'Everyone in this group can read and reply.';
+      groupPeople.replaceChildren(...recipients().filter(student => newGroup || currentGroup?.members.some(member => member.studentId === student.id)).map(student => {
+        const selectedKid = newGroup ? chosenKids.has(student.id) : true;
+        const chip = textNode('button', student.name, 'cloud-group-chip'); chip.type = 'button';
+        chip.setAttribute('aria-pressed', String(selectedKid)); chip.disabled = !newGroup || Boolean(batch) || sending;
+        chip.addEventListener('click', () => { selectedKid ? chosenKids.delete(student.id) : chosenKids.add(student.id); chosenInitialized = true; render(); });
+        return chip;
+      }));
+      groupClose.hidden = newGroup || Boolean(currentGroup?.closedAt);
+    }
+    if (batch) progress.append(textNode('span', saved === total ? `Saved for ${total} kids.` : `${saved} of ${total} copies saved online. Retry the rest.`));
     if (batch && saved < total && !sending) {
       const retry = textNode('button', 'Retry remaining', 'btn btn-primary cloud-broadcast-retry'); retry.type = 'button';
-      retry.addEventListener('click', () => el('messages-reply-box').requestSubmit()); familyProgress.append(retry);
+      retry.addEventListener('click', () => el('messages-reply-box').requestSubmit()); progress.append(retry);
     }
-    if (batch && saved < total && !sending) {
+    if (family && batch && saved < total && !sending) {
       const restart = textNode('button', 'Start a new message', 'btn btn-secondary'); restart.type = 'button';
-      restart.addEventListener('click', () => { pending.delete(ALL_KIDS); drafts.delete(ALL_KIDS); attachments.delete(ALL_KIDS); localFiles.delete(ALL_KIDS); voices.delete(ALL_KIDS); broadcastResult = null; voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Earlier family posts remain in this thread.'); render(); el('messages-reply-input').focus(); });
-      familyProgress.append(restart);
+      restart.addEventListener('click', () => { pending.delete(FAMILY); drafts.delete(FAMILY); attachments.delete(FAMILY); localFiles.delete(FAMILY); voices.delete(FAMILY); broadcastResult = null; voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Earlier family posts remain in this thread.'); render(); el('messages-reply-input').focus(); });
+      progress.append(restart);
     }
     const messages = [...older, ...(page?.messages || [])];
     const unique = [...new Map(messages.map(message => [message.id, message])).values()];
-    familyEmpty.hidden = unique.length > 0;
+    familyEmpty.textContent = family ? 'No family messages yet. Send the first one below.' : 'No group messages yet. Send the first one below.';
+    familyEmpty.hidden = unique.length > 0 || newGroup;
     if (familyEmpty.parentElement !== familyRows) familyRows.append(familyEmpty);
     familyThreadRows.update(unique, {
       fingerprint: message => JSON.stringify([message.sender, message.senderName, message.body, message.attachment]),
@@ -429,20 +489,32 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (![document.body, document.documentElement, input, el('messages-reply-btn')].includes(document.activeElement)) return;
     try { input.focus({ preventScroll: true }); } catch { input.focus(); }
   }
-  async function sendBroadcast(wasComposing) {
-    const file = localFiles.get(ALL_KIDS) || el('messages-attachment').files[0];
-    const body = el('messages-reply-input').value.trim() || (voices.has(ALL_KIDS) ? `Voice message · ${voices.get(ALL_KIDS).seconds}s` : '');
-    if (!pending.has(ALL_KIDS) && (!recipients().length || !body && !file)) return;
-    sending = true; controls(); note('Preparing message for all kids…');
-    let batch = pending.get(ALL_KIDS);
+  async function sendShared(wasComposing) {
+    const target = selected, family = target === FAMILY, newGroup = target === ALL_KIDS;
+    const file = localFiles.get(target) || el('messages-attachment').files[0];
+    const body = el('messages-reply-input').value.trim() || (voices.has(target) ? `Voice message · ${voices.get(target).seconds}s` : '');
+    if (!pending.has(target) && (!body && !file || newGroup && !chosenKids.size)) return;
+    sending = true; controls(); note('Preparing message…');
+    let batch = pending.get(target);
     try {
       if (!batch) {
         // Freeze names, recipients, contents and per-child retry IDs before the first write.
-        batch = { id: crypto.randomUUID(), body, recipients: recipients().map(student => ({ studentId: student.id, name: student.name, id: crypto.randomUUID(), uploadId: crypto.randomUUID() })) };
+        const members = family ? recipients().map(student => ({ studentId: student.id, name: student.name }))
+          : newGroup ? recipients().filter(student => chosenKids.has(student.id)).map(student => ({ studentId: student.id, name: student.name }))
+          : groups.find(group => group.id === groupId(target))?.members || [];
+        if (!members.length) throw new Error('Choose at least one child.');
+        batch = { id: crypto.randomUUID(), groupId: family ? null : newGroup ? groupDraftId || crypto.randomUUID() : groupId(target), body,
+          recipients: members.map(student => ({ studentId: student.studentId, name: student.name, id: crypto.randomUUID(), uploadId: crypto.randomUUID() })) };
+        if (newGroup) groupDraftId = batch.groupId;
         if (file) batch.attachment = await window.cloudFileTools.encode(file, 'message');
-        pending.set(ALL_KIDS, batch); drafts.set(ALL_KIDS, body); broadcastResult = batch;
+        pending.set(target, batch); drafts.set(target, body); if (family) broadcastResult = batch;
       }
-      if (selected === ALL_KIDS) render();
+      if (newGroup && !batch.created) {
+        const created = await request('create-message-group', { id: batch.groupId, studentIds: batch.recipients.map(person => person.studentId) });
+        if (created.group?.id !== batch.groupId) throw new Error('The group could not be confirmed.');
+        batch.created = true; groups = [created.group, ...groups.filter(group => group.id !== batch.groupId)]; renderStudents();
+      }
+      if (selected === target) render();
       for (const person of batch.recipients) {
         if (person.saved) continue;
         person.error = '';
@@ -453,7 +525,8 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
             if (!receipt.saved || receipt.file?.id !== person.uploadId) throw new Error('Attachment confirmation was interrupted.');
             person.fileId = person.uploadId;
           }
-          const receipt = await request('send-message', { studentId: person.studentId, id: person.id, familyThreadId: batch.id, body: batch.body, ...(person.fileId ? { fileId: person.fileId } : {}) });
+          const receipt = await request('send-message', { studentId: person.studentId, id: person.id, familyThreadId: batch.id,
+            ...(batch.groupId ? { groupId: batch.groupId } : {}), body: batch.body, ...(person.fileId ? { fileId: person.fileId } : {}) });
           if (receipt.id !== person.id || receipt.studentId !== person.studentId || receipt.saved !== true) throw new Error('Message confirmation was interrupted.');
           person.saved = true;
         } catch (failure) {
@@ -461,22 +534,26 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
           // Stop network-wide failures promptly; retry keeps the original IDs and recipients.
           if (!failure.status || failure.status === 401 || failure.status === 429 || failure.status >= 500) break;
         }
-        if (selected === ALL_KIDS) { render(); note(`Sending to all kids · ${batch.recipients.filter(person => person.saved).length} of ${batch.recipients.length} saved`); }
+        if (selected === target) { render(); note(`Sending to group · ${batch.recipients.filter(person => person.saved).length} of ${batch.recipients.length} saved`); }
       }
       if (batch.recipients.every(person => person.saved)) {
-        pending.delete(ALL_KIDS); drafts.delete(ALL_KIDS); attachments.delete(ALL_KIDS); localFiles.delete(ALL_KIDS); voices.delete(ALL_KIDS);
-        if (selected === ALL_KIDS) { voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; }
+        pending.delete(target); drafts.delete(target); attachments.delete(target); localFiles.delete(target); voices.delete(target);
+        if (selected === target) { voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; }
+        if (newGroup) { groupDraftId = null; chosenKids = new Set(recipients().map(student => student.id)); chosenInitialized = true; }
       }
-      if (selected === ALL_KIDS) { note(pending.has(ALL_KIDS) ? 'Some family messages still need confirmation. Retry remaining uses the same message IDs.' : 'Family message saved. Everyone can see it in this thread.'); void refresh(); }
+      if (selected === target) {
+        note(pending.has(target) ? 'Some group copies still need confirmation. Retry uses the same message IDs.' : 'Message saved for this conversation.');
+        if (newGroup && !pending.has(target)) choose(groupKey(batch.groupId)); else void refresh();
+      }
     } catch (failure) {
-      if (selected === ALL_KIDS) note(`${failure.message} Your draft is retained.`);
-    } finally { sending = false; if (selected === ALL_KIDS) render(); else controls(); if (!pending.has(ALL_KIDS)) restoreComposerFocus(ALL_KIDS, wasComposing); }
+      if (selected === target) note(`${failure.message} Your draft is retained.`);
+    } finally { sending = false; if (selected === target) render(); else controls(); if (!pending.has(target)) restoreComposerFocus(target, wasComposing); }
   }
   el('messages-reply-box').addEventListener('submit', async event => {
     event.preventDefault(); if (!selected || sending || recordingBusy()) return;
     const composer = el('messages-reply-input');
     const wasComposing = [composer, el('messages-reply-btn')].includes(document.activeElement);
-    if (selected === ALL_KIDS) { await sendBroadcast(wasComposing); return; }
+    if (selected === ALL_KIDS || selected === FAMILY || groupId(selected)) { await sendShared(wasComposing); return; }
     const child = selected;
     const file = localFiles.get(child) || el('messages-attachment').files[0];
     const body = el('messages-reply-input').value.trim() || (voices.has(child) ? `Voice message · ${voices.get(child).seconds}s` : ''); if (!body && !attachments.has(child) && !file) return;
@@ -507,8 +584,9 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     clearTimeout(timer);
     loading = true; controls(); const ticket = generation; const child = selected;
     try {
-      const result = child === ALL_KIDS ? await request('list-family-messages', { before }) : await request('list-messages', { studentId: child, before });
-      if (ticket !== generation || child !== selected || child !== ALL_KIDS && result.studentId !== child) return;
+      const result = child === FAMILY ? await request('list-family-messages', { before }) : groupId(child)
+        ? await request('list-group-messages', { groupId: groupId(child), before }) : await request('list-messages', { studentId: child, before });
+      if (ticket !== generation || child !== selected || child !== FAMILY && !groupId(child) && result.studentId !== child) return;
       older = [...result.messages, ...older]; cursor = result.nextBefore; render();
     } catch (failure) { if (ticket === generation) note(failure.message); }
     finally { loading = false; controls(); if (conversationVisible() && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 5 * 60000); refreshQueued = false; }
@@ -517,14 +595,14 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   document.addEventListener('visibilitychange', () => { publishConversationView(); clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('focus', () => { if (error && !loading) void refresh(); });
   window.addEventListener('online', () => { if (error && !loading) void refresh(); });
-  window.addEventListener('beforeunload', event => { if (pending.has(ALL_KIDS)) { event.preventDefault(); event.returnValue = ''; } });
+  window.addEventListener('beforeunload', event => { if ([...pending.keys()].some(key => key === ALL_KIDS || key === FAMILY || groupId(key))) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('pagehide', () => { window.parent.postMessage({type:'bodeeguard-conversation-view',studentId:null},location.origin); clearTimeout(timer); voice.cancel(); threadRows.clear(); familyThreadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
     setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));for(const item of items)rememberChildMessage(item.studentId,item.sequence);renderStudents();},
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); publishConversationView(); clearTimeout(timer); if (active) return refresh(); },
-    notify(studentId) { if ((studentId === selected || selected === ALL_KIDS) && active) return refresh(); },
-    update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && !students.some(student => student.id === selected)) choose(null); },
-    setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }
+    notify(studentId) { if ((studentId === selected || selected === FAMILY || groupId(selected)) && active) return refresh(); },
+    update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); if (!chosenInitialized) { chosenKids = new Set(ids); chosenInitialized = true; } renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && selected !== FAMILY && !groupId(selected) && !students.some(student => student.id === selected)) choose(null); },
+    setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) { void loadGroups(); return refresh(); } else pauseMedia(); }
   };
 }

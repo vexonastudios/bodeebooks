@@ -93,6 +93,20 @@
 .cloud-family-thread-empty[hidden] { display: none; }
 .cloud-family-thread-rows .cloud-message strong { display: block; font-size: .8rem; color: #a9c3df; }
 
+.cloud-group-panel { padding: 12px 16px; border: 1px solid rgba(167,139,250,.34); border-radius: 14px; background: rgba(107,77,173,.12); }
+.cloud-group-panel h3 { margin: 0 0 4px; font-size: 1rem; }
+.cloud-group-panel p { margin: 4px 0 10px; color: #b7c8dc; font-size: .875rem; }
+.cloud-group-people { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.cloud-group-chip { min-height: 38px; padding: 6px 12px; border-radius: 999px; border: 1px solid #59617d; color: #c4c9dc; background: #1b2035; font: inherit; cursor: pointer; touch-action: manipulation; }
+.cloud-group-chip[aria-pressed="true"] { border-color: #8e80fa; color: #fff; background: #403b85; }
+.cloud-group-chip:disabled { cursor: default; opacity: .9; }
+.cloud-group-chip:focus-visible, .cloud-group-close:focus-visible { outline: 2px solid #b8adff; outline-offset: 2px; }
+.cloud-group-status:empty { display: none; }
+.cloud-group-status .btn { margin-left: 10px; }
+.cloud-group-list { padding: 0 8px; max-height: 160px; overflow: auto; }
+.cloud-chat-people .cloud-group-list-item { font-size: .85rem; overflow-wrap: anywhere; }
+.cloud-chat-people .cloud-family-conversation-link { margin: 8px; width: calc(100% - 16px); }
+
 .cloud-message {
   align-self: flex-start;
   max-width: 90%;
