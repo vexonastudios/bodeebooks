@@ -110,7 +110,7 @@ test('Vocabulary parent route bounds terms and excludes submitted mastery, devic
   assert.equal((await load('vocabulary/route.ts',{authenticated:false}).POST(request(input))).status,401);assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);assert.equal((await route.POST(request(input,{contentType:'text/plain'}))).status,415);
   assert.equal((await route.POST(request({...input,title:'a'.repeat(1024*1024)}))).status,413);assert.equal((await route.POST(request({...input,kind:'respond'}))).status,400);assert.equal((await route.POST(request({...input,terms:Array(61).fill(terms[0])}))).status,400);
   const result=await route.POST(request(input));assert.equal(result.status,200);assert.match(result.headers.get('cache-control'),/no-store/);assert.deepEqual(calls[0],{path:'/vocabulary/command',body:{id:deviceId,kind:'list',studentId:deviceId,listId:deviceId,revision:0,title:input.title,terms:terms.map(({word,definition})=>({word,definition}))}});
-  await route.POST(request({action:'list',studentId:deviceId,offset:2,householdId:'forged'}));assert.deepEqual(calls[1],{path:'/vocabulary/list',body:{studentId:deviceId,offset:2}});
+  await route.POST(request({action:'list',studentId:deviceId,offset:2,view:'archived',householdId:'forged'}));assert.deepEqual(calls[1],{path:'/vocabulary/list',body:{studentId:deviceId,offset:2,view:'archived'}});
 });
 
 test('Science transfer route accepts only the family archive review and excludes submitted records and balances',async()=>{

@@ -12,7 +12,7 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character =>
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
 })[character]);
 
-let pending=null,busy=false,loading=false,offset=0,loadEpoch=0,scanBusy=false,photoScan=null,sourceNotes='';
+let pending=null,busy=false,loading=false,offset=0,loadEpoch=0,listView='current',scanBusy=false,photoScan=null,sourceNotes='';
 function notice(message){byId('vocabulary-admin-status').textContent=message;byId('vocabulary-form-error').textContent=message;}
 function controls(){
   retry.hidden=retryModal.hidden=!pending;retry.disabled=retryModal.disabled=busy;
@@ -22,14 +22,14 @@ function controls(){
 }
 async function send(action,input={}){const response=await fetch('/guard/dashboard/vocabulary/',{method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(28000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...input})});const result=await response.json();if(!response.ok){const error=new Error(result.error||'Vocabulary could not connect.');error.status=response.status;throw error;}return result;}
 async function request(route,options={}){
-  if(!options.method){const studentId=byId('vocabulary-student-filter').value;return send('list',{offset,...(studentId?{studentId}:{})});}
+  if(!options.method){const studentId=byId('vocabulary-student-filter').value;return send('list',{offset,view:listView,...(studentId?{studentId}:{})});}
   if(busy||scanBusy)throw Error('Finish or cancel the current scan or save first.');
   const input=options.body?JSON.parse(options.body):{},fingerprint=JSON.stringify([route,options.method,input]);if(pending&&pending.fingerprint!==fingerprint)throw Error('Retry the saved Vocabulary change first.');
   if(!pending){const old=editingId?state.lists.find(l=>l.id===editingId):null,archive=options.method==='DELETE';if(editingId&&!old)throw Error('Refresh this Vocabulary list.');
     const value=archive?{...old,status:'archived',required_daily:false}:input;
     pending={fingerprint,command:{id:crypto.randomUUID(),kind:'list',studentId:old?.student_id||value.student_id,listId:old?.id||crypto.randomUUID(),revision:old?.revision||0,title:value.title,start_date:old?.start_date||state.defaults.startDate,test_date:value.test_date,status:value.status,required_daily:value.required_daily,daily_term_limit:value.daily_term_limit,retention_enabled:old?.retention_enabled??true,source_notes:archive?old?.source_notes||'':sourceNotes,terms:value.terms}};
   }
-  busy=true;controls();try{const result=await send('command',pending.command);pending=null;return result;}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}
+  busy=true;controls();try{const result=await send('command',pending.command);if(pending.command.status!=='archived'){listView='current';offset=0;}pending=null;return result;}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}
 }
 
 function dateLabel(value) {
@@ -139,10 +139,11 @@ function masteryDetails(list) {
 }
 function renderLists() {
   const filter = byId('vocabulary-student-filter')?.value || '';
-  const lists = state.lists.filter(list => (!filter || String(list.student_id) === filter));
+  const lists = state.lists.filter(list => (listView==='archived'?list.status==='archived':list.status!=='archived') && (!filter || String(list.student_id) === filter));
   const root = byId('vocabulary-list-grid');
   const child = state.students.find(student => String(student.id) === filter);
   byId('vocabulary-lists-title').textContent = child ? `${child.name}’s vocabulary lists` : 'Vocabulary lists';
+  if (!lists.length && listView==='archived') {root.innerHTML='<div class="vocabulary-empty"><strong>No archived vocabulary lists.</strong><p>Lists you archive will appear here.</p></div>';return;}
   if (!lists.length) {
     root.innerHTML = '<div class="vocabulary-empty"><strong>No vocabulary lists here yet.</strong><p>Add a list with the words and definitions your child is learning.</p><button type="button" class="btn btn-primary" data-vocabulary-create>Create a vocabulary list</button></div>';
     return;
@@ -156,7 +157,7 @@ function renderLists() {
     const totals = stages.map(stage => mastery(list, stage.key));
     return `<article class="vocabulary-list-card ${status === 'active' ? 'is-active' : ''}" data-vocabulary-list="${escapeHtml(list.id)}">
       <div class="vocabulary-list-top"><div><div class="vocabulary-list-student">${escapeHtml(list.student_name || state.students.find(student => String(student.id) === String(list.student_id))?.name || 'Child')}</div><h3 class="vocabulary-list-title">${escapeHtml(list.title || 'Vocabulary List')}</h3></div><span class="vocabulary-list-badge ${status}">${escapeHtml(status)}</span></div>
-      <div class="vocabulary-list-meta"><span>${count} words</span><span>${list.test_date ? `Test ${escapeHtml(dateLabel(list.test_date))}` : 'No test date'}</span><span>${Number(list.daily_term_limit) || 8} words / session</span><span>${list.required_daily ? 'Daily schoolwork' : 'Optional practice'}</span></div>
+      <div class="vocabulary-list-meta"><span>${count} words</span><span>${list.test_date ? `Test ${escapeHtml(dateLabel(list.test_date))}` : 'No test date'}</span><span>${Number(list.daily_term_limit) || 10} words / session</span><span>${list.required_daily ? 'Daily schoolwork' : 'Optional practice'}</span></div>
       <div class="vocabulary-readiness"><span>Ready for the test</span><strong>${Number.isFinite(readiness) ? `${Math.max(0,Math.min(100,Math.round(readiness)))}%` : 'Not assessed'}</strong></div>
       ${progressBar(totals)}<div class="vocabulary-stage-grid">${stageMarkup(totals)}</div>
       ${wordChips(trouble, 'needs-attention', 'Needs attention')}${wordChips(due, 'due-review', 'Due for review')}
@@ -178,10 +179,10 @@ function populateStudents() {
 async function loadVocabularyTab() {
   const status = byId('vocabulary-admin-status');
   if (!status) return;
-  const epoch=++loadEpoch;status.textContent = 'Loading vocabulary mastery…';
+  const epoch=++loadEpoch;renderListTabs();byId('vocabulary-list-grid').replaceChildren();byId('vocabulary-list-grid').setAttribute('aria-busy','true');previous.disabled=next.disabled=true;status.textContent = 'Loading vocabulary mastery…';
   try {
     const result = await request(`/admin/lists`);
-    if(epoch!==loadEpoch)return;previous.disabled=offset===0;next.disabled=!result.hasMore;
+    if(epoch!==loadEpoch)return;byId('vocabulary-list-grid').setAttribute('aria-busy','false');previous.disabled=offset===0;next.disabled=!result.hasMore;
     state = {
       familySummary: result.familySummary||[],photoScanningAvailable:result.photoScanningAvailable===true,
       students: Array.isArray(result.students) ? result.students : [],
@@ -193,7 +194,7 @@ async function loadVocabularyTab() {
     renderLists();
     status.textContent = `${state.lists.length} list${state.lists.length === 1 ? '' : 's'} · ${state.students.length} children`;
   } catch (error) {
-    if(epoch===loadEpoch)status.textContent = error.message;
+    if(epoch===loadEpoch){status.textContent = error.message;byId('vocabulary-list-grid').setAttribute('aria-busy','false');}
   }
 }
 
@@ -235,7 +236,7 @@ function openModal(list = null, studentId = '') {
   byId('vocabulary-list-title').value = list?.title || 'Weekly Vocabulary';
   byId('vocabulary-list-test-date').value = list?.test_date || state.defaults.testDate || '';
   byId('vocabulary-list-required').checked = list ? !!list.required_daily : state.defaults.requiredDaily !== false;
-  byId('vocabulary-list-daily-limit').value = Number(list?.daily_term_limit || state.defaults.dailyTermLimit || 8);
+  byId('vocabulary-list-daily-limit').value = Number(list?.daily_term_limit ?? state.defaults.dailyTermLimit ?? 10);
   const statusSelect = byId('vocabulary-list-status');
   const completedOption = [...statusSelect.options].find(option => option.value === 'completed');
   if (completedOption) {
@@ -296,7 +297,7 @@ async function saveList() {
         title: byId('vocabulary-list-title').value.trim(),
         test_date: byId('vocabulary-list-test-date').value,
         required_daily: byId('vocabulary-list-required').checked,
-        daily_term_limit: Math.max(4, Math.min(15, Number(byId('vocabulary-list-daily-limit').value) || 8)),
+        daily_term_limit: Math.max(4, Math.min(15, Number(byId('vocabulary-list-daily-limit').value) || 10)),
         status: selectedStatus,
         source: listSource, terms: payloadTerms
       })
@@ -366,9 +367,14 @@ function setupVocabulary() {
 }
 
 function button(label,action){const e=document.createElement('button');e.type='button';e.className='btn btn-secondary';e.textContent=label;e.onclick=()=>void action().catch(error=>notice(error.message));return e;}
-async function retryChange(){if(!pending||busy)return;busy=true;controls();try{await send('command',pending.command);pending=null;busy=false;closeModal();await loadVocabularyTab();}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}}
+async function retryChange(){if(!pending||busy)return;busy=true;controls();try{await send('command',pending.command);if(pending.command.status!=='archived'){listView='current';offset=0;}pending=null;busy=false;closeModal();await loadVocabularyTab();}catch(error){if(error.status>=400&&error.status<500)pending=null;throw error;}finally{busy=false;controls();}}
 const retry=button('Retry saved Vocabulary change',retryChange),retryModal=button('Retry saved Vocabulary change',retryChange);retryModal.id='vocabulary-retry-modal';retry.hidden=retryModal.hidden=true;byId('vocabulary-admin-status').after(retry);byId('vocabulary-form-error').after(retryModal);
 const previous=button('Newer Vocabulary lists',async()=>{offset=Math.max(0,offset-2);await loadVocabularyTab();}),next=button('Older Vocabulary lists',async()=>{offset+=2;await loadVocabularyTab();});previous.disabled=next.disabled=true;byId('vocabulary-pagination').append(previous,next);
+const listTabs=document.createElement('div');listTabs.className='vocabulary-list-tabs';listTabs.setAttribute('role','tablist');listTabs.setAttribute('aria-label','Vocabulary lists');
+for(const [value,label] of [['current','Current lists'],['archived','Archives']]){const tab=button(label,async()=>{if(listView===value)return;listView=value;offset=0;await loadVocabularyTab();});tab.id='vocabulary-view-'+value;tab.dataset.vocabularyView=value;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','vocabulary-list-grid');listTabs.append(tab);}
+byId('vocabulary-list-grid').before(listTabs);byId('vocabulary-list-grid').setAttribute('role','tabpanel');
+function renderListTabs(){for(const tab of listTabs.children){const selected=tab.dataset.vocabularyView===listView;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;}byId('vocabulary-list-grid').setAttribute('aria-labelledby','vocabulary-view-'+listView);}
+listTabs.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=[...listTabs.children],index=tabs.indexOf(event.target);const target=event.key==='Home'?tabs[0]:event.key==='End'?tabs.at(-1):tabs[(index+1)%tabs.length];target.focus();target.click();});renderListTabs();
 const archived=document.createElement('option');archived.value='archived';archived.textContent='Archived — retained history and older-word reviews';byId('vocabulary-list-status').append(archived);
 photoScan=createVocabularyPhotoScan({input:byId('vocabulary-list-photos'),status:byId('vocabulary-scan-status'),hasTerms:()=>terms.some(term=>term.word||term.definition),onBusy(value){scanBusy=value;controls();},onResult(result,{mode='append'}={}){
   if(!result.is_vocabulary_list||!result.terms.length)return 'No vocabulary words were found. Take a clearer photo with the words and definitions visible.';

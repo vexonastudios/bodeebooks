@@ -94,3 +94,6 @@
 .vocabulary-scan-choices{display:flex;flex-wrap:wrap;gap:10px}.vocabulary-scan-choices .btn{min-height:44px;white-space:normal}
 .vocabulary-scan-preview[hidden],.vocabulary-scan-choices[hidden]{display:none}
 @media(max-width:600px){.vocabulary-scan-preview{margin:12px 16px}.vocabulary-scan-choices .btn{flex:1}}
+.vocabulary-list-tabs{display:flex;gap:8px;margin:0 0 20px;border-bottom:1px solid #ffffff1c;padding-bottom:12px}
+.vocabulary-list-tabs [role=tab]{min-height:44px}.vocabulary-list-tabs [aria-selected=true]{background:#22d3ee1a;border-color:#22d3ee80;color:#8de7de}
+.vocabulary-list-tabs [role=tab]:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}

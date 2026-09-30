@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   } catch { return reply({ error: "The Vocabulary request is invalid." }, 400); }
   finally { reader.releaseLock(); }
   let body: Record<string, unknown>;
-  if (input.action === "list") body = pick(input, ["studentId", "offset"]);
+  if (input.action === "list") body = pick(input, ["studentId", "offset", "view"]);
   else {
     if (input.kind !== "list") return reply({ error: "Choose a parent Vocabulary list change." }, 400);
     if (!Array.isArray(input.terms) || input.terms.length < 3 || input.terms.length > 60 || input.terms.some(term => !term || typeof term !== "object" || Array.isArray(term))) return reply({ error: "Use three to 60 Vocabulary terms." }, 400);
