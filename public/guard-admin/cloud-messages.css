@@ -358,16 +358,34 @@
 .cloud-messages-panel > .tab-header h1 { flex: 1; min-width: 0; }
 .cloud-messages-back:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 
-/* The same compact, touch-accessible reactions appear in parent and child chat. */
-.message-reactions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; min-width:0; color:inherit; }
-.message-reaction-badges { display:contents; }
-.message-reactions button { font:inherit; color:inherit; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18); border-radius:22px; min-height:44px; min-width:44px; padding:6px 12px; cursor:pointer; touch-action:manipulation; }
-.message-reactions button:hover { background:rgba(134,125,255,.22); }
-.message-reactions button:focus-visible { outline:3px solid #a99fff; outline-offset:2px; }
-.message-reactions button[aria-pressed="true"] { background:rgba(119,105,242,.3); border-color:#a99fff; }
-.message-reactions button:disabled { opacity:.55; cursor:wait; }
-.message-reactions .message-reaction-trigger { font-size:.8rem; color:inherit; opacity:.85; }
-.message-reaction-picker { display:flex; flex-wrap:wrap; gap:4px; flex-basis:100%; padding:4px; border-radius:14px; background:rgba(127,127,160,.13); }
+/* Reactions sit on the bubble edge; the picker floats above the conversation. */
+.message-can-react { position:relative; }
+.message-reactions { color:inherit; min-width:0; }
+.message-reactions button, .message-reaction-picker button { font:inherit; color:inherit; min-height:44px; min-width:44px; padding:0; cursor:pointer; touch-action:manipulation; }
+.message-reactions button:focus-visible, .message-reaction-picker button:focus-visible { outline:2px solid #bdb2ff; outline-offset:2px; }
+.message-reactions button:disabled, .message-reaction-picker button:disabled { opacity:.55; cursor:wait; }
+.message-reaction-trigger { position:absolute; right:-46px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:50%; background:transparent; color:#b7c8dc; opacity:0; transition:opacity .12s ease; }
+.message-reaction-trigger svg { width:21px; height:21px; padding:5px; box-sizing:content-box; border-radius:50%; background:#1c2337; border:1px solid #ffffff20; }
+.cloud-message.parent .message-reaction-trigger, .msg-child .message-reaction-trigger { right:auto; left:-46px; }
+.message-can-react:focus-within > .message-reactions .message-reaction-trigger, .message-reaction-open > .message-reactions .message-reaction-trigger { opacity:1; }
+@media (hover:hover) and (pointer:fine) {
+  .message-can-react:hover > .message-reactions .message-reaction-trigger { opacity:1; }
+}
+@media (pointer:coarse) {
+  .message-can-react { -webkit-touch-callout:none; }
+}
+.cloud-message.message-can-react { max-width:min(90%, calc(100% - 44px)); }
+.cloud-mobile .cloud-message.message-can-react { max-width:min(88%, calc(100% - 44px)); }
+.message-reaction-badges { position:absolute; top:calc(100% - 10px); left:8px; display:flex; gap:2px; }
+.cloud-message.parent .message-reaction-badges, .msg-child .message-reaction-badges { left:auto; right:8px; }
+.message-can-react.message-has-reaction-badges { margin-bottom:24px; }
+.message-reactions .message-reaction-badge { display:grid; place-items:center; background:transparent; border:0; border-radius:20px; }
+.message-reaction-badge > span { display:inline-flex; align-items:center; justify-content:center; gap:3px; padding:3px 8px; min-width:38px; min-height:26px; border:1px solid #5f6484; border-radius:18px; background:#202942; color:#f1efff; font-size:.8rem; box-shadow:0 2px 5px #0003; }
+.message-reaction-badge[aria-pressed=true] > span { background:#373761; border-color:#b0a0f2; }
+.message-reaction-picker { position:fixed; z-index:2147483000; display:flex; gap:4px; width:max-content; max-width:calc(100vw - 16px); box-sizing:border-box; padding:8px; border:1px solid #62617e; border-radius:32px; background:#191d30; color:#fff; box-shadow:0 8px 30px #0006; }
+.message-reaction-picker button { flex:0 0 44px; width:44px; height:44px; border:1px solid transparent; border-radius:50%; background:transparent; font-size:1.45rem; }
+.message-reaction-picker button:hover { background:#a78bfa25; }
+.message-reaction-picker button[aria-pressed=true] { background:#a78bfa30; border-color:#b0a0f2; }
 .message-reaction-picker[hidden], .message-reaction-feedback[hidden] { display:none; }
-.message-reactions .message-reaction-picker button { padding:4px 8px; font-size:1.35rem; }
-.message-reaction-feedback { flex-basis:100%; color:#ffb7b7; font-size:.8rem; overflow-wrap:anywhere; }
+.message-reaction-feedback { display:block; margin-top:6px; color:#ffb7b7; font-size:.8rem; overflow-wrap:anywhere; }
+@media (prefers-reduced-motion:reduce) { .message-reaction-trigger { transition:none; } }

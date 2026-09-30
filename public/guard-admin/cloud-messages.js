@@ -212,7 +212,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         if (attachment) row.append(attachment);
         row.append(meta);
         const child = selected;
-        const reactions = createMessageReactions({ otherChild: students.find(student => student.id === child)?.name || 'Child', onReact: async emoji => {
+        const reactions = createMessageReactions({ messageElement: row, otherChild: students.find(student => student.id === child)?.name || 'Child', onReact: async emoji => {
           if (selected !== child || !conversationVisible()) throw new Error('Reopen this conversation before reacting.');
           const result = await request('react-message', { studentId: child, messageId: message.id, emoji });
           if (selected !== child || result.id !== message.id || result.studentId !== child || !result.saved || !Array.isArray(result.reactions)) throw new Error('The reaction could not be confirmed. Reopen this conversation.');
