@@ -101,10 +101,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
   const updated=node('time','cloud-overview-updated');updated.id='cloud-overview-updated';updated.setAttribute('aria-live','polite');
   const refreshGroup=node('div','cloud-overview-refresh');refresh.before(refreshGroup);refreshGroup.append(updated,refresh);
   const lockAll=button('Lock All Computers','lock-keyhole',el=>run(el,async()=>{
-    const devices=connectedDevices();
-    if(!devices.length)throw Error('No child computer is currently connected. Refresh to check again.');
+    const devices=getSnapshot()?.devices||[];
+    if(!devices.length)throw Error('Connect a child computer first.');
     await mutate('computer-command',{kind:'lock-all',locked:!devices.every(d=>d.locked)});
-  },{pending:'Updating connected computers…',title:'Computer controls saved',detail:'The connected child apps will apply this on their next sync.'}),'btn monitor-student-action--lock');notices.bind(lockAll,'all-computers');notices.mount(header,'all-computers');lockAll.id='cloud-lock-all';lockAll.dataset.cloudMutation='true';header.querySelector('.cloud-actions').prepend(lockAll);
+  },{pending:'Saving computer controls…',title:'Computer controls saved',detail:'Child computers will apply this when they next connect.'}),'btn monitor-student-action--lock');notices.bind(lockAll,'all-computers');notices.mount(header,'all-computers');lockAll.id='cloud-lock-all';lockAll.dataset.cloudMutation='true';header.querySelector('.cloud-actions').prepend(lockAll);
   const stats=node('div','command-center cloud-monitor-stats');stats.id='cloud-monitor-stats';grid.before(stats);
   const assistant=node('form','cloud-overview-assistant');
   const input=node('input');input.placeholder='Ask about settings, activities or your dashboard…';input.setAttribute('aria-label','Ask BodeeGuard');input.maxLength=1500;
@@ -150,7 +150,6 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const unlocked=!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
         &&Array.isArray(model.student.quick_unlock.subjectIds)&&model.student.quick_unlock.subjectIds.includes(subject.id);
       const choice=button(subject.label,unlocked?'circle-check':subject.icon,async el=>{
-        if(!studentOnline(model.student.id)){quickDialog.close();render();setControls();return;}
         el.disabled=true;
         quickDialog.querySelector('.cloud-quick-status').textContent='Saving '+subject.label+' for '+model.student.name+'…';
         try{
@@ -170,7 +169,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     status.setAttribute('role','status');foot.append(status,done);shell.append(head,choices,foot);quickDialog.append(shell);window.lucide?.createIcons();
   }
   function openQuickDialog(studentId){
-    const model=monitoringChildren(getSnapshot(),connectionNow()).find(item=>item.student.id===studentId);if(!model?.online)return;
+    const model=monitoringChildren(getSnapshot(),connectionNow()).find(item=>item.student.id===studentId);if(!model)return;
     quickStudentId=studentId;renderQuickDialog(model);if(!quickDialog.open)quickDialog.showModal();
   }
   function render(){
@@ -187,10 +186,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const stat=node('div','cc-stat'),copy=node('div','cc-stat-body'),count=node('span','cc-stat-value',String(value));count.append(node('span','cc-of',` / ${total}`));copy.append(count,node('span','cc-stat-label',label));stat.append(icon(glyph),copy);stats.append(stat);
     }
     updated.dateTime=snapshot.serverTime;updated.textContent='Updated '+new Date(snapshot.serverTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-    const allLocked=online>0&&connected.every(d=>d.locked);
+    const devices=snapshot.devices||[],allLocked=devices.length>0&&devices.every(d=>d.locked);
     lockAll.replaceChildren(icon(allLocked?'lock-open':'lock-keyhole'),node('span','',allLocked?'Unlock All Computers':'Lock All Computers'));
-    delete lockAll.dataset.actionLabel;lockAll.disabled=!online;lockAll.dataset.requiresDevice=String(online>0);
-    lockAll.title=online?'Lock or unlock your family’s computers.':'Controls become available when a child computer connects.';
+    delete lockAll.dataset.actionLabel;lockAll.disabled=!devices.length;lockAll.dataset.requiresDevice=String(devices.length>0);
+    lockAll.title=devices.length?'Save a lock or unlock for every family computer, including those offline.':'Connect a child computer first.';
     for(const model of models){
       const {student,device}=model;
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
@@ -217,13 +216,6 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       }
       const actions=node('div','cloud-monitor-actions'),primary=node('div','cloud-monitor-actions monitor-primary-actions');
       top.after(primary);
-      for(const group of [actions,primary]){
-        group.inert=!model.online;group.setAttribute('aria-disabled',String(!model.online));
-        group.addEventListener('click',event=>{
-          if(studentOnline(student.id))return;
-          event.preventDefault();event.stopImmediatePropagation();render();setControls();
-        },true);
-      }
       const shot=button('Snap Screen','camera',el=>run(el,async()=>{if(!canScreenshot(student.id)){el.dataset.requiresDevice='false';throw Error('The child app must be online. Refresh to check its connection.');}await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');},{pending:'Requesting a screenshot from '+student.name+'…',title:'Screenshot requested for '+student.name,detail:'Opening Screenshots. The image appears when the child app sends it.'}),'monitor-control monitor-control--screenshot');notices.bind(shot,student.id+':screenshot');shot.disabled=!canScreenshot(student.id);shot.dataset.requiresDevice=String(!shot.disabled);shot.dataset.cloudMutation='true';shot.title=shot.disabled?'Open the child app, then refresh to check its connection.':'Capture the child’s BodeeGuard screen';actions.append(shot);notices.mount(actions,student.id+':screenshot');
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
       if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
@@ -238,25 +230,21 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const close=button('Close BodeeGuard','power',el=>run(el,()=>mutate('computer-command',{kind:'close',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a close request to '+student.name+'…',title:'Close requested for '+student.name,detail:'The request expires in two minutes if the child app does not receive it.'}),'monitor-control monitor-control--close');
       notices.bind(close,student.id+':close');
       const parts=String(device?.app_version||'').split('.').map(Number),supportsClose=parts.length===3&&parts.every(Number.isInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=201));
-      close.disabled=!supportsClose;close.dataset.requiresDevice=String(supportsClose);close.dataset.cloudMutation='true';
+      close.disabled=!supportsClose||!model.online;close.dataset.requiresDevice=String(supportsClose&&model.online);close.dataset.cloudMutation='true';
       close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';
       const sleep=button('Sleep computer','moon',el=>run(el,()=>mutate('computer-command',{kind:'sleep',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a sleep request to '+student.name+'…',title:'Sleep requested for '+student.name,detail:'The request expires in two minutes. BodeeGuard stays open for when the computer wakes.'}),'monitor-control monitor-control--sleep');
       const supportsSleep=parts.length===3&&parts.every(Number.isSafeInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=265));
-      notices.bind(sleep,student.id+':sleep');sleep.disabled=!supportsSleep;sleep.dataset.requiresDevice=String(supportsSleep);sleep.dataset.cloudMutation='true';
+      notices.bind(sleep,student.id+':sleep');sleep.disabled=!supportsSleep||!model.online;sleep.dataset.requiresDevice=String(supportsSleep&&model.online);sleep.dataset.cloudMutation='true';
       sleep.title=!device?'Connect a computer first.':!supportsSleep?'Available after this computer updates to 1.2.265.':'Put Windows to sleep. BodeeGuard and open work remain ready when it wakes.';
       const power=node('div','monitor-power-actions');power.append(close,sleep);primary.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'),power);notices.mount(primary,student.id+':close');notices.mount(primary,student.id+':sleep');
       if(device&&model.online&&!supportsSleep)primary.append(node('small','monitor-control-note','Remote sleep needs child app 1.2.265 or newer.'));
       if(device&&!supportsClose)primary.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
-      if(!model.online)card.append(node('p','monitor-offline-note',model.connection==='Connection not checked'?'The connection check is unavailable. Refresh to check again.':'Controls are available when this child’s computer is online.'));
+      if(!model.online)card.append(node('p','monitor-offline-note',model.connection==='Connection not checked'?'Connection status is unavailable. Saved unlocks will apply when this computer reconnects.':'Unlocks and time changes can be saved now. This computer will receive them when it reconnects.'));
       mobile()?.decorateCard(card,student.id,model);
       for(const control of card.querySelectorAll('.cloud-monitor-actions button, .cloud-mobile-only button')){
-        control.dataset.requiresDevice=String(model.online&&control.dataset.requiresDevice!=='false');
+        control.dataset.requiresDevice=String(control.dataset.requiresDevice!=='false');
         control.disabled=control.dataset.requiresDevice==='false';control.dataset.cloudMutation='true';
-        if(!model.online)control.title='Available when this child’s computer is online.';
-      }
-      for(const summary of actions.querySelectorAll('summary')){
-        summary.setAttribute('aria-disabled',String(!model.online));summary.tabIndex=model.online?0:-1;
       }
       grid.append(card);
     }
@@ -264,9 +252,9 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     for(const {studentId,kind} of openMenus){
       const card=[...grid.children].find(item=>item.dataset.studentId===studentId);
       const detail=[...(card?.querySelectorAll('.monitor-media-action')||[])].find(item=>item.dataset.media===kind)?.querySelector('details');
-      if(detail&&!detail.closest('.cloud-monitor-actions').inert)detail.open=true;
+      if(detail)detail.open=true;
     }
-    if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model?.online)renderQuickDialog(model);else quickDialog.close();}
+    if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model)renderQuickDialog(model);else quickDialog.close();}
     notices.render();window.lucide?.createIcons();
     if(connected.length){
       const nextExpiry=Math.min(...connected.map(connectionExpiresAt))-now;
