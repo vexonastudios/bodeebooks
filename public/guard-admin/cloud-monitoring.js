@@ -128,7 +128,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     const row=node('div','monitor-media-action');row.dataset.media=kind;
     const unlocked=model.media[kind].unlocked, key=model.student.id+':'+kind, child=model.student.name;
     const change=extra=>mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:model.student.id,...extra}});
-    const main=button(unlocked?`${label} unlocked`:kind==='audiobook'?'Bypass Audiobooks':`Unlock ${label}`,unlocked?'lock-open':glyph,
+    const main=button(unlocked?`${label} bypass on`:kind==='audiobook'?'Bypass Audiobooks':`Bypass ${label} rules`,unlocked?'lock-open':glyph,
       el=>run(el,()=>change({operation:'override',unlocked:!unlocked}),{pending:(unlocked?'Restoring '+label.toLowerCase()+' rules':'Unlocking '+label.toLowerCase())+' for '+child+'…',title:unlocked?label+' rules restored for '+child:label+' unlocked for '+child,detail:unlocked?'Saved. School and schedule requirements apply again on the child app’s next sync.':'Saved for today. Daily time limits still apply. The child app receives the change on its next sync.',errorTitle:'Could not confirm '+label.toLowerCase()+' access for '+child}),'monitor-media-main');
     notices.bind(main,key);main.dataset.cloudMutation='true';main.title=unlocked?'Restore the usual school and schedule requirements':'Bypass school and schedule requirements for today. The daily time limit still applies.';
     const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));summary.setAttribute('aria-label',`Add ${label.toLowerCase()} time for ${model.student.name}`);
