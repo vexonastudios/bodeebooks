@@ -70,7 +70,7 @@
     "renderer/js/message-thread.js": "07467db77af45fc3c7f9e941c2b946e74a8e369a31ea5735d985762e0aa0dced",
     "renderer/lib/fix-webm-duration.js": "5cc08779083d4a1129f30e66af75e50a29a7b56df0034046d58902e1d6037112",
     "renderer/lib/fix-webm-duration.LICENSE": "32313800857cae0018a1c233717ead61a1ab70788b99da7bed2d37d125494ec8",
-    "renderer/css/cloud-messages.css": "bb5c2aaba3c027d83f20ff254f8c76cf2e9423aebecdc4f0b60a0b22e7891dc3",
+    "renderer/css/cloud-messages.css": "69b9a40dfd3fca67e509ac25d553375499e359878b3a88bb22cac27256814510",
     "renderer/js/admin/cloud-screenshots.js": "a87ee3a51fa57bb63116a6e8afe74a1b6cb91018d2a164c937214db428c7c535",
     "renderer/css/admin/cloud-screenshots.css": "2f3d410af4da5edbbbef9592fb90bba5df985321796f378ec4fd2b28b2d8f352",
     "renderer/js/admin/cloud-files.js": "9c685248c47d9159b1f19059eed10ffca505b2a99afdafa23c03b7f590fcbd74",

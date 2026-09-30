@@ -389,7 +389,7 @@
   .message-can-react:hover > .message-reactions .message-reaction-trigger { opacity:1; }
 }
 @media (pointer:coarse) {
-  .message-can-react { -webkit-touch-callout:none; }
+  .message-can-react, .message-can-react * { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
 }
 .cloud-message.message-can-react { max-width:min(90%, calc(100% - 44px)); }
 .cloud-mobile .cloud-message.message-can-react { max-width:min(88%, calc(100% - 44px)); }
