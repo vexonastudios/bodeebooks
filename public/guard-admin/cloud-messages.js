@@ -13,7 +13,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const recipients = () => students.filter(student => !student.archived_at);
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
-  let groups = [], chosenKids = new Set(), chosenInitialized = false, groupDraftId = null;
+  let groups = [], peerEnabled = false, chosenKids = new Set(), chosenInitialized = false, groupDraftId = null;
   let unread = new Map();
   const recentChildMessages = new Map();
   const sequence = value => typeof value === 'string' && /^[1-9][0-9]{0,18}$/.test(value) ? BigInt(value) : 0n;
@@ -47,8 +47,9 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const groupDescription = textNode('p', 'Choose who belongs. Everyone selected can see and reply in one shared chat.');
   const groupPeople = textNode('div', '', 'cloud-group-people');
   const groupClose = textNode('button', 'Close group', 'btn btn-secondary cloud-group-close'); groupClose.type = 'button';
+  const groupReopen = textNode('button', 'Reopen chat', 'btn btn-secondary cloud-group-close'); groupReopen.type = 'button';
   const groupStatus = textNode('p', '', 'cloud-group-status');
-  groupPanel.append(groupTitle, groupDescription, groupPeople, groupClose, groupStatus);
+  groupPanel.append(groupTitle, groupDescription, groupPeople, groupClose, groupReopen, groupStatus);
   groupClose.addEventListener('click', async () => {
     const id = groupId(selected); if (!id || sending) return;
     groupClose.disabled = true;
@@ -58,6 +59,16 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       render(); renderStudents(); note('Group closed. Children can still read its history, but cannot reply.');
     } catch (failure) { note(failure.message); }
     finally { groupClose.disabled = false; }
+  });
+  groupReopen.addEventListener('click', async () => {
+    const id = groupId(selected); if (!id || sending) return;
+    groupReopen.disabled = true;
+    try { const result = await request('reopen-message-group', { groupId: id });
+      groups = groups.map(group => group.id === id ? result.group : group);
+      if (page) page.group = result.group;
+      render(); renderStudents(); note('Chat reopened. Children can reply while sibling messaging is on.');
+    } catch (failure) { note(failure.message); }
+    finally { groupReopen.disabled = false; }
   });
   const familyTitle = textNode('h3', 'Family conversation');
   const familyDescription = textNode('p', 'Everyone can read this thread. Only parents can post unless you turn on children’s replies.');
@@ -73,7 +84,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       if (page) page.childrenCanPost = desired;
       note(desired ? 'Children can now post in the family conversation.' : 'Only parents can post in the family conversation.');
     } catch (failure) { familyToggle.checked = !desired; note(`${failure.message} The previous setting is still shown.`); }
-    finally { familyToggle.disabled = false; }
+    finally { familyToggle.disabled = !peerEnabled; }
   });
   const mobile = window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)');
   const section = el('tab-messages') || document.querySelector('.cloud-messages-panel');
@@ -94,9 +105,23 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   messageAll.addEventListener('click', () => choose(ALL_KIDS));
   const familyButton = textNode('button', 'Family conversation', 'btn btn-secondary cloud-family-conversation-link'); familyButton.type = 'button';
   familyButton.addEventListener('click', () => choose(FAMILY));
+  const peerLabel = textNode('label', '', 'cloud-peer-setting');
+  const peerToggle = document.createElement('input'); peerToggle.type = 'checkbox';
+  peerLabel.append(peerToggle, textNode('span', 'Let kids message each other'));
+  const peerHint = textNode('small', 'Off by default. When on, children can start sibling chats and groups. Parents can review and close every chat.');
+  const peerSettings = textNode('div', '', 'cloud-peer-settings'); peerSettings.append(peerLabel, peerHint);
+  peerToggle.addEventListener('change', async () => {
+    const desired = peerToggle.checked; peerToggle.disabled = true;
+    try { const saved = await request('peer-message-settings', { enabled: desired });
+      if (saved.peerMessagingEnabled !== desired) throw new Error('The sibling messaging setting could not be confirmed.');
+      peerEnabled = desired; renderStudents(); if (selected === FAMILY || groupId(selected)) render();
+      note(desired ? 'Sibling chats and group replies are on.' : 'Sibling chats and group replies are paused. Their history is kept.');
+    } catch (failure) { peerToggle.checked = !desired; note(`${failure.message} The previous setting is still shown.`); }
+    finally { peerToggle.disabled = false; }
+  });
   const groupList = textNode('div', '', 'cloud-group-list');
-  el('messages-student-list').before(messageAll, familyButton, groupList, search); search.addEventListener('input', renderStudents);
-  back.addEventListener('click', () => { pauseMedia(); clearTimeout(timer); showConversation(false); renderStudents(); (selected === ALL_KIDS ? messageAll : el('messages-student-list').querySelector('[aria-pressed="true"]'))?.focus(); });
+  el('messages-student-list').before(messageAll, familyButton, peerSettings, groupList, search); search.addEventListener('input', renderStudents);
+  back.addEventListener('click', () => { pauseMedia(); clearTimeout(timer); showConversation(false); void loadGroups(); renderStudents(); (selected === ALL_KIDS ? messageAll : el('messages-student-list').querySelector('[aria-pressed="true"]'))?.focus(); });
   el('messages-reply-input').placeholder = 'Message…';
   el('messages-attachment').setAttribute('aria-label', 'Attach an image, PDF or audio file');
   el('messages-attachment-clear').innerHTML = '<i data-lucide="x" aria-hidden="true"></i><span>Clear attachment</span>';
@@ -336,11 +361,12 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     render(); renderStudents(); note(child === ALL_KIDS ? 'Choose recipients and send a group message.' : 'Loading conversation…'); void refresh();
   }
   async function loadGroups() {
-    try { const result = await request('list-message-groups', {}); groups = result.groups || []; renderStudents();
+    try { const result = await request('list-message-groups', {}); groups = result.groups || []; peerEnabled = result.peerMessagingEnabled === true; renderStudents();
       if (groupId(selected) && !groups.some(group => group.id === groupId(selected))) choose(null);
     } catch (failure) { if (groupId(selected)) note(`Group conversations could not load. ${failure.message}`); }
   }
   function renderStudents() {
+    peerToggle.checked = peerEnabled;
     messageAll.disabled = false;
     messageAll.setAttribute('aria-pressed', String(selected === ALL_KIDS));
     messageAll.querySelector('strong').textContent = 'New group message';
@@ -348,7 +374,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     familyButton.setAttribute('aria-pressed', String(selected === FAMILY));
     groupList.replaceChildren(...groups.map(group => {
       const names = group.members.map(member => member.name).join(', ');
-      const button = textNode('button', `${names}${group.closedAt ? ' · Closed' : ''}`, 'btn btn-secondary cloud-group-list-item');
+      const button = textNode('button', `${group.kind === 'siblings' ? group.members.length > 2 ? 'Sibling group: ' : 'Sibling chat: ' : ''}${names}${group.closedAt ? ' · Closed' : ''}`, 'btn btn-secondary cloud-group-list-item');
       button.type = 'button'; button.setAttribute('aria-pressed', String(groupKey(group.id) === selected));
       button.addEventListener('click', () => choose(groupKey(group.id)));
       return button;
@@ -439,12 +465,16 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
     if ((family ? familyPanel : groupPanel).parentElement !== thread) thread.replaceChildren(family ? familyPanel : groupPanel, familyRows);
     familyToggle.checked = Boolean(page?.childrenCanPost);
-    familyToggle.disabled = !page;
+    familyToggle.disabled = !page || !peerEnabled;
+    familyDescription.textContent = peerEnabled ? 'Everyone can read this thread. Turn on replies below if you want children to post here.' :
+      'Everyone can read this thread. Turn on sibling messaging from the conversation list before allowing replies.';
     const progress = family ? familyProgress : groupStatus;
     progress.replaceChildren();
     if (!family) {
-      groupTitle.textContent = newGroup ? 'Who should receive this?' : 'Group conversation';
-      groupDescription.textContent = newGroup ? `${total} selected · Tap a name to include or remove them.` : currentGroup?.closedAt ? 'This group is closed. Everyone can still read its history.' : 'Everyone in this group can read and reply.';
+      groupTitle.textContent = newGroup ? 'Who should receive this?' : currentGroup?.kind === 'siblings' ? currentGroup.members.length > 2 ? 'Sibling group' : 'Sibling chat' : 'Group conversation';
+      groupDescription.textContent = newGroup ? `${total} selected · Tap a name to include or remove them. Children can reply when sibling messaging is on.` :
+        currentGroup?.closedAt ? 'This chat is closed. Everyone can still read its history.' :
+        peerEnabled ? 'Everyone in this chat can read and reply.' : 'Only parents can post while sibling messaging is off.';
       groupPeople.replaceChildren(...recipients().filter(student => newGroup || currentGroup?.members.some(member => member.studentId === student.id)).map(student => {
         const selectedKid = newGroup ? chosenKids.has(student.id) : true;
         const chip = textNode('button', student.name, 'cloud-group-chip'); chip.type = 'button';
@@ -453,6 +483,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         return chip;
       }));
       groupClose.hidden = newGroup || Boolean(currentGroup?.closedAt);
+      groupReopen.hidden = newGroup || !currentGroup?.closedAt;
     }
     if (batch) progress.append(textNode('span', saved === total ? `Saved for ${total} kids.` : `${saved} of ${total} copies saved online. Retry the rest.`));
     if (batch && saved < total && !sending) {
@@ -592,7 +623,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     finally { loading = false; controls(); if (conversationVisible() && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 5 * 60000); refreshQueued = false; }
   });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); familyThreadRows.pause(); }
-  document.addEventListener('visibilitychange', () => { publishConversationView(); clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
+  document.addEventListener('visibilitychange', () => { publishConversationView(); clearTimeout(timer); if (!document.hidden) { if (active) void loadGroups(); void refresh(); } else pauseMedia(); });
   window.addEventListener('focus', () => { if (error && !loading) void refresh(); });
   window.addEventListener('online', () => { if (error && !loading) void refresh(); });
   window.addEventListener('beforeunload', event => { if ([...pending.keys()].some(key => key === ALL_KIDS || key === FAMILY || groupId(key))) { event.preventDefault(); event.returnValue = ''; } });

@@ -86,6 +86,10 @@
 .cloud-family-thread-intro p { margin: 4px 0 10px; color: #b7c8dc; font-size: .875rem; }
 .cloud-family-thread-setting { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: .875rem; }
 .cloud-family-thread-setting input { width: 18px; height: 18px; accent-color: #34d399; }
+.cloud-peer-settings { margin: 8px; padding: 12px; border: 1px solid #343658; border-radius: 12px; background: #18192f; }
+.cloud-peer-setting { display: flex; align-items: center; gap: 10px; cursor: pointer; color: #efedff; font-weight: 650; }
+.cloud-peer-setting input { width: 20px; height: 20px; accent-color: #34d399; flex: none; }
+.cloud-peer-settings small { display: block; margin: 6px 0 0 30px; color: #a9aac8; line-height: 1.4; }
 .cloud-family-thread-progress:empty { display: none; }
 .cloud-family-thread-progress .btn { margin: 6px 8px 0 0; }
 .cloud-family-thread-rows { display: flex; flex-direction: column; gap: 12px; min-width: 0; }

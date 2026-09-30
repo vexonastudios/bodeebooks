@@ -157,9 +157,11 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     }
     case "list-family-messages": path = "/messages/family/list"; method = "POST"; body = { before: input.before, version: input.version }; break;
     case "family-message-settings": path = "/messages/family/settings"; method = "POST"; body = { childrenCanPost: input.childrenCanPost }; break;
+    case "peer-message-settings": path = "/messages/peer/settings"; method = "POST"; body = { enabled: input.enabled }; break;
     case "list-message-groups": path = "/messages/groups/list"; method = "POST"; body = {}; break;
     case "create-message-group": path = "/messages/groups/create"; method = "POST"; body = { id: input.id, studentIds: input.studentIds }; break;
     case "close-message-group": path = "/messages/groups/close"; method = "POST"; body = { groupId: input.groupId }; break;
+    case "reopen-message-group": path = "/messages/groups/reopen"; method = "POST"; body = { groupId: input.groupId }; break;
     case "list-group-messages": path = "/messages/groups/page"; method = "POST"; body = { groupId: input.groupId, before: input.before, version: input.version }; break;
     case "react-message": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
