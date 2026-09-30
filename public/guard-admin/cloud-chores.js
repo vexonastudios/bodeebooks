@@ -55,7 +55,8 @@ export function setupCloudChores({endpoint,navigate}) {
     if(!rows.length)list.append(node('p',view==='pending'?'Nothing is waiting for approval.':view==='history'?'Completed and excused chores will appear here.':'No chores in this view.'));
     for(const row of rows){
       const card=node('article','','cloud-panel chore-card'),def=row.definition,child=data.students.find(s=>s.id===row.studentId)?.name||'Child';
-      card.append(node('h2',`${child} · ${def.title}`),node('strong',names[row.status]||row.status),node('p',`${row.date||'Finished'} · ${def.startTime}${def.dueTime?`–${def.dueTime}`:''} · ${data.timeZone} · ${def.coins} coins`));
+      card.append(node('h2',`${child} · ${def.title}`),node('strong',names[row.status]||row.status),node('p',`${row.date||'Finished'} · ${def.startTime}${def.dueTime?`–${def.dueTime}`:''} · ${data.timeZone} · +${def.coins} coins when done${def.missedCoins?` · up to −${def.missedCoins} if not checked off by the deadline`:''}`));
+      if(row.penaltyAssessed)card.append(node('p',row.penaltyRefunded?'Missed check-in deduction refunded.':row.penaltyAmount?`${row.penaltyAmount} coins deducted for the missed check-in.`:'Missed check-in recorded; no coins were available to deduct.'));
       if(def.instructions)card.append(node('p',def.instructions,'chore-instructions'));if(row.note)card.append(node('p',row.note));
       if(def.targets.length)card.append(node('p',`${def.targets.map(t=>targets.find(v=>v[0]===t)?.[1]).join(', ')} pause at ${def.blockFrom==='due'?def.dueTime:def.startTime} until ${def.approvalRequired?'approved':'done'}.`));
       if(row.nextDefinition)card.append(node('p','Future changes are saved. The current chore keeps its original requirements.'));
@@ -64,12 +65,13 @@ export function setupCloudChores({endpoint,navigate}) {
       if(view!=='history'){
         if(row.available){actions.append(button(row.status==='submitted'?'Approve':'Mark done',()=>decide('approve'),'btn btn-primary'));
           if(row.status==='submitted')actions.append(button('Send back',()=>noteDialog('Send chore back','Explain what still needs doing.',note=>decide('return',note))));
-          actions.append(button('Excuse this date',()=>decide('excuse')));
-          if(row.date<data.date)actions.append(button('Excuse missed dates through today',()=>noteDialog('Excuse missed dates','This forgives every outstanding occurrence through today without coins.',()=>decide('excuse-through-today'))));
+          actions.append(button(row.penaltyAmount>0&&!row.penaltyRefunded?'Excuse & refund this date':'Excuse this date',()=>decide('excuse')));
+          if(row.date<data.date)actions.append(button('Excuse missed dates through today',()=>noteDialog('Excuse missed dates','This forgives outstanding chore dates through today and refunds any missed check-in deduction for the current occurrence.',()=>decide('excuse-through-today'))));
         }
         if(row.date)actions.append(button('Edit',()=>editor(row)));
         actions.append(button('Stop assigning',()=>noteDialog('Stop this chore','This removes unfinished restrictions and stops future repeats. Earned coins stay unchanged.',()=>decide('archive'))));
       }
+      if(row.penaltyAmount>0&&!row.penaltyRefunded)actions.append(button('Refund missed deduction',()=>noteDialog('Refund missed deduction',`Return ${row.penaltyAmount} coins to ${child}? This is useful when the chore was done but not checked off.`,()=>change({operation:'refund',id:row.id,date:row.date}))));
       card.append(actions);list.append(card);
     }
   }
@@ -109,8 +111,10 @@ export function setupCloudChores({endpoint,navigate}) {
     form.append(node('p','Rewards remain paused after the deadline until this chore is resolved. Leave every reward unchecked for a chore that only earns coins. School and messaging stay available.'));
     const rewards=targets.map(([id,label])=>[id,check(form,label,def?def.targets.includes(id):['videos','games'].includes(id))]);
     const coins=field(form,'Coins for completion','number',def?.coins??20);coins.min='0';coins.max='10000';coins.required=true;
+    const missedCoins=field(form,'Coins to deduct if not checked off by the deadline (optional)','number',def?.missedCoins??0);missedCoins.min='0';missedCoins.max='10000';missedCoins.required=true;
+    form.append(node('p','0 means no deduction. A missed check-in is assessed once after the due time, even if the chore was done but not checked off. The balance never goes below zero, and you can refund a deduction.'));
     const approval=check(form,'Parent approval required',def?.approvalRequired??true);
-    finishDialog(el,form,()=>change({operation:row?'edit':'create',...(row?{id:row.id,revision:row.revision,editScope:scope.value}:{studentIds:children.filter(([,c])=>c.checked).map(([id])=>id)}),definition:{title:title.value,instructions:instructions.value,startDate:start.value,endDate:end.value||null,days:weekdays.flatMap((c,i)=>c.checked?[i]:[]),startTime:from.value,dueTime:due.value||null,blockFrom:block.value,targets:rewards.filter(([,c])=>c.checked).map(([id])=>id),coins:Number(coins.value),approvalRequired:approval.checked}}));
+    finishDialog(el,form,()=>{if(Number(missedCoins.value)>0&&!due.value)throw Error('Set a due time to deduct coins for a missed check-in.');return change({operation:row?'edit':'create',...(row?{id:row.id,revision:row.revision,editScope:scope.value}:{studentIds:children.filter(([,c])=>c.checked).map(([id])=>id)}),definition:{title:title.value,instructions:instructions.value,startDate:start.value,endDate:end.value||null,days:weekdays.flatMap((c,i)=>c.checked?[i]:[]),startTime:from.value,dueTime:due.value||null,blockFrom:block.value,targets:rewards.filter(([,c])=>c.checked).map(([id])=>id),coins:Number(coins.value),missedCoins:Number(missedCoins.value),approvalRequired:approval.checked}});});
   }
   function exception(){if(!data?.enabled)return;const {el,form}=dialog('Temporary chore exception');form.append(node('p','Allow selected entertainment despite chores. Chores remain unfinished and no coins are awarded. School, time budgets and other parent locks still apply.'));
     const child=field(form,'Child','select');for(const s of data.students)child.append(new Option(s.name,s.id));
