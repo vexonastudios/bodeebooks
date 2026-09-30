@@ -370,8 +370,9 @@ async function retryChange(){if(!pending||busy)return;busy=true;controls();try{a
 const retry=button('Retry saved Vocabulary change',retryChange),retryModal=button('Retry saved Vocabulary change',retryChange);retryModal.id='vocabulary-retry-modal';retry.hidden=retryModal.hidden=true;byId('vocabulary-admin-status').after(retry);byId('vocabulary-form-error').after(retryModal);
 const previous=button('Newer Vocabulary lists',async()=>{offset=Math.max(0,offset-2);await loadVocabularyTab();}),next=button('Older Vocabulary lists',async()=>{offset+=2;await loadVocabularyTab();});previous.disabled=next.disabled=true;byId('vocabulary-pagination').append(previous,next);
 const archived=document.createElement('option');archived.value='archived';archived.textContent='Archived — retained history and older-word reviews';byId('vocabulary-list-status').append(archived);
-photoScan=createVocabularyPhotoScan({input:byId('vocabulary-list-photos'),status:byId('vocabulary-scan-status'),onBusy(value){scanBusy=value;controls();},onResult(result){
+photoScan=createVocabularyPhotoScan({input:byId('vocabulary-list-photos'),status:byId('vocabulary-scan-status'),hasTerms:()=>terms.some(term=>term.word||term.definition),onBusy(value){scanBusy=value;controls();},onResult(result,{mode='append'}={}){
   if(!result.is_vocabulary_list||!result.terms.length)return 'No vocabulary words were found. Take a clearer photo with the words and definitions visible.';
+  if(mode==='replace'){terms=[];sourceNotes='';}
   const key=word=>word.trim().normalize('NFKC').toLocaleLowerCase('en-US'),seen=new Set(terms.map(t=>key(t.word))),added=[];let skipped=0;
   for(const source of result.terms){const term=normalizeTerm(source);if(seen.has(key(term.word))){skipped++;continue;}seen.add(key(term.word));added.push(term);}
   if(terms.length+added.length>60)return 'This scan would exceed 60 words. Your current words are kept. Remove unneeded entries, then scan fewer words.';
