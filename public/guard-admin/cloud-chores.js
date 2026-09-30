@@ -1,7 +1,7 @@
 const node = (tag, text = '', cls = '') => { const el=document.createElement(tag);el.textContent=text;el.className=cls;return el; };
 const icon = name => {const el=node('i','','chore-icon');el.dataset.lucide=name;el.setAttribute('aria-hidden','true');return el;};
 const paintIcons = () => window.lucide?.createIcons();
-const buttonIcons = {'Add chore':'plus','Temporary chore exception':'key-round','Refresh':'refresh-cw','Retry saved change':'rotate-cw','Refresh without retrying':'refresh-cw','Open chores':'arrow-right','Open Settings':'settings','Approve':'check','Mark done':'check','Send back':'undo-2','Excuse this date':'calendar-check','Excuse & refund this date':'calendar-check','Excuse missed dates through today':'calendar-check','Edit':'pencil','Stop assigning':'archive','Refund missed deduction':'undo-2','Cancel':'x'};
+const buttonIcons = {'Add chore':'plus','Temporary chore exception':'key-round','Refresh':'refresh-cw','Retry saved change':'rotate-cw','Refresh without retrying':'refresh-cw','Open chores':'arrow-right','Open Settings':'settings','Approve':'check','Mark done':'check','Mark completed early':'check-check','Send back':'undo-2','Excuse this date':'calendar-check','Excuse & refund this date':'calendar-check','Excuse missed dates through today':'calendar-check','Edit':'pencil','Stop assigning':'archive','Refund missed deduction':'undo-2','Cancel':'x'};
 const button = (label, action, cls='btn btn-secondary', glyph=buttonIcons[label]) => {const el=node('button','',cls);if(glyph)el.append(icon(glyph));el.append(node('span',label));el.type='button';el.onclick=()=>void action();return el;};
 const section = (form,title,glyph,copy='') => {const el=node('fieldset','','chore-form-section'),heading=node('legend',title);heading.prepend(icon(glyph));el.append(heading);if(copy)el.append(node('p',copy,'chore-help'));form.append(el);return el;};
 const targets = [['videos','Videos'],['games','Games & reward websites'],['music','Music'],['audiobooks','Audiobooks']];
@@ -80,10 +80,17 @@ export function setupCloudChores({endpoint,navigate}) {
       const actions=node('div','','chore-actions');
       const decide=(operation,note)=>change({operation,id:row.id,date:row.date,revision:row.revision,...(note?{note}:{})});
       if(view!=='history'){
-        if(row.available){actions.append(button(row.status==='submitted'?'Approve':'Mark done',()=>decide('approve'),'btn btn-primary'));
+        if(row.available||row.date===data.date){
+          const early=!row.available;
+          actions.append(button(row.status==='submitted'?'Approve':early?'Mark completed early':'Mark done',()=>early?
+            noteDialog('Mark chore completed early',`Confirm ${child} finished “${def.title}” before its scheduled start. This awards ${def.coins} coins now and clears this occurrence.`,()=>decide('approve')):
+            decide('approve'),'btn btn-primary'));
+          if(early)card.append(node('p','You can confirm a chore finished early today. Children can check it off when its scheduled time begins.','chore-early-help'));
           if(row.status==='submitted')actions.append(button('Send back',()=>noteDialog('Send chore back','Explain what still needs doing.',note=>decide('return',note))));
-          actions.append(button(row.penaltyAmount>0&&!row.penaltyRefunded?'Excuse & refund this date':'Excuse this date',()=>decide('excuse')));
-          if(row.date<data.date)actions.append(button('Excuse missed dates through today',()=>noteDialog('Excuse missed dates','This forgives outstanding chore dates through today and refunds any missed check-in deduction for the current occurrence.',()=>decide('excuse-through-today'))));
+          if(row.available){
+            actions.append(button(row.penaltyAmount>0&&!row.penaltyRefunded?'Excuse & refund this date':'Excuse this date',()=>decide('excuse')));
+            if(row.date<data.date)actions.append(button('Excuse missed dates through today',()=>noteDialog('Excuse missed dates','This forgives outstanding chore dates through today and refunds any missed check-in deduction for the current occurrence.',()=>decide('excuse-through-today'))));
+          }
         }
         if(row.date)actions.append(button('Edit',()=>editor(row)));
         actions.append(button('Stop assigning',()=>noteDialog('Stop this chore','This removes unfinished restrictions and stops future repeats. Earned coins stay unchanged.',()=>decide('archive'))));
@@ -128,6 +135,7 @@ export function setupCloudChores({endpoint,navigate}) {
     timing.append(node('p','Repeat on these weekdays, or leave all unchecked for a one-time chore.','chore-help'));
     const days=node('div','','chore-weekdays');timing.append(days);const weekdays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=>check(days,d,def?.days.includes(i)||false));
     const times=node('div','','chore-fields');timing.append(times);const from=field(times,'Available at','time',def?.startTime||'16:00'),due=field(times,'Due at (optional)','time',def?.dueTime||'18:00');from.required=true;
+    timing.append(node('p','BodeeGuard reminds the child 5 minutes before the start time. If the chore is still unchecked, it reminds them again 5 minutes after the due time, or 1 hour after the start when there is no due time.','chore-help'));
     const access=section(form,'Entertainment access','lock-keyhole','Select the rewards to pause until this chore is resolved. School and messaging stay available.');
     const rewardChoices=node('div','','chore-choice-grid');access.append(rewardChoices);const rewards=targets.map(([id,label])=>[id,check(rewardChoices,label,def?def.targets.includes(id):['videos','games'].includes(id))]);
     const block=field(access,'Pause selected rewards starting at','select');block.append(new Option('Chore start time','start'),new Option('Due time','due'));block.value=def?.blockFrom||'start';
