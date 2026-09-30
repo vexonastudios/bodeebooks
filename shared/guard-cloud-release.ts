@@ -9,6 +9,19 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.273": {
+    title: "Return to Grades after an Abeka quiz",
+    sections: [{
+      heading: "Version 1.2.273",
+      headline: "Completed assignments return to Abeka Grades",
+      summary: "Recognizes both Start Another Assignment and Start another session on LinkIt's completed-session screen.",
+      highlights: [
+        "Returns to Abeka Grades inside BodeeGuard without repeating the quiz submission.",
+        "Unfinished quizzes and Submit or Review controls keep their normal behavior.",
+        "Includes the requested hide/restore controls for optional child modules and compact message reactions."
+      ]
+    }]
+  },
   "1.2.267": {
     "title": "Keep typing after sending a message",
     "sections": [
