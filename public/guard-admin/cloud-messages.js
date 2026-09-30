@@ -34,6 +34,26 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const attachments = new Map();
   const localFiles = new Map(), voices = new Map();
   const threadRows = createMessageThread(el('messages-thread-content'));
+  const familyPanel = textNode('div', '', 'cloud-family-thread-intro');
+  const familyRows = textNode('div', '', 'cloud-family-thread-rows');
+  const familyEmpty = textNode('p', 'No family messages yet. Send the first one below.', 'cloud-family-thread-empty');
+  const familyThreadRows = createMessageThread(familyRows);
+  const familyTitle = textNode('h3', 'Family conversation');
+  const familyDescription = textNode('p', 'Everyone can read this thread. Only parents can post unless you turn on children’s replies.');
+  const familyToggleLabel = textNode('label', '', 'cloud-family-thread-setting');
+  const familyToggle = document.createElement('input'); familyToggle.type = 'checkbox';
+  familyToggleLabel.append(familyToggle, textNode('span', 'Let children post here'));
+  const familyProgress = textNode('div', '', 'cloud-family-thread-progress');
+  familyPanel.append(familyTitle, familyDescription, familyToggleLabel, familyProgress);
+  familyToggle.addEventListener('change', async () => {
+    const desired = familyToggle.checked; familyToggle.disabled = true;
+    try { const saved = await request('family-message-settings', { childrenCanPost: desired });
+      if (saved.childrenCanPost !== desired) throw new Error('The family setting could not be confirmed.');
+      if (page) page.childrenCanPost = desired;
+      note(desired ? 'Children can now post in the family conversation.' : 'Only parents can post in the family conversation.');
+    } catch (failure) { familyToggle.checked = !desired; note(`${failure.message} The previous setting is still shown.`); }
+    finally { familyToggle.disabled = false; }
+  });
   const mobile = window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)');
   const section = el('tab-messages') || document.querySelector('.cloud-messages-panel');
   section.dataset.messageView = 'list';
@@ -63,19 +83,19 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   helpNote.before(help); help.append(summary, helpNote);
   function showConversation(value) { section.dataset.messageView = value ? 'thread' : 'list'; document.body.classList.toggle('cloud-conversation-open', active && value); sizeInput(); publishConversationView(); }
   function publishConversationView() {
-    const studentId = conversationVisible() && live && !error && section.dataset.messageLoad === 'ready' ? selected : null;
+    const studentId = conversationVisible() && selected !== ALL_KIDS && live && !error && section.dataset.messageLoad === 'ready' ? selected : null;
     window.parent.postMessage({type:'bodeeguard-conversation-view',studentId},location.origin);
   }
   window.addEventListener('message', event => {
     if(event.origin===location.origin && event.source===window.parent && event.data?.type==='bodeeguard-conversation-view-request') publishConversationView();
   });
-  function conversationVisible() { return active && !document.hidden && selected && selected !== ALL_KIDS && (!mobile.matches || section.dataset.messageView === 'thread'); }
+  function conversationVisible() { return active && !document.hidden && selected && (!mobile.matches || section.dataset.messageView === 'thread'); }
   function sizeInput() {
     const input = el('messages-reply-input'); input.style.removeProperty('height');
     if (mobile.matches) { input.style.height = '44px'; input.style.height = `${Math.min(112, Math.max(44, input.scrollHeight + 2))}px`; }
   }
   function newBroadcastDraft() {
-    if (selected === ALL_KIDS && broadcastResult && !pending.has(ALL_KIDS)) { broadcastResult = null; note(''); renderBroadcast(); }
+    if (selected === ALL_KIDS && broadcastResult && !pending.has(ALL_KIDS)) { broadcastResult = null; note(''); renderFamily(); }
   }
   el('messages-reply-input').addEventListener('input', () => { sizeInput(); newBroadcastDraft(); });
   el('messages-reply-input').title = 'Enter to send; Shift+Enter for a new line.';
@@ -92,7 +112,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const voicePanel = document.createElement('div'); voicePanel.className = 'cloud-chat-voice';
   voicePanel.innerHTML = '<div class="cloud-chat-voice-actions"><button id="messages-record" class="btn btn-secondary" type="button" disabled><i data-lucide="mic"></i><span>Record voice</span></button><span id="messages-record-status" role="status"></span></div><div id="messages-voice-preview" class="cloud-chat-voice-preview" hidden><audio id="messages-voice-audio" controls preload="metadata" aria-label="Preview your voice message"></audio><span id="messages-voice-duration"></span><button id="messages-voice-discard" class="btn btn-secondary" type="button"><i data-lucide="trash-2"></i>Discard</button></div>';
   el('messages-compose-tools').prepend(voicePanel);
-  helpNote.textContent = 'Record a voice message up to 60 seconds, or attach an image, PDF or audio file up to 2 MB. Messages travel over an encrypted connection. Received means delivered to the computer.';
+  helpNote.textContent = 'Record a voice message up to 60 seconds, or attach a photo up to 20 MB (compressed automatically), PDF or audio file up to 2 MB. Messages travel over an encrypted connection. Received means delivered to the computer.';
   const voice = createVoiceRecorder({ onChange: value => {
     const recording = value.phase === 'recording', label = el('messages-record').querySelector('span');
     label.textContent = recording ? 'Stop recording' : 'Record voice';
@@ -149,7 +169,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, action }) };
     let response;
     try {
-      response = ['list-messages', 'read-file'].includes(action)
+      response = ['list-messages', 'list-family-messages', 'read-file'].includes(action)
         ? await session.readMessages(endpoint, { ...input, action }, options)
         : await fetch(action === 'upload-file' ? endpoint.replace(/bridge\/?$/, 'upload/') : endpoint, options);
     } catch (failure) { if (failure.sessionRecovery) recoveryActions(true); throw failure; }
@@ -188,7 +208,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     return `${today ? '' : date.toLocaleDateString([], { month: 'short', day: 'numeric', year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }) + ' · '}${time}${message.sender === 'parent' ? ' · ' + (message.receivedAt ? 'Received' : 'Saved online') : ''}`;
   }
   function render() {
-    if (selected === ALL_KIDS) { renderBroadcast(); controls(); return; }
+    if (selected === ALL_KIDS) { renderFamily(); controls(); return; }
     const messages = [...older, ...(page?.messages || [])];
     const unique = [...new Map(messages.map(message => [message.id, message])).values()];
     const thread = el('messages-thread-content');
@@ -235,6 +255,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     markVisibleConversation();
   }
   function markVisibleConversation() {
+    if (selected === ALL_KIDS) return;
     const thread=el('messages-thread-content');
     if(!conversationVisible()||thread.scrollHeight-thread.scrollTop-thread.clientHeight>=40)return;
     const latest=page?.messages.filter(message=>message.sender==='child').at(-1);
@@ -247,9 +268,11 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     clearTimeout(timer); loading = true; controls();
     const child = selected; const ticket = generation;
     try {
-      const result = await request('list-messages', { studentId: child,
-        version: page?.version, receivedIds: page?.messages.filter(message => message.sender === 'child' && !message.receivedAt).map(message => message.id) || [] });
-      if (ticket !== generation || result.studentId !== child) return;
+      const result = child === ALL_KIDS
+        ? await request('list-family-messages', { version: page?.version })
+        : await request('list-messages', { studentId: child,
+          version: page?.version, receivedIds: page?.messages.filter(message => message.sender === 'child' && !message.receivedAt).map(message => message.id) || [] });
+      if (ticket !== generation || child !== selected || child !== ALL_KIDS && result.studentId !== child) return;
       if (!result.notModified) {
         page = result;
         for (const message of result.messages || []) if (message.sender === 'child') rememberChildMessage(child, message.sequence);
@@ -272,7 +295,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     showConversation(Boolean(child));
     if (mobile.matches && child) back.focus();
     if (selected === child) { void refresh(); return; }
-    voice.cancel(); threadRows.clear(); delete el('messages-thread-content').dataset.rendered;
+    voice.cancel(); threadRows.clear(); familyThreadRows.clear(); delete el('messages-thread-content').dataset.rendered;
     if (selected) drafts.set(selected, el('messages-reply-input').value);
     selected = child; generation++; page = null; older = []; cursor = undefined;
     reconnect.hidden = true; section.dataset.messageLoad = 'loading'; publishConversationView();
@@ -280,12 +303,12 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     el('messages-reply-input').value = drafts.get(child) || '';
     const name = child === ALL_KIDS ? 'Message all kids' : students.find(student => student.id === child)?.name || 'Conversation';
     el('messages-thread-header').textContent = name; threadAvatar.textContent = child === ALL_KIDS ? 'All' : child ? initials(name) : ''; threadAvatar.hidden = !child;
-    render(); renderStudents(); note(child === ALL_KIDS ? '' : 'Loading conversation…'); void refresh();
+    render(); renderStudents(); note(child === ALL_KIDS ? 'Loading family conversation…' : 'Loading conversation…'); void refresh();
   }
   function renderStudents() {
-    messageAll.disabled = recipients().length === 0;
+    messageAll.disabled = false;
     messageAll.setAttribute('aria-pressed', String(selected === ALL_KIDS));
-    messageAll.querySelector('small').textContent = `Send once to ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
+    messageAll.querySelector('small').textContent = `Shared family conversation · ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
     const matches = recipients().filter(student => student.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))
       .sort((a, b) => { const left = recentChildMessages.get(a.id) || 0n, right = recentChildMessages.get(b.id) || 0n; return left === right ? 0 : left > right ? -1 : 1; });
     el('messages-student-list').replaceChildren(...matches.map(student => {
@@ -307,8 +330,8 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   }
   function stageAttachment(file) {
     if (!canChooseAttachment()) return;
-    if (!file || file.size > 2 * 1024 * 1024 || !file.size) {
-      note('Choose one nonempty image, PDF, or audio file up to 2 MB.');
+    if (!file || !file.size || file.size > (/^image\/(?:jpeg|png|webp)$/.test(file.type) ? 20 : 2) * 1024 * 1024) {
+      note('Choose one photo under 20 MB, or a PDF or audio file under 2 MB. Photos are compressed when sent.');
       return;
     }
     if (!/\.(?:png|jpe?g|webp|pdf|wav|mp3|webm|ogg)$/i.test(file.name)) {
@@ -362,37 +385,43 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (voice.state().phase === 'recording') voice.stop();
     else if (canChooseAttachment() && !localFiles.has(selected)) { recordingChild = selected; void voice.start(); }
   });
-  function renderBroadcast() {
+  function renderFamily() {
     const batch = pending.get(ALL_KIDS) || broadcastResult;
     const people = batch?.recipients || recipients().map(student => ({ studentId: student.id, name: student.name }));
-    const panel = textNode('div', '', 'cloud-broadcast');
     const total = people.length, saved = people.filter(person => person.saved).length;
-    const title = batch ? (saved === total ? `Sent to all ${total} ${total === 1 ? 'child' : 'kids'}` : `${saved} of ${total} saved online`) : `Send to all ${total} ${total === 1 ? 'child' : 'kids'}`;
-    panel.append(textNode('h3', title), textNode('p', 'All active children are included. Each gets a separate message. Replies stay in their own conversation. Children who are offline get it when BodeeGuard reconnects.'));
-    if (batch) {
-      const message = textNode('blockquote', batch.body || batch.attachment?.name || 'Attachment');
-      panel.append(message);
-    }
+    const thread = el('messages-thread-content');
+    const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
+    if (familyPanel.parentElement !== thread) thread.replaceChildren(familyPanel, familyRows);
+    familyToggle.checked = Boolean(page?.childrenCanPost);
+    familyToggle.disabled = !page;
+    familyProgress.replaceChildren();
+    if (batch) familyProgress.append(textNode('p', saved === total ? `Last message saved for all ${total} kids.` : `${saved} of ${total} copies saved online. Keep this page open and retry the rest.`));
     if (batch && saved < total && !sending) {
       const retry = textNode('button', 'Retry remaining', 'btn btn-primary cloud-broadcast-retry'); retry.type = 'button';
-      retry.addEventListener('click', () => el('messages-reply-box').requestSubmit()); panel.append(retry);
+      retry.addEventListener('click', () => el('messages-reply-box').requestSubmit()); familyProgress.append(retry);
     }
-    const list = textNode('ul', '', 'cloud-broadcast-recipients'); list.setAttribute('aria-label', 'Message recipients');
-    for (const person of people) {
-      const row = textNode('li', '', person.saved ? 'is-saved' : person.error ? 'needs-retry' : '');
-      row.append(textNode('strong', person.name), textNode('span', person.saved ? 'Saved online' : person.error ? 'Retry needed' : sending && batch ? 'Sending…' : batch ? 'Not sent yet' : 'Included'));
-      if (person.error) row.append(textNode('small', person.error));
-      list.append(row);
-    }
-    panel.append(list);
     if (batch && saved < total && !sending) {
-      panel.append(textNode('p', 'Keep this page open and choose Retry remaining. Confirmed messages will not be resent.'));
       const restart = textNode('button', 'Start a new message', 'btn btn-secondary'); restart.type = 'button';
-      restart.addEventListener('click', () => { pending.delete(ALL_KIDS); drafts.delete(ALL_KIDS); attachments.delete(ALL_KIDS); localFiles.delete(ALL_KIDS); voices.delete(ALL_KIDS); broadcastResult = null; voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Earlier messages stay in each child’s conversation.'); render(); el('messages-reply-input').focus(); });
-      panel.append(restart);
+      restart.addEventListener('click', () => { pending.delete(ALL_KIDS); drafts.delete(ALL_KIDS); attachments.delete(ALL_KIDS); localFiles.delete(ALL_KIDS); voices.delete(ALL_KIDS); broadcastResult = null; voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Earlier family posts remain in this thread.'); render(); el('messages-reply-input').focus(); });
+      familyProgress.append(restart);
     }
-    const thread = el('messages-thread-content'), scrollTop = thread.scrollTop;
-    thread.replaceChildren(panel); thread.scrollTop = scrollTop;
+    const messages = [...older, ...(page?.messages || [])];
+    const unique = [...new Map(messages.map(message => [message.id, message])).values()];
+    familyEmpty.hidden = unique.length > 0;
+    if (familyEmpty.parentElement !== familyRows) familyRows.append(familyEmpty);
+    familyThreadRows.update(unique, {
+      fingerprint: message => JSON.stringify([message.sender, message.senderName, message.body, message.attachment]),
+      refresh: () => {},
+      create: message => {
+        const row = textNode('article', '', `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`);
+        row.append(textNode('strong', message.senderName || 'Mom & Dad'), textNode('p', message.body));
+        const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
+        if (attachment) row.append(attachment);
+        row.append(textNode('small', new Date(message.createdAt).toLocaleString()));
+        return { node: row, dispose: () => attachment?.dispose?.() };
+      }
+    });
+    if (atBottom) thread.scrollTop = thread.scrollHeight;
   }
   function restoreComposerFocus(recipient, wasComposing) {
     const input = el('messages-reply-input');
@@ -409,7 +438,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     try {
       if (!batch) {
         // Freeze names, recipients, contents and per-child retry IDs before the first write.
-        batch = { body, recipients: recipients().map(student => ({ studentId: student.id, name: student.name, id: crypto.randomUUID(), uploadId: crypto.randomUUID() })) };
+        batch = { id: crypto.randomUUID(), body, recipients: recipients().map(student => ({ studentId: student.id, name: student.name, id: crypto.randomUUID(), uploadId: crypto.randomUUID() })) };
         if (file) batch.attachment = await window.cloudFileTools.encode(file, 'message');
         pending.set(ALL_KIDS, batch); drafts.set(ALL_KIDS, body); broadcastResult = batch;
       }
@@ -424,7 +453,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
             if (!receipt.saved || receipt.file?.id !== person.uploadId) throw new Error('Attachment confirmation was interrupted.');
             person.fileId = person.uploadId;
           }
-          const receipt = await request('send-message', { studentId: person.studentId, id: person.id, body: batch.body, ...(person.fileId ? { fileId: person.fileId } : {}) });
+          const receipt = await request('send-message', { studentId: person.studentId, id: person.id, familyThreadId: batch.id, body: batch.body, ...(person.fileId ? { fileId: person.fileId } : {}) });
           if (receipt.id !== person.id || receipt.studentId !== person.studentId || receipt.saved !== true) throw new Error('Message confirmation was interrupted.');
           person.saved = true;
         } catch (failure) {
@@ -438,7 +467,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         pending.delete(ALL_KIDS); drafts.delete(ALL_KIDS); attachments.delete(ALL_KIDS); localFiles.delete(ALL_KIDS); voices.delete(ALL_KIDS);
         if (selected === ALL_KIDS) { voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; }
       }
-      if (selected === ALL_KIDS) note(pending.has(ALL_KIDS) ? 'Some messages still need confirmation. Retry remaining uses the same messages without duplicating them.' : 'Message saved for every child. Open their conversation to see delivery and replies.');
+      if (selected === ALL_KIDS) { note(pending.has(ALL_KIDS) ? 'Some family messages still need confirmation. Retry remaining uses the same message IDs.' : 'Family message saved. Everyone can see it in this thread.'); void refresh(); }
     } catch (failure) {
       if (selected === ALL_KIDS) note(`${failure.message} Your draft is retained.`);
     } finally { sending = false; if (selected === ALL_KIDS) render(); else controls(); if (!pending.has(ALL_KIDS)) restoreComposerFocus(ALL_KIDS, wasComposing); }
@@ -478,23 +507,23 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     clearTimeout(timer);
     loading = true; controls(); const ticket = generation; const child = selected;
     try {
-      const result = await request('list-messages', { studentId: child, before });
-      if (ticket !== generation || result.studentId !== child) return;
+      const result = child === ALL_KIDS ? await request('list-family-messages', { before }) : await request('list-messages', { studentId: child, before });
+      if (ticket !== generation || child !== selected || child !== ALL_KIDS && result.studentId !== child) return;
       older = [...result.messages, ...older]; cursor = result.nextBefore; render();
     } catch (failure) { if (ticket === generation) note(failure.message); }
     finally { loading = false; controls(); if (conversationVisible() && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 5 * 60000); refreshQueued = false; }
   });
-  function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); }
+  function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); familyThreadRows.pause(); }
   document.addEventListener('visibilitychange', () => { publishConversationView(); clearTimeout(timer); if (!document.hidden) void refresh(); else pauseMedia(); });
   window.addEventListener('focus', () => { if (error && !loading) void refresh(); });
   window.addEventListener('online', () => { if (error && !loading) void refresh(); });
   window.addEventListener('beforeunload', event => { if (pending.has(ALL_KIDS)) { event.preventDefault(); event.returnValue = ''; } });
-  window.addEventListener('pagehide', () => { window.parent.postMessage({type:'bodeeguard-conversation-view',studentId:null},location.origin); clearTimeout(timer); voice.cancel(); threadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
+  window.addEventListener('pagehide', () => { window.parent.postMessage({type:'bodeeguard-conversation-view',studentId:null},location.origin); clearTimeout(timer); voice.cancel(); threadRows.clear(); familyThreadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
     setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));for(const item of items)rememberChildMessage(item.studentId,item.sequence);renderStudents();},
     openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); publishConversationView(); clearTimeout(timer); if (active) return refresh(); },
-    notify(studentId) { if (studentId === selected && active) return refresh(); },
+    notify(studentId) { if ((studentId === selected || selected === ALL_KIDS) && active) return refresh(); },
     update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && !students.some(student => student.id === selected)) choose(null); },
     setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) return refresh(); else pauseMedia(); }
   };

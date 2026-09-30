@@ -55,7 +55,7 @@ export function createParentSessionRecovery({ window: win = window, document: do
     async readMessages(url, input, options = {}) {
       // These bridge reads use POST. Receipt acknowledgement in list-messages is
       // idempotent; sending, uploading and all other actions must never replay.
-      if (!['list-messages', 'read-file'].includes(input?.action)) throw new Error('Only message reads can be recovered.');
+      if (!['list-messages', 'list-family-messages', 'read-file'].includes(input?.action)) throw new Error('Only message reads can be recovered.');
       return recoverRead(url, { ...options, method: 'POST', body: JSON.stringify(input) });
     },
     stop() { finish(false); win.removeEventListener('message', message); doc.removeEventListener('visibilitychange', hidden); win.removeEventListener('pagehide', leave); }

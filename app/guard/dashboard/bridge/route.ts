@@ -151,10 +151,12 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
       path = input.action === "send-message" ? "/messages/send" : "/messages/list";
       method = "POST";
-      body = input.action === "send-message" ? { studentId: input.studentId, id: input.id, body: input.body, fileId: input.fileId }
+      body = input.action === "send-message" ? { studentId: input.studentId, id: input.id, body: input.body, fileId: input.fileId, familyThreadId: input.familyThreadId }
         : { studentId: input.studentId, before: input.before, receivedIds: input.receivedIds, version: input.version };
       break;
     }
+    case "list-family-messages": path = "/messages/family/list"; method = "POST"; body = { before: input.before, version: input.version }; break;
+    case "family-message-settings": path = "/messages/family/settings"; method = "POST"; body = { childrenCanPost: input.childrenCanPost }; break;
     case "react-message": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
       path = "/messages/react"; method = "POST";

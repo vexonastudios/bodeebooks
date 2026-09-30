@@ -7,8 +7,35 @@
   const accept = '.png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.webm,.ogg';
   const element = (tag, text = '') => { const item = document.createElement(tag); item.textContent = text; return item; };
   const button = (text, action) => { const item = element('button', text); item.type = 'button'; item.className = 'btn btn-secondary'; item.addEventListener('click', action); return item; };
+  async function prepareMessageImage(file) {
+    if (!/^image\/(?:jpeg|png|webp)$/.test(file.type)) return file;
+    if (file.size > 20 * 1024 * 1024) throw new Error('Choose a photo under 20 MB. Your original is unchanged.');
+    if (file.size <= 300 * 1024) return file;
+    let bitmap;
+    try { bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch { throw new Error('This photo could not be opened. Try a JPG, PNG, or WebP image. Your draft is retained.'); }
+    try {
+      for (const [edge, quality] of [[1800, .82], [1400, .7], [1100, .6]]) {
+        const scale = Math.min(1, edge / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext('2d', { alpha: false });
+        if (!context) throw new Error('Photo compression is unavailable on this device. Your draft is retained.');
+        context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((resolve, reject) => canvas.toBlob(resolve, 'image/jpeg', quality));
+        canvas.width = canvas.height = 0;
+        if (!blob) throw new Error('Photo compression failed. Your draft is retained.');
+        if (blob.size <= maximum && blob.size < file.size) return new File([blob], (file.name || 'Photo').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+      }
+    } finally { bitmap.close(); }
+    if (file.size <= maximum) return file;
+    throw new Error('This photo is still too large after compression. Your original and message draft are unchanged.');
+  }
   async function encode(file, purpose) {
-    if (!file || file.size > maximum || !file.size) throw new Error('Choose a nonempty file up to 2 MB. For a larger scan, export a smaller image or PDF; your original stays unchanged.');
+    if (!file || !file.size) throw new Error('Choose a nonempty file. Your draft is retained.');
+    if (purpose === 'message') file = await prepareMessageImage(file);
+    if (file.size > maximum) throw new Error('Choose a file up to 2 MB. Photos are compressed automatically; your original and draft are unchanged.');
     const bytes = new Uint8Array(await file.arrayBuffer()); let binary = '';
     for (let index = 0; index < bytes.length; index += 16384) binary += String.fromCharCode(...bytes.subarray(index, index + 16384));
     return { id: crypto.randomUUID(), name: file.name, mime: file.type, purpose, data: btoa(binary) };

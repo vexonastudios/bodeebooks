@@ -22,6 +22,7 @@ const fixture = {
 fixture.screenshotAvailability = { known: true, availableStudentIds: ['child-1'], checkedAt: new Date().toISOString() };
 fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Casey', 'Riley', 'Sam'].map((name, i) => ({id:'child-'+(i+1),name,grade:'5'}));
 const history = new Map();
+let childrenCanPost = false;
 history.set('child-1', [{id:'incoming-1', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 fixture.students[8].archived_at = '2026-09-01T00:00:00Z';
 let lostMessage = true, lostUpload = true;
@@ -47,7 +48,12 @@ const server = http.createServer(async (req, res) => {
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
     if (input.action === 'list-files') output = { files: [], usage: { bytes: 0 } };
-    if (input.action === 'list-messages') output = { studentId: input.studentId, messages: input.before ? [{id:'older-1',sender:'child',body:'Yesterday’s message',createdAt:'2026-09-24T14:30:00Z'}] : history.get(input.studentId)||[], version: (history.get(input.studentId)||[]).length, nextBefore: input.before ? null : 'older-page' };
+    if (input.action === 'list-messages') output = { studentId: input.studentId, messages: input.before ? [{id:'older-1',sender:'child',body:'Yesterday’s message',createdAt:'2026-09-24T14:30:00Z'}] : (history.get(input.studentId)||[]).filter(item=>!item.familyThreadId), version: (history.get(input.studentId)||[]).length, nextBefore: input.before ? null : 'older-page' };
+    if (input.action === 'list-family-messages') {
+      const messages=[...new Map([...history.values()].flat().filter(item=>item.familyThreadId).map(item=>[item.familyThreadId,{id:item.familyThreadId,sender:item.sender,senderName:'Mom & Dad',body:item.body,createdAt:item.createdAt,attachment:item.fileId?{id:item.fileId,name:'Attachment',mime:'application/pdf',size:100}:undefined}])).values()];
+      output={messages,version:String(messages.length)+String(childrenCanPost),childrenCanPost,nextBefore:null};
+    }
+    if (input.action === 'family-message-settings') { childrenCanPost=input.childrenCanPost; output={childrenCanPost}; }
     if (input.action === 'send-message') {
       if(input.fileId) assert.equal(uploaded.get(input.fileId)?.studentId,input.studentId,'attachments remain child-scoped');
       const rows=history.get(input.studentId)||[];if(!rows.some(row=>row.id===input.id))rows.push({...input,sender:'parent',createdAt:new Date().toISOString()});history.set(input.studentId,rows);
@@ -76,6 +82,20 @@ async function run() {
   const wait=async expression=>{const end=Date.now()+12000;while(Date.now()<end){if(await js(expression))return;await new Promise(r=>setTimeout(r,60));}throw Error('Timed out: '+expression);};
   const capture=async name=>{await new Promise(r=>setTimeout(r,150));fs.mkdirSync(path.join(site,'.tmp'),{recursive:true});fs.writeFileSync(path.join(site,'.tmp','broadcast-'+name+'.png'),(await win.webContents.capturePage()).toPNG());};
   await win.loadURL(origin);
+  const compressedPhoto=await js(`(async()=>{
+    const canvas=document.createElement('canvas');canvas.width=2200;canvas.height=1800;
+    const context=canvas.getContext('2d'),image=context.createImageData(canvas.width,canvas.height);
+    let seed=1;for(let i=0;i<image.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;
+      image.data[i]=seed&255;image.data[i+1]=seed>>>8;image.data[i+2]=seed>>>16;image.data[i+3]=255;}
+    context.putImageData(image,0,0);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.98));
+    const original=new File([blob],'new photo.jpg',{type:'image/jpeg'});
+    const saved=await window.cloudFileTools.encode(original,'message');
+    return {original:original.size,saved:atob(saved.data).length,mime:saved.mime};
+  })()`);
+  assert.ok(compressedPhoto.original>2*1024*1024,'synthetic camera photo exceeds the old upload limit');
+  assert.ok(compressedPhoto.saved<2*1024*1024,'the real browser canvas produces an uploadable photo');
+  assert.equal(compressedPhoto.mime,'image/jpeg');
   await wait('document.querySelectorAll(".monitor-card").length>=8');
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   await wait('document.querySelector("#messages-all-kids small").textContent.includes("8")');
@@ -83,9 +103,11 @@ async function run() {
   await capture('phone-list');
   // Filtering the list must not accidentally narrow "all"; archived profiles are excluded.
   await js('document.querySelector(".cloud-chat-search").value="Jamie";document.querySelector(".cloud-chat-search").dispatchEvent(new Event("input"));document.querySelector("#messages-all-kids").click()');
-  assert.equal(await js('document.querySelectorAll(".cloud-broadcast-recipients li").length'),8);
+  await wait('document.querySelector(".cloud-family-thread-intro") && !document.querySelector(".cloud-family-thread-setting input").disabled');
+  assert.equal(await js('document.querySelector(".cloud-family-thread-setting input").checked'),false);
   assert.equal(await js('document.querySelector("#messages-older").hidden'),true);
-  assert.equal(calls.filter(c=>c.action==='list-messages').length,0,'broadcast is not a group/sibling conversation');
+  assert.equal(calls.filter(c=>c.action==='list-messages').length,0,'family room is separate from one-to-one conversations');
+  assert.ok(calls.some(c=>c.action==='list-family-messages'));
   for(const [label,width,height]of [['compose',390,844],['small',320,568],['keyboard',390,420],['landscape',844,390]]){
     win.setContentSize(width,height);await new Promise(r=>setTimeout(r,100));
     const bounds=await js('({overflow:document.documentElement.scrollWidth>innerWidth,composer:document.querySelector("#messages-reply-box").getBoundingClientRect().toJSON(),head:document.querySelector(".cloud-chat-heading").getBoundingClientRect().toJSON(),h:innerHeight})');
@@ -95,8 +117,8 @@ async function run() {
   await js('document.querySelector("#messages-reply-input").value="Dinner in ten minutes <img src=x onerror=alert(1)>";for(let i=0;i<2;i++)document.querySelector("#messages-reply-input").dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))');
   await wait('document.querySelector("#messages-reply-btn").getAttribute("aria-label")==="Retry remaining"');
   assert.equal(calls.filter(c=>c.action==='send-message').length,3,'double tap must not start another batch');
-  assert.equal(await js('document.querySelectorAll(".cloud-broadcast-recipients .is-saved").length'),2);
-  assert.equal(await js('document.querySelector(".cloud-broadcast img")'),null,'message uses safe text');
+  assert.match(await js('document.querySelector(".cloud-family-thread-progress").textContent'),/2 of 8 copies saved/);
+  assert.equal(await js('document.querySelector(".cloud-family-thread-rows img")'),null,'message uses safe text');
   assert.equal(await js('document.querySelector("#messages-reply-input").disabled'),true);
   assert.equal(await js('(()=>{const e=new Event("beforeunload",{cancelable:true});dispatchEvent(e);return e.defaultPrevented;})()'),true);
   await capture('partial');
@@ -105,25 +127,27 @@ async function run() {
   await js('document.querySelector(".cloud-chat-back").click();document.querySelector("[data-mobile-tab=overview]").click();document.querySelector("#cloud-refresh").click()');
   await wait('document.querySelector("#messages-all-kids small").textContent.includes("9")');
   await js('document.querySelector("[data-mobile-tab=messages]").click();document.querySelector("#messages-all-kids").click()');
-  assert.equal(await js('document.querySelectorAll(".cloud-broadcast-recipients li").length'),8);
+  assert.match(await js('document.querySelector(".cloud-family-thread-progress").textContent'),/2 of 8 copies saved/);
   await js('document.querySelector(".cloud-broadcast-retry").click()');
-  await wait('document.querySelector(".cloud-broadcast h3").textContent==="Sent to all 8 kids"');
+  await wait('document.querySelector(".cloud-family-thread-progress").textContent.includes("Last message saved for all 8 kids")');
   const dinner=calls.filter(c=>c.action==='send-message'&&c.body.startsWith('Dinner'));
   assert.equal(dinner.length,9);assert.equal(new Set(dinner.map(c=>c.id)).size,8);
   assert.equal(dinner.filter(c=>c.studentId==='child-1').length,1);assert.equal(dinner.filter(c=>c.studentId==='child-3').length,2);
   assert.equal(dinner.filter(c=>c.studentId==='child-3')[0].id,dinner.filter(c=>c.studentId==='child-3')[1].id);
+  assert.equal(new Set(dinner.map(c=>c.familyThreadId)).size,1,'every private copy belongs to one durable family post');
   assert.ok(!dinner.some(c=>['child-9','child-10'].includes(c.studentId)));
   assert.equal([...history.values()].flat().filter(m=>m.body.startsWith('Dinner')).length,8,'lost reply retry creates exactly one message per child');
-  // One person's existing draft survives, and their history contains the broadcast.
+  // One person's existing draft survives; the family post stays in its own thread.
   await js('document.querySelector(".cloud-chat-back").click();document.querySelector(".cloud-chat-search").value="";document.querySelector(".cloud-chat-search").dispatchEvent(new Event("input"));document.querySelector(".cloud-chat-person").click()');
-  await wait('[...document.querySelectorAll(".cloud-message p")].some(p=>p.textContent.startsWith("Dinner"))');
+  await wait('document.querySelector(".cloud-message p")');
+  assert.equal(await js('[...document.querySelectorAll(".cloud-message p")].some(p=>p.textContent.startsWith("Dinner"))'),false);
   await js('document.querySelector("#messages-reply-input").value="Private draft";document.querySelector(".cloud-chat-back").click();document.querySelector("#messages-all-kids").click()');
   assert.equal(await js('document.querySelector("#messages-reply-input").value'),'');
   // Attachments use one stable upload/message ID per child, even after a lost upload reply.
   await js(`{const d=new DataTransfer();d.items.add(new File(['%PDF-1.7 synthetic'],'school.pdf',{type:'application/pdf'}));const f=document.querySelector('#messages-attachment');f.files=d.files;f.dispatchEvent(new Event('change'));document.querySelector('#messages-reply-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));}`);
   await wait('document.querySelector("#messages-reply-btn").getAttribute("aria-label")==="Retry remaining"');
   await js('document.querySelector("#messages-reply-box").requestSubmit()');
-  await wait('document.querySelector(".cloud-broadcast h3").textContent==="Sent to all 9 kids"');
+  await wait('document.querySelector(".cloud-family-thread-progress").textContent.includes("Last message saved for all 9 kids")');
   const uploads=calls.filter(c=>c.action==='upload-file');assert.equal(uploads.length,10);assert.equal(uploaded.size,9);
   const child2=uploads.filter(c=>c.studentId==='child-2');assert.equal(child2[0].id,child2[1].id);
   const attached=calls.filter(c=>c.action==='send-message'&&c.fileId);assert.equal(attached.length,9);assert.equal(new Set(attached.map(c=>c.fileId)).size,9);
@@ -137,7 +161,7 @@ async function run() {
   await js('document.querySelector("#messages-record").click()');
   await wait('!document.querySelector("#messages-voice-preview").hidden');
   await js('document.querySelector("#messages-reply-box").requestSubmit()');
-  await wait('document.querySelector(".cloud-broadcast h3").textContent==="Sent to all 9 kids" && document.querySelector("#messages-voice-preview").hidden');
+  await wait('document.querySelector(".cloud-family-thread-progress").textContent.includes("Last message saved for all 9 kids") && document.querySelector("#messages-voice-preview").hidden');
   const voicesSent=calls.filter(c=>c.action==='send-message'&&c.body.startsWith('Voice message'));
   assert.equal(voicesSent.length,9);assert.ok(voicesSent.every(c=>uploaded.get(c.fileId).mime.startsWith('audio/')));
   await js('document.querySelector(".cloud-chat-back").click();document.querySelector(".cloud-chat-person").click()');
@@ -145,6 +169,11 @@ async function run() {
   // Desktop keeps the same visible entry; even fully offline children are included.
   win.setContentSize(1365,900);await wait('!document.body.classList.contains("cloud-mobile")');
   await js('document.querySelector("#messages-all-kids").click()');await capture('desktop');
+  await wait('document.querySelectorAll(".cloud-family-thread-rows .cloud-message").length>=3');
+  await js('document.querySelector(".cloud-family-thread-setting input").click()');
+  await wait('document.querySelector(".cloud-family-thread-setting input").checked');
+  { const end=Date.now()+5000; while(!calls.some(c=>c.action==='family-message-settings')&&Date.now()<end) await new Promise(r=>setTimeout(r,40)); }
+  assert.equal(calls.filter(c=>c.action==='family-message-settings').at(-1).childrenCanPost,true);
   assert.equal(await js('getComputedStyle(document.querySelector("#messages-all-kids")).display'),'flex');
   assert.ok(dinner.some(c=>c.studentId==='child-8'),'offline child still receives a saved message');
   assert.ok(!calls.some(c=>c.studentId==='all-kids'),'never send pseudo-recipient to API');

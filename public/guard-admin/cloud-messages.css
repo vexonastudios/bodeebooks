@@ -76,6 +76,23 @@
   max-height: 400px;
 }
 
+.cloud-family-thread-intro {
+  padding: 12px 16px;
+  border: 1px solid rgba(130, 138, 255, .24);
+  border-radius: 14px;
+  background: rgba(130, 138, 255, .07);
+}
+.cloud-family-thread-intro h3 { margin: 0 0 4px; font-size: 1rem; }
+.cloud-family-thread-intro p { margin: 4px 0 10px; color: #b7c8dc; font-size: .875rem; }
+.cloud-family-thread-setting { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: .875rem; }
+.cloud-family-thread-setting input { width: 18px; height: 18px; accent-color: #34d399; }
+.cloud-family-thread-progress:empty { display: none; }
+.cloud-family-thread-progress .btn { margin: 6px 8px 0 0; }
+.cloud-family-thread-rows { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cloud-family-thread-empty { margin: 10px 0; color: #aebbd1; font-size: .9rem; }
+.cloud-family-thread-empty[hidden] { display: none; }
+.cloud-family-thread-rows .cloud-message strong { display: block; font-size: .8rem; color: #a9c3df; }
+
 .cloud-message {
   align-self: flex-start;
   max-width: 90%;
