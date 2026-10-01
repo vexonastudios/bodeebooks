@@ -22,7 +22,10 @@
 .cloud-monitor-actions [data-media=music]{--media-rgb:59,130,246;--media-color:#60a5fa}
 .cloud-monitor-actions [data-media=video]{--media-rgb:234,179,8;--media-color:#facc15}
 .cloud-monitor-actions [data-media=audiobook]{--media-rgb:249,115,22;--media-color:#fb923c}
-.cloud-monitor-actions .monitor-media-time-popover{display:grid;gap:8px;z-index:20}
+.cloud-monitor-actions .monitor-media-time-popover{display:none;gap:8px;box-sizing:border-box;z-index:20}
+.cloud-monitor-actions .monitor-media-time-menu[open] + .monitor-media-time-popover{display:grid}
+.cloud-workspace .cloud-monitor-card:has(.monitor-media-time-menu[open]){position:relative;z-index:2}
+.cloud-mobile .cloud-monitor-actions .monitor-media-time-popover{position:static;grid-column:1/-1;width:100%;max-width:100%;margin-top:0}
 .cloud-monitor-actions .monitor-media-time-popover .btn{font-size:12px;padding:6px}
 .cloud-monitor-actions .monitor-student-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .monitor-connect-link{background:none;border:0;color:var(--text-secondary);font-size:12px;cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}

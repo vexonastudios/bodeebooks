@@ -134,7 +134,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));summary.setAttribute('aria-label',`Add ${label.toLowerCase()} time for ${model.student.name}`);
     const options=node('div','monitor-media-time-popover');options.append(node('strong','',`Extra ${label.toLowerCase()} time today`));
     for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await change({operation:'extra-time',minutes});menu.open=false;},{pending:'Adding '+minutes+' '+label.toLowerCase()+' minutes for '+child+'…',title:minutes+' '+label.toLowerCase()+' minutes added for '+child,detail:'Saved to today’s allowance. School and schedule requirements still apply.'}),'btn btn-secondary');notices.bind(add,key+':'+minutes,key);add.dataset.cloudMutation='true';options.append(add);}
-    menu.append(summary,options);row.append(main,menu);notices.mount(row,key);for(const minutes of [15,30,60])notices.mount(row,key+':'+minutes);return row;
+    menu.append(summary);row.append(main,menu,options);notices.mount(row,key);for(const minutes of [15,30,60])notices.mount(row,key+':'+minutes);return row;
   }
   function renderQuickDialog(model){
     const priorStatus=quickDialog.querySelector('.cloud-quick-status')?.textContent||'';

@@ -33,7 +33,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
-import { setupMonitoring } from './cloud-monitoring.js?v=20260923-colors1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20261001-time-menu1';
 import { setupCloudMathCoach } from './cloud-math-coach.js';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-unified2';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
