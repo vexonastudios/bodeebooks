@@ -5,7 +5,7 @@ function courseMarkup(data) {
         ${data.students.map(row => {
           const eligible = row.settings.course_eligible;
           const percent = eligible ? Math.round((row.mastered_count / row.total_lessons) * 100) : 0;
-          const status = !eligible ? 'Speed Test only' : row.course_completed ? 'Home Row Graduate' : row.current_lesson.shortTitle;
+          const status = !eligible ? 'Speed Test only' : row.course_completed ? 'Typing course complete · Speed Test' : row.current_lesson.shortTitle;
           const count = eligible ? `${row.mastered_count}/${row.total_lessons}` : 'Speed Test';
           return `<div style="padding:14px;border:1px solid rgba(255,255,255,0.08);border-radius:13px;background:rgba(255,255,255,0.035);">
             <div style="display:flex;align-items:center;gap:9px;">
@@ -22,7 +22,7 @@ function courseMarkup(data) {
         <div class="cloud-typing-settings-grid">
           <div class="form-group"><label>Student controls</label><select id="typing-course-student" class="admin-select">${data.students.map(row => `<option value="${row.student.id}">${esc(row.student.name)}</option>`).join('')}</select></div>
           <div class="form-group"><label>Daily lesson</label><select id="typing-course-goal" class="admin-select"><option value="3">3 minutes</option><option value="5">5 minutes</option><option value="8">8 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option></select></div>
-          <div class="form-group"><label>Starting lesson</label><select id="typing-course-start" class="admin-select">${data.lesson_options.map(lesson => `<option value="${lesson.id}">${lesson.order}. ${esc(lesson.title)}</option>`).join('')}</select></div>
+          <div class="form-group"><label>Starting lesson</label><select id="typing-course-start" class="admin-select">${data.lesson_options.filter(lesson => !lesson.optional).map(lesson => `<option value="${lesson.id}">${lesson.order}. ${esc(lesson.title)}</option>`).join('')}</select></div>
         </div>
         <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:12px;">
           <label style="display:flex;gap:7px;align-items:center;font-size:13px;"><input type="checkbox" id="typing-course-enabled"> Guided course enabled (grades K–5)</label>
