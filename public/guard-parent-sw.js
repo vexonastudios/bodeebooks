@@ -82,7 +82,7 @@ self.addEventListener('push', event => {
       icon: '/guard-icons/bodeeguard-parent-192.png',
       tag: test ? 'bodeeguard-test' : 'bodeeguard-messages' + (studentId ? '-' + studentId : ''),
       renotify: true,
-      actions: replyId ? [{ action: 'reply', type: 'text', title: 'Quick reply', placeholder: 'Reply to your child…' }, { action: 'open', title: 'Open message' }] : [],
+      actions: replyId ? [{ action: 'reply', type: 'text', title: 'Send · Ctrl+Enter', placeholder: 'Reply to your child…' }, { action: 'open', title: 'Open message' }] : [],
       data: {studentId,sequence:sequence(data.sequence),...(replyId ? { accountUserId: data.accountUserId, replyId, createdAt: Date.now() } : {})},
     }),
     test ? Promise.resolve() : badge(count(data.totalUnread)),

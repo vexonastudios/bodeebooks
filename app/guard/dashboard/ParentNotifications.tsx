@@ -114,7 +114,7 @@ export default function ParentNotifications() {
         <div className={styles.notificationHeading}><Bell size={26} aria-hidden="true"/><h2 id="phone-notifications-title">Message notifications</h2></div>
         <p>Get desktop or phone alerts when your children send messages. Choose whether alerts show your child’s name and a message preview.</p>
         {state.desktopApp&&<p className={styles.notificationHint}>Installing BodeeGuard and enabling alerts are separate steps. This computer needs its own notification permission, even if alerts already work on your phone.</p>}
-        <p className={styles.notificationHint}>Chrome and Edge on Windows can offer a quick reply in the alert. On other devices, tap the notification to open that child’s conversation. Replies require your parent sign-in. Test alerts have no reply button.</p>
+        <p className={styles.notificationHint}>On Windows, press Ctrl+Enter to send a reply from the notification, or click Send. Enter alone adds a new line in the Windows alert. Inside BodeeGuard Messages, Enter sends. On other devices, tap the notification to open that child’s conversation. Replies require your parent sign-in. Test alerts have no reply button.</p>
         {state.attention&&<p className={styles.notificationAttention} role="status">{state.attention}</p>}
         {state.iosInstall?<p>Add BodeeGuard to your Home Screen and open that icon to enable phone alerts.</p>:!state.supported?<p>Use Chrome or Edge on desktop, Chrome on Android, or the Home Screen app on iPhone for notifications.</p>:<>
           <p className={styles.notificationStatus}>{state.enabled?'On for this device':'Off for this device'}</p>

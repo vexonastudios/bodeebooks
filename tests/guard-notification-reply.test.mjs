@@ -48,7 +48,7 @@ function worker(fetch = async () => Response.json({saved:true,id,studentId})) {
 async function alert(w) { await w.event('push',{data:{json:()=>({type:'message',accountUserId:'parent',studentId,sequence:'7',unread:1,totalUnread:1})}}); return w.notifications.at(-1); }
 test('notification offers inline Reply only with account binding; unsupported inline input opens the conversation',async()=>{
   const w=worker(()=>assert.fail('No reply should be sent'));const n=await alert(w);
-  assert.equal(n.actions[0].type,'text');assert.equal(n.data.replyId,id);assert.ok(!n.body.includes('parent'));
+  assert.equal(n.actions[0].type,'text');assert.equal(n.actions[0].title,'Send · Ctrl+Enter');assert.equal(n.data.replyId,id);assert.ok(!n.body.includes('parent'));
   await w.event('notificationclick',{notification:n,action:'reply'});assert.match(w.opened[0],new RegExp(studentId));
   await w.event('push',{data:{json:()=>({studentId})}});assert.equal(w.notifications.at(-1).actions.length,0);
 });
