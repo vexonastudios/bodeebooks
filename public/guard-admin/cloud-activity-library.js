@@ -74,6 +74,7 @@ export function setupActivityLibrary({ getSnapshot, editSubject, canEdit, handwr
     child.value = students.some(student => student.id === previous) ? previous : '';
     const query = search.value.trim().toLocaleLowerCase();
     const subjects = snapshot.rules.subjects.filter(subject => {
+      if (subject.url === 'app://science-spelling') return false;
       const assignment = child.value ? assignmentFor(subject, child.value) : null;
       return (!child.value || assignment && assignment.active !== false)
         && (!query || [subject.title, subject.description, subject.url].some(value => String(value || '').toLocaleLowerCase().includes(query)));

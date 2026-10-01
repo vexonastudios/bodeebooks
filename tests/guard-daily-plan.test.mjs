@@ -27,3 +27,14 @@ test('legacy saved defaults enable missing built-ins on apply, while explicit fa
  saved=applyFamilyPlan({...snapshot,rules:{...snapshot.rules,...saved}},template,[a,b]);
  assert.ok(saved.subjects[0].assignments.filter(row=>[a,b].includes(row.studentId)).every(row=>row.active===false));
 });
+test('served parent plan omits retired Science Spelling but keeps regular Spelling and saved history',()=>{
+ const snapshot=family(),science={id:'55555555-5555-4555-8555-555555555555',title:'Science Spelling Lab',kind:'activity',url:'app://science-spelling',assignments:[{studentId:a,active:true,dailyGoalMinutes:0}]};
+ snapshot.schoolActivities.push({url:science.url,module:'spelling',ready:false});snapshot.rules.subjects.push(science);
+ const familyCards=familyPlanCards(snapshot),childCards=dailyPlanCards(snapshot,{},a);
+ assert.ok(familyCards.some(card=>card.url==='app://spelling'));
+ assert.ok(childCards.some(card=>card.url==='app://spelling'));
+ assert.ok(familyCards.every(card=>card.url!==science.url));
+ assert.ok(childCards.every(card=>card.url!==science.url));
+ const saved=applyFamilyPlan(snapshot,templateFromCards(familyCards),[a]);
+ assert.deepEqual(saved.subjects.find(subject=>subject.id===science.id),science);
+});

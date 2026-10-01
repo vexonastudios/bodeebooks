@@ -46,6 +46,7 @@ export function isSchoolWeekdays(days) {
 export function dailyPlanCards(snapshot, details, studentId) {
   const activities = snapshot.schoolActivities || [], cards = [], seen = new Set();
   for (const subject of snapshot.rules.subjects) {
+    if (subject.url === 'app://science-spelling') continue;
     const assignment = Array.isArray(subject.assignments) ? subject.assignments.find(a => a.studentId === studentId) : { dailyGoalMinutes: 30 };
     // Main schools belong to their assigned children; optional websites belong
     // in the catalog even before they have an assignment.
@@ -53,7 +54,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     const module = activities.find(a => a.url === subject.url)?.module;
     // Keep unassigned built-ins in Not allowed so parents can see and fix
     // exclusions. Hiding them here also prevented a family apply from finding them.
-    if (module && subject.url !== 'app://science-spelling') seen.add(module);
+    if (module) seen.add(module);
     const stats = details.media?.[mediaKinds[module]], plan = assignment?.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
     cards.push({ key: subject.id, subjectId: subject.id, module, ...(isQuizlet(subject) ? {preset:'quizlet', assignmentScoped:!subject.planOnly} : subject.planOnly && isHandwriting(subject.url) ? {preset:'handwriting'} : subject.planOnly && isNumerals(subject.url) ? {preset:'numerals'} : {}), title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
@@ -155,7 +156,8 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
   baseline.unshift({ key: 'school', title: 'Each child’s school websites', icon: 'graduation-cap', portal: true, goal: 0,
     placement: 'school', days: defaultDays('school'), start: null, end: null, limitMinutes: null });
   for (const subject of snapshot.rules.subjects) {
-    if (subject.isSchoolPortal && !isQuizlet(subject) || subject.url !== 'app://science-spelling' && snapshot.schoolActivities.some(a => a.url === subject.url)) continue;
+    if (subject.url === 'app://science-spelling') continue;
+    if (subject.isSchoolPortal && !isQuizlet(subject) || snapshot.schoolActivities.some(a => a.url === subject.url)) continue;
     const owner = snapshot.students.find(s => !s.archived_at && (!subject.assignments || subject.assignments.some(a => a.studentId === s.id && a.active !== false)));
     const card = dailyPlanCards(snapshot, {}, owner?.id || 'family').find(c => c.subjectId === subject.id);
     if (card) baseline.push({ ...card, key: planCardKey(card) });
