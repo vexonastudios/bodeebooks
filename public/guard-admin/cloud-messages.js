@@ -243,7 +243,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     el('messages-attachment-status').textContent = attachments.get(selected)?.name || localFiles.get(selected)?.name || '';
     el('messages-attachment-status').hidden = voices.has(selected);
     el('messages-attachment-clear').hidden = !attachments.has(selected) && !localFiles.has(selected) || voices.has(selected);
-    const sendLabel = sending ? 'Sending…' : selected === ALL_KIDS || groupId(selected) ? (pending.has(selected) ? 'Retry remaining' : 'Send to group') : selected === FAMILY ? (pending.has(selected) ? 'Retry remaining' : 'Send to family') : pending.has(selected) ? 'Retry same message' : 'Send';
+    const sendLabel = sending ? 'Sending…' : selected === ALL_KIDS || groupId(selected) ? (pending.has(selected) ? 'Retry message' : 'Send to group') : selected === FAMILY ? (pending.has(selected) ? 'Retry message' : 'Send to family') : pending.has(selected) ? 'Retry same message' : 'Send';
     el('messages-reply-btn').innerHTML = `<i data-lucide="send" aria-hidden="true"></i><span>${sendLabel}</span>`;
     el('messages-reply-btn').setAttribute('aria-label', sendLabel);
     el('messages-record').setAttribute('aria-label', el('messages-record').querySelector('span').textContent);
@@ -460,7 +460,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     const currentGroup = page?.group || groups.find(item => item.id === groupId(selected));
     const batch = pending.get(selected) || (family ? broadcastResult : null);
     const people = batch?.recipients || (currentGroup ? currentGroup.members : recipients().filter(student => chosenKids.has(student.id)).map(student => ({ studentId: student.id, name: student.name })));
-    const total = people.length, saved = people.filter(person => person.saved).length;
+    const total = people.length;
     const thread = el('messages-thread-content');
     const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
     if ((family ? familyPanel : groupPanel).parentElement !== thread) thread.replaceChildren(family ? familyPanel : groupPanel, familyRows);
@@ -485,16 +485,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       groupClose.hidden = newGroup || Boolean(currentGroup?.closedAt);
       groupReopen.hidden = newGroup || !currentGroup?.closedAt;
     }
-    if (batch) progress.append(textNode('span', saved === total ? `Saved for ${total} kids.` : `${saved} of ${total} copies saved online. Retry the rest.`));
-    if (batch && saved < total && !sending) {
-      const retry = textNode('button', 'Retry remaining', 'btn btn-primary cloud-broadcast-retry'); retry.type = 'button';
-      retry.addEventListener('click', () => el('messages-reply-box').requestSubmit()); progress.append(retry);
-    }
-    if (family && batch && saved < total && !sending) {
-      const restart = textNode('button', 'Start a new message', 'btn btn-secondary'); restart.type = 'button';
-      restart.addEventListener('click', () => { pending.delete(FAMILY); drafts.delete(FAMILY); attachments.delete(FAMILY); localFiles.delete(FAMILY); voices.delete(FAMILY); broadcastResult = null; voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; note('Earlier family posts remain in this thread.'); render(); el('messages-reply-input').focus(); });
-      progress.append(restart);
-    }
+    if (batch) progress.append(textNode('span', sending ? 'Sending to everyone…' : 'This message is ready to retry. No partial post was published.'));
     const messages = [...older, ...(page?.messages || [])];
     const unique = [...new Map(messages.map(message => [message.id, message])).values()];
     familyEmpty.textContent = family ? 'No family messages yet. Send the first one below.' : 'No group messages yet. Send the first one below.';
@@ -502,14 +493,24 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (familyEmpty.parentElement !== familyRows) familyRows.append(familyEmpty);
     familyThreadRows.update(unique, {
       fingerprint: message => JSON.stringify([message.sender, message.senderName, message.body, message.attachment]),
-      refresh: () => {},
+      refresh: (row, message) => row.messageReactions.update(message.reactions),
       create: message => {
         const row = textNode('article', '', `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`);
         row.append(textNode('strong', message.senderName || 'Mom & Dad'), textNode('p', message.body));
         const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
         if (attachment) row.append(attachment);
         row.append(textNode('small', new Date(message.createdAt).toLocaleString()));
-        return { node: row, dispose: () => attachment?.dispose?.() };
+        const conversation = selected;
+        const reactions = createMessageReactions({ messageElement: row, onReact: async emoji => {
+          if (selected !== conversation || !conversationVisible()) throw new Error('Reopen this conversation before reacting.');
+          const result = await request('react-message', { shared: true, groupId: groupId(conversation), messageId: message.id, emoji });
+          if (selected !== conversation || result.id !== message.id || !result.saved || !Array.isArray(result.reactions)) throw new Error('The reaction could not be confirmed.');
+          older = older.map(item => item.id === message.id ? { ...item, reactions: result.reactions } : item);
+          if (page) page = { ...page, version: null, messages: page.messages.map(item => item.id === message.id ? { ...item, reactions: result.reactions } : item) };
+          render(); return result.reactions;
+        } });
+        row.messageReactions = reactions; row.append(reactions.node);
+        return { node: row, dispose: () => { reactions.dispose(); attachment?.dispose?.(); } };
       }
     });
     if (atBottom) thread.scrollTop = thread.scrollHeight;
@@ -546,34 +547,32 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         batch.created = true; groups = [created.group, ...groups.filter(group => group.id !== batch.groupId)]; renderStudents();
       }
       if (selected === target) render();
-      for (const person of batch.recipients) {
-        if (person.saved) continue;
-        person.error = '';
-        try {
-          if (batch.attachment && !person.fileId) {
-            // Private attachments are scoped to one child, including on an uncertain retry.
+      if (batch.attachment) {
+        // Files remain child-scoped; prepare at most three in parallel before publishing the post.
+        let next = 0;
+        const upload = async () => {
+          while (next < batch.recipients.length) {
+            const person = batch.recipients[next++]; if (person.fileId) continue;
             const receipt = await request('upload-file', { ...batch.attachment, id: person.uploadId, studentId: person.studentId });
-            if (!receipt.saved || receipt.file?.id !== person.uploadId) throw new Error('Attachment confirmation was interrupted.');
+            if (!receipt.saved || receipt.file?.id !== person.uploadId) throw new Error('Attachment confirmation was interrupted. Retry keeps your draft.');
             person.fileId = person.uploadId;
           }
-          const receipt = await request('send-message', { studentId: person.studentId, id: person.id, familyThreadId: batch.id,
-            ...(batch.groupId ? { groupId: batch.groupId } : {}), body: batch.body, ...(person.fileId ? { fileId: person.fileId } : {}) });
-          if (receipt.id !== person.id || receipt.studentId !== person.studentId || receipt.saved !== true) throw new Error('Message confirmation was interrupted.');
-          person.saved = true;
-        } catch (failure) {
-          person.error = failure.message;
-          // Stop network-wide failures promptly; retry keeps the original IDs and recipients.
-          if (!failure.status || failure.status === 401 || failure.status === 429 || failure.status >= 500) break;
-        }
-        if (selected === target) { render(); note(`Sending to group · ${batch.recipients.filter(person => person.saved).length} of ${batch.recipients.length} saved`); }
+        };
+        const uploads = await Promise.allSettled(Array.from({ length: Math.min(3, batch.recipients.length) }, upload));
+        const failure = uploads.find(result => result.status === 'rejected');
+        if (failure) throw failure.reason;
       }
-      if (batch.recipients.every(person => person.saved)) {
+      const receipt = await request('send-shared-message', { familyThreadId: batch.id, groupId: batch.groupId, body: batch.body,
+        recipients: batch.recipients.map(person => ({ studentId: person.studentId, id: person.id, ...(person.fileId ? { fileId: person.fileId } : {}) })) });
+      if (receipt.id !== batch.id || receipt.saved !== true || receipt.recipients?.length !== batch.recipients.length) throw new Error('The group send could not be confirmed. Retry the same draft.');
+      {
         pending.delete(target); drafts.delete(target); attachments.delete(target); localFiles.delete(target); voices.delete(target);
+        if (family) broadcastResult = null;
         if (selected === target) { voice.cancel(); el('messages-reply-input').value = ''; el('messages-attachment').value = ''; }
         if (newGroup) { groupDraftId = null; chosenKids = new Set(recipients().map(student => student.id)); chosenInitialized = true; }
       }
       if (selected === target) {
-        note(pending.has(target) ? 'Some group copies still need confirmation. Retry uses the same message IDs.' : 'Message saved for this conversation.');
+        note('Message saved for this conversation.');
         if (newGroup && !pending.has(target)) choose(groupKey(batch.groupId)); else void refresh();
       }
     } catch (failure) {

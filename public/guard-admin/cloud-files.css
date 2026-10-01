@@ -23,3 +23,10 @@
 .cloud-inline-audio-status { color: #d3dbee; font: 12px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
 .cloud-inline-audio-status:empty { display: none; }
 .cloud-file-dialog audio, .cloud-chat-voice-preview audio { color-scheme: dark; }
+
+.cloud-inline-image { display: block; width: min(320px,100%); max-width: 100%; min-height: 72px; padding: 0; margin: 7px 0; border: 1px solid #8bd6cf44; border-radius: 12px; overflow: hidden; background: #0c1c2b99; color: #d3dbee; cursor: pointer; text-align: left; }
+.cloud-inline-image img { display: block; width: 100%; max-height: 280px; object-fit: contain; }
+.cloud-inline-image img:not([src]) { display: none; }
+.cloud-inline-image-status { display: block; padding: 12px; font: 13px/1.4 system-ui,sans-serif; }
+.cloud-inline-image-status:empty { display: none; }
+.cloud-inline-image:focus-visible { outline: 2px solid #8cf0d4; outline-offset: 3px; }
