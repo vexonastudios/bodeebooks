@@ -12,6 +12,18 @@ export function clockTime(value) {
   const n=seconds(value);return `${Math.floor(n/3600)}:${String(Math.floor(n/60)%60).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 }
 const duration = value => value < 60 ? '<1m' : value < 3600 ? `${Math.floor(value/60)}m` : `${Math.floor(value/3600)}h ${Math.floor(value/60)%60}m`;
+const creativeStudioUrls = new Set(['app://coloring','app://coloring-studio']);
+function quickUnlockChoices(goals) {
+  const studio = goals.filter(goal => creativeStudioUrls.has(goal.url));
+  if (!studio.length) return goals.map(goal => ({...goal, subjectIds:[goal.id]}));
+  let shown = false;
+  return goals.flatMap(goal => {
+    if (!creativeStudioUrls.has(goal.url)) return [{...goal, subjectIds:[goal.id]}];
+    if (shown) return [];
+    shown = true;
+    return [{...goal, label:'Art & Coloring Studio', icon:'palette', subjectIds:studio.map(item => item.id)}];
+  });
+}
 // Saved grades are free text. Sort recognized school levels numerically;
 // missing/custom levels follow them without changing the saved profiles.
 function gradeOrder(grade) {
@@ -146,9 +158,9 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     const close=button('Close','x',()=>quickDialog.close(),'cloud-quick-close');close.setAttribute('aria-label','Close Quick Unlock');
     head.append(heading,close);
     const choices=node('div','cloud-quick-dialog-choices');
-    for(const subject of model.goals){
+    for(const subject of quickUnlockChoices(model.goals)){
       const unlocked=!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
-        &&Array.isArray(model.student.quick_unlock.subjectIds)&&model.student.quick_unlock.subjectIds.includes(subject.id);
+        &&Array.isArray(model.student.quick_unlock.subjectIds)&&subject.subjectIds.every(id=>model.student.quick_unlock.subjectIds.includes(id));
       const choice=button(subject.label,unlocked?'circle-check':subject.icon,async el=>{
         el.disabled=true;
         quickDialog.querySelector('.cloud-quick-status').textContent='Saving '+subject.label+' for '+model.student.name+'…';
