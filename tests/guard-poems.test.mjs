@@ -13,3 +13,20 @@ test('Poem parent routes require sign-in and same origin, bound inputs and only 
   await f.POST(request({action:'recording',view:'part',studentId:'child',recordingId:'recording',position:0,url:'https://arbitrary.example',data:'arbitrary'}));assert.deepEqual(f.calls[1].body,{view:'part',studentId:'child',recordingId:'recording',position:0});
   const failed=await route({fail:true}).POST(request({action:'command',kind:'review',id:'synthetic',studentId:'child',recitationId:'recording',revision:1,approved:true}));assert.equal(failed.status,503);assert.doesNotMatch(JSON.stringify(await failed.json()),/provider detail/);
 });
+test('Poem photo route keeps pages private, bounds requests and forwards only image bytes',async()=>{
+  const file=path.resolve('app/guard/dashboard/poems-scan/route.ts'),module=new Module(file),calls=[];
+  class CloudApiError extends Error{}
+  module.require=name=>{
+    if(name==='@clerk/nextjs/server')return{auth:async()=>({isAuthenticated:true})};
+    if(name==='../cloud-api')return{CloudApiError,cloudApi:async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return{id:'scan',poem_text:'First line\n\nSecond stanza'};}};
+    throw Error('Unexpected route dependency');
+  };
+  module._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,file);
+  const send=(body,origin='https://guard.bodeebooks.com')=>new Request('https://guard.bodeebooks.com/guard/dashboard/poems-scan/',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(body)});
+  assert.equal((await module.exports.POST(send({id:'scan',images:[{}]},'https://other.example'))).status,403);
+  assert.equal((await module.exports.POST(send({id:'scan',images:[]}))).status,400);
+  assert.equal((await module.exports.POST(send({id:'scan',images:[{data:'a'.repeat(4*1024*1024)}]}))).status,413);
+  const result=await module.exports.POST(send({id:'scan',images:[{mime:'image/png',data:'abc',studentName:'private'}],householdId:'forged',model:'forged'}));
+  assert.equal(result.status,200);assert.match(result.headers.get('cache-control'),/no-store/);
+  assert.deepEqual(calls,[{url:'/poems/scan',body:{id:'scan',images:[{mime:'image/png',data:'abc'}]}}]);
+});
