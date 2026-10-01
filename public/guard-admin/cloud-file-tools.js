@@ -174,8 +174,47 @@
     item.dispose = () => { disposed = true; audio.pause(); audio.removeAttribute('src'); audio.load(); if (url) URL.revokeObjectURL(url); url = null; };
     return item;
   }
+  function imageAttachment(file, load) {
+    const item = button('', () => preview(read)); item.className = 'cloud-inline-image';
+    item.setAttribute('aria-label', `Open image ${file.name || 'attachment'}`);
+    const picture = element('img'); picture.alt = file.name || 'Image attachment'; picture.loading = 'lazy';
+    const status = element('span', 'Image attachment'); status.className = 'cloud-inline-image-status';
+    item.append(picture, status);
+    let url = null, saved = null, loading = false, disposed = false, observer = null;
+    async function read() { return saved || (saved = await load()); }
+    async function show() {
+      if (loading || disposed || url) return;
+      loading = true; status.textContent = 'Loading image…';
+      try {
+        const value = await read(), meta = value?.file;
+        if (disposed) return;
+        if (meta?.id !== file.id || meta.removed || meta.mime !== file.mime || !/^image\/(?:png|jpeg|webp)$/.test(meta.mime) ||
+            typeof value.data !== 'string' || value.data.length > Math.ceil(maximum / 3) * 4) throw new Error('Image unavailable. Tap to retry.');
+        const binary = atob(value.data);
+        if (!binary.length || binary.length !== meta.size || binary.length > maximum) throw new Error('Image unavailable. Tap to retry.');
+        url = URL.createObjectURL(new Blob([Uint8Array.from(binary, char => char.charCodeAt(0))], { type: meta.mime }));
+        picture.src = url;
+        picture.onload = () => {
+          if (picture.naturalWidth * picture.naturalHeight > 40000000) {
+            picture.removeAttribute('src'); URL.revokeObjectURL(url); url = null;
+            status.textContent = 'Image too large to show here. Tap to open.';
+          } else status.textContent = '';
+        };
+        picture.onerror = () => { if (url) URL.revokeObjectURL(url); url = null; status.textContent = 'Image unavailable. Tap to retry.'; };
+      } catch { saved = null; if (!disposed) status.textContent = 'Image unavailable. Tap to retry.'; }
+      finally { loading = false; observer?.disconnect(); }
+    }
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) void show(); }, { rootMargin: '200px' });
+      observer.observe(item);
+    } else void show();
+    item.addEventListener('click', () => { if (!url) void show(); });
+    item.dispose = () => { disposed = true; observer?.disconnect(); picture.removeAttribute('src'); if (url) URL.revokeObjectURL(url); url = null; };
+    return item;
+  }
   function attachment(file, load) {
     if (!file.removed && types.has(file.mime) && file.mime.startsWith('audio/')) return voiceAttachment(file, load);
+    if (!file.removed && types.has(file.mime) && file.mime.startsWith('image/')) return imageAttachment(file, load);
     const item = button(file.removed ? 'Attachment removed' : `Open ${file.name || 'attachment'}`, () => preview(load));
     item.disabled = Boolean(file.removed); return item;
   }

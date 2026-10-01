@@ -156,6 +156,8 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       break;
     }
     case "list-family-messages": path = "/messages/family/list"; method = "POST"; body = { before: input.before, version: input.version }; break;
+    case "send-shared-message": path = "/messages/shared/send"; method = "POST";
+      body = { familyThreadId: input.familyThreadId, groupId: input.groupId, body: input.body, recipients: input.recipients }; break;
     case "family-message-settings": path = "/messages/family/settings"; method = "POST"; body = { childrenCanPost: input.childrenCanPost }; break;
     case "peer-message-settings": path = "/messages/peer/settings"; method = "POST"; body = { enabled: input.enabled }; break;
     case "list-message-groups": path = "/messages/groups/list"; method = "POST"; body = {}; break;
@@ -164,9 +166,10 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "reopen-message-group": path = "/messages/groups/reopen"; method = "POST"; body = { groupId: input.groupId }; break;
     case "list-group-messages": path = "/messages/groups/page"; method = "POST"; body = { groupId: input.groupId, before: input.before, version: input.version }; break;
     case "react-message": {
-      if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
+      if (input.shared !== true && (typeof input.studentId !== "string" || !uuid.test(input.studentId))) return response({ error: "Choose a child from your family." }, 400);
       path = "/messages/react"; method = "POST";
-      body = { studentId: input.studentId, messageId: input.messageId, emoji: input.emoji };
+      body = { studentId: input.studentId, messageId: input.messageId, emoji: input.emoji,
+        shared: input.shared, groupId: input.groupId };
       break;
     }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
