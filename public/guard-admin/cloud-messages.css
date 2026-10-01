@@ -6,7 +6,7 @@
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   display: block;
   width: 100%;
-  max-width: 1440px;
+  max-width: 1920px;
   min-width: 0;
   margin: 0 auto;
 }
@@ -18,11 +18,27 @@
 
 .cloud-chat-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: clamp(260px, 20vw, 340px) minmax(0, 1fr);
   gap: 20px;
   width: 100%;
   min-height: 500px;
-  height: min(720px, calc(100vh - 240px));
+  height: clamp(560px, calc(100dvh - 210px), 1400px);
+}
+
+/* Desktop conversations fill the workspace and can be made taller when needed. */
+@media (min-width: 901px) {
+  body:not(.cloud-mobile) .cloud-chat-layout {
+    resize: vertical;
+    overflow: hidden;
+  }
+
+  body:not(.cloud-mobile) .cloud-message {
+    max-width: min(82%, 920px);
+  }
+
+  body:not(.cloud-mobile) .cloud-message.message-can-react {
+    max-width: min(82%, 920px, calc(100% - 44px));
+  }
 }
 
 .cloud-chat-people,
@@ -46,6 +62,8 @@
 }
 
 .cloud-chat-people #messages-student-list {
+  flex: 1;
+  min-height: 0;
   padding: 8px;
   overflow: auto;
 }
