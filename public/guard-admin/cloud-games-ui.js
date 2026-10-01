@@ -152,6 +152,35 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     dialog.addEventListener('cancel', event => { if (save.disabled) event.preventDefault(); });
     dialog.addEventListener('close', () => { settingsOpen = false; formArea.replaceChildren(); opener?.focus({ preventScroll: true }); });
   }
+  function openExtraTime(child) {
+    settingsOpen = true; formArea.replaceChildren();
+    const opener = document.activeElement;
+    const dialog = node('dialog', '', 'cloud-game-dialog'); dialog.setAttribute('aria-label', `Extra game time for ${child.name}`);
+    const panel = node('div', '', 'cloud-game-settings');
+    panel.append(heading('h3', `Extra game time for ${child.name}`, 'clock-3'),
+      node('p', `Choose extra minutes for today (${room.date}). This does not change ${child.name}’s regular daily limit or bypass school, chore, or game-hour rules.`, 'cloud-note'));
+    const actions = node('div', '', 'cloud-game-actions');
+    const message = node('p'); message.setAttribute('role', 'status');
+    let pendingGrant = null;
+    for (const minutes of [15,30,60]) {
+      const grant = button(`+${minutes} minutes`, async () => {
+        if (!pendingGrant || pendingGrant.minutes !== minutes) pendingGrant = {requestId:crypto.randomUUID(),studentId:child.id,minutes};
+        [...actions.querySelectorAll('button')].forEach(control => { control.disabled = true; });
+        message.textContent = 'Saving extra game time…';
+        try {
+          await request('add-time', pendingGrant);
+          pendingGrant = null; dialog.close(); await refresh();
+        } catch (error) {
+          message.textContent = `${error.message} Retry the same amount if the response was interrupted.`;
+          if (error.status >= 400 && error.status < 500 && ![408,429].includes(error.status)) pendingGrant = null;
+        } finally { [...actions.querySelectorAll('button')].forEach(control => { control.disabled = false; }); }
+      }, false, 'clock-plus');
+      actions.append(grant);
+    }
+    actions.append(button('Cancel', () => dialog.close(), false, 'x'));
+    panel.append(actions, message); dialog.append(panel); formArea.append(dialog); icons(); dialog.showModal();
+    dialog.addEventListener('close', () => { settingsOpen = false; formArea.replaceChildren(); opener?.focus({preventScroll:true}); });
+  }
   function render() {
     const focusedElement = document.activeElement;
     const focusedSquare = content.contains(document.activeElement) && document.activeElement.classList.contains('cloud-checkers-square') ? document.activeElement.getAttribute('aria-label')?.split(' ')[0] : null;
@@ -174,7 +203,11 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       if (parent) {
         const days = child.settings?.days || [], names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         const schedule = node('p', '', 'cloud-game-schedule'); schedule.append(icon('calendar-days'), document.createTextNode(`${days.length === 7 ? 'Every day' : days.map(d => names[d]).join(', ') || 'No days selected'} · ${child.settings?.start || '00:00'}–${child.settings?.end || '24:00'}`)); row.append(schedule);
-        row.append(button('Access & game time', () => openSettings(child), !fresh || busy, 'sliders-horizontal'));
+        if (child.settings?.bonusDate === room.date && child.settings.bonusMinutes) row.append(node('p', `+${child.settings.bonusMinutes} parent minutes today`, 'cloud-note'));
+        const parentActions = node('div', '', 'cloud-game-actions');
+        parentActions.append(button('Access & game time', () => openSettings(child), !fresh || busy, 'sliders-horizontal'),
+          button('Add game time today', () => openExtraTime(child), !fresh || busy, 'clock-plus'));
+        row.append(parentActions);
       } else if (!tabletop && child.id !== room.studentId) row.append(button('Invite to Checkers', () => act('invite', null, { opponentId: child.id }), !fresh || busy || loading || !!pending || !child.access.allowed || !room.children.find(c => c.id === room.studentId)?.access.allowed, 'send'));
       people.append(row);
     }

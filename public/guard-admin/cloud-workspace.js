@@ -24,9 +24,9 @@ import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
 import { setupCloudDocuments } from './cloud-documents.js?v=20260929-documents2';
-import { setupCloudGames } from './cloud-games-ui.js';
+import { setupCloudGames } from './cloud-games-ui.js?v=20261001-game-time1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
-import { setupCloudAssistant } from './cloud-assistant.js';
+import { setupCloudAssistant } from './cloud-assistant.js?v=20261001-game-time1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
@@ -444,7 +444,7 @@ const economy = setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
 const legacy = setupCloudLegacyArchive({ root: byId('cloud-legacy-import'), onApplied: refresh });
 const games = setupCloudGames({ root: byId('cloud-family-games'), parent: true, assetBase: new URL('/guard-admin/family-games/v1/', location.href), request: async (kind, input = {}) => {
   const body = kind === 'action' ? { action: 'game-action', gameAction: input.action, id: input.id, matchId: input.matchId, revision: input.revision }
-    : { ...input, action: kind === 'tabletop' ? 'game-tabletop' : kind === 'settings' ? 'game-settings' : 'game-room' };
+    : { ...input, action: kind === 'tabletop' ? 'game-tabletop' : kind === 'settings' ? 'game-settings' : kind === 'add-time' ? 'game-add-time' : 'game-room' };
   const response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const value = await response.json();
   if (!response.ok) { const error = new Error(value.error || 'Family games could not connect.'); error.status = response.status; throw error; }

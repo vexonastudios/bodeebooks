@@ -324,6 +324,8 @@ test('game bridge forwards only parent game controls, not client-chosen family o
   await route.POST(request({action:'game-action',gameAction:'cancel',id:deviceId,matchId:deviceId,revision:2,studentId:'forged',opponentId:'forged',deviceCredential:'forged'}));
   assert.deepEqual(calls[1],{path:'/games/action',body:{action:'cancel',id:deviceId,matchId:deviceId,revision:2}});
   await route.POST(request({action:'game-room',householdId:'forged'})); assert.deepEqual(calls[2],{path:'/games/room',body:{}});
+  await route.POST(request({action:'game-add-time',studentId:deviceId,minutes:30,requestId:deviceId,householdId:'forged',coins:999}));
+  assert.deepEqual(calls[3],{path:'/games/add-time',body:{studentId:deviceId,minutes:30,requestId:deviceId}});
 });
 
 test('workspace checks sign-in and household eligibility before serving shared controls', async () => {
@@ -525,6 +527,8 @@ test('assistant approval bridge keeps explicit parent approval and strips submit
  const input={action:'assistant-music-approve',prompt:'add song test for all my kids',requestId:deviceId,youtubeId:'abcdefghijk',approved:true,householdId:'forged',student_ids:['foreign'],screened:true};
  assert.equal((await route.POST(request(input))).status,200);
  assert.deepEqual(calls,[{path:'/assistant/music/approve',body:{prompt:input.prompt,requestId:deviceId,youtubeId:'abcdefghijk',approved:true}}]);
+ await route.POST(request({action:'assistant-game-time-approve',prompt:'add 30 more minutes of game time for all my kids',requestId:deviceId,minutes:30,approved:true,householdId:'forged',studentIds:['foreign']}));
+ assert.deepEqual(calls[1],{path:'/assistant/game-time/approve',body:{prompt:'add 30 more minutes of game time for all my kids',requestId:deviceId,minutes:30,approved:true}});
  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
  assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
 });
