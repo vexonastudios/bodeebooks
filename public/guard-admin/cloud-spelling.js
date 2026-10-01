@@ -1,6 +1,12 @@
 import { createSpellingPhotoTray } from './cloud-spelling-photos.js?v=20260910-prompt1';
 // Adapted from the original weekly-list editor and progress cards.
-export function setupCloudSpelling({endpoint}){
+export function newAssignmentDates(value) {
+  const fallback=new Date(),local=`${fallback.getFullYear()}-${String(fallback.getMonth()+1).padStart(2,'0')}-${String(fallback.getDate()).padStart(2,'0')}`;
+  const start=/^\d{4}-\d{2}-\d{2}$/.test(String(value||''))?String(value):local;
+  const date=new Date(start+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+7);
+  return{startDate:start,dueDate:`${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}-${String(date.getUTCDate()).padStart(2,'0')}`};
+}
+export function setupCloudSpelling({endpoint,getStudents=()=>[],getActivityDate=()=>''}){
 const API = '/spelling-adapter';
 
 let data = { students: [], lists: [], defaults: {} };
@@ -74,6 +80,25 @@ function renderActiveSession(session) {
 function countWords() {
   const count = byId('spelling-list-words').value.split(/[\r\n,;]+/).map(word => word.trim()).filter(Boolean).length;
   byId('spelling-word-count').textContent = `${count} word${count === 1 ? '' : 's'}`;
+  renderTeachingHints();
+}
+function listWords(){return byId('spelling-list-words').value.split(/[\r\n,;]+/).map(word=>word.trim()).filter(Boolean);}
+const hintKey=word=>String(word).normalize('NFKC').toLocaleLowerCase('en-US');
+function renderTeachingHints(){
+  const words=listWords(),prior=new Map(editingWords.map(item=>[hintKey(item.word),item]));
+  editingWords=words.map(word=>({...prior.get(hintKey(word)),word}));
+  const hasHints=editingWords.some(item=>item.teaching_hint||item.pattern);
+  teachingEditor.hidden=!hasHints;
+  if(!hasHints){teachingRows.replaceChildren();return;}
+  teachingRows.replaceChildren(...editingWords.map(item=>{
+    const row=document.createElement('div');row.className='spelling-teaching-row';
+    const title=document.createElement('strong');title.textContent=item.word;
+    const hint=document.createElement('textarea');hint.rows=2;hint.maxLength=240;hint.value=item.teaching_hint||'';hint.setAttribute('aria-label',`Teaching hint for ${item.word}`);hint.placeholder='Short clue about the tricky spelling';hint.addEventListener('input',()=>{item.teaching_hint=hint.value;});
+    const pattern=document.createElement('input');pattern.type='text';pattern.maxLength=40;pattern.value=item.pattern||'';pattern.setAttribute('aria-label',`Letter pattern for ${item.word}`);pattern.placeholder='Letter pattern, e.g. igh';pattern.addEventListener('input',()=>{item.pattern=pattern.value;});
+    row.style.cssText='display:grid;gap:6px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:rgba(255,255,255,.025)';
+    hint.style.cssText='width:100%;min-height:54px;resize:vertical';pattern.style.cssText='width:100%';
+    row.append(title,hint,pattern);return row;
+  }));
 }
 
 function listBelongsToView(list, view) {
@@ -192,7 +217,8 @@ async function saveCoachSetting(input) {
 
 function populateSelectors() {
   const options = data.students.map(student => `<option value="${escapeHtml(student.id)}">${escapeHtml(student.name)} · Grade ${escapeHtml(student.grade || '')}</option>`).join('');
-  byId('spelling-list-student').innerHTML = options;
+  const editor=byId('spelling-list-student'),editorSelected=editor.value;editor.innerHTML=options;
+  if ([...editor.options].some(option => option.value === editorSelected)) editor.value=editorSelected;
   const filter = byId('spelling-student-filter');
   const selected = filter.value;
   filter.innerHTML = `<option value="">All students</option>${options}`;
@@ -210,12 +236,19 @@ async function loadSpellingTab() {
     renderCoachSettings();
     renderBanks();
     render();
+    if(byId('spelling-list-modal').classList.contains('active')&&!scanBusy){
+      scanControls(false);
+      if(byId('spelling-scan-status').textContent==='Getting the photo scanner ready…')byId('spelling-scan-status').textContent=data.photoScanningAvailable===true?'':'Photo scanning is currently unavailable. Enter or paste the words below.';
+    }
   } catch (error) {
     status.textContent = error.message;
+    const scanStatus=byId('spelling-scan-status');
+    if(byId('spelling-list-modal').classList.contains('active')&&scanStatus.textContent==='Getting the photo scanner ready…'){scanStatus.textContent='The scanner could not connect. You can still enter or paste the words below.';scanStatus.className='spelling-scan-status error';scanControls(false);}
   }
 }
 
 function openModal(list = null, studentId = '', bank = null) {
+  const dates=newAssignmentDates(getActivityDate()||data.date);
   resetScan();
   editingId = list?.id || null;
   editingWords = list?.words || bank?.words || [];
@@ -225,8 +258,8 @@ function openModal(list = null, studentId = '', bank = null) {
   byId('spelling-list-student').disabled = !!list;
   byId('spelling-list-student').value = list?.student_id || studentId || data.students[0]?.id || '';
   byId('spelling-list-title').value = list?.title || bank?.title || 'Weekly Spelling';
-  byId('spelling-list-week').value = list?.week_start || data.defaults.weekStart || '';
-  byId('spelling-list-test').value = list?.test_date || data.defaults.testDate || '';
+  byId('spelling-list-week').value = list?.week_start || dates.startDate;
+  byId('spelling-list-test').value = list?.test_date || dates.dueDate;
   const listStatus = ['active', 'draft', 'completed', 'archived'].includes(list?.status) ? list.status : 'active';
   const historical = listStatus === 'completed' || listStatus === 'archived';
   byId('spelling-status-completed').hidden = !historical;
@@ -234,7 +267,7 @@ function openModal(list = null, studentId = '', bank = null) {
   byId('spelling-list-status').value = listStatus;
   byId('spelling-list-words').value = editingWords.map(item => item.word).join('\n');
   byId('spelling-list-archive').hidden = !list || list.status === 'archived';
-  byId('spelling-scan-status').textContent = data.photoScanningAvailable===true?'':'Photo scanning is currently unavailable. Enter or paste the words below. The built-in spelling coach remains available.';
+  byId('spelling-scan-status').textContent = data.photoScanningAvailable===true?'':loadingRequest?'Getting the photo scanner ready…':'Photo scanning is currently unavailable. Enter or paste the words below.';
   byId('spelling-scan-status').className = 'spelling-scan-status';
   byId('spelling-list-photo').value = '';
   countWords();
@@ -304,10 +337,11 @@ async function runScan(epoch){
     pendingScan=null;scanRetry.hidden=true;
     if(result.is_spelling_list===false)throw new Error('This photo does not look like a spelling list. Choose a clearer photo of the printed spelling words.');
     if(!result.words?.length)throw new Error(result.notes||'No spelling words were found. Try a clearer photo.');
+    editingWords=result.words.map(item=>({...item}));
     byId('spelling-list-words').value=result.words.map(item=>item.word).join('\n');
     if(result.title&&(!byId('spelling-list-title').value||byId('spelling-list-title').value==='Weekly Spelling'))byId('spelling-list-title').value=result.title;
     const uncertain=result.words.filter(item=>Number(item.confidence)<.8).length;
-    status.textContent=`Found ${result.words.length} words. ${uncertain?`Carefully check ${uncertain} uncertain word${uncertain===1?'':'s'}. `:''}Review every word before saving.${result.notes?' '+result.notes:''}`;countWords();
+    status.textContent=`Found ${result.words.length} words and generated teaching suggestions in the same scan. ${uncertain?`Carefully check ${uncertain} uncertain word${uncertain===1?'':'s'}. `:''}Review every word and hint before saving.${result.notes?' '+result.notes:''}`;countWords();teachingEditor.open=true;
   }catch(error){if(epoch===scanGeneration){if(error.status>=400&&error.status<500&&error.status!==409)pendingScan=null;status.className='spelling-scan-status error';status.textContent=error.message;scanRetry.hidden=!pendingScan;}}
   finally{if(epoch===scanGeneration){scanControls(false);byId('spelling-list-photo').value='';}}
 }
@@ -329,10 +363,20 @@ function setupSpelling() {
 
 const button=(label,fn)=>{const value=document.createElement('button');value.className='btn btn-secondary';value.textContent=label;value.onclick=()=>void Promise.resolve().then(fn).catch(error=>notice(error.message));return value;};
 
+const teachingEditor=document.createElement('details');teachingEditor.className='spelling-teaching-editor';teachingEditor.hidden=true;
+teachingEditor.style.cssText='grid-column:1/-1;margin:8px 0 14px;padding:12px;border:1px solid var(--border-color);border-radius:12px';
+const teachingTitle=document.createElement('summary');teachingTitle.textContent='Review teaching hints';
+const teachingDescription=document.createElement('p');teachingDescription.textContent='These are AI suggestions, not text read from the photo. Correct or clear any hint before assigning the list.';
+const teachingRows=document.createElement('div');teachingRows.className='spelling-teaching-rows';
+teachingRows.style.cssText='display:grid;gap:8px;max-height:360px;overflow:auto';
+teachingEditor.append(teachingTitle,teachingDescription,teachingRows);
+byId('spelling-list-words').closest('.form-group')?.after(teachingEditor);
+
 const anytimeLabel=document.createElement('label');anytimeLabel.className='form-group';anytimeLabel.style.cssText='grid-column:1/-1;display:flex;gap:8px;align-items:center;color:var(--text-primary)';
 const anytime=document.createElement('input');anytime.type='checkbox';anytimeLabel.append(anytime,document.createTextNode(' Practice anytime — no test date'));
 byId('spelling-list-week').closest('.form-group')?.before(anytimeLabel);
 if(!anytimeLabel.isConnected)byId('spelling-list-week').before(anytimeLabel);
+const startDateLabel=byId('spelling-list-week').closest('.form-group')?.querySelector('label');if(startDateLabel)startDateLabel.textContent='Start date';
 function updateDates(){for(const id of ['spelling-list-week','spelling-list-test']){byId(id).closest('.form-group').hidden=anytime.checked;byId(id).disabled=anytime.checked;byId(id).required=!anytime.checked;}}
 anytime.onchange=updateDates;
 const banks=document.createElement('details');banks.className='spelling-list-card';byId('spelling-list-grid').before(banks);
@@ -356,5 +400,5 @@ const photoTray=createSpellingPhotoTray({input:byId('spelling-list-photo'),statu
 const retry=button('Retry saved change',async()=>{if(!pending)return;retry.disabled=true;try{await send('spelling-command',pending.command);pending=null;retry.hidden=true;closeModal();await loadSpellingTab();}finally{retry.disabled=false;}});retry.hidden=true;
 const previous=button('Newer weekly lists',async()=>{offset=Math.max(0,offset-100);await loadSpellingTab();}),next=button('Older weekly lists',async()=>{offset+=100;await loadSpellingTab();});previous.disabled=next.disabled=true;
 byId('spelling-admin-status').after(retry);byId('spelling-list-grid').after(previous,next);setupSpelling();
-return{async openScanner(){await (loadingRequest||loadSpellingTab());if(!active)return;if(!data.students.length){notice('Add a child in Students first.');return;}openModal();photoTray.focus();},update(){},setActive(value){active=value;if(active&&!loading){loading=true;loadingRequest=loadSpellingTab().finally(()=>{loading=false;loadingRequest=null;});}if(!active)closeModal();}};
+return{async openScanner(){if(!data.students.length){const students=getStudents().filter(student=>!student.archived_at);if(students.length){data={...data,students,date:getActivityDate()||data.date};populateSelectors();}}if(!data.students.length)await (loadingRequest||loadSpellingTab());if(!active)return;if(!data.students.length){notice('Add a child in Students first.');return;}openModal();byId('spelling-list-student').focus();},update(){},setActive(value){active=value;if(active&&!loading){loading=true;loadingRequest=loadSpellingTab().finally(()=>{loading=false;loadingRequest=null;});}if(!active)closeModal();}};
 }
