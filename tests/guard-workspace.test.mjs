@@ -648,3 +648,14 @@ test('reaction bridge preserves message/emoji only, with normal parent authentic
   assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
   assert.equal((await route.POST(request({ ...input, studentId: '../other' }))).status, 400);
 });
+
+test('learning challenge controls use authenticated fixed routes without client household authority', async () => {
+  const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { saved: true }; } });
+  assert.equal((await route.POST(request({ action: 'learning-challenges-read', householdId: 'forged' }))).status, 200);
+  assert.deepEqual(calls[0], { path: '/challenges', body: { action: 'read' } });
+  const input = { action: 'learning-challenges-save', id: deviceId, revision: 2, settings: { family: { enabled: true }, children: {} }, householdId: 'forged', studentId: 'forged' };
+  assert.equal((await route.POST(request(input))).status, 200);
+  assert.deepEqual(calls[1], { path: '/challenges', body: { action: 'save', id: deviceId, revision: 2, settings: input.settings } });
+  assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
+});

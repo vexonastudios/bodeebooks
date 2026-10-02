@@ -42,7 +42,7 @@ import { setupCloudQuizzes } from './cloud-quizzes.js';
 import { setupCloudWorksheets } from './cloud-worksheets.js';
 import { setupCloudReading } from './cloud-reading.js';
 import { setupCloudTyping } from './cloud-typing.js?v=20260911-controls1';
-import { setupCloudEconomy } from './cloud-economy.js?v=20260911-controls1';
+import { setupCloudEconomy } from './cloud-economy.js?v=20261001-challenges1';
 import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
 import { setupNotificationNavigation } from './cloud-notification-navigation.js';

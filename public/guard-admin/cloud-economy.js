@@ -1,8 +1,10 @@
+import { setupChallengeSettings } from './cloud-challenges.js?v=20261001-challenges1';
 /* global document, fetch, AbortSignal, crypto, window, structuredClone */
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
 const mediaLabels = { music:'Music', video:'Videos', audiobook:'Audiobooks', family_game:'Family Games' };
 const mediaIcons = { music:'music', video:'video', audiobook:'headphones', family_game:'gamepad-2' };
 export function setupCloudEconomy({ endpoint, mutate, editor, field, node, button }) {
+  const challenges = setupChallengeSettings({endpoint,mutate});
   const el = id => document.getElementById(id), modal = el('reward-catalog-modal');
   let active = false, generation = 0, loading = false, data = null, editing = null, editId = null, saving = false, offset = 0;
   function close() { modal.classList.remove('active'); modal.setAttribute('aria-hidden', 'true'); editing = null; }
@@ -181,5 +183,5 @@ export function setupCloudEconomy({ endpoint, mutate, editor, field, node, butto
   });
   el('cloud-economy-refresh').addEventListener('click', load);
   el('econ-purchase-sel').addEventListener('change', () => { offset = 0; generation++; void load(); });
-  return { update() { if (active && !saving && !earningsSaving && !earningsDirty && !modal.classList.contains('active')) void load(); }, setActive(value) { active = value; generation++; if (value) void load(); else { close(); data = null; } } };
+  return { update() { challenges.update(); if (active && !saving && !earningsSaving && !earningsDirty && !modal.classList.contains('active')) void load(); }, setActive(value) { challenges.setActive(value); active = value; generation++; if (value) void load(); else { close(); data = null; } } };
 }
