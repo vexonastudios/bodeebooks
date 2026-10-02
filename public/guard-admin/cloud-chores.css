@@ -128,3 +128,61 @@
   .chore-dialog .chore-dialog-actions { bottom: -16px; }
   .chore-dialog-actions .btn { flex: 1; }
 }
+
+/* Ready-made chores and routines share the existing family-life palette. */
+.chore-library-banner { display:flex; align-items:center; gap:16px; padding:18px 20px; margin:0 0 22px; border:1px solid #a78bfa3b; border-radius:16px; background:linear-gradient(110deg,#a78bfa10,#55cdb408); }
+.chore-library-banner > .chore-icon { width:30px; height:30px; color:#c1adf6; }
+.chore-library-banner > div { flex:1; min-width:0; }
+.chore-library-banner h2 { font-family:'Outfit',sans-serif; font-size:1.04rem; margin:0 0 5px; }
+.chore-library-banner p { color:#aaaac4; font-size:.82rem; line-height:1.5; margin:0; }
+.chore-library-banner .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; }
+.chore-card-title { display:flex; align-items:flex-start; gap:10px; }
+.chore-card-title .chore-icon { color:#b6a2e5; margin-top:3px; }
+.chore-library-dialog { max-width:850px; }
+.chore-library-dialog h2 { margin-bottom:10px; }
+.chore-library-tools { display:flex; align-items:center; justify-content:space-between; gap:12px; position:sticky; top:-24px; z-index:2; padding:12px 0; background:var(--bg-secondary,#171726); }
+.chore-library-dialog .admin-input { width:100%; }
+.chore-library-filters { display:flex; flex-wrap:wrap; gap:7px; margin:16px 0 10px; }
+.chore-library-filter { min-height:40px; padding:8px 12px; border:1px solid var(--border); border-radius:24px; background:#ffffff04; color:#bbb9d1; font:inherit; font-size:.78rem; cursor:pointer; }
+.chore-library-filter[aria-pressed=true] { color:#e3d7ff; background:#a78bfa22; border-color:#a78bfa88; }
+.chore-library-dialog .chore-library-count { font-size:.76rem; color:#a8a3c1; margin:0 0 12px; }
+.chore-library-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.chore-library-tile { display:flex; align-items:flex-start; flex-direction:column; gap:10px; min-width:0; min-height:140px; padding:16px; border:1px solid var(--border); border-radius:16px; text-align:left; color:var(--text-primary,#ecebff); background:linear-gradient(140deg,#ffffff05,#ffffff01); font:inherit; cursor:pointer; }
+.chore-library-tile:hover { border-color:#a78bfa88; background:#a78bfa10; }
+.chore-library-tile strong { font-size:.9rem; line-height:1.4; overflow-wrap:anywhere; }
+.chore-library-art { display:grid; place-items:center; width:40px; height:40px; flex-shrink:0; border-radius:12px; color:#cbb6ff; background:#a78bfa1a; }
+.chore-library-art .chore-icon { width:23px; height:23px; }
+[data-category=care] .chore-library-art { color:#93d7ff; background:#38bdf815; }
+[data-category=home] .chore-library-art { color:#d3bcff; background:#a78bfa1a; }
+[data-category=kitchen] .chore-library-art { color:#f4c88b; background:#fbbf2415; }
+[data-category=laundry] .chore-library-art { color:#8ce5d0; background:#34d39915; }
+[data-category=outdoors] .chore-library-art { color:#b8dd91; background:#a3e63515; }
+[data-category=routines] .chore-library-art { color:#efb4db; background:#f472b615; }
+.chore-library-meta { margin-top:auto; color:#aaa6be; font-size:.74rem; line-height:1.4; }
+.chore-library-empty { grid-column:1/-1; display:flex; align-items:center; flex-direction:column; gap:10px; padding:32px 16px; text-align:center; border:1px dashed var(--border); border-radius:14px; }
+.chore-library-empty .chore-icon { color:#b6a2e5; }
+.chore-template-selected { display:flex; align-items:center; gap:12px; padding:12px 16px; background:#a78bfa0c; border:1px solid #a78bfa33; border-radius:12px; }
+.chore-template-selected > .chore-icon { color:#cbb6ff; width:28px; height:28px; }
+.chore-template-selected p { margin:0; }
+.chore-child-choices .chore-check { min-width:0; }
+.chore-child-choices .chore-check span { overflow-wrap:anywhere; }
+@media (max-width:600px) {
+  .chore-library-banner { flex-wrap:wrap; gap:12px; padding:16px; }
+  .chore-library-banner .btn { width:100%; }
+  .chore-library-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .chore-library-tile { min-height:142px; padding:12px; }
+  .chore-library-tile strong { font-size:.84rem; }
+  .chore-library-filters { flex-wrap:nowrap; overflow-x:auto; padding:3px 3px 8px; }
+  .chore-library-filter { flex-shrink:0; min-height:44px; }
+}
+@media (max-width:520px) {
+  .chore-library-tools { top:-16px; }
+  .chore-library-tools .btn { padding-inline:12px; font-size:.8rem; }
+  .chore-child-choices { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .chore-dialog-actions .chore-save-another { flex-basis:100%; order:2; }
+}
+
+.chore-library-dialog { font-family:Inter,sans-serif; scrollbar-width:thin; scrollbar-color:#625978 transparent; }
+.chore-library-filters { scrollbar-width:thin; scrollbar-color:#625978 transparent; }
+
+.chore-dialog-actions > .btn-primary { order:1; }
