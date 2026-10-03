@@ -164,3 +164,5 @@
 .cloud-abeka-parent-preference{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:12px;cursor:pointer;font-size:14px;line-height:1.5}
 .cloud-abeka-parent-preference input{flex:0 0 20px;width:20px;height:20px;accent-color:#a78bfa}
 @media(max-width:600px){.cloud-abeka-parent-shortcut{gap:10px;padding:12px;margin-bottom:16px}.cloud-abeka-parent-copy strong{font-size:15px}.cloud-abeka-parent-copy small{font-size:12px}.cloud-abeka-parent-open{width:100%;box-sizing:border-box}}
+
+.monitor-platform-note{display:flex;gap:8px;align-items:flex-start;margin:12px 0;padding:10px 12px;border:1px solid #706695;border-radius:12px;background:#25213c;color:#d8d0ee;font-size:13px;line-height:1.5}.monitor-platform-note svg{width:18px;height:18px;flex:0 0 18px;margin-top:2px}

@@ -199,15 +199,17 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     }
     updated.dateTime=snapshot.serverTime;updated.textContent='Updated '+new Date(snapshot.serverTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
     const devices=snapshot.devices||[],allLocked=devices.length>0&&devices.every(d=>d.locked);
-    lockAll.replaceChildren(icon(allLocked?'lock-open':'lock-keyhole'),node('span','',allLocked?'Unlock All Computers':'Lock All Computers'));
+    lockAll.replaceChildren(icon(allLocked?'lock-open':'lock-keyhole'),node('span','',devices.some(d=>d.platform==='mac-preview')?(allLocked?'Resume All Activities':'Pause All Activities'):(allLocked?'Unlock All Computers':'Lock All Computers')));
     delete lockAll.dataset.actionLabel;lockAll.disabled=!devices.length;lockAll.dataset.requiresDevice=String(devices.length>0);
-    lockAll.title=devices.length?'Save a lock or unlock for every family computer, including those offline.':'Connect a child computer first.';
+    lockAll.title=devices.length?'Save a lock or unlock for every family computer, including those offline. On a Mac preview this pauses only BodeeGuard activities.':'Connect a child computer first.';
     for(const model of models){
       const {student,device}=model;
+      const mac=device?.platform==='mac-preview';
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
       const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
-      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!model.online?model.connection:device.locked?'Computer locked':model.current?.title||'BodeeGuard connected'));
+      const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!model.online?model.connection:device.locked?(mac?'BodeeGuard paused':'Computer locked'):model.current?.title||'BodeeGuard connected'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
+      if(mac){const notice=node('p','monitor-platform-note');notice.append(icon('laptop'),node('span','','Mac preview · Rules apply inside BodeeGuard. Other apps and Mac settings stay accessible.'));card.append(notice);}
       const clocks=node('div','monitor-timer-row');
       for(const [label,time,cls]of [['School today',model.total,''],['Subject today',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
       clocks.title='Received school time and today’s time in the current subject. Values stay fixed until refresh.';card.append(clocks);
@@ -237,20 +239,20 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
         notices.bind(lockMedia,student.id+':media-rules');lockMedia.title='Remove today’s media bypasses and restore your usual rules.';lockMedia.dataset.cloudMutation='true';actions.append(lockMedia);notices.mount(actions,student.id+':media-rules');
       }
       const pair=node('div','monitor-student-actions');
-      const pause=button(device?.locked?'Unlock computer':'Lock computer',device?.locked?'lock-open':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked}),{pending:(device?.locked?'Unlocking ':'Locking ')+student.name+'’s computer…',title:(device?.locked?'Unlock':'Lock')+' requested for '+student.name,detail:'Saved to your family account. The child app will apply it on its next sync.'}),'monitor-student-action monitor-student-action--lock');notices.bind(pause,student.id+':computer-lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
+      const pause=button(mac?(device?.locked?'Resume BodeeGuard':'Pause BodeeGuard'):(device?.locked?'Unlock computer':'Lock computer'),device?.locked?'lock-open':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked}),{pending:(device?.locked?'Unlocking ':'Locking ')+student.name+(mac?'’s BodeeGuard activities…':'’s computer…'),title:(device?.locked?'Unlock':'Lock')+' requested for '+student.name,detail:'Saved to your family account. The child app will apply it on its next sync.'}),'monitor-student-action monitor-student-action--lock');notices.bind(pause,student.id+':computer-lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
       pair.append(pause,button('Message','send',()=>openMessages(student.id),'monitor-student-action monitor-student-action--message'));actions.append(pair);notices.mount(actions,student.id+':computer-lock');card.append(actions);
       const close=button('Close BodeeGuard','power',el=>run(el,()=>mutate('computer-command',{kind:'close',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a close request to '+student.name+'…',title:'Close requested for '+student.name,detail:'The request expires in two minutes if the child app does not receive it.'}),'monitor-control monitor-control--close');
       notices.bind(close,student.id+':close');
-      const parts=String(device?.app_version||'').split('.').map(Number),supportsClose=parts.length===3&&parts.every(Number.isInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=201));
+      const parts=String(device?.app_version||'').split('.').map(Number),supportsClose=mac?device.device_capabilities?.remoteClose===true:parts.length===3&&parts.every(Number.isInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=201));
       close.disabled=!supportsClose||!model.online;close.dataset.requiresDevice=String(supportsClose&&model.online);close.dataset.cloudMutation='true';
-      close.title=!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';
+      close.title=mac?(supportsClose?'Save work and close BodeeGuard. Other Mac apps remain open.':'Open an updated Mac preview to confirm remote close support.'):!device?'Connect a computer first.':!supportsClose?'Available after this computer updates to 1.2.201.':'Exit to Windows. BodeeGuard stays closed until opened again.';
       const sleep=button('Sleep computer','moon',el=>run(el,()=>mutate('computer-command',{kind:'sleep',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a sleep request to '+student.name+'…',title:'Sleep requested for '+student.name,detail:'The request expires in two minutes. BodeeGuard stays open for when the computer wakes.'}),'monitor-control monitor-control--sleep');
-      const supportsSleep=parts.length===3&&parts.every(Number.isSafeInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=265));
+      const supportsSleep=!mac&&parts.length===3&&parts.every(Number.isSafeInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=265));
       notices.bind(sleep,student.id+':sleep');sleep.disabled=!supportsSleep||!model.online;sleep.dataset.requiresDevice=String(supportsSleep&&model.online);sleep.dataset.cloudMutation='true';
       sleep.title=!device?'Connect a computer first.':!supportsSleep?'Available after this computer updates to 1.2.265.':'Put Windows to sleep. BodeeGuard and open work remain ready when it wakes.';
-      const power=node('div','monitor-power-actions');power.append(close,sleep);primary.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'),power);notices.mount(primary,student.id+':close');notices.mount(primary,student.id+':sleep');
-      if(device&&model.online&&!supportsSleep)primary.append(node('small','monitor-control-note','Remote sleep needs child app 1.2.265 or newer.'));
-      if(device&&!supportsClose)primary.append(node('small','monitor-control-note','Remote close needs the latest child app.'));
+      const power=node('div','monitor-power-actions');power.append(close);if(!mac)power.append(sleep);primary.append(button('Quick Unlock…','key-round',()=>openQuickDialog(student.id),'monitor-quick-unlock'),power);notices.mount(primary,student.id+':close');notices.mount(primary,student.id+':sleep');
+      if(device&&!mac&&model.online&&!supportsSleep)primary.append(node('small','monitor-control-note','Remote sleep needs child app 1.2.265 or newer.'));
+      if(device&&!supportsClose)primary.append(node('small','monitor-control-note',mac?'Remote close is awaiting confirmation from this Mac preview.':'Remote close needs the latest child app.'));
       if(!device){const connect=button('Connect a computer','laptop',()=>navigate('settings'),'monitor-connect-link');card.append(connect);}
       if(!model.online)card.append(node('p','monitor-offline-note',model.connection==='Connection not checked'?'Connection status is unavailable. Saved unlocks will apply when this computer reconnects.':'Unlocks and time changes can be saved now. This computer will receive them when it reconnects.'));
       mobile()?.decorateCard(card,student.id,model);
