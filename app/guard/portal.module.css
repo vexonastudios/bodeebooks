@@ -220,3 +220,5 @@
 .downloadFeedback .downloadNext { display:flex; gap:10px; align-items:flex-start; }
 .downloadFeedback .downloadRetryHelp { font-size:.83rem; color:#446478; }
 @media(max-width:700px){.installerDownload > a{width:100%;padding:12px 14px;text-align:center}.downloadFeedback{padding:16px}.downloadShortcut{align-items:flex-start}}
+
+.macPreviewNote { margin:8px 0 0; padding:10px 12px; border-left:3px solid #7657bd; border-radius:6px; background:#f3f0fa; color:#45385f; font-size:.85rem; line-height:1.6; overflow-wrap:anywhere; }

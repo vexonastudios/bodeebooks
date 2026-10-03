@@ -181,3 +181,12 @@ test('paid scheduled cancellation still offers resumption after cloud-only onboa
   assert.match(html, /Payment history/);
   assert.doesNotMatch(html, /Cancel at the end of my billing period/);
 });
+
+
+test('Mac previews are identified in mixed-family accounts without advertising Windows downloads as Mac installers',async()=>{
+ const device={id:'mac',deviceRole:'child',computerName:'Test Mac',platform:'mac-preview',appVersion:'1.2.283',lastSeenAt:'2026-10-02T12:00:00Z',revokedAt:null,releaseChannel:'beta'};
+ const html=await render(fixture({devices:[device,{...device,id:'pc',computerName:'Test PC',platform:'windows'}]}));
+ assert.match(html,/Mac preview/);assert.match(html,/Windows · BodeeGuard/);
+ assert.match(html,/Other Mac apps and settings remain accessible/);
+ assert.doesNotMatch(html,/Download child app for Mac|Mac installer|Only children’s Windows/);
+});

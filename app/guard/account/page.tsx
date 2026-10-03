@@ -224,7 +224,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
     <div className={styles.portalPage}>
       <div className={`container ${styles.portalShell}`}>
         <header className={styles.portalHeader}>
-          <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Your parent dashboard lives online at guard.bodeebooks.com. Only children’s Windows computers need the BodeeGuard app—there is nothing for parents to install.</p></div>
+          <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Your parent dashboard lives online at guard.bodeebooks.com. The BodeeGuard app runs on your child’s computer—there is nothing for parents to install.</p></div>
         </header>
         <GuardSignOut className={styles.portalButton} />
         <section className={styles.dashboardEntry} aria-label="Online parent dashboard">
@@ -456,7 +456,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               {childDevices.map(device => (
                 <article className={styles.computerRow} key={device.id}>
                   <div className={styles.computerIcon}><Laptop size={20} /></div>
-                  <div><strong>{device.computerName || "Child computer"}</strong><span>{device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · {device.releaseChannel === "beta" ? "Beta" : device.releaseChannel === "stable" ? "Stable" : "Channel unavailable"} · Last check-in {readableLastSeen(device.lastSeenAt)}</span></div>
+                  <div><strong>{device.computerName || "Child computer"}</strong><span>{device.platform === "mac-preview" ? "Mac preview" : ["windows", "win32"].includes(device.platform) ? "Windows" : device.platform} · BodeeGuard {device.appVersion || "version unavailable"} · {device.releaseChannel === "beta" ? "Beta" : device.releaseChannel === "stable" ? "Stable" : "Channel unavailable"} · Last check-in {readableLastSeen(device.lastSeenAt)}</span>{device.platform === "mac-preview" && <p className={styles.macPreviewNote}>Rules apply inside BodeeGuard. Other Mac apps and settings remain accessible. Remote sleep, installed games, and automatic updates are not available in this preview.</p>}</div>
                   <div className={styles.computerActions}>
                     <form className={styles.renameComputer} action={renameBodeeGuardComputer}>
                       <input type="hidden" name="deviceId" value={device.id} />

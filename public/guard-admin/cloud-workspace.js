@@ -239,7 +239,8 @@ function renderComputers() {
       item = { row, title, status, recoveryStatus, assignment, pause, device }; computerRows.set(device.id, item);
     }
     item.device = device; item.title.textContent = device.computer_name;
-    item.status.textContent = `${connected} · ${device.app_version || 'Version unavailable'} · ${deliveryState(device)}`;
+    item.status.textContent = `${device.platform === 'mac-preview' ? 'Mac preview · ' : ''}${connected} · ${device.app_version || 'Version unavailable'} · ${deliveryState(device)}`;
+    item.status.title = device.platform === 'mac-preview' ? 'Rules apply inside BodeeGuard. Other Mac apps and settings stay accessible.' : '';
     item.recoveryStatus.textContent = device.recovery_configured ? 'Recovery code configured' : 'Recovery code required before study';
     item.pause.textContent = device.locked ? 'Resume cloud school' : 'Pause cloud school';
     item.assignment.update(device, snapshot.students);

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 export type ActivationState = { status: "idle" | "error" | "success"; message: string };
 
-type ApiErrorPayload = { error?: string };
+type ApiErrorPayload = { error?: string; platform?: string };
 type AccountApiResult = { error: string } | { payload: ApiErrorPayload & { started?: boolean; trialEndsAt?: string; url?: string } };
 
 async function callAccountApi(path: string, init: RequestInit = {}): Promise<AccountApiResult> {
@@ -139,5 +139,6 @@ export async function approveComputer(_state: ActivationState, formData: FormDat
     body: "{}",
   });
   if ("error" in result) return { status: "error", message: result.error };
+  if (result.payload.platform === "mac-preview") return { status: "success", message: "Mac preview approved. Assign a test child and finish parent recovery setup in the dashboard. Rules apply inside BodeeGuard; other Mac apps and settings remain accessible. This preview can be quit normally and has no automatic updates." };
   return { status: "success", message: "Child computer approved. The child app checks automatically. Next, assign a child in your family dashboard and save the computer’s offline recovery code." };
 }

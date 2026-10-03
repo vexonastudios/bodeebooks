@@ -78,10 +78,13 @@ else {
   snapshot.rules.subjects=[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}},{studentId:'later-child',dailyPlan:{placement:'school'}}]}];
   snapshot.students.push({id:'later-child',name:'Later Child',main_school:{provider:'none'}});
   snapshot.devices[0].last_seen_at='2020-01-01T00:00:00Z';snapshot.devices[0].locked=true;
+  snapshot.devices[0].platform='mac-preview';
   await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
   assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("Not connected right now")'));
   assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("Setup checks complete")'));
   assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("School paused")'));
+  assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("Setup confirms app rules only")'));
+  assert.ok(await js('document.querySelector(".parent-start-readiness").textContent.includes("Windows installer does not run on a Mac")'));
   assert.ok(await js('document.querySelector(".setup-readiness-summary").textContent.includes("Later Child: no computer assigned yet")'));
   assert.ok(await js('document.querySelectorAll(".parent-start-readiness")[1].textContent.includes("Connect a computer when you’re ready")'));
   assert.equal(await js('document.querySelector(".setup-check-details").open'),false,'completed checks start collapsed');

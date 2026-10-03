@@ -43,7 +43,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     if(!nextStep)return;
     const ready=canFinish();
     welcome.replaceChildren(node('h2',!children().length?'Start with the essentials':ready?'Your family setup is ready to finish':'A few setup steps remain'),
-      node('p',!children().length?'Add your children, choose their school and activities, then connect their Windows computer.':ready
+      node('p',!children().length?'Add your children, choose their school and activities, then connect their computer.':ready
         ?'Finish setup for the computers you have connected. You can connect the remaining children later from Family setup.'
         :'Next: '+nextStep.label+'. Review the remaining steps below; your saved choices are kept.'),
       button(!children().length?'Set up my family':ready?'Review & finish setup':'Review remaining steps',()=>open(nextStep.step),true));
@@ -183,14 +183,17 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(summary);
     body.append(button('Check again',async()=>{if(busy)return;busy=true;try{for(const commit of pending)await commit();await refresh();render();}catch(failure){error.textContent=failure.message;}finally{busy=false;}}));
     const connections=node('details','','parent-start-more');connections.open=!(getSnapshot().devices||[]).some(device=>!device.revoked_at);
-    connections.append(node('summary','Connect a Windows computer'),node('p','On the child’s Windows computer, download and install BodeeGuard. Choose Get pairing code. You can approve that code from this phone or any signed-in parent browser.','setup-copy'));
+    connections.append(node('summary','Connect a child computer'),node('p','On the child’s Windows computer, download and install BodeeGuard. Choose Get pairing code. You can approve that code from this phone or any signed-in parent browser.','setup-copy'));
     const download=link('Get Windows installer','/guard/account/?setup=connect#child-setup-heading'),approve=link('Approve pairing code','/guard/activate/?setup=1');
     for(const anchor of [download,approve]){anchor.target='_blank';anchor.rel='noopener';}
     connections.append(download,approve,node('p','This setup stays open. Return here after approving the code.','setup-copy'));body.append(connections);
+    const macNotice = () => node('p','Mac preview · Setup confirms app rules only. Other Mac apps and settings remain accessible. Use the separate preview build provided for testing; the Windows installer does not run on a Mac.','setup-copy');
+    if ((getSnapshot().devices||[]).some(device=>!device.revoked_at&&device.platform==='mac-preview')) connections.append(macNotice());
     const unassigned=(getSnapshot().devices||[]).filter(device=>!device.revoked_at&&!device.student_id);
     for(const device of unassigned){
       const row=node('section','','setup-child setup-computer-assignment'),field=node('label','','setup-field'),select=node('select');
       row.append(node('h3',device.computer_name || 'Child computer'));
+      if(device.platform==='mac-preview')row.append(macNotice());
       field.append(node('span','Who uses this computer?'));
       const prompt=node('option','Choose a child');prompt.value='';select.append(prompt);
       for(const child of children()){const option=node('option',child.name);option.value=child.id;select.append(option);}
@@ -212,6 +215,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       const later=row.connectLater&&finishable;
       card.append(node('h3',row.child.name),node('strong',row.ready?'Setup checks complete':later?'Connect a computer when you’re ready':'Setup still needs attention'));
       if(row.device){
+        if(row.device.platform==='mac-preview')card.append(macNotice());
         const connection=row.connected?'Online now': 'Not connected right now';
         card.append(node('p',(row.device.computer_name||'Assigned computer')+' · '+connection+(row.device.locked?' · School paused':''),'setup-device-status'));
         if(row.ready&&!row.connected)card.append(node('p','This computer has already confirmed its setup. It can be offline while you finish the guide.','setup-copy'));
