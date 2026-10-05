@@ -17,7 +17,7 @@ import { setupActivityLibrary } from './cloud-activity-library.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js';
-import { setupCloudMessages } from './cloud-messages.js?v=20260930-peers1';
+import { setupCloudMessages } from './cloud-messages.js?v=20261005-list-tabs1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
 import { setupCloudMobile } from './cloud-mobile.js';
 import { setupCloudCalendar } from './cloud-calendar.js';

@@ -24,6 +24,8 @@ fixture.students[0].main_school = { provider: 'abeka' };
 let choresEnabled = true;
 const history = new Map();
 history.set('11111111-1111-4111-8111-000000000001', [{id:'incoming-1', sequence:'9', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
+const messageGroups = Array.from({length:20},(_,i)=>({id:'group-' + i,kind:i%2?'parent':'siblings',closedAt:i===0?'2026-10-05T12:00:00Z':null,members:fixture.students.filter((_,j)=>i===19||[i%9,(i+1)%9,(i+2)%9].includes(j)).map(student=>({studentId:student.id,name:student.name}))}));
+let peerMessagingEnabled=false, failPeerSetting=true;
 let failSend = true;
 const calls = [];
 const server = http.createServer(async (req, res) => {
@@ -48,6 +50,13 @@ const server = http.createServer(async (req, res) => {
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
     if (input.action === 'list-files') output = { files: [], usage: { bytes: 0 } };
+    if (input.action === 'list-message-groups') output = {groups:messageGroups,peerMessagingEnabled};
+    if (input.action === 'list-family-messages') output = {messages:[],childrenCanPost:false,version:'0'};
+    if (input.action === 'list-group-messages') output = {group:messageGroups.find(group=>group.id===input.groupId),messages:[],version:'0'};
+    if (input.action === 'peer-message-settings') {
+      if(failPeerSetting){failPeerSetting=false;res.statusCode=503;return res.end(JSON.stringify({error:'Connection interrupted.'}));}
+      peerMessagingEnabled=input.enabled;output={peerMessagingEnabled};
+    }
     if (input.action === 'list-messages') output = { studentId: input.studentId, messages: input.before ? [{id:'older-1',sender:'child',body:'Yesterday’s message',createdAt:'2026-09-24T14:30:00Z'}] : history.get(input.studentId)||[], version: (history.get(input.studentId)||[]).length, nextBefore: input.before ? null : 'older-page' };
     if (input.action === 'send-message') {
       if(failSend){failSend=false;res.statusCode=503;return res.end(JSON.stringify({error:'Connection interrupted.'}));}
@@ -143,6 +152,70 @@ async function run() {
   const capture=async name=>{await new Promise(r=>setTimeout(r,150));fs.mkdirSync(path.join(site,'.tmp'),{recursive:true});fs.writeFileSync(path.join(site,'.tmp','messages-'+name+'.png'),(await win.webContents.capturePage()).toPNG());};
   const layout=()=>js(`({width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,people:getComputedStyle(document.querySelector('.cloud-chat-people')).display,chat:getComputedStyle(document.querySelector('.cloud-chat-conversation')).display,nav:getComputedStyle(document.querySelector('.bottom-nav')).display,assistant:getComputedStyle(document.querySelector('#parent-assistant-launcher')).display,composer:document.querySelector('#messages-reply-box').getBoundingClientRect().toJSON(),header:document.querySelector('.cloud-chat-heading').getBoundingClientRect().toJSON(),input:document.querySelector('#messages-reply-input').getBoundingClientRect().toJSON()})`);
   assert.equal((await layout()).chat,'none');assert.notEqual((await layout()).nav,'none');assert.equal((await layout()).assistant,'none');
+  await wait('document.querySelectorAll(".cloud-group-list-item").length===20');
+  assert.equal(await js('document.querySelector("#messages-tab-children").getAttribute("aria-selected")'),'true','individual children open first');
+  assert.equal(await visible('#messages-all-kids'),false,'group controls do not bury children');
+  assert.equal(await visible('.cloud-peer-settings'),false,'settings stay out of the conversation list');
+  for(const width of [320,390,768]){
+    win.setContentSize(width,844);await new Promise(r=>setTimeout(r,100));
+    const nav=await js('[...document.querySelectorAll(".cloud-chat-list-toolbar button")].map(el=>el.getBoundingClientRect().toJSON())');
+    await capture('navigation-check-'+width);
+    assert.ok(nav.every(box=>box.width>=44 && box.height>=44),'tabs and settings have comfortable touch targets: '+JSON.stringify(nav));
+    assert.ok(await js('document.querySelector(".cloud-chat-person").getBoundingClientRect().top<240'),'children are reachable at the top without scrolling past groups');
+    assert.ok(await js('document.querySelector("#messages-student-list").clientHeight>480'),'children have one large scroll area');
+    assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true);
+    await capture('children-'+width);
+  }
+  win.setContentSize(390,844);await new Promise(r=>setTimeout(r,100));
+  await js('document.querySelector("#messages-settings").click()');
+  assert.equal(await js('document.querySelector("#messages-settings-dialog").open'),true);
+  assert.equal(await js('document.querySelector(".cloud-peer-setting input").checked'),false);
+  assert.ok(await js('document.querySelector(".cloud-peer-setting").getBoundingClientRect().height>=44'),'the entire setting label is tappable');
+  const settingsBox=await js('document.querySelector("#messages-settings-dialog").getBoundingClientRect().toJSON()');
+  assert.ok(settingsBox.left>=15 && settingsBox.right<=375 && settingsBox.top>0 && settingsBox.bottom<844,'settings dialog is centered within the phone');
+  assert.ok(await js('document.querySelector(".cloud-peer-setting input").getBoundingClientRect().width>=44'),'the switch stays full width on mobile');
+  await capture('settings');
+  await js('document.querySelector(".cloud-peer-setting").click()');
+  await wait('document.querySelector(".cloud-chat-settings-status").classList.contains("is-error")');
+  assert.equal(await js('document.querySelector(".cloud-peer-setting input").checked'),false,'failed save restores the confirmed setting');
+  assert.equal(peerMessagingEnabled,false);
+  assert.equal(await visible('.cloud-chat-settings-status.is-error'),true,'save failures remain visible in the dialog');
+  await js('document.querySelector(".cloud-peer-setting").click()');
+  await wait('document.querySelector(".cloud-peer-setting input").checked && !document.querySelector(".cloud-peer-setting input").disabled');
+  assert.equal(peerMessagingEnabled,true,'the existing API saves the toggle');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});win.webContents.sendInputEvent({type:'keyUp',keyCode:'Escape'});
+  await wait('!document.querySelector("#messages-settings-dialog").open');
+  assert.equal(await js('document.activeElement.id'),'messages-settings','closing returns focus to settings');
+  await js('document.querySelector("#messages-tab-groups").click()');
+  assert.equal(await visible('.cloud-chat-person'),false);
+  assert.equal(await visible('.cloud-family-conversation-link'),true);
+  assert.equal(await visible('#messages-all-kids'),true);
+  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),20);
+  assert.equal(await js('document.querySelector(".cloud-chat-group-copy strong").textContent'),'Family conversation');
+  assert.equal(await visible('.cloud-chat-closed-badge'),true,'closed chats retain their visible status');
+  assert.ok(await js('document.querySelector(".cloud-chat-group-rows").scrollHeight>document.querySelector(".cloud-chat-group-rows").clientHeight'),'all groups use one scrolling list');
+  await capture('groups');
+  await js('document.querySelector(".cloud-chat-group-rows").scrollTop=10000');
+  assert.ok(await js('document.querySelector(".cloud-group-list-item:last-child").getBoundingClientRect().bottom<=document.querySelector(".cloud-chat-group-rows").getBoundingClientRect().bottom'),'the last group can be reached');
+  await js('document.querySelector(".cloud-chat-group-rows").scrollTop=0;document.querySelector(".cloud-group-list-item").click()');
+  await wait('document.querySelector("#tab-messages").dataset.messageView==="thread" && document.querySelector("#tab-messages").dataset.messageLoad==="ready"');
+  await js('document.querySelector(".cloud-chat-back").click()');
+  assert.equal(await js('document.querySelector("#messages-tab-groups").getAttribute("aria-selected")'),'true');
+  await new Promise(r=>setTimeout(r,150));
+  assert.equal(await js('document.activeElement.classList.contains("cloud-group-list-item")'),true,'group back restores the matching list and focus');
+  await js('{const input=document.querySelector(".cloud-chat-search");input.value="Sam";input.dispatchEvent(new Event("input"));}');
+  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),messageGroups.filter(group=>group.members.some(member=>member.name==='Sam')).length,'search includes group members');
+  await js('document.querySelector("#messages-tab-children").click()');
+  assert.equal(await js('document.querySelector(".cloud-chat-search").value'),'','children have an independent search');
+  await js('{const input=document.querySelector(".cloud-chat-search");input.value="Jamie";input.dispatchEvent(new Event("input"));document.querySelector("#messages-tab-groups").focus();}');
+  win.webContents.sendInputEvent({type:'keyDown',keyCode:'ArrowRight'});win.webContents.sendInputEvent({type:'keyUp',keyCode:'ArrowRight'});
+  assert.equal(await js('document.querySelector("#messages-tab-children").getAttribute("aria-selected")'),'true','arrow keys select and focus tabs');
+  await js('document.querySelector("#messages-tab-groups").click()');
+  assert.equal(await js('document.querySelector(".cloud-chat-search").value'),'Sam','switching keeps each tab’s search');
+  await js('document.querySelector("#messages-tab-children").click()');
+  assert.equal(await js('document.querySelector(".cloud-chat-search").value'),'Jamie');
+  assert.equal(calls.filter(call=>call.action==='peer-message-settings').length,2,'navigation never changes sibling permissions');
+  console.log('Mobile conversation navigation passed: children first, 20 compact groups, independent searches, large touch targets, keyboard tabs, group back focus, compact settings, failed-save recovery and confirmed API save.');
   await capture('list');
   await js(`{const s=document.querySelector('.cloud-chat-search');s.value='Jamie';s.dispatchEvent(new Event('input'));}`);
   assert.equal(await js('document.querySelectorAll(".cloud-chat-person").length'),1);

@@ -442,3 +442,54 @@
 .message-reaction-picker[hidden], .message-reaction-feedback[hidden] { display:none; }
 .message-reaction-feedback { display:block; margin-top:6px; color:#ffb7b7; font-size:.8rem; overflow-wrap:anywhere; }
 @media (prefers-reduced-motion:reduce) { .message-reaction-trigger { transition:none; } }
+
+/* Children stay first; groups and settings have their own compact navigation. */
+.cloud-chat-people .cloud-chat-list-toolbar { display:flex; flex:0 0 auto; align-items:center; gap:8px; padding:12px 12px 0; }
+.cloud-chat-list-tabs { display:flex; flex:1; min-width:0; gap:4px; padding:4px; border:1px solid #ffffff14; border-radius:14px; background:#101326; }
+.cloud-chat-people .cloud-chat-list-tab { display:flex; align-items:center; justify-content:center; flex:1; gap:6px; width:auto; min-width:0; min-height:44px; padding:8px; margin:0; border:0; border-radius:10px; background:transparent; color:#aebbd1; font-size:13px; }
+.cloud-chat-people .cloud-chat-list-tab[aria-selected=true] { color:#f1efff; background:#34335e; font-weight:700; }
+.cloud-chat-tab-count { display:grid; place-items:center; min-width:20px; padding:2px 4px; border-radius:8px; background:#ffffff0c; color:inherit; font-size:11px; }
+.cloud-chat-people .cloud-chat-settings-button { display:grid; place-items:center; flex:0 0 44px; width:44px; min-height:44px; margin:0; padding:0; border:1px solid #ffffff20; border-radius:12px; background:#171b30; color:#c4b5fd; position:relative; }
+.cloud-chat-settings-button svg { width:21px; height:21px; }
+.cloud-chat-settings-button.has-kid-chats::after { content:''; position:absolute; top:7px; right:7px; width:6px; height:6px; border-radius:50%; background:#64e1c5; }
+.cloud-chat-list-panel { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
+.cloud-chat-list-panel[hidden] { display:none !important; }
+.cloud-chat-people .cloud-chat-search { margin:10px 12px; }
+.cloud-chat-group-rows { flex:1; min-height:0; overflow:auto; padding:0 12px 12px; overscroll-behavior:contain; }
+.cloud-chat-group-rows .cloud-group-list { max-height:none; overflow:visible; padding:0; }
+.cloud-chat-people .cloud-chat-group-row { display:flex; align-items:center; gap:10px; min-height:64px; padding:10px 12px; margin:0 0 6px; font-weight:400; border:1px solid #ffffff14; border-radius:12px; background:#ffffff04; }
+.cloud-chat-group-row > svg { flex:0 0 22px; width:22px; height:22px; color:#9e9dcc; }
+.cloud-chat-group-copy { display:block; flex:1; min-width:0; }
+.cloud-chat-group-copy strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#efedff; font-size:14px; font-weight:650; }
+.cloud-chat-group-copy small { display:block; margin-top:4px; color:#a1aec4; font-size:12px; }
+.cloud-chat-closed-badge { flex:none; padding:4px 7px; border-radius:8px; background:#ffffff08; color:#aebbd1; font-size:10px; }
+.cloud-chat-people #messages-all-kids { min-height:52px; padding:10px 12px; margin-top:0; margin-bottom:10px; gap:10px; }
+.cloud-chat-people #messages-all-kids strong { font-size:14px; }
+.cloud-chat-people #messages-all-kids small { margin-top:2px; }
+.cloud-chat-list-toolbar button:focus-visible, .cloud-chat-group-row:focus-visible { outline:2px solid #a5b4fc; outline-offset:-2px; }
+.cloud-chat-settings-dialog { margin:auto; box-sizing:border-box; width:min(420px,calc(100% - 32px)); max-height:calc(100dvh - 32px); padding:20px; border:1px solid #4c4a6a; border-radius:20px; background:#12162b; color:#efedff; box-shadow:0 18px 60px #0008; overflow:auto; }
+.cloud-chat-settings-dialog::backdrop { background:#050713aa; }
+.cloud-chat-settings-heading { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.cloud-chat-settings-heading h2 { flex:1; margin:0; font-size:18px; }
+.cloud-chat-settings-heading .cloud-chat-settings-close { display:grid; place-items:center; width:44px; min-height:44px; padding:0; border:1px solid #ffffff20; border-radius:12px; background:#ffffff06; color:#d8d3ff; }
+.cloud-chat-settings-close svg { width:22px; height:22px; }
+.cloud-chat-settings-dialog .cloud-peer-settings { margin:0; padding:12px 16px; border-radius:14px; }
+.cloud-chat-settings-dialog .cloud-peer-setting { justify-content:space-between; gap:12px; min-height:48px; font-size:15px; }
+.cloud-chat-settings-dialog .cloud-peer-setting input[type=checkbox] { appearance:none; box-sizing:border-box; width:44px; min-width:44px; flex:0 0 44px; height:26px; margin:0; border:1px solid #727c99; border-radius:15px; background:#30394f; position:relative; cursor:pointer; }
+.cloud-chat-settings-dialog .cloud-peer-setting input::before { content:''; position:absolute; width:18px; height:18px; top:3px; left:3px; border-radius:50%; background:#fff; }
+.cloud-chat-settings-dialog .cloud-peer-setting input:checked { background:#14866d; border-color:#64e1c5; }
+.cloud-chat-settings-dialog .cloud-peer-setting input:checked::before { left:21px; }
+.cloud-chat-settings-dialog .cloud-peer-setting input:disabled { opacity:.6; cursor:wait; }
+.cloud-chat-settings-dialog input:focus-visible, .cloud-chat-settings-close:focus-visible { outline:2px solid #a5b4fc; outline-offset:3px; }
+.cloud-chat-settings-dialog .cloud-peer-settings small { margin:6px 0 4px; font-size:13px; line-height:1.5; }
+.cloud-chat-settings-status { margin:8px 0 0; font-size:12px; color:#9eefdd; line-height:1.5; }
+.cloud-chat-settings-status:empty { display:none; }
+.cloud-chat-settings-status.is-error { color:#ffb7b7; }
+.cloud-chat-settings-dialog .cloud-chat-help { padding:0; margin:16px 0 0; max-height:none; font-size:13px; color:#aebbd1; }
+.cloud-chat-settings-dialog .cloud-chat-help summary { min-height:44px; cursor:pointer; }
+.cloud-chat-settings-dialog .cloud-chat-help p { line-height:1.6; }
+.cloud-mobile #messages-student-list .cloud-chat-person { min-height:68px; padding:10px 8px; }
+.cloud-mobile #messages-student-list .cloud-chat-avatar { width:40px; height:40px; flex-basis:40px; font-size:15px; }
+
+.cloud-chat-people .cloud-chat-list-toolbar .btn, .cloud-chat-settings-dialog .cloud-chat-settings-heading .btn { min-height:44px; }
+.cloud-chat-people #messages-groups-panel .cloud-chat-group-row { min-height:64px; }

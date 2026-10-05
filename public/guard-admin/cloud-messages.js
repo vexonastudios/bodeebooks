@@ -13,6 +13,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const recipients = () => students.filter(student => !student.archived_at);
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
+  let peerSaving = false, peerRevision = 0;
   let groups = [], peerEnabled = false, chosenKids = new Set(), chosenInitialized = false, groupDraftId = null;
   let unread = new Map();
   const recentChildMessages = new Map();
@@ -105,23 +106,66 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   messageAll.addEventListener('click', () => choose(ALL_KIDS));
   const familyButton = textNode('button', 'Family conversation', 'btn btn-secondary cloud-family-conversation-link'); familyButton.type = 'button';
   familyButton.addEventListener('click', () => choose(FAMILY));
+  const listToolbar = textNode('div', '', 'cloud-chat-list-toolbar');
+  const tabs = textNode('div', '', 'cloud-chat-list-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Conversations');
+  const listTabs = new Map(), listQueries = { children: '', groups: '' };
+  let listScope = 'children';
+  for (const [scope, label] of [['children', 'Children'], ['groups', 'Groups']]) {
+    const tab = textNode('button', '', 'btn cloud-chat-list-tab'); tab.type = 'button'; tab.id = 'messages-tab-' + scope;
+    tab.setAttribute('role', 'tab'); tab.setAttribute('aria-controls', 'messages-' + scope + '-panel');
+    tab.append(textNode('span', label), textNode('span', '', 'cloud-chat-tab-count'));
+    tab.addEventListener('click', () => setListScope(scope));
+    tab.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault(); const next = event.key === 'Home' ? 'children' : event.key === 'End' ? 'groups' : scope === 'children' ? 'groups' : 'children';
+      setListScope(next); listTabs.get(next).focus();
+    });
+    listTabs.set(scope, tab); tabs.append(tab);
+  }
+  const settingsButton = textNode('button', '', 'btn cloud-chat-settings-button'); settingsButton.type = 'button'; settingsButton.id = 'messages-settings';
+  settingsButton.innerHTML = '<i data-lucide="settings-2" aria-hidden="true"></i>';
+  settingsButton.setAttribute('aria-label', 'Messaging settings'); settingsButton.setAttribute('aria-haspopup', 'dialog'); settingsButton.setAttribute('aria-controls', 'messages-settings-dialog');
+  listToolbar.append(tabs, settingsButton);
+  const childrenPanel = textNode('div', '', 'cloud-chat-list-panel'); childrenPanel.id = 'messages-children-panel';
+  const groupsPanel = textNode('div', '', 'cloud-chat-list-panel'); groupsPanel.id = 'messages-groups-panel';
+  for (const [scope, panel] of [['children', childrenPanel], ['groups', groupsPanel]]) { panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', 'messages-tab-' + scope); }
+  const settingsDialog = textNode('dialog', '', 'cloud-chat-settings-dialog'); settingsDialog.id = 'messages-settings-dialog'; settingsDialog.setAttribute('aria-labelledby', 'messages-settings-title');
+  const settingsHeader = textNode('div', '', 'cloud-chat-settings-heading');
+  const settingsTitle = textNode('h2', 'Messaging settings'); settingsTitle.id = 'messages-settings-title';
+  const settingsClose = textNode('button', '', 'btn cloud-chat-settings-close'); settingsClose.type = 'button'; settingsClose.setAttribute('aria-label', 'Close messaging settings'); settingsClose.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>';
+  settingsClose.addEventListener('click', () => settingsDialog.close());
+  settingsHeader.append(settingsTitle, settingsClose); settingsDialog.append(settingsHeader); section.append(settingsDialog);
+  settingsButton.addEventListener('click', () => { settingsDialog.showModal(); settingsClose.focus(); });
+  settingsDialog.addEventListener('close', () => { if (active) settingsButton.focus(); });
   const peerLabel = textNode('label', '', 'cloud-peer-setting');
-  const peerToggle = document.createElement('input'); peerToggle.type = 'checkbox';
-  peerLabel.append(peerToggle, textNode('span', 'Let kids message each other'));
-  const peerHint = textNode('small', 'Off by default. When on, children can start sibling chats and groups. Parents can review and close every chat.');
-  const peerSettings = textNode('div', '', 'cloud-peer-settings'); peerSettings.append(peerLabel, peerHint);
+  const peerToggle = document.createElement('input'); peerToggle.type = 'checkbox'; peerToggle.setAttribute('role', 'switch'); peerToggle.setAttribute('aria-describedby', 'messages-peer-hint');
+  peerLabel.append(textNode('span', 'Kid-to-kid chats'), peerToggle);
+  const peerHint = textNode('small', 'Allow sibling chats and group replies. You can review or close any chat.'); peerHint.id = 'messages-peer-hint';
+  const settingsStatus = textNode('p', '', 'cloud-chat-settings-status'); settingsStatus.setAttribute('role', 'status');
+  const peerSettings = textNode('div', '', 'cloud-peer-settings'); peerSettings.append(peerLabel, peerHint, settingsStatus); settingsDialog.append(peerSettings);
   peerToggle.addEventListener('change', async () => {
-    const desired = peerToggle.checked; peerToggle.disabled = true;
+    const desired = peerToggle.checked; peerSaving = true; peerRevision++; peerToggle.disabled = true;
+    settingsStatus.textContent = 'Saving…'; settingsStatus.classList.remove('is-error');
     try { const saved = await request('peer-message-settings', { enabled: desired });
       if (saved.peerMessagingEnabled !== desired) throw new Error('The sibling messaging setting could not be confirmed.');
-      peerEnabled = desired; renderStudents(); if (selected === FAMILY || groupId(selected)) render();
-      note(desired ? 'Sibling chats and group replies are on.' : 'Sibling chats and group replies are paused. Their history is kept.');
-    } catch (failure) { peerToggle.checked = !desired; note(`${failure.message} The previous setting is still shown.`); }
-    finally { peerToggle.disabled = false; }
+      peerEnabled = desired; if (selected === FAMILY || groupId(selected)) render();
+      settingsStatus.textContent = desired ? 'On · Children can chat with siblings.' : 'Off · Sibling chats are paused. History is kept.';
+    } catch (failure) { settingsStatus.textContent = failure.message + ' The previous setting is still shown.'; settingsStatus.classList.add('is-error'); }
+    finally { peerSaving = false; peerToggle.disabled = false; renderStudents(); }
   });
   const groupList = textNode('div', '', 'cloud-group-list');
-  el('messages-student-list').before(messageAll, familyButton, peerSettings, groupList, search); search.addEventListener('input', renderStudents);
-  back.addEventListener('click', () => { pauseMedia(); clearTimeout(timer); showConversation(false); void loadGroups(); renderStudents(); (selected === ALL_KIDS ? messageAll : el('messages-student-list').querySelector('[aria-pressed="true"]'))?.focus(); });
+  const groupRows = textNode('div', '', 'cloud-chat-group-rows');
+  el('messages-student-list').before(listToolbar, search, childrenPanel, groupsPanel);
+  childrenPanel.append(el('messages-student-list')); groupRows.append(familyButton, groupList); groupsPanel.append(messageAll, groupRows);
+  familyButton.classList.add('cloud-chat-group-row');
+  familyButton.innerHTML = '<i data-lucide="house" aria-hidden="true"></i><span class="cloud-chat-group-copy"><strong>Family conversation</strong><small>Everyone in your family</small></span>';
+  search.addEventListener('input', () => { listQueries[listScope] = search.value; renderStudents(); });
+  function setListScope(scope) {
+    listQueries[listScope] = search.value; listScope = scope; search.value = listQueries[scope];
+    search.placeholder = scope === 'children' ? 'Search your children' : 'Search groups'; search.setAttribute('aria-label', search.placeholder);
+    renderStudents();
+  }
+  back.addEventListener('click', () => { pauseMedia(); clearTimeout(timer); showConversation(false); void loadGroups(); renderStudents(); (selected === ALL_KIDS ? messageAll : selected === FAMILY ? familyButton : groupId(selected) ? groupList.querySelector('[aria-pressed="true"]') : el('messages-student-list').querySelector('[aria-pressed="true"]'))?.focus(); });
   el('messages-reply-input').placeholder = 'Message…';
   el('messages-attachment').setAttribute('aria-label', 'Attach an image, PDF or audio file');
   el('messages-attachment-clear').innerHTML = '<i data-lucide="x" aria-hidden="true"></i><span>Clear attachment</span>';
@@ -129,7 +173,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const help = document.createElement('details'); help.className = 'cloud-chat-help';
   const summary = document.createElement('summary'); summary.textContent = 'About messages';
   const helpNote = document.querySelector('.cloud-messages-panel > .cloud-note');
-  helpNote.before(help); help.append(summary, helpNote);
+  settingsDialog.append(help); help.append(summary, helpNote);
   function showConversation(value) { section.dataset.messageView = value ? 'thread' : 'list'; document.body.classList.toggle('cloud-conversation-open', active && value); sizeInput(); publishConversationView(); }
   function publishConversationView() {
     const studentId = conversationVisible() && selected !== ALL_KIDS && selected !== FAMILY && !groupId(selected) && live && !error && section.dataset.messageLoad === 'ready' ? selected : null;
@@ -345,6 +389,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     }
   }
   function choose(child) {
+    if (child) setListScope(child === ALL_KIDS || child === FAMILY || groupId(child) ? 'groups' : 'children');
     showConversation(Boolean(child));
     if (mobile.matches && child) back.focus();
     if (selected === child) { void refresh(); return; }
@@ -361,25 +406,42 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     render(); renderStudents(); note(child === ALL_KIDS ? 'Choose recipients and send a group message.' : 'Loading conversation…'); void refresh();
   }
   async function loadGroups() {
-    try { const result = await request('list-message-groups', {}); groups = result.groups || []; peerEnabled = result.peerMessagingEnabled === true; renderStudents();
+    const revision = peerRevision;
+    try { const result = await request('list-message-groups', {}); groups = result.groups || []; if (!peerSaving && revision === peerRevision) peerEnabled = result.peerMessagingEnabled === true; renderStudents();
       if (groupId(selected) && !groups.some(group => group.id === groupId(selected))) choose(null);
     } catch (failure) { if (groupId(selected)) note(`Group conversations could not load. ${failure.message}`); }
   }
   function renderStudents() {
-    peerToggle.checked = peerEnabled;
+    const focused = document.activeElement;
+    const focusedChild = el('messages-student-list').contains(focused) ? focused.dataset.studentId : null;
+    const focusedGroup = groupList.contains(focused) ? focused.dataset.groupId : null;
+    if (!peerSaving) peerToggle.checked = peerEnabled;
+    settingsButton.setAttribute('aria-label', 'Messaging settings. Kid-to-kid chats ' + (peerEnabled ? 'on' : 'off'));
+    settingsButton.classList.toggle('has-kid-chats', peerEnabled);
+    childrenPanel.hidden = listScope !== 'children'; groupsPanel.hidden = listScope !== 'groups';
+    for (const [scope, tab] of listTabs) { tab.setAttribute('aria-selected', String(listScope === scope)); tab.tabIndex = listScope === scope ? 0 : -1; tab.querySelector('.cloud-chat-tab-count').textContent = String(scope === 'children' ? recipients().length : groups.length + 1); }
+    const childQuery = listQueries.children.trim().toLocaleLowerCase(), groupQuery = listQueries.groups.trim().toLocaleLowerCase();
+    familyButton.hidden = !'family conversation everyone in your family'.includes(groupQuery);
     messageAll.disabled = false;
     messageAll.setAttribute('aria-pressed', String(selected === ALL_KIDS));
     messageAll.querySelector('strong').textContent = 'New group message';
     messageAll.querySelector('small').textContent = `Choose from ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
     familyButton.setAttribute('aria-pressed', String(selected === FAMILY));
-    groupList.replaceChildren(...groups.map(group => {
+    const matchedGroups = groups.filter(group => group.members.some(member => member.name.toLocaleLowerCase().includes(groupQuery)) || (group.kind === 'siblings' ? 'sibling chat' : 'group chat').includes(groupQuery));
+    groupList.replaceChildren(...matchedGroups.map(group => {
       const names = group.members.map(member => member.name).join(', ');
-      const button = textNode('button', `${group.kind === 'siblings' ? group.members.length > 2 ? 'Sibling group: ' : 'Sibling chat: ' : ''}${names}${group.closedAt ? ' · Closed' : ''}`, 'btn btn-secondary cloud-group-list-item');
-      button.type = 'button'; button.setAttribute('aria-pressed', String(groupKey(group.id) === selected));
+      const all = group.members.length === recipients().length && group.members.every(member => recipients().some(student => student.id === member.studentId));
+      const button = textNode('button', '', 'btn btn-secondary cloud-group-list-item cloud-chat-group-row');
+      button.type = 'button'; button.title = names; button.dataset.groupId = group.id; button.setAttribute('aria-pressed', String(groupKey(group.id) === selected));
+      button.setAttribute('aria-label', names + (group.closedAt ? ', closed chat' : ''));
+      const icon = document.createElement('i'); icon.dataset.lucide = 'users'; icon.setAttribute('aria-hidden', 'true');
+      const copy = textNode('span', '', 'cloud-chat-group-copy'); copy.append(textNode('strong', all ? 'All children' : names), textNode('small', group.members.length + ' children · ' + (group.kind === 'siblings' ? 'Sibling chat' : 'Group chat')));
+      button.append(icon, copy); if (group.closedAt) button.append(textNode('span', 'Closed', 'cloud-chat-closed-badge'));
       button.addEventListener('click', () => choose(groupKey(group.id)));
       return button;
     }));
-    const matches = recipients().filter(student => student.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))
+    if (!matchedGroups.length && familyButton.hidden) groupList.append(textNode('p', 'No groups match your search.', 'cloud-chat-list-empty'));
+    const matches = recipients().filter(student => student.name.toLocaleLowerCase().includes(childQuery))
       .sort((a, b) => { const left = recentChildMessages.get(a.id) || 0n, right = recentChildMessages.get(b.id) || 0n; return left === right ? 0 : left > right ? -1 : 1; });
     el('messages-student-list').replaceChildren(...matches.map(student => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary cloud-chat-person'; button.dataset.studentId = student.id;
@@ -393,6 +455,8 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       if(count){const badge=document.createElement('span');badge.className='cloud-unread-badge';badge.textContent=count>99?'99+':String(count);button.append(badge);}
       button.setAttribute('aria-pressed', String(student.id === selected)); button.addEventListener('click', () => choose(student.id)); return button;
     }));
+    window.lucide?.createIcons({ root: groupRows });
+    if (focusedChild || focusedGroup) { const rows = focusedChild ? el('messages-student-list').children : groupList.children; (Array.from(rows).find(row => focusedChild ? row.dataset.studentId === focusedChild : row.dataset.groupId === focusedGroup) || listTabs.get(listScope)).focus(); }
     if (!matches.length) { const empty = document.createElement('p'); empty.className = 'cloud-chat-list-empty'; empty.textContent = students.length ? 'No children match your search.' : 'Your children’s conversations will appear here.'; el('messages-student-list').append(empty); }
   }
   function canChooseAttachment() {
@@ -633,6 +697,6 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); publishConversationView(); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if ((studentId === selected || selected === FAMILY || groupId(selected)) && active) return refresh(); },
     update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); if (!chosenInitialized) { chosenKids = new Set(ids); chosenInitialized = true; } renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && selected !== FAMILY && !groupId(selected) && !students.some(student => student.id === selected)) choose(null); },
-    setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) { void loadGroups(); return refresh(); } else pauseMedia(); }
+    setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) { void loadGroups(); return refresh(); } else { if (settingsDialog.open) settingsDialog.close(); pauseMedia(); } }
   };
 }
