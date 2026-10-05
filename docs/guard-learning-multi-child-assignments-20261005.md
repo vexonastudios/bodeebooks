@@ -11,3 +11,17 @@ Verification: focused dashboard,learning static/package checks passed. The selec
 This change publishes only the existing private Family Beta parent website. Windows stays 1.2.287; API, Worker, R2, installer and signed feed remain unchanged. No actual child assignments were made during verification. No physical phone or child-PC acceptance was performed. Ignored evidence: .tmp/multi-child-lists-20261005/ in both current worktrees; final browser diagnostics .tmp/verification/electron/fixture-3TkIME. Clean archive/candidate/public source identity and rollback receipt will be appended after publication.
 
 Maintained cloud feature source: 49b2e31f962b28d17da7df2867331c6d1f54ced6. All four release-note regressions passed before source publication.
+
+Published 2026-10-05T14:23:38.203Z to the existing private Family Beta parent site, deployment dpl_EBcWfvWyWhBxCCKkNWcxtFxwdrWd, from parent source 85bd630e6d31e824c86b552a0c1eeae774c50c02 and cloud feature source 49b2e31f962b28d17da7df2867331c6d1f54ced6. The previous healthy website dpl_HeuUGr9B1CUixiWFt6VVvgaDxmBB remains available for rollback. Candidate exact release/asset/authentication checks passed before promotion; both guard.bodeebooks.com and bodeebooks.com then returned the exact release identity and archived learning/helper/workspace assets, preserved Assistant and Account styles, required unauthenticated workspace 401, and the unchanged pinned-key-verified Windows 1.2.287 recovery manifest. Primary and backup feed SHA-256 remain ca52950690e8bbe24dc5afbecac8f0f1325077ca7f729b2c46fae4d580bb3412. API, database, Worker, R2, installer and Stable were not published. Vercel candidate build completed in 23 seconds; promotion and public checks completed in about 7 seconds.
+
+Source archive SHA-256: 79ea6b5a459542c363c234371dc31c19dcf6a215cd44262ce2b2052386f8d940. Normalized archived files match tested source; raw archive SHA values account for Git CRLF. Preserved Account stylesheet /_next/static/chunks/0u75lm4usuyq3.css: be0a9bcf65b9c81c20c559815a2b5acd4b383ead863a7ba99c1495adf2b46696.
+
+- cloud-learning-assignment.js: 0597ea9c1a6d3dbda0578c3e580be78003e868b974a808d46c3cdc33b9c36b7b (normalized 67f92a956288a7180e2378cf6c9ea460a7dcc54b3467587135b7478f550e161c)
+- cloud-spelling.js: 791d76fdd8ff2ba3e07e1d25a514a976121cbabebb1ca12cab0e73b5c5a5a9a9 (normalized f9623040666724181d86a867629695d6d8a63ef64657c1a692f98c4e1cf44a44)
+- cloud-vocabulary.js: 58c81e0d1128284fc773090e935132326c842a90c802ae96f8e0ca795d103f10 (normalized 52cacc23736e9dbd2d2736a83119c78952933be112d660c121e1067f4cba5d7f)
+- cloud-workspace.js: af608fce6308ee51c91a22104adcc19726d2d2aea8e4bbf55eb2840a29f50c84 (normalized 5c0732280fecf623f8753c4d28bed9920546e23330507973deb3602974b2ca81)
+- cloud-workspace.css: 08c77595bfa746c884fee5338175f1761772a136f97f9257428c894182d7b573 (normalized adc732664d376ab91960d29bd300467e06fa9579d1ad36fff921cc8bb6aff9f2)
+- cloud-assistant.js: 3e461fd147f82cf3d6d33e38eb27d94280a3c02508143ebb31d75133621e0482 (normalized 372856aa85ce89e1de32b3607dd8a7dbb6139c8c520bc28d3892e4f59b62d93e)
+- cloud-assistant.css: 0fcb307caf06c26ee91bf37f48fd9757a52d045f071e7dcefed59ed738a485b7 (normalized f4272fded3efbdb5a20c212ef287caab9354333d96d7bb356c7aad3c1e36750f)
+
+Detailed ignored receipt: .tmp/multi-child-lists-20261005/publication-result.json in the parent worktree. All four release-note regressions passed before source push. No physical parent-phone acceptance or actual child assignment was performed; the isolated real-service browser acceptance passed.
