@@ -24,7 +24,7 @@ export function setupField(title, name, value = '', type = 'text') {
   label.append(node('span', title), input); return { label, input };
 }
 export function lockControls(root) {
-  const controls=[...root.querySelectorAll('button,input,select')].map(element=>[element,element.disabled]);
+  const controls=[...root.querySelectorAll('button,input,select,textarea')].map(element=>[element,element.disabled]);
   controls.forEach(([element])=>{element.disabled=true;});
   return ()=>controls.forEach(([element,disabled])=>{element.disabled=disabled;});
 }
@@ -57,8 +57,9 @@ export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
   for (const [value, title] of [['','Choose a school'],['abeka','Abeka Academy'],['bju','Bob Jones / BJU Press'],['custom','Another school website'],['none','No online school']]) { const option=node('option',title); option.value=value; select.append(option); }
   select.value = student.main_school?.provider || ''; providerLabel.append(node('span', 'First school website'), select);
   const linked = getSnapshot().rules?.subjects?.find(row => row.id === student.main_school?.subjectId);
+  if (student.main_school?.schoolName && !student.main_school?.provider) section.append(node('p', 'School noted: '+student.main_school.schoolName+'. Choose a website below, or No online school for offline curriculum.', 'setup-copy'));
   const defaults = { abeka:'https://academy.abeka.com/', bju:'https://homeschoolhub.com/auth' };
-  const title = setupField('School name', 'schoolTitle', linked?.title || ''), url = setupField('School website', 'schoolUrl', linked?.url || defaults[select.value] || '', 'url');
+  const title = setupField('School name', 'schoolTitle', linked?.title || student.main_school?.schoolName || ''), url = setupField('School website', 'schoolUrl', linked?.url || defaults[select.value] || '', 'url');
   url.input.maxLength = 2048; title.input.maxLength = 120;
   const saveButton = node('button', 'Save school', 'btn btn-secondary'); saveButton.type='button';
   const status = node('span', '', 'setup-inline-status'); status.setAttribute('role','status');
