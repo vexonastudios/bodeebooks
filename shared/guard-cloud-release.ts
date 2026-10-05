@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.287": {
+  "title": "A compact student wallet",
+  "sections": [
+    {
+      "heading": "Version 1.2.287",
+      "headline": "Clearer wallet controls with less clutter",
+      "summary": "Store and Earn coins share a compact row, History sits beside the wallet title, and extra earned time appears as small music/video badges.",
+      "highlights": [
+        "Lucide icons and the child's theme make wallet actions easier to recognize.",
+        "Wallet controls fit narrow screens and display scaling; touch buttons stay easy to tap.",
+        "Extra earned minutes now appear correctly, and empty bonus-time rows stay hidden."
+      ]
+    }
+  ]
+},
   "1.2.286": {
   "title": "Student update recovery and backup downloads",
   "sections": [
