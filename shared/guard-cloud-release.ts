@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.290": {
+  "title": "Spelling practice without a perfect-score gate",
+  "sections": [
+    {
+      "heading": "Version 1.2.290",
+      "headline": "Finish a spelling pass, then review the misses",
+      "summary": "Children can try every word once and finish daily Practice even when some answers are wrong.",
+      "highlights": [
+        "After a miss, compare the highlighted letters and choose Next word without being forced to retype it.",
+        "Missed words lead the next practice, with help at the child’s current level and no extra AI call.",
+        "Copied words and mistakes do not earn mastery. Ordinary practice has no separate coin reward or deduction; pre-test rules stay the same."
+      ]
+    }
+  ]
+},
   "1.2.289": {
   "title": "Keep your place during a school break",
   "sections": [
