@@ -224,3 +224,32 @@
 
 .cloud-abeka-course.refresh-needed{color:#fcd34d;background:rgba(251,191,36,.1)}
 .cloud-abeka-refresh-note{margin:0;color:#fcd34d;font-size:12px;line-height:1.5}
+
+/* Shared child selection for Spelling and Vocabulary assignments. */
+.learning-recipients { --learning-accent: #6ee7b7; grid-column: 1 / -1; min-width: 0; margin: 0 0 16px; padding: 14px; border: 1px solid var(--border-color,#334155); border-radius: 14px; background: rgba(110,231,183,.035); }
+#tab-spelling .learning-recipients { --learning-accent: #fdba74; background: rgba(253,186,116,.035); }
+.learning-recipients[hidden], .learning-single-recipient[hidden] { display: none !important; }
+.learning-recipients legend { padding: 0 6px; font-size: 15px; font-weight: 750; color: var(--text-primary,#eef2ff); }
+.learning-recipients p { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--text-secondary,#a9bad0); }
+.learning-recipient-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.learning-recipient-actions button { min-height: 44px; padding: 7px 10px; border: 1px solid var(--border-color,#334155); border-radius: 8px; background: transparent; color: var(--learning-accent); font: inherit; font-size: 13px; cursor: pointer; }
+.learning-recipient-actions span { margin-left: auto; color: var(--text-secondary,#a9bad0); font-size: 12px; }
+.learning-recipient-chips { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,128px),1fr)); gap: 8px; }
+.learning-recipient { display: flex; align-items: center; gap: 7px; min-height: 54px; min-width: 0; margin: 0; padding: 9px; border: 1px solid var(--border-color,#334155); border-radius: 10px; background: rgba(255,255,255,.025); cursor: pointer; }
+.learning-recipient.is-selected { border-color: var(--learning-accent); background: rgba(110,231,183,.09); }
+.learning-recipient:focus-within { outline: 2px solid var(--learning-accent); outline-offset: 2px; }
+.learning-recipient input[type=checkbox] { width: 17px; height: 17px; min-height: 17px; flex: 0 0 17px; margin: 0; padding: 0; accent-color: var(--learning-accent); }
+.learning-recipient-avatar { display: grid; place-items: center; flex: 0 0 26px; height: 26px; border-radius: 8px; background: rgba(110,231,183,.1); color: var(--learning-accent); font-size: 13px; font-weight: 750; }
+.learning-recipient-name { min-width: 0; color: var(--text-primary,#eef2ff); font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.learning-recipient-name small { display: block; margin-top: 2px; color: var(--text-secondary,#a9bad0); font-size: 11px; font-weight: 400; }
+.learning-recipient:has(input:disabled) { cursor: default; opacity: .65; }
+.learning-recipients .learning-assignment-note { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--border-color,#334155); font-size: 12px; }
+.learning-list-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.learning-list-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; max-width: 100%; white-space: normal; font-size: 13px; }
+.learning-list-actions button svg { width: 17px; height: 17px; flex: 0 0 17px; }
+.learning-list-actions > span { flex: 1 1 180px; }
+#spelling-retry-modal { margin: 10px 0; min-height: 44px; }
+@media (max-width: 600px) { .learning-recipients { padding: 10px; } .learning-recipient { gap: 5px; padding: 8px; } .learning-recipient-avatar { display: none; } .learning-list-actions button { flex: 1 1 auto; } }
+
+#spelling-list-modal.learning-reassign .spelling-photo-tray,
+#vocabulary-list-modal.learning-reassign .spelling-photo-tray { display: none; }
