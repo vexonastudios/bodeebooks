@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.288": {
+  "title": "Abeka progress survives clock differences",
+  "sections": [
+    {
+      "heading": "Version 1.2.288",
+      "headline": "Abeka lesson results can keep syncing",
+      "summary": "Abeka lesson reporting handles a computer clock that is slightly behind, and older rejected reports no longer block fresh results.",
+      "highlights": [
+        "Abeka lesson checks use the signed school connection's time when Windows is behind.",
+        "Rejected earlier reports stay saved safely while newer lesson results can reach your dashboard.",
+        "Provider completion checks and parent access rules keep their existing meaning."
+      ]
+    }
+  ]
+},
   "1.2.287": {
   "title": "A compact student wallet",
   "sections": [
