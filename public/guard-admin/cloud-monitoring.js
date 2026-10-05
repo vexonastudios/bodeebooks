@@ -81,9 +81,10 @@ function button(label,glyph,callback,className='monitor-control'){
 }
 function ring(model){
   const box=node('div','monitor-completion-ring'),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 36 36');
-  for(const [cls,dash]of [['ring-bg',null],['ring-fill',model.required?`${100*model.done/model.required} 100`:'0 100']]){
+  const percent=model.required?Math.max(0,Math.min(100,100*model.done/model.required)):0;
+  for(const [cls,dash]of [['ring-bg',null],['ring-fill',`${percent} ${100-percent}`]]){
     const circle=document.createElementNS(svg.namespaceURI,'circle');
-    for(const [k,v]of Object.entries({cx:18,cy:18,r:15.9,class:cls,...(dash?{'stroke-dasharray':dash,'stroke-dashoffset':25,stroke:model.color}:{})}))circle.setAttribute(k,v);
+    for(const [k,v]of Object.entries({cx:18,cy:18,r:15.9,pathLength:100,class:cls,...(dash?{'stroke-dasharray':dash,stroke:model.color,'stroke-opacity':percent?1:0}:{})}))circle.setAttribute(k,v);
     svg.append(circle);
   }
   box.title=`${model.done} of ${model.required} subject goals completed`;box.append(svg,node('span','ring-label',`${model.done}/${model.required}`));return box;
