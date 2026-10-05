@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.286": {
+  "title": "Student update recovery and backup downloads",
+  "sections": [
+    {
+      "heading": "Version 1.2.286",
+      "headline": "Recovery paths for Windows updates",
+      "summary": "Recoverable Windows update failures get bounded automatic retries and a child-accessible recovery action, with verified backup downloads and retained recovery copies.",
+      "highlights": [
+        "Transient installer failures retry after a cooldown while schoolwork stays open until restart is safe.",
+        "Children can use Updates → Recover update to download fresh verified bytes without a parent password.",
+        "Healthy-startup failures keep the previous app and wait for a newer verified release; failure reports remain available to support."
+      ]
+    }
+  ]
+},
   "1.2.273": {
     title: "Return to Grades after an Abeka quiz",
     sections: [{
