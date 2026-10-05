@@ -18,7 +18,7 @@
 #poem-modal .poem-scan-icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 11px; background: rgba(167,139,250,.15); color: #c4b5fd; }
 #poem-modal .poem-scan-icon svg, #poem-modal .poem-photo-actions svg { width: 18px; height: 18px; }
 #poem-modal .poem-photo-actions { display: flex; flex-wrap: wrap; gap: 9px; }
-#poem-modal .poem-photo-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 43px; margin: 0; cursor: pointer; }
+#poem-modal .poem-photo-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 0; cursor: pointer; }
 #poem-modal .poem-photo-preview { display: flex; gap: 10px; max-width: 100%; overflow-x: auto; padding: 3px 0 5px; }
 #poem-modal .poem-photo-preview[hidden] { display: none; }
 #poem-modal .poem-photo-preview > span { display: grid; flex: 0 0 74px; gap: 4px; text-align: center; }
@@ -46,5 +46,5 @@
 }
 #poem-modal.active ~ .parent-assistant-launcher,
 body:has(#poem-modal.active) .parent-assistant-launcher { display: none !important; }
-#poem-modal .poem-photo-actions:has(#poem-photos:disabled) label { opacity: .5; pointer-events: none; }
+#poem-modal .poem-photo-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
 #poem-modal .poem-scan { margin-top: 4px; }
