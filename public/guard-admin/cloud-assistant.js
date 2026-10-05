@@ -5,7 +5,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const drawer = byId('parent-assistant-drawer');
   if (!drawer) return;
   const input = byId('parent-assistant-input');
-  let pendingGameTime = null;
+  let pendingReview = null;
   const thread = byId('parent-assistant-thread');
   const ai = byId('parent-assistant-ai');
   const launcher = byId('parent-assistant-launcher');
@@ -63,6 +63,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     }
   }
   function close() {
+    cancelReview();
     drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); drawer.inert = true;
     background.inert = false; launcher.setAttribute('aria-expanded', 'false'); byId('parent-assistant-backdrop').hidden = true;
     (returnFocus?.isConnected ? returnFocus : launcher).focus();
@@ -131,29 +132,43 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     item.append(choices);
     requestAnimationFrame(() => item.scrollIntoView({block:'start'}));
   }
-  function gameTimeReview(item, review) {
-    if (!review || !Number.isInteger(review.minutes) || review.minutes < 1 || review.minutes > 240) return;
-    const approval = {prompt:review.prompt,minutes:review.minutes,requestId:crypto.randomUUID()};
-    pendingGameTime = approval;
-    const approve = document.createElement('button'); approve.type = 'button'; approve.className = 'btn btn-primary';
-    approve.textContent = `Yes, add ${review.minutes} minutes to all ${review.studentCount} kids`;
-    const status = document.createElement('p'); status.setAttribute('role','status');
-    const actions = document.createElement('div'); actions.className = 'assistant-message-actions';
+  function cancelReview() {
+    if(pendingReview){pendingReview.cancel();pendingReview=null;}
+  }
+  function actionReview(item,review,type) {
+    if(!review || !Number.isInteger(review.studentCount) || review.studentCount<1 || review.studentCount>50)return;
+    const game=type==='game-time';
+    if(game && (!Number.isInteger(review.minutes)||review.minutes<1||review.minutes>240))return;
+    if(!game && !['games-unlock','math-enable'].includes(review.kind))return;
+    cancelReview();
+    const approval={prompt:review.prompt,studentCount:review.studentCount,reviewFingerprint:review.reviewFingerprint,requestId:crypto.randomUUID(),
+      ...(game?{minutes:review.minutes,studentId:review.studentId || 'all'}:{kind:review.kind})};
+    const token={expires:Date.now()+10*60*1000};
+    pendingReview=token;
+    const approve=document.createElement('button');approve.type='button';approve.className='btn btn-primary';
+    approve.textContent=game?'Yes, add '+review.minutes+' minutes for '+(review.targetLabel || 'all '+review.studentCount+' kids'):review.kind==='games-unlock'?'Yes, unlock games today':'Yes, enable Math Coach';
+    const cancel=document.createElement('button');cancel.type='button';cancel.className='btn btn-secondary';cancel.textContent='Cancel';
+    const status=document.createElement('p');status.setAttribute('role','status');
+    const actions=document.createElement('div');actions.className='assistant-message-actions assistant-confirmation';
+    token.cancel=()=>{approve.disabled=true;cancel.disabled=true;status.textContent='Review dismissed. Ask again to prepare a new change.';};
+    cancel.addEventListener('click',()=>{if(pendingReview===token)cancelReview();});
     async function confirm() {
-      if (busy || pendingGameTime !== approval) return;
-      busy = true; approve.disabled = true; input.readOnly = true; byId('parent-assistant-send').disabled = true;
-      status.textContent = 'Adding game time…';
+      if(busy || pendingReview!==token)return;
+      if(Date.now()>token.expires){cancelReview();status.textContent='This review expired. Ask again to confirm current recipients and settings.';return;}
+      const current=generation;
+      busy=true;approve.disabled=true;cancel.disabled=true;input.readOnly=true;byId('parent-assistant-send').disabled=true;
+      status.textContent='Saving your confirmed change…';
       try {
-        const result = await request('assistant-game-time-approve', {...approval,approved:true});
-        status.textContent = result.message; approve.textContent = 'Game time added';
-        pendingGameTime = null;
-        if (result.change?.changedCount > 0) onChange?.(result.change.feature);
-      } catch (error) { status.textContent = error.message; approve.textContent = 'Retry adding game time'; }
-      finally { busy = false; input.readOnly = false; byId('parent-assistant-send').disabled = false; approve.disabled = !pendingGameTime; }
+        const result=await request(game?'assistant-game-time-approve':'assistant-settings-approve',{...approval,approved:true});
+        if(current!==generation)return;
+        status.textContent=result.message;approve.textContent='Saved';
+        if(pendingReview===token)pendingReview=null;
+        if(result.change?.changedCount>0)onChange?.(result.change.feature);
+      } catch(error){if(current===generation){status.textContent=error.message;approve.textContent='Retry confirmation';}}
+      finally{if(current===generation){busy=false;input.readOnly=false;byId('parent-assistant-send').disabled=false;approve.disabled=pendingReview!==token;cancel.disabled=pendingReview!==token;}}
     }
-    approve.addEventListener('click',confirm);
-    approval.confirm = confirm;
-    actions.append(approve,status); item.append(actions);
+    approve.addEventListener('click',confirm);token.confirm=confirm;
+    actions.append(approve,cancel,status);item.append(actions);
   }
   function loadWelcome() {
     if (welcome) return welcome;
@@ -173,12 +188,12 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   }
   async function submit() {
     if (busy || !input.value.trim()) return;
-    if (pendingGameTime && /^(?:yes|yes please|confirm|approve)[.!]?$/i.test(input.value.trim())) {
+    if (pendingReview && /^(?:yes|yes please|confirm|approve)[.!]?$/i.test(input.value.trim())) {
       input.value = '';
-      await pendingGameTime.confirm();
+      await pendingReview.confirm();
       return;
     }
-    pendingGameTime = null;
+    cancelReview();
     busy = true; byId('parent-assistant-send').disabled = true;
     const current = generation;
     await loadWelcome();
@@ -199,10 +214,11 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       pending.remove();
       const reply = message('assistant', response.message);
       const mode = document.createElement('small'); mode.className = 'cloud-assistant-mode';
-      mode.textContent = response.mode === 'action' ? 'Request saved' : response.mode === 'game-time-review' ? 'Confirm before adding game time' : response.mode === 'music-review' ? 'Your approval is needed to add a song' : response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
+      mode.textContent = response.mode === 'action' ? 'Request saved' : response.mode === 'settings-review' || response.mode === 'game-time-review' ? 'Review and confirm this change' : response.mode === 'music-review' ? 'Your approval is needed to add a song' : response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
       reply.append(mode); sources(reply, response.sources, response.mode === 'action' || response.mode === 'music-review');
       if (response.mode === 'music-review') musicReview(reply, response.musicReview);
-      if (response.mode === 'game-time-review') gameTimeReview(reply, response.gameTimeReview);
+      if (response.mode === 'game-time-review') actionReview(reply, response.gameTimeReview, 'game-time');
+      if (response.mode === 'settings-review') actionReview(reply, response.settingsReview, 'settings');
       if (response.mode === 'action' && response.change?.changedCount > 0) onChange?.(response.change.feature);
       if (response.notice) message('assistant', response.notice, 'cloud-assistant-notice');
       topicId = response.sources?.[0]?.id || topicId;
@@ -235,10 +251,10 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submit(); } });
   const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cloud-assistant-reset'; reset.textContent = 'Clear conversation';
   reset.addEventListener('click', () => {
-    generation++; controller?.abort(); welcome = null; history = []; retry = null; topicId = null; pendingGameTime = null; busy = false;
+    cancelReview(); generation++; controller?.abort(); welcome = null; history = []; retry = null; topicId = null; pendingReview = null; busy = false;
     input.value = ''; input.readOnly = false; byId('parent-assistant-send').disabled = false; thread.replaceChildren(); loadWelcome();
   });
   help.append(reset);
   window.lucide?.createIcons?.();
-  window.addEventListener('pagehide', () => { generation++; controller?.abort(); history = []; retry = null; thread.replaceChildren(); });
+  window.addEventListener('pagehide', () => { cancelReview(); generation++; controller?.abort(); history = []; retry = null; thread.replaceChildren(); });
 }

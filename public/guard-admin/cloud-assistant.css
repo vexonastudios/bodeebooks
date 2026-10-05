@@ -78,3 +78,8 @@
   .cloud-assistant-composer textarea { height: 48px; }
   .cloud-assistant-composer .parent-assistant-footnote { padding-bottom: 6px; font-size: 10px; }
 }
+
+/* Reviewed commands stay reachable on narrow phones and with long child names. */
+.assistant-confirmation { flex-wrap: wrap; }
+.assistant-confirmation button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.assistant-confirmation p { flex-basis: 100%; margin: 4px 0 0; }
