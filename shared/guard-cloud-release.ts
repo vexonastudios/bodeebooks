@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.289": {
+  "title": "Keep your place during a school break",
+  "sections": [
+    {
+      "heading": "Version 1.2.289",
+      "headline": "Dashboard keeps the paused school page open",
+      "summary": "Children can pause a lesson, visit Dashboard or Music, then resume the same school page without restarting the player.",
+      "highlights": [
+        "Resume school returns to the existing paused lesson and unfinished answers.",
+        "Hidden lessons stay paused and do not add school time; Abeka playback restrictions remain in place.",
+        "End session warns before closing the paused page. Parent locks and school access rules still apply."
+      ]
+    }
+  ]
+},
   "1.2.288": {
   "title": "Abeka progress survives clock differences",
   "sections": [
