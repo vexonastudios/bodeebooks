@@ -46,6 +46,17 @@ function worker(fetch = async () => Response.json({saved:true,id,studentId})) {
   return {notifications,opened,posted,badges,setTabs:value=>{tabs=value;},event:async(name,event)=>{let work;handlers.get(name)({...event,waitUntil:promise=>{work=promise;}});await work;}};
 }
 async function alert(w) { await w.event('push',{data:{json:()=>({type:'message',accountUserId:'parent',studentId,sequence:'7',unread:1,totalUnread:1})}}); return w.notifications.at(-1); }
+test('opening a native alert focuses the window before navigation and never sends entered text',async()=>{
+  const w=worker(()=>assert.fail('Opening a conversation must not send a message'));const n=await alert(w),events=[];
+  w.setTabs([{url:'https://guard.example/dashboard/',focus:async()=>events.push('focus'),postMessage:value=>events.push(value.type)}]);
+  await w.event('notificationclick',{notification:n,action:'open',reply:'Still an unsent draft'});
+  assert.deepEqual(events,['focus','bodeeguard-open-messages']);
+  events.length=0;
+  w.setTabs([{url:'https://guard.example/dashboard/',focus:async()=>{throw Error('Foreground denied');},postMessage:value=>events.push(value.type)}]);
+  await w.event('notificationclick',{notification:n,action:'open'});
+  assert.deepEqual(events,['bodeeguard-open-messages']);
+});
+
 test('notification offers inline Reply only with account binding; unsupported inline input opens the conversation',async()=>{
   const w=worker(()=>assert.fail('No reply should be sent'));const n=await alert(w);
   assert.equal(n.actions[0].type,'text');assert.equal(n.data.replyId,id);assert.ok(!n.body.includes('parent'));
@@ -106,7 +117,7 @@ test('reading a conversation clears message alerts but preserves an unconfirmed 
 test('notification navigation waits for the authorized child list and ignores foreign windows',()=>{
   const listeners=[],posted=[],opened=[],buttons=[];let students=[];
   const parent={postMessage:value=>posted.push(value)},location={origin:'https://guard.example'};
-  const messaging={openStudent:id=>opened.push(id)},navigated=[];
+  const focusRequests=[];const messaging={openStudent:(id,options)=>{opened.push(id);focusRequests.push(options?.focusReply);}},navigated=[];
   const source=fs.readFileSync('public/guard-admin/cloud-notification-navigation.js','utf8').replace(/^import .*\r?\n/,'').replace('export function','function');
   const context={setupMessageUnread:()=>{},window:{parent,addEventListener:(_name,fn)=>listeners.push(fn)},location,
     document:{querySelector:()=>({after:button=>buttons.push(button),append:button=>buttons.push(button)}),createElement:()=>({addEventListener(_name,fn){this.click=fn;}})}};
@@ -116,7 +127,7 @@ test('notification navigation waits for the authorized child list and ignores fo
   listeners[0]({...event,origin:'https://evil.test'});listeners[0]({...event,source:{}});assert.equal(navigated.length,0);
   listeners[0](event);assert.equal(navigated.length,0);
   students=[{id:studentId}];nav.update();assert.deepEqual(opened,[studentId]);assert.deepEqual(navigated,['messages']);
-  nav.update();assert.equal(opened.length,1);assert.equal(posted.at(-1).type,'bodeeguard-message-opened');
+  assert.deepEqual(focusRequests,[true]);nav.update();assert.equal(opened.length,1);assert.equal(posted.at(-1).type,'bodeeguard-message-opened');
   assert.equal(buttons.length,2);buttons[0].click();assert.equal(posted.at(-1).type,'bodeeguard-phone-notifications');
 });
 

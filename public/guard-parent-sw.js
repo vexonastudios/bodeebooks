@@ -19,9 +19,9 @@ async function openConversation(data) {
   const tabs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   const existing = tabs.find(client => { const url = new URL(client.url); return url.origin === self.location.origin && /^\/(?:guard\/)?dashboard\/?$/.test(url.pathname); });
   if (existing) {
+    try { await existing.focus(); } catch { /* Still route the reply if the browser refuses foreground focus. */ }
     existing.postMessage({ type: 'bodeeguard-open-messages', studentId });
     if (replyDraft(data)) existing.postMessage({ type: 'bodeeguard-reply-draft', draft: data });
-    await existing.focus();
   } else await self.clients.openWindow('/dashboard/' + (studentId ? '?conversation=' + studentId : '') + '#messages' + (studentId ? '/' + studentId : ''));
 }
 async function sendReply(data) {
@@ -82,7 +82,7 @@ self.addEventListener('push', event => {
       icon: '/guard-icons/bodeeguard-parent-192.png',
       tag: test ? 'bodeeguard-test' : 'bodeeguard-messages' + (studentId ? '-' + studentId : ''),
       renotify: true,
-      actions: replyId ? [{ action: 'reply', type: 'text', title: 'Quick reply', placeholder: 'Reply to your child…' }, { action: 'open', title: 'Open message' }] : [],
+      actions: replyId ? [{ action: 'reply', type: 'text', title: 'Send reply', placeholder: 'Type, then choose Send reply' }, { action: 'open', title: 'Reply in app' }] : [],
       data: {studentId,sequence:sequence(data.sequence),...(replyId ? { accountUserId: data.accountUserId, replyId, createdAt: Date.now() } : {})},
     }),
     test ? Promise.resolve() : badge(count(data.totalUnread)),

@@ -303,10 +303,14 @@ async function run() {
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   win.setContentSize(1365,900);await wait('!document.body.classList.contains("cloud-mobile")');
   assert.notEqual((await layout()).people,'none');assert.notEqual((await layout()).chat,'none');await capture('desktop');
+  // Notification navigation puts the desktop reply box in focus without a click.
+  await js('window.postMessage({type:"bodeeguard-open-messages",studentId:"11111111-1111-4111-8111-000000000001"},location.origin)');
+  await wait('document.activeElement.id==="messages-reply-input"');
+  await js('document.querySelector("#messages-reply-input").value="First line";window.postMessage({type:"bodeeguard-open-messages",studentId:"11111111-1111-4111-8111-000000000001"},location.origin)');
+  await new Promise(resolve=>setTimeout(resolve,100));
+  assert.equal(await js('document.querySelector("#messages-reply-input").value'),'First line','notification reopen keeps the existing draft');
+  await js('document.querySelector("#messages-reply-input").setSelectionRange(10,10)');
   // Desktop keyboard sends through the same composer; Shift+Enter keeps multiline drafts.
-  await js('document.querySelector(".cloud-chat-person").click()');
-  await wait('!document.querySelector("#messages-reply-input").disabled');
-  await js('document.querySelector("#messages-reply-input").value="First line";document.querySelector("#messages-reply-input").focus();document.querySelector("#messages-reply-input").setSelectionRange(10,10)');
   win.webContents.sendInputEvent({type:'keyDown',keyCode:'Enter',modifiers:['shift']});
   win.webContents.sendInputEvent({type:'char',keyCode:'\r',modifiers:['shift']});
   win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter',modifiers:['shift']});

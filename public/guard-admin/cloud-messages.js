@@ -717,7 +717,14 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   window.addEventListener('pagehide', () => { window.parent.postMessage({type:'bodeeguard-conversation-view',studentId:null},location.origin); clearTimeout(timer); voice.cancel(); threadRows.clear(); familyThreadRows.clear(); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   return {
     setUnread(items){unread=new Map(items.map(item=>[item.studentId,item.count]));for(const item of items)rememberChildMessage(item.studentId,item.sequence);renderStudents();},
-    openStudent(id) { if (students.some(student => student.id === id)) choose(id); },
+    openStudent(id, { focusReply = false } = {}) {
+      if (!students.some(student => student.id === id)) return;
+      choose(id);
+      // Only an explicit notification open requests typing focus. Keep the
+      // phone's conversation heading and existing unsent drafts intact.
+      const input = el('messages-reply-input');
+      if (focusReply && !mobile.matches && active && !document.hidden && !input.disabled) input.focus({ preventScroll: true });
+    },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); publishConversationView(); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if ((studentId === selected || selected === FAMILY || groupId(selected)) && active) return refresh(); },
     update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); if (!chosenInitialized) { chosenKids = new Set(ids); chosenInitialized = true; } renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && selected !== FAMILY && !groupId(selected) && !students.some(student => student.id === selected)) choose(null); },

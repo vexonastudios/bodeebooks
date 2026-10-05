@@ -5,7 +5,7 @@ export function setupNotificationNavigation({ messaging, navigate, getStudents }
   const open = () => {
     if (pending === null) return;
     if (pending && !getStudents().some(student => student.id === pending)) return;
-    navigate('messages'); if (pending) messaging.openStudent(pending);
+    navigate('messages'); if (pending) messaging.openStudent(pending, { focusReply: true });
     window.parent.postMessage({ type: 'bodeeguard-message-opened' }, location.origin);
     pending = null;
   };
