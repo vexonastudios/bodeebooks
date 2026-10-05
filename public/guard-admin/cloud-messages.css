@@ -493,3 +493,6 @@
 
 .cloud-chat-people .cloud-chat-list-toolbar .btn, .cloud-chat-settings-dialog .cloud-chat-settings-heading .btn { min-height:44px; }
 .cloud-chat-people #messages-groups-panel .cloud-chat-group-row { min-height:64px; }
+
+.cloud-chat-people .cloud-chat-archive-groups{display:flex;align-items:center;gap:8px;flex:0 0 auto;min-height:44px;width:calc(100% - 24px);margin:0 12px 8px;padding:9px 12px;border:1px solid #ffffff14;border-radius:10px;background:#ffffff04;color:#b9c5db;font-size:13px;font-weight:600;text-align:left}
+.cloud-chat-archive-groups svg{width:18px;height:18px;flex:0 0 18px}.cloud-group-status .btn{margin:8px 0 0}

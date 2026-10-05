@@ -26,7 +26,7 @@ const history = new Map();
 history.set('11111111-1111-4111-8111-000000000001', [{id:'incoming-1', sequence:'9', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 const messageGroups = Array.from({length:20},(_,i)=>({id:'group-' + i,kind:i%2?'parent':'siblings',closedAt:i===0?'2026-10-05T12:00:00Z':null,members:fixture.students.filter((_,j)=>i===19||[i%9,(i+1)%9,(i+2)%9].includes(j)).map(student=>({studentId:student.id,name:student.name}))}));
 let peerMessagingEnabled=false, failPeerSetting=true;
-let failSend = true;
+let failSend = true, failSharedSend = true;
 const calls = [];
 const server = http.createServer(async (req, res) => {
   if (req.url === '/') {
@@ -53,6 +53,11 @@ const server = http.createServer(async (req, res) => {
     if (input.action === 'list-message-groups') output = {groups:messageGroups,peerMessagingEnabled};
     if (input.action === 'list-family-messages') output = {messages:[],childrenCanPost:false,version:'0'};
     if (input.action === 'list-group-messages') output = {group:messageGroups.find(group=>group.id===input.groupId),messages:[],version:'0'};
+    if (input.action === 'create-message-group') output = {group:messageGroups[19]};
+    if (input.action === 'send-shared-message') {
+      if(failSharedSend){failSharedSend=false;res.statusCode=503;return res.end(JSON.stringify({error:'Reply interrupted.'}));}
+      output={id:input.familyThreadId,saved:true,recipients:input.recipients};
+    }
     if (input.action === 'peer-message-settings') {
       if(failPeerSetting){failPeerSetting=false;res.statusCode=503;return res.end(JSON.stringify({error:'Connection interrupted.'}));}
       peerMessagingEnabled=input.enabled;output={peerMessagingEnabled};
@@ -152,7 +157,7 @@ async function run() {
   const capture=async name=>{await new Promise(r=>setTimeout(r,150));fs.mkdirSync(path.join(site,'.tmp'),{recursive:true});fs.writeFileSync(path.join(site,'.tmp','messages-'+name+'.png'),(await win.webContents.capturePage()).toPNG());};
   const layout=()=>js(`({width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,people:getComputedStyle(document.querySelector('.cloud-chat-people')).display,chat:getComputedStyle(document.querySelector('.cloud-chat-conversation')).display,nav:getComputedStyle(document.querySelector('.bottom-nav')).display,assistant:getComputedStyle(document.querySelector('#parent-assistant-launcher')).display,composer:document.querySelector('#messages-reply-box').getBoundingClientRect().toJSON(),header:document.querySelector('.cloud-chat-heading').getBoundingClientRect().toJSON(),input:document.querySelector('#messages-reply-input').getBoundingClientRect().toJSON()})`);
   assert.equal((await layout()).chat,'none');assert.notEqual((await layout()).nav,'none');assert.equal((await layout()).assistant,'none');
-  await wait('document.querySelectorAll(".cloud-group-list-item").length===20');
+  await wait('document.querySelectorAll(".cloud-group-list-item").length===19');
   assert.equal(await js('document.querySelector("#messages-tab-children").getAttribute("aria-selected")'),'true','individual children open first');
   assert.equal(await visible('#messages-all-kids'),false,'group controls do not bury children');
   assert.equal(await visible('.cloud-peer-settings'),false,'settings stay out of the conversation list');
@@ -190,9 +195,23 @@ async function run() {
   assert.equal(await visible('.cloud-chat-person'),false);
   assert.equal(await visible('.cloud-family-conversation-link'),true);
   assert.equal(await visible('#messages-all-kids'),true);
-  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),20);
+  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),19);
   assert.equal(await js('document.querySelector(".cloud-chat-group-copy strong").textContent'),'Family conversation');
-  assert.equal(await visible('.cloud-chat-closed-badge'),true,'closed chats retain their visible status');
+  assert.equal(await visible('.cloud-chat-closed-badge'),false,'closed chats stay out of the active list');
+  assert.ok(await js('document.querySelector("#messages-tab-groups").textContent.includes("20")'),'group count excludes archives and includes Family');
+  await js('document.querySelector("#messages-archived-groups").click()');
+  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),1);
+  assert.equal(await visible('.cloud-family-conversation-link'),false);
+  assert.equal(await visible('#messages-all-kids'),false);
+  assert.equal(await js('document.querySelector(".cloud-chat-search").placeholder'),'Search archived chats');
+  assert.equal(await js('document.querySelector(".cloud-chat-closed-badge").textContent'),'Archived');
+  await capture('archived-groups');
+  await js('document.querySelector(".cloud-group-list-item").click()');
+  await wait('document.querySelector("#tab-messages").dataset.messageLoad==="ready"');
+  assert.equal(await visible('#messages-reply-box'),false,'archived conversations are read-only');
+  await js('document.querySelector(".cloud-chat-back").click();document.querySelector("#messages-archived-groups").click()');
+  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),19);
+  assert.equal(await visible('.cloud-chat-closed-badge'),false);
   assert.ok(await js('document.querySelector(".cloud-chat-group-rows").scrollHeight>document.querySelector(".cloud-chat-group-rows").clientHeight'),'all groups use one scrolling list');
   await capture('groups');
   await js('document.querySelector(".cloud-chat-group-rows").scrollTop=10000');
@@ -204,7 +223,7 @@ async function run() {
   await new Promise(r=>setTimeout(r,150));
   assert.equal(await js('document.activeElement.classList.contains("cloud-group-list-item")'),true,'group back restores the matching list and focus');
   await js('{const input=document.querySelector(".cloud-chat-search");input.value="Sam";input.dispatchEvent(new Event("input"));}');
-  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),messageGroups.filter(group=>group.members.some(member=>member.name==='Sam')).length,'search includes group members');
+  assert.equal(await js('document.querySelectorAll(".cloud-group-list-item").length'),messageGroups.filter(group=>!group.closedAt&&group.members.some(member=>member.name==='Sam')).length,'search includes group members');
   await js('document.querySelector("#messages-tab-children").click()');
   assert.equal(await js('document.querySelector(".cloud-chat-search").value'),'','children have an independent search');
   await js('{const input=document.querySelector(".cloud-chat-search");input.value="Jamie";input.dispatchEvent(new Event("input"));document.querySelector("#messages-tab-groups").focus();}');
@@ -215,7 +234,24 @@ async function run() {
   await js('document.querySelector("#messages-tab-children").click()');
   assert.equal(await js('document.querySelector(".cloud-chat-search").value'),'Jamie');
   assert.equal(calls.filter(call=>call.action==='peer-message-settings').length,2,'navigation never changes sibling permissions');
-  console.log('Mobile conversation navigation passed: children first, 20 compact groups, independent searches, large touch targets, keyboard tabs, group back focus, compact settings, failed-save recovery and confirmed API save.');
+  console.log('Mobile conversation navigation passed: children first, 19 active groups and a separate archive, independent searches, large touch targets, keyboard tabs, group back focus, compact settings, failed-save recovery and confirmed API save.');
+  await js('document.querySelector("#messages-tab-groups").click();document.querySelector("#messages-all-kids").click()');
+  await wait('document.querySelector("#messages-reply-input").disabled===false');
+  assert.ok(await js('document.querySelector(".cloud-group-status").textContent.includes("already have a chat")'),'same-audience reuse is explained before sending');
+  await js('{const input=document.querySelector("#messages-reply-input");input.value="Existing group draft";input.dispatchEvent(new Event("input"));document.querySelector("#messages-reply-box").requestSubmit();}');
+  await wait('document.querySelector("#messages-reply-btn").disabled===false && document.querySelector("#messages-cloud-status").textContent.includes("draft is retained")');
+  assert.equal(await js('document.querySelector("#messages-reply-input").value'),'Existing group draft');
+  await js('document.querySelector("#messages-reply-box").requestSubmit()');
+  await wait('document.querySelector("#messages-reply-input").value==="" && document.querySelector("#tab-messages").dataset.messageLoad==="ready"');
+  const creates=calls.filter(call=>call.action==='create-message-group'), sharedSends=calls.filter(call=>call.action==='send-shared-message');
+  assert.equal(creates.length,1,'retry reuses the confirmed audience');
+  assert.notEqual(creates[0].id,'group-19','the server can return an existing ID');
+  assert.equal(sharedSends.length,2);
+  assert.ok(sharedSends.every(call=>call.groupId==='group-19'&&call.recipients.length===9));
+  assert.equal(sharedSends[0].familyThreadId,sharedSends[1].familyThreadId,'retry does not create another post');
+  assert.equal(await js('document.querySelector(".cloud-group-status").textContent.includes("already have a chat")'),false,'successful send opens the existing conversation');
+  await js('document.querySelector(".cloud-chat-back").click();document.querySelector("#messages-tab-children").click()');
+  console.log('Group reuse passed: archive isolation, read-only history, canonical ID reuse, retained draft, idempotent retry and existing conversation navigation.');
   await capture('list');
   await js(`{const s=document.querySelector('.cloud-chat-search');s.value='Jamie';s.dispatchEvent(new Event('input'));}`);
   assert.equal(await js('document.querySelectorAll(".cloud-chat-person").length'),1);

@@ -14,6 +14,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
   let peerSaving = false, peerRevision = 0;
+  let archivedGroups = false;
   let groups = [], peerEnabled = false, chosenKids = new Set(), chosenInitialized = false, groupDraftId = null;
   let unread = new Map();
   const recentChildMessages = new Map();
@@ -57,17 +58,21 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     try { const result = await request('close-message-group', { groupId: id });
       groups = groups.map(group => group.id === id ? result.group : group);
       if (page) page.group = result.group;
-      render(); renderStudents(); note('Group closed. Children can still read its history, but cannot reply.');
+      render(); renderStudents(); note('Chat archived. Its history is kept, and children cannot reply.');
     } catch (failure) { note(failure.message); }
     finally { groupClose.disabled = false; }
   });
   groupReopen.addEventListener('click', async () => {
     const id = groupId(selected); if (!id || sending) return;
+    const current = groups.find(group => group.id === id);
+    if (current?.duplicateOf) { archivedGroups = false; choose(groupKey(current.duplicateOf)); return; }
     groupReopen.disabled = true;
     try { const result = await request('reopen-message-group', { groupId: id });
       groups = groups.map(group => group.id === id ? result.group : group);
-      if (page) page.group = result.group;
-      render(); renderStudents(); note('Chat reopened. Children can reply while sibling messaging is on.');
+      archivedGroups = false;
+      if (result.group.id !== id) { choose(groupKey(result.group.id)); void loadGroups(); }
+      else { if (page) page.group = result.group; render(); renderStudents(); }
+      note('Chat reopened. Children can reply while sibling messaging is on.');
     } catch (failure) { note(failure.message); }
     finally { groupReopen.disabled = false; }
   });
@@ -155,8 +160,10 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   });
   const groupList = textNode('div', '', 'cloud-group-list');
   const groupRows = textNode('div', '', 'cloud-chat-group-rows');
+  const archiveGroups = textNode('button', '', 'btn cloud-chat-archive-groups'); archiveGroups.type = 'button'; archiveGroups.id = 'messages-archived-groups';
+  archiveGroups.addEventListener('click', () => { archivedGroups = !archivedGroups; listQueries.groups = ''; search.value = ''; groupRows.scrollTop = 0; renderStudents(); });
   el('messages-student-list').before(listToolbar, search, childrenPanel, groupsPanel);
-  childrenPanel.append(el('messages-student-list')); groupRows.append(familyButton, groupList); groupsPanel.append(messageAll, groupRows);
+  childrenPanel.append(el('messages-student-list')); groupRows.append(familyButton, groupList); groupsPanel.append(messageAll, archiveGroups, groupRows);
   familyButton.classList.add('cloud-chat-group-row');
   familyButton.innerHTML = '<i data-lucide="house" aria-hidden="true"></i><span class="cloud-chat-group-copy"><strong>Family conversation</strong><small>Everyone in your family</small></span>';
   search.addEventListener('input', () => { listQueries[listScope] = search.value; renderStudents(); });
@@ -419,15 +426,20 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     settingsButton.setAttribute('aria-label', 'Messaging settings. Kid-to-kid chats ' + (peerEnabled ? 'on' : 'off'));
     settingsButton.classList.toggle('has-kid-chats', peerEnabled);
     childrenPanel.hidden = listScope !== 'children'; groupsPanel.hidden = listScope !== 'groups';
-    for (const [scope, tab] of listTabs) { tab.setAttribute('aria-selected', String(listScope === scope)); tab.tabIndex = listScope === scope ? 0 : -1; tab.querySelector('.cloud-chat-tab-count').textContent = String(scope === 'children' ? recipients().length : groups.length + 1); }
+    for (const [scope, tab] of listTabs) { tab.setAttribute('aria-selected', String(listScope === scope)); tab.tabIndex = listScope === scope ? 0 : -1; tab.querySelector('.cloud-chat-tab-count').textContent = String(scope === 'children' ? recipients().length : groups.filter(group => !group.closedAt).length + 1); }
     const childQuery = listQueries.children.trim().toLocaleLowerCase(), groupQuery = listQueries.groups.trim().toLocaleLowerCase();
-    familyButton.hidden = !'family conversation everyone in your family'.includes(groupQuery);
+    familyButton.hidden = archivedGroups || !'family conversation everyone in your family'.includes(groupQuery);
+    messageAll.hidden = archivedGroups;
+    archiveGroups.innerHTML = archivedGroups ? '<i data-lucide="arrow-left" aria-hidden="true"></i><span>Back to active groups</span>' : '<i data-lucide="archive" aria-hidden="true"></i><span>Archived (' + groups.filter(group => group.closedAt).length + ')</span>';
+    archiveGroups.setAttribute('aria-pressed', String(archivedGroups));
+    if (listScope === 'groups') { search.placeholder = archivedGroups ? 'Search archived chats' : 'Search groups'; search.setAttribute('aria-label', search.placeholder); }
+    window.lucide?.createIcons({ root: archiveGroups });
     messageAll.disabled = false;
     messageAll.setAttribute('aria-pressed', String(selected === ALL_KIDS));
     messageAll.querySelector('strong').textContent = 'New group message';
     messageAll.querySelector('small').textContent = `Choose from ${recipients().length} ${recipients().length === 1 ? 'child' : 'kids'}`;
     familyButton.setAttribute('aria-pressed', String(selected === FAMILY));
-    const matchedGroups = groups.filter(group => group.members.some(member => member.name.toLocaleLowerCase().includes(groupQuery)) || (group.kind === 'siblings' ? 'sibling chat' : 'group chat').includes(groupQuery));
+    const matchedGroups = groups.filter(group => Boolean(group.closedAt) === archivedGroups).filter(group => group.members.some(member => member.name.toLocaleLowerCase().includes(groupQuery)) || (group.kind === 'siblings' ? 'sibling chat' : 'group chat').includes(groupQuery));
     groupList.replaceChildren(...matchedGroups.map(group => {
       const names = group.members.map(member => member.name).join(', ');
       const all = group.members.length === recipients().length && group.members.every(member => recipients().some(student => student.id === member.studentId));
@@ -436,11 +448,11 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       button.setAttribute('aria-label', names + (group.closedAt ? ', closed chat' : ''));
       const icon = document.createElement('i'); icon.dataset.lucide = 'users'; icon.setAttribute('aria-hidden', 'true');
       const copy = textNode('span', '', 'cloud-chat-group-copy'); copy.append(textNode('strong', all ? 'All children' : names), textNode('small', group.members.length + ' children · ' + (group.kind === 'siblings' ? 'Sibling chat' : 'Group chat')));
-      button.append(icon, copy); if (group.closedAt) button.append(textNode('span', 'Closed', 'cloud-chat-closed-badge'));
+      button.append(icon, copy); if (group.closedAt) button.append(textNode('span', group.duplicateOf ? 'Earlier chat' : 'Archived', 'cloud-chat-closed-badge'));
       button.addEventListener('click', () => choose(groupKey(group.id)));
       return button;
     }));
-    if (!matchedGroups.length && familyButton.hidden) groupList.append(textNode('p', 'No groups match your search.', 'cloud-chat-list-empty'));
+    if (!matchedGroups.length && familyButton.hidden) groupList.append(textNode('p', groupQuery ? 'No groups match your search.' : 'No archived chats.', 'cloud-chat-list-empty'));
     const matches = recipients().filter(student => student.name.toLocaleLowerCase().includes(childQuery))
       .sort((a, b) => { const left = recentChildMessages.get(a.id) || 0n, right = recentChildMessages.get(b.id) || 0n; return left === right ? 0 : left > right ? -1 : 1; });
     el('messages-student-list').replaceChildren(...matches.map(student => {
@@ -537,7 +549,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     if (!family) {
       groupTitle.textContent = newGroup ? 'Who should receive this?' : currentGroup?.kind === 'siblings' ? currentGroup.members.length > 2 ? 'Sibling group' : 'Sibling chat' : 'Group conversation';
       groupDescription.textContent = newGroup ? `${total} selected · Tap a name to include or remove them. Children can reply when sibling messaging is on.` :
-        currentGroup?.closedAt ? 'This chat is closed. Everyone can still read its history.' :
+        currentGroup?.duplicateOf ? 'This earlier chat is archived. Its messages are kept here; continue in the existing chat.' : currentGroup?.closedAt ? 'This chat is archived. Reopen it to send messages again.' :
         peerEnabled ? 'Everyone in this chat can read and reply.' : 'Only parents can post while sibling messaging is off.';
       groupPeople.replaceChildren(...recipients().filter(student => newGroup || currentGroup?.members.some(member => member.studentId === student.id)).map(student => {
         const selectedKid = newGroup ? chosenKids.has(student.id) : true;
@@ -548,6 +560,15 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       }));
       groupClose.hidden = newGroup || Boolean(currentGroup?.closedAt);
       groupReopen.hidden = newGroup || !currentGroup?.closedAt;
+      groupReopen.textContent = currentGroup?.duplicateOf ? 'Open existing chat' : 'Reopen chat';
+      if (newGroup) {
+        const match = groups.find(group => !group.duplicateOf && group.members.length === chosenKids.size && group.members.every(member => chosenKids.has(member.studentId)));
+        if (match) {
+          progress.append(textNode('span', match.closedAt ? 'This chat is archived. Open it and choose Reopen chat before sending.' : 'You already have a chat with these children. Your message will go there.'));
+          const open = textNode('button', 'Open existing chat', 'btn btn-secondary'); open.type = 'button';
+          open.addEventListener('click', () => { archivedGroups = Boolean(match.closedAt); choose(groupKey(match.id)); }); progress.append(open);
+        }
+      }
     }
     if (batch) progress.append(textNode('span', sending ? 'Sending to everyone…' : 'This message is ready to retry. No partial post was published.'));
     const messages = [...older, ...(page?.messages || [])];
@@ -607,8 +628,11 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       }
       if (newGroup && !batch.created) {
         const created = await request('create-message-group', { id: batch.groupId, studentIds: batch.recipients.map(person => person.studentId) });
-        if (created.group?.id !== batch.groupId) throw new Error('The group could not be confirmed.');
-        batch.created = true; groups = [created.group, ...groups.filter(group => group.id !== batch.groupId)]; renderStudents();
+        const group = created.group;
+        if (!group?.id || !Array.isArray(group.members) || group.members.length !== batch.recipients.length || !group.members.every(member => batch.recipients.some(person => person.studentId === member.studentId))) throw new Error('The group could not be confirmed.');
+        groups = [group, ...groups.filter(item => item.id !== group.id)]; renderStudents();
+        if (group.closedAt) throw new Error('This chat is archived. Reopen it from Archived before sending.');
+        batch.groupId = group.id; batch.created = true;
       }
       if (selected === target) render();
       if (batch.attachment) {
