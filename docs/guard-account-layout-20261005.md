@@ -1,0 +1,11 @@
+# Parent Account layout — October 5, 2026
+
+Parent Account now starts with a compact family summary and two action cards: Open dashboard and Add a computer (Set up your family when access is not yet active). Plan & billing, Child computers, Child app & setup, Software updates and Help & account security use Lucide icons and expandable rows. Returning parents with connected computers see explanations collapsed; the connect link deliberately opens setup. First-time eligible setup remains available automatically. Sign-out and identity move to the footer, with the existing notification cleanup retained.
+
+Trial end dates remain visible above the shortcuts. Billing opens for inactive access, grace, scheduled cancellation, returned billing actions or unavailable billing details. The active/trial/complimentary gates, verified installer selection, card-free trial, Beta consent, cancel/resume, invoice links and computer rename/remove forms retain their authenticated actions. No account API, schema, Windows child or update feed change is required.
+
+Scoped account.module.css keeps the styling separate from activation and marketing pages. Disclosures use native details/summary, with keyboard support and at least 44px tap targets. Setup retains its cookie and browser first-download memory; a connect navigation changes its React key so the requested setup state is honored.
+
+Verification: TypeScript, changed-file ESLint and production Next build passed. All 26 account, installer, saved-setup and sign-out regressions passed. The isolated real-component browser preview used fictional account data and blocked all external requests. It checked 1440, 768, 390 and 320px widths; default and expanded sections had no horizontal overflow. Connected, connect-requested, trial, grace and new-parent states passed. Phone and desktop previews were inspected. The first preview had a working-directory error, and the first capture failed on the host GPU; the corrected absolute fixture path and software rendering passed. These were fixture changes, not app changes. Preview sources, screenshots and measurements remain ignored under .tmp/account-redesign/.
+
+Publication source and deployment identity will be recorded after candidate and public checks. No physical phone or real account mutation was used for validation.

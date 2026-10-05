@@ -20,11 +20,11 @@ export function useGuardSignOut(){
   }
   return {leave,error,leaving};
 }
-export default function GuardSignOut({className}:{className?:string}){
+export default function GuardSignOut({className,compact=false}:{className?:string;compact?:boolean}){
   const {leave,error,leaving}=useGuardSignOut();
   return <div>
     <button type="button" className={className} disabled={leaving} onClick={()=>void leave()}><LogOut size={17}/>{leaving?"Signing out…":"Sign out of this device"}</button>
-    <p>Signing out turns off message alerts on this device. Your other devices stay connected.</p>
+    <p>{compact ? "Turns off this device’s message alerts." : "Signing out turns off message alerts on this device. Your other devices stay connected."}</p>
     {error&&<p role="alert">{error}</p>}
   </div>;
 }

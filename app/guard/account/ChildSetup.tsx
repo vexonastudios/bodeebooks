@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { ChevronDown, Laptop } from "lucide-react";
 import styles from "../portal.module.css";
+import accountStyles from "./account.module.css";
 
 export default function ChildSetup({ initiallyCollapsed, highlightDownload = false, children }: { initiallyCollapsed: boolean; highlightDownload?: boolean; children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(initiallyCollapsed);
@@ -11,25 +12,27 @@ export default function ChildSetup({ initiallyCollapsed, highlightDownload = fal
     if (!highlightDownload) return;
     try {
       if (localStorage.getItem("bg-child-download-seen-v1")) return;
-      localStorage.setItem("bg-child-download-seen-v1", "1");
-    } catch { /* Highlight still works when browser storage is blocked. */ }
-    setFirstVisit(true);
-    setCollapsed(false);
+    } catch { /* Setup still opens when storage is unavailable. */ }
+    const frame = requestAnimationFrame(() => {
+      try { localStorage.setItem("bg-child-download-seen-v1", "1"); } catch { /* Optional visit memory. */ }
+      setFirstVisit(true);
+      setCollapsed(false);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [highlightDownload]);
-  function toggle() {
-    const next = !collapsed;
+  return <details id="child-setup" className={`${accountStyles.section} ${firstVisit ? styles.firstDownloadVisit : ""}`} open={!collapsed} onToggle={event => {
+    const next = !event.currentTarget.open;
+    if (next === collapsed) return;
     setCollapsed(next);
-    try { document.cookie = `bg_child_setup_collapsed=${next ? "1" : "0"}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`; } catch { /* The toggle still works when cookies are blocked. */ }
-  }
-  return <section className={`${styles.setupSection} ${styles.childSetup} ${firstVisit ? styles.firstDownloadVisit : ""}`} aria-labelledby="child-setup-heading" onClick={event => {
+    try { document.cookie = `bg_child_setup_collapsed=${next ? "1" : "0"}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`; } catch { /* Disclosure works without cookies. */ }
+  }} onClick={event => {
     if ((event.target as Element).closest('a[href="/guard/download/windows"]')) setFirstVisit(false);
   }}>
-    <div className={styles.childSetupHeading}>
-      <div><span className={styles.kicker}><Laptop size={15} /> Child app & setup</span><h2 id="child-setup-heading">Connect a child computer</h2></div>
-      <button type="button" onClick={toggle} aria-expanded={!collapsed} aria-controls="child-setup-content" className={styles.setupToggle}>
-        {collapsed ? "Show setup" : "Hide setup"}<ChevronDown size={18} aria-hidden="true" style={{ transform: collapsed ? undefined : "rotate(180deg)" }} />
-      </button>
-    </div>
-    <div id="child-setup-content" hidden={collapsed}>{children}</div>
-  </section>;
+    <summary className={accountStyles.sectionSummary}>
+      <span className={accountStyles.sectionIcon}><Laptop size={20} /></span>
+      <span className={accountStyles.sectionLabel}><strong id="child-setup-heading">Child app & setup</strong><small>Install or connect a Windows computer</small></span>
+      <ChevronDown className={accountStyles.chevron} size={18} aria-hidden="true" />
+    </summary>
+    <div className={accountStyles.panelBody}>{children}</div>
+  </details>;
 }

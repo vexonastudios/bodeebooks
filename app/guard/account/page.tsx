@@ -6,12 +6,13 @@ import ChildSetup from "./ChildSetup";
 import InstallerShareLink from "./InstallerShareLink";
 import InstallerDownload from "../InstallerDownload";
 import PlanControls, {type AiAllowance} from "./PlanControls";
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, ReceiptText, RotateCcw, ShieldCheck, Trash2, UserRound, WalletCards } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, ChevronDown, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, RotateCcw, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
 import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
 import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
 import styles from "../portal.module.css";
+import accountStyles from "./account.module.css";
 import AccountRetry from "../AccountRetry";
 import GuardSignOut from "@/components/GuardSignOut";
 
@@ -220,24 +221,26 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
     : account?.entitlementStatus === "grace" ? readableDate(account.graceEndsAt)
       : readableDate(billingPeriodEnd);
 
+
+  const computerLimit = account.deviceLimits?.child || 10;
+  const planSummary = isComplimentary ? "Complimentary" : isTrial ? "Free trial" : isSubscribed ? "Family plan" : "Not active";
+  const billingNeedsAttention = !isComplimentary && (account.entitlementStatus === "inactive" || account.entitlementStatus === "grace" || cancellationScheduled || (account.hasBillingAccount && billing?.available === false) || Boolean(params.billingError || params.checkout || params.subscription || params.trial));
+
   return (
-    <div className={styles.portalPage}>
-      <div className={`container ${styles.portalShell}`}>
-        <header className={styles.portalHeader}>
-          <div><span><ShieldCheck size={15} /> BodeeGuard account</span><h1>Welcome, {name}.</h1><p>Your parent dashboard lives online at guard.bodeebooks.com. Only children’s Windows computers need the BodeeGuard app—there is nothing for parents to install.</p></div>
+    <div className={`${styles.portalPage} ${accountStyles.page}`}>
+      <div className={accountStyles.shell}>
+        <Link className={accountStyles.backLink} href="/guard/dashboard/"><ArrowLeft size={17} /> Back to dashboard</Link>
+        <header className={accountStyles.header}>
+          <span className={accountStyles.headerIcon}><ShieldCheck size={24} /></span>
+          <div><h1>Parent account</h1><p>Welcome, {name}.</p></div>
+          <span className={`${accountStyles.accessBadge} ${account.entitlementStatus === "grace" ? accountStyles.attentionBadge : ""}`}>{isComplimentary ? "Family Beta" : isTrial ? "Free trial" : isSubscribed ? "Active" : "Account ready"}</span>
         </header>
-        <GuardSignOut className={styles.portalButton} />
-        <section className={styles.dashboardEntry} aria-label="Online parent dashboard">
-            <div><span className={styles.kicker}><Monitor size={15} /> Your online dashboard</span><h2>Manage school from your phone or browser.</h2><p>Set school rules, review progress, and manage connected child computers. You can close your browser or turn off your computer without stopping their school day.</p>
-              <Link className={styles.portalButton} href="/guard/dashboard/">Open family dashboard <ArrowRight size={16} /></Link>
-            </div>
-        </section>
         {(params.billingError || params.checkout || params.channel || params.computerRemoved === "1" || params.computerRenamed === "1" || params.subscription || params.trial === "started") && (
           <aside className={params.billingError ? styles.errorNotice : styles.successNotice} role="status">
             {params.billingError
-              || (params.trial === "started" ? "Your 30-day BodeeGuard trial has started. No card was requested or stored, and the trial will end without a charge."
-                : params.checkout === "success" ? "You returned from checkout. Your confirmed subscription status is shown below; if payment is still processing, refresh in a moment."
-                : params.checkout === "canceled" ? "You left checkout. No new subscription was confirmed here. You can return whenever you are ready."
+              || (params.trial === "started" ? "Your 30-day trial has started. No card or automatic charge."
+                : params.checkout === "success" ? "Returned from checkout. Check Plan & billing for your confirmed status."
+                : params.checkout === "canceled" ? "Checkout canceled. No new subscription was confirmed."
                 : params.channel === "beta" ? "Beta updates selected. Your connected computers will switch when they next check in."
                 : params.channel === "stable" ? "Stable updates selected. Computers already running a newer Beta will keep it until Stable catches up; they will not be downgraded."
                 : params.subscription === "canceled" ? `Cancellation scheduled. Your family keeps full access${billingPeriodEnd ? ` through ${readableDate(billingPeriodEnd)}` : " through the paid period"}.`
@@ -253,137 +256,39 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               : "The cloud student installer is not released on your account’s channel yet. Nothing was downloaded or installed. This page will offer it after release approval."}
           </aside>
         )}
-        <ChildSetup initiallyCollapsed={setupCollapsed && params.setup !== 'connect'} highlightDownload={canConnectComputers && installerAvailable}>
-          {canConnectComputers ? <>
-            <p className={styles.channelExplanation}>Start with children → school → activities → connect a computer. <Link href="/guard/dashboard/?setup=1">Continue your saved family setup</Link>. Use the steps below when you reach Connect.</p>
-            {installerAvailable && <InstallerShareLink />}
-            <div className={styles.setupDownload}>
-              {installerAvailable ? (
-                <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} secondary />
-              ) : (
-                <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
-              )}
-            </div>
-            <p className={styles.channelExplanation}>Stay signed in on your own computer or phone. The child computer only needs the installer; approve its code here and assign an existing child in your dashboard.</p>
-            <ol className={styles.setupSteps}>
-              <li className={styles.setupStep}>
-                <span className={styles.stepNumber}>1</span>
-                <div><strong>Install</strong><p>Run the installer on your child’s PC. Open BodeeGuard and note its pairing code. If needed, choose <b>Get pairing code</b>.</p></div>
-              </li>
-              <li className={styles.setupStep}>
-                <span className={styles.stepNumber}>2</span>
-                <div><strong>Approve from your device</strong><p>On your own computer or phone, enter the code shown by the child app.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
-              </li>
-              <li className={styles.setupStep}>
-                <span className={styles.stepNumber}>3</span>
-                <div><strong>Check readiness</strong><p>Assign this computer to the child’s existing profile, check its connection and complete the Parent password setup if prompted.</p><Link className={styles.stepAction} href="/guard/dashboard/?setup=connect">Continue setup <ArrowRight size={15} /></Link></div>
-              </li>
-            </ol>
-          </> : <p className={styles.channelExplanation}>{canStartTrial ? "Start your trial below, then download and connect your child’s computer here." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}
-        </ChildSetup>
-        <div className={`${styles.portalGrid} ${styles.accountDetailsGrid}`}>
-          <section className={`${styles.portalCard} ${styles.billingCard}`}>
-            <div className={styles.cardIcon}><CreditCard size={22} /></div>
-            <span className={styles.statusPill}>{statusLabel}</span>
-            <h2>BodeeGuard Family</h2>
-            {isComplimentary ? (
-              <>
-                <p><strong>No subscription charge.</strong> Your family uses the complete licensed system on the Family Beta channel so activation, device controls, and new releases can be tested during real school days before customer promotion.</p>
-                <div className={styles.complimentaryNote}><ShieldCheck size={16} /> Full access · Beta updates · No billing required</div>
-              </>
-            ) : isTrial ? (
-              <p><strong>Your complete trial is active with no card on file.</strong> {remainingTrialDays === null ? "Your trial remains active" : remainingTrialDays === 0 ? "The trial ends today" : `${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} left`}; use BodeeGuard through {readableDate(trialEnd) || "the trial end date"}. It ends without a charge; subscribe afterward only if your family chooses to continue.</p>
-            ) : isSubscribed ? (
-              <p><strong>Your family subscription is active.</strong> {account.entitlementStatus === "grace" ? "A payment needs attention. Please review billing below before the grace period ends." : cancellationScheduled ? "Renewal is canceled. Your family keeps access through the end date shown below." : "Your plan renews monthly. You can manage payments or cancel the next renewal below."}</p>
-            ) : account.trialEligible === null ? (
-              <p>We are checking your billing history. Please refresh shortly; we will not start another trial or subscription until your account status is confirmed.</p>
-            ) : (
-              customerLaunchOpen || canStartTrial || canSubscribe || account?.hasBillingAccount ? (
-                trialEligible ? (
-                  <p><strong>30 days completely free with no card required.</strong> Protect up to 10 child computers and manage them from your browser. When the trial ends, you decide whether to subscribe for $19.99 per month.</p>
-                ) : (
-                  <p><strong>$19.99 per month.</strong> A free trial is no longer available for this account. Subscribe when you are ready to continue, with up to 10 child computers and an online parent dashboard.</p>
-                )
-              ) : (
-                <p><strong>Your parent account is ready and free.</strong> Family trials will open when the Windows installer is ready. The 30-day trial requires no card and ends without a charge.</p>
-              )
-            )}
-            {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : account?.entitlementStatus === "trial" ? "Trial ends" : "Current period ends"} {statusDate}{isTrial && remainingTrialDays !== null ? ` · ${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} left` : ""}</p>}
-            {!isComplimentary && isTrial ? (
-              <div className={styles.complimentaryNote}><ShieldCheck size={16} /> No payment method · No automatic charge · Trial ends {readableDate(trialEnd) || "after 30 days"}</div>
-            ) : !isComplimentary && (isSubscribed || paidSubscription) ? (
-              <form action={openBodeeGuardBilling}><button className={styles.portalButton} type="submit">Manage billing <ArrowRight size={16} /></button></form>
-            ) : !isComplimentary && (canStartTrial || canSubscribe) ? (
-              <>
-                <form action={canStartTrial ? startBodeeGuardTrial : subscribeToBodeeGuard}><SubmitButton className={styles.portalButton} pendingLabel={canStartTrial ? "Starting your trial…" : "Opening secure checkout…"}>{canStartTrial ? "Start 30-day trial — no card" : "Subscribe for $19.99/month"} <ArrowRight size={16} /></SubmitButton></form>
-                {trialEligible && <p className={styles.downloadHint}><ShieldCheck size={14} /> No trial code, checkout, or payment information is needed. The trial simply ends after 30 days unless you later choose to subscribe.</p>}
-              </>
-            ) : !isComplimentary ? (
-              <div className={styles.launchHold}><ShieldCheck size={16} /><span><strong>No payment is needed yet.</strong> {account.enrollment?.reason || "Your account will show the trial button here when family enrollment opens."}</span></div>
-            ) : null}
-          </section>
-          <section className={styles.portalCard}>
-            <div className={styles.cardIcon}><UserRound size={22} /></div>
-            <h2>Parent identity</h2>
-            <p className={styles.identity}>{user?.primaryEmailAddress?.emailAddress || "Signed in with Clerk"}</p>
-            <p>Your sign-in stays with Clerk. BodeeGuard child computers never receive or store this password.</p>
-          </section>
-        </div>
-        <section className={styles.setupSection}>
-          <div className={styles.sectionHeadingRow}><div><span className={styles.kicker}><ShieldCheck size={15} /> Software updates</span>
-            <h2>{channelLabel} updates{release ? ` · Version ${release.version}` : ""}</h2>
-            <p>{isComplimentary ? "Your family receives new versions first and tests the same account activation and device controls as other families. Your access remains complimentary."
-              : account.releaseChannel === "beta" ? "Your family has chosen early updates. Beta versions may have issues that are still being tested; you can return to Stable below. Your trial dates and subscription price stay the same."
-                : "Stable is the recommended channel for school days. Your family receives updates after Beta testing and a separate release approval."}</p>
-            {release && (
-              <details className={styles.releaseNotes}>
-                <summary>What changed in {release.version}</summary>
-                <div className={styles.releaseNotesBody}>
-                  {release.notes?.title && <p className={styles.releaseNotesTitle}>{release.notes.title}</p>}
-                  {release.notes?.sections?.length ? release.notes.sections.map((section, index) => (
-                    <section className={styles.releaseNotesSection} key={`${section.heading}-${index}`}>
-                      <h3>{section.heading}</h3>
-                      {section.headline && <strong>{section.headline}</strong>}
-                      {section.summary && <p>{section.summary}</p>}
-                      {section.highlights.length > 0 && <ul>{section.highlights.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>}
-                    </section>
-                  )) : <p>Release details are being prepared. The installer is still verified before BodeeGuard offers it.</p>}
-                </div>
-              </details>
-            )}
-          </div></div>
-          {!isComplimentary && account.releaseChannel === "beta" && <form action={changeBodeeGuardReleaseChannel}>
-            <input type="hidden" name="channel" value="stable" /><p className={styles.channelExplanation}>Returning to Stable stops future Beta updates. A newer installed Beta stays in place until Stable catches up; your data is preserved.</p>
-            <SubmitButton className={styles.secondaryPortalButton}>Return to Stable updates</SubmitButton>
-          </form>}
-          {!isComplimentary && account.releaseChannel === "stable" && account.enrollment?.betaInvited && (
-            account.enrollment.canChooseBeta ? <form action={changeBodeeGuardReleaseChannel} className={styles.betaChoice}>
-              <input type="hidden" name="channel" value="beta" />
-              <label><input type="checkbox" name="betaConsent" required /> I want my family to receive early Beta updates and understand they may contain unfinished fixes.</label>
-              <SubmitButton className={styles.secondaryPortalButton}>Join invited Family Beta</SubmitButton>
-            </form> : <p className={styles.channelExplanation}>Your family is invited to Beta. Enrollment will appear here when the installer for invited families is ready. Your trial has not started just by receiving an invitation.</p>
-          )}
-          {!isComplimentary && !account.enrollment?.betaInvited && <p className={styles.channelExplanation}>Beta testing is by invitation. <Link href="/feedback">Contact us</Link> if your family would like to help test new versions.</p>}
-        </section>
-        <section className={styles.billingSection}>
-          <div className={styles.sectionHeadingRow}>
-            <div>
-              <span className={styles.kicker}><ReceiptText size={15} /> Subscription & billing</span>
-              <h2>{isComplimentary ? "Your complimentary family access" : "Your BodeeGuard plan"}</h2>
-              <p>{isComplimentary ? "This household is an internal, activation-enabled Family Beta account and will never be sent to Stripe." : "Review your plan, next billing date, payment method, receipts, and cancellation status in one place."}</p>
-            </div>
-            {!isComplimentary && account?.hasBillingAccount && !isTrial && (
-              <form action={openBodeeGuardBilling}>
-                <button className={styles.secondaryPortalButton} type="submit"><WalletCards size={16} /> Secure billing portal</button>
-              </form>
-            )}
-          </div>
 
+        {!isComplimentary && account.entitlementStatus === "grace" && <aside className={styles.errorNotice} role="status"><strong>Payment needs attention.</strong> Review Plan & billing{statusDate ? ` before ${statusDate}` : ""} to keep family access.</aside>}
+        {!isComplimentary && isTrial && <p className={accountStyles.trialNotice}><CalendarClock size={16} /> Trial ends {readableDate(trialEnd) || "after 30 days"} · No automatic charge</p>}
+        <nav className={accountStyles.quickActions} aria-label="Account shortcuts">
+          <Link className={accountStyles.dashboardAction} href="/guard/dashboard/" aria-label="Open family dashboard"><Monitor size={23} /><span><strong>Open dashboard</strong><small>Manage your family</small></span><ArrowRight size={18} /></Link>
+          <Link className={accountStyles.setupAction} href={canConnectComputers ? "/guard/account/?setup=connect#child-setup" : "/guard/dashboard/?setup=1"}><Laptop size={23} /><span><strong>{canConnectComputers ? "Add a computer" : "Set up your family"}</strong><small>{canConnectComputers ? "Install & approve its code" : "Children, school & activities"}</small></span><ArrowRight size={18} /></Link>
+        </nav>
+        <dl className={accountStyles.snapshot} aria-label="Family account summary">
+          <div><dt><CreditCard size={15} /> Plan</dt><dd>{planSummary}</dd></div>
+          <div><dt><Laptop size={15} /> Computers</dt><dd>{childDevices.length} <span>/ {computerLimit}</span></dd></div>
+          <div><dt><Download size={15} /> Child app</dt><dd>{release ? release.version : "Coming soon"}</dd></div>
+        </dl>
+        <div className={accountStyles.sections}>
+          <details id="account-billing" className={accountStyles.section} open={billingNeedsAttention}>
+            <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><CreditCard size={20} /></span><span className={accountStyles.sectionLabel}><strong>Plan & billing</strong><small>{isComplimentary ? "Full access · No subscription charge" : statusLabel}</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
+            <div className={accountStyles.panelBody}>
+              {isComplimentary ? <p className={styles.complimentaryNote}><ShieldCheck size={16} /> Full family access. No subscription charge.</p> : <>
+                <h2>BodeeGuard Family</h2>
+                {isTrial ? <p>Your trial is active{remainingTrialDays === null ? "" : ` · ${remainingTrialDays} days left`}. It ends without a charge.</p>
+                  : isSubscribed ? <p><strong>Your family subscription is active.</strong> {cancellationScheduled ? "Renewal is canceled; access continues through the date below." : account.entitlementStatus === "grace" ? "Please review your payment." : "Manage payments or renewal below."}</p>
+                  : account.trialEligible === null ? <p>Billing history is temporarily unavailable. Refresh before starting a trial or subscription.</p>
+                  : (customerLaunchOpen || canStartTrial || canSubscribe || account.hasBillingAccount) ? <p>{trialEligible ? "Try 30 days free. No card required." : "$19.99 per month. Subscribe to continue."}</p>
+                  : <p>{account.enrollment?.reason || "Family enrollment is being prepared."}</p>}
+                {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : isTrial ? "Trial ends" : "Current period ends"} {statusDate}</p>}
+                {isTrial ? <p className={styles.complimentaryNote}><ShieldCheck size={16} /> No automatic charge · No card required</p>
+                  : (isSubscribed || paidSubscription) ? <form action={openBodeeGuardBilling}><SubmitButton className={styles.portalButton}>Manage billing <ArrowRight size={16} /></SubmitButton></form>
+                  : (canStartTrial || canSubscribe) ? <form action={canStartTrial ? startBodeeGuardTrial : subscribeToBodeeGuard}><SubmitButton className={styles.portalButton} pendingLabel={canStartTrial ? "Starting your trial…" : "Opening secure checkout…"}>{canStartTrial ? "Start 30-day trial — no card" : "Subscribe for $19.99/month"} <ArrowRight size={16} /></SubmitButton></form>
+                  : <p className={styles.launchHold}><ShieldCheck size={16} /> No payment is needed yet.</p>}
           {!isComplimentary && account?.hasBillingAccount && billing?.available === false && (
-            <div className={styles.billingWarning}><AlertTriangle size={18} /><span><strong>Live billing details are temporarily unavailable.</strong> Your BodeeGuard access and family computers are unaffected. Use the secure billing portal or refresh this page shortly.</span></div>
+            <div className={styles.billingWarning}><AlertTriangle size={18} /><span><strong>Live billing details are temporarily unavailable.</strong> Your BodeeGuard access and family computers are unaffected. Use Manage billing or refresh this page.</span></div>
           )}
 
-          <div className={styles.billingSummaryGrid}>
+          <div className={`${styles.billingSummaryGrid} ${accountStyles.billingMetrics}`}>
             <div className={styles.billingMetric}>
               <span>Plan</span>
               <strong>{isComplimentary ? "BodeeGuard Family Beta" : billing?.plan?.name || "BodeeGuard Family"}</strong>
@@ -443,9 +348,13 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             )}
           </div>
 
-          <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Trial families provide no card. If you later subscribe, payment details are handled by Stripe and BodeeGuard never stores your full card number. For account help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
-        </section>
-        <section className={styles.computersSection}>
+          <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Payment details stay with Stripe. For help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
+              </>}
+            </div>
+          </details>
+          <details id="account-computers" className={accountStyles.section} open={params.computerRemoved === "1" || params.computerRenamed === "1"}>
+            <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><Laptop size={20} /></span><span className={accountStyles.sectionLabel}><strong>Child computers</strong><small>{childDevices.length} connected · Names & device access</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
+            <div className={accountStyles.panelBody}>
           <div className={styles.computersHeading}>
             <div><span className={styles.kicker}><Laptop size={15} /> Child computers</span><h2>{childDevices.length} of {account.deviceLimits?.child || 10} computers connected</h2><p className={styles.channelExplanation}>Manage school activity in your <Link href="/guard/dashboard/">family dashboard</Link>.</p></div>
             {canConnectComputers && <Link className={styles.secondaryPortalButton} href="/guard/activate">Approve pairing code</Link>}
@@ -473,10 +382,82 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               ))}
             </div>
           ) : (
-            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? "Each child computer appears after you approve its pairing code. If you already have the cloud app installed, approve its code now, then assign a child in the dashboard." : "Activate your family’s access when setup becomes available. Then install the child app and approve its pairing code here. No parent password is copied to a child computer."}</span></div>
+            <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? "Approve a computer’s pairing code, then assign it to a child in your dashboard." : "Activate family access to connect your children’s computers."}</span></div>
+          )}</div>
+          </details>
+        <ChildSetup key={params.setup === "connect" ? "connect" : "account"} initiallyCollapsed={params.setup !== "connect" && (setupCollapsed || childDevices.length > 0 || !canConnectComputers)} highlightDownload={childDevices.length === 0 && installerAvailable}>
+          {canConnectComputers ? <>
+            <p className={styles.channelExplanation}>Family setup: children → school → activities → connect a computer. <Link href="/guard/dashboard/?setup=1">Continue your saved family setup</Link>. </p>
+            {installerAvailable && <InstallerShareLink />}
+            <div className={styles.setupDownload}>
+              {installerAvailable ? (
+                <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} secondary />
+              ) : (
+                <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
+              )}
+            </div>
+            <p className={styles.channelExplanation}>Stay signed in on your own computer or phone. Install on the child’s PC, then approve its code here.</p>
+            <ol className={styles.setupSteps}>
+              <li className={styles.setupStep}>
+                <span className={styles.stepNumber}>1</span>
+                <div><strong>Install</strong><p>Run the installer on your child’s PC. Open BodeeGuard to get its pairing code.</p></div>
+              </li>
+              <li className={styles.setupStep}>
+                <span className={styles.stepNumber}>2</span>
+                <div><strong>Approve from your device</strong><p>On your own computer or phone, enter the code shown by the child app.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
+              </li>
+              <li className={styles.setupStep}>
+                <span className={styles.stepNumber}>3</span>
+                <div><strong>Check readiness</strong><p>Assign this computer to the child’s existing profile, check its connection and complete the Parent password setup if prompted.</p><Link className={styles.stepAction} href="/guard/dashboard/?setup=connect">Continue setup <ArrowRight size={15} /></Link></div>
+              </li>
+            </ol>
+          </> : <p className={styles.channelExplanation}>{canStartTrial ? "Start your trial below, then download and connect your child’s computer here." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}
+        </ChildSetup>
+
+          <details id="account-updates" className={accountStyles.section} open={Boolean(params.channel)}>
+            <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><Download size={20} /></span><span className={accountStyles.sectionLabel}><strong>Software updates</strong><small>{channelLabel}{release ? ` · Version ${release.version}` : " · Installer not released yet"}</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
+            <div className={accountStyles.panelBody}>
+              <p>{isComplimentary ? "Early updates are included with your complimentary Family Beta access." : account.releaseChannel === "beta" ? "Early updates may still have issues. You can return to Stable below." : "Stable updates arrive after Beta testing."}</p>
+            {release && (
+              <details className={styles.releaseNotes}>
+                <summary>What changed in {release.version}</summary>
+                <div className={styles.releaseNotesBody}>
+                  {release.notes?.title && <p className={styles.releaseNotesTitle}>{release.notes.title}</p>}
+                  {release.notes?.sections?.length ? release.notes.sections.map((section, index) => (
+                    <section className={styles.releaseNotesSection} key={`${section.heading}-${index}`}>
+                      <h3>{section.heading}</h3>
+                      {section.headline && <strong>{section.headline}</strong>}
+                      {section.summary && <p>{section.summary}</p>}
+                      {section.highlights.length > 0 && <ul>{section.highlights.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>}
+                    </section>
+                  )) : <p>Release details are being prepared. The installer is still verified before BodeeGuard offers it.</p>}
+                </div>
+              </details>
+            )}
+          {!isComplimentary && account.releaseChannel === "beta" && <form action={changeBodeeGuardReleaseChannel}>
+            <input type="hidden" name="channel" value="stable" /><p className={styles.channelExplanation}>Returning to Stable stops future Beta updates. A newer installed Beta stays in place until Stable catches up; your data is preserved.</p>
+            <SubmitButton className={styles.secondaryPortalButton}>Return to Stable updates</SubmitButton>
+          </form>}
+          {!isComplimentary && account.releaseChannel === "stable" && account.enrollment?.betaInvited && (
+            account.enrollment.canChooseBeta ? <form action={changeBodeeGuardReleaseChannel} className={styles.betaChoice}>
+              <input type="hidden" name="channel" value="beta" />
+              <label><input type="checkbox" name="betaConsent" required /> I want my family to receive early Beta updates and understand they may contain unfinished fixes.</label>
+              <SubmitButton className={styles.secondaryPortalButton}>Join invited Family Beta</SubmitButton>
+            </form> : <p className={styles.channelExplanation}>Your family is invited to Beta. Enrollment will appear here when the installer for invited families is ready. Your trial has not started just by receiving an invitation.</p>
           )}
-        </section>
-        {account.releaseOperator && <section className={styles.setupSection}>
+          {!isComplimentary && !account.enrollment?.betaInvited && <p className={styles.channelExplanation}>Beta testing is by invitation. <Link href="/feedback">Contact us</Link> if your family would like to help test new versions.</p>}
+            </div>
+          </details>
+          <details className={accountStyles.section}>
+            <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><CircleHelp size={20} /></span><span className={accountStyles.sectionLabel}><strong>Help & account security</strong><small>Setup questions, sign-in & support</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
+            <div className={`${accountStyles.panelBody} ${accountStyles.helpBody}`}>
+              <div><strong>Do parents need an app?</strong><p>Use your dashboard in this browser. There is nothing for parents to install.</p></div>
+              <div><strong>Can I close the dashboard?</strong><p>Yes. Your children’s school day keeps running on their computers.</p></div>
+              <div><strong>Is my sign-in shared with my children?</strong><p>No. Your password stays with Clerk and is never stored on a child’s computer.</p></div>
+              <Link className={styles.secondaryPortalButton} href="/feedback"><CircleHelp size={16} /> Get account help <ArrowRight size={16} /></Link>
+            </div>
+          </details>
+        {account.releaseOperator && <details className={accountStyles.section} open={Boolean(params.invitation)}><summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><ShieldCheck size={20} /></span><span className={accountStyles.sectionLabel}><strong>Staff tools</strong><small>Beta invitations & product dashboard</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary><div className={accountStyles.panelBody}>
           <span className={styles.kicker}><ShieldCheck size={15} /> BodeeGuard staff</span>
           <p><Link className={styles.secondaryPortalButton} href="/guard/admin/"><ShieldCheck size={18} /> Open product dashboard</Link></p>
           <h2>Invite a family to Beta</h2>
@@ -488,7 +469,12 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             <label>Action<select name="operation"><option value="invite">Invite to Beta</option><option value="remove-invitation">Remove invitation</option></select></label>
             <SubmitButton className={styles.secondaryPortalButton} pendingLabel="Saving invitation…">Save Beta invitation</SubmitButton>
           </form>
-        </section>}
+        </div></details>}
+        </div>
+        <footer className={accountStyles.identity}>
+          <div><UserRound size={19} /><span><small>Signed in as</small><strong>{user?.primaryEmailAddress?.emailAddress || name}</strong></span></div>
+          <GuardSignOut className={accountStyles.signOut} compact />
+        </footer>
       </div>
     </div>
   );
