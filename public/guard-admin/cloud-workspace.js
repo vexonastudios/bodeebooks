@@ -35,7 +35,7 @@ import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupMonitoring } from './cloud-monitoring.js?v=20261001-time-menu1';
 import { setupCloudMathCoach } from './cloud-math-coach.js';
-import { setupCloudSpelling } from './cloud-spelling.js?v=20260910-unified2';
+import { setupCloudSpelling } from './cloud-spelling.js?v=20261005-regular-spelling';
 import { setupCloudVocabulary } from './cloud-vocabulary.js';
 import { setupCloudPoems } from './cloud-poems.js';
 import { setupCloudQuizzes } from './cloud-quizzes.js';

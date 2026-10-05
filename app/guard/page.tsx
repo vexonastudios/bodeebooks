@@ -37,7 +37,7 @@ const features = [
   {
     icon: BookOpenCheck,
     title: "Learning tools are built in",
-    copy: "Use Science Spelling Lab, Geography Mastery, quizzes, worksheets, learning videos, audiobooks, and parent-reviewed grading without sending children elsewhere.",
+    copy: "Use Spelling, Vocabulary, Geography Mastery, quizzes, worksheets, learning videos, audiobooks, and parent-reviewed grading without sending children elsewhere.",
   },
   {
     icon: MessageCircleMore,
