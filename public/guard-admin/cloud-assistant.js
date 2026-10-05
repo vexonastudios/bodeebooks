@@ -1,3 +1,67 @@
+// Presentation only: all provider text becomes text nodes, never HTML or links.
+const ASSISTANT_AREAS = {
+  chores: ['Chores & routines', 'list-checks', 'chores'],
+  spelling: ['Spelling', 'spell-check', 'spelling'],
+  vocabulary: ['Vocabulary', 'book-a', 'learning'],
+  poems: ['Poems', 'quote', 'learning'],
+  typing: ['Typing', 'keyboard', 'learning'],
+  'math-coach': ['Math Coach', 'calculator', 'learning'],
+  'family-games': ['Games', 'gamepad-2', 'games'],
+  videos: ['Videos', 'video', 'videos'],
+  music: ['Music', 'music', 'music'],
+  audiobooks: ['Audiobooks', 'headphones', 'audiobooks'],
+  'learning-videos': ['Learning videos', 'graduation-cap', 'learning'],
+  messages: ['Messages', 'messages-square', 'messages'],
+  economy: ['Coins & rewards', 'coins', 'rewards'],
+  account: ['Account & billing', 'credit-card', 'account'],
+  students: ['Children', 'users', 'general'],
+  grades: ['Grades', 'notebook-tabs', 'learning'],
+  'daily-plan': ['Daily plan', 'calendar-check', 'school'],
+  calendar: ['Schedule', 'calendar-days', 'school'],
+  overview: ['Family controls', 'sliders-horizontal', 'general'],
+};
+const ASSISTANT_TOPIC_AREAS = { 'workflow-media-lock': ['Entertainment rules', 'lock-keyhole', 'videos'] };
+const ASSISTANT_CONTROLS = /\*\*[^*\n]+\*\*|\x60[^\x60\n]+\x60|\b(?:Quick Unlock|Add chore|Mark complete|Mark as done|Daily Plan|Daily plan|Family setup|Game Hub|Music Library|Math Coach|Your day|Open Store|Earn coins|Needs approval|Save settings|Start trial|Spelling|Vocabulary|Audiobooks|Videos|Chores|Save)\b/g;
+function assistantInlineRuns(text) {
+  text=String(text ?? '');
+  const runs = []; let offset = 0;
+  for (const match of String(text).matchAll(ASSISTANT_CONTROLS)) {
+    if (match.index > offset) runs.push({kind:'text', text:text.slice(offset,match.index)});
+    const value=match[0], kind=value.startsWith('**')?'strong':value.startsWith('\x60')?'code':'control';
+    runs.push({kind, text:kind==='strong'?value.slice(2,-2):kind==='code'?value.slice(1,-1):value});
+    offset=match.index+value.length;
+  }
+  if (offset < text.length) runs.push({kind:'text',text:text.slice(offset)});
+  return runs;
+}
+function assistantReplyModel(text, {sources=[],mode=''} = {}) {
+  const entries=Array.isArray(sources)?sources.filter(entry=>entry && typeof entry==='object'):[], first=entries.find(entry=>Object.hasOwn(ASSISTANT_TOPIC_AREAS,entry.id) || Object.hasOwn(ASSISTANT_AREAS,entry.tab));
+  const area=first?(Object.hasOwn(ASSISTANT_TOPIC_AREAS,first.id)?ASSISTANT_TOPIC_AREAS[first.id]:ASSISTANT_AREAS[first.tab]):null;
+  const titles=new Set(entries.map(entry=>entry.title));
+  const blocks=[]; let current=null, afterSteps=false;
+  const guideFooter='I can guide you to these controls; I have not changed anything.';
+  for (const raw of String(text ?? '').split(/\r?\n/)) {
+    const line=raw.trim();
+    if (!line) {current=null;continue;}
+    if (mode==='guide' && line===guideFooter) {current=null;continue;}
+    const heading=line.match(/^#{1,3}\s+(.+)/);
+    if (heading || titles.has(line)) {blocks.push({kind:'heading',text:heading?heading[1]:line});current=null;afterSteps=false;continue;}
+    const ordered=line.match(/^(\d{1,3})[.)]\s+(.+)/), bullet=line.match(/^[-*•]\s+(.+)/);
+    if (ordered || bullet) {
+      const kind=ordered?'ordered':'bullets';
+      if (current?.kind!==kind) {current={kind,items:[]};blocks.push(current);}
+      current.items.push({text:ordered?ordered[2]:bullet[1],...(ordered?{number:Number(ordered[1])}:{})});afterSteps=true;continue;
+    }
+    const explicitNote=line.match(/^(Note|Important|Remember|Keep in mind):\s*/i);
+    const kind=explicitNote || mode==='guide' && afterSteps?'note':'paragraph';
+    const value=explicitNote?line.slice(explicitNote[0].length):line, label=kind==='note'?(explicitNote?explicitNote[1]:'Keep in mind'):null;
+    if (current?.kind===kind && current.label===label) current.text+=' '+value;
+    else {current={kind,text:value,label};blocks.push(current);}
+  }
+  const state=mode==='guide'?['Guide only · Nothing changed','guide']:mode==='ai'?['AI guidance · Nothing changed','guide']:['settings-review','game-time-review','music-review'].includes(mode)?['Review before saving','review']:mode==='action'?['Request saved','saved']:mode==='status'?['Latest reported check-ins','status']:null;
+  return {area,blocks,state};
+}
+
 // The cloud adapter reuses the desktop presentation, not its LAN endpoints,
 // settings, mutations or credentials. Conversation text lives only in this tab.
 export function setupCloudAssistant({ endpoint, navigate, onChange }) {
@@ -27,11 +91,38 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const phoneLayout = () => document.body.classList.contains('cloud-mobile') || window.matchMedia('(max-width: 600px)').matches;
   let welcome = null, busy = false, generation = 0, topicId = null, retry = null, controller = null;
   let history = [], returnFocus = null;
-  function message(role, text, className = '') {
+  function message(role, text, className = '', info = {}) {
     const item = document.createElement('article');
     item.className = `assistant-message ${role} ${className}`;
-    item.textContent = text;
+    if (role === 'assistant' && !className) {
+      item.classList.add('assistant-rich');
+      const model=assistantReplyModel(text,info);
+      if (model.area) item.setAttribute('data-area',model.area[2]);
+      const header=document.createElement('div');header.className='assistant-reply-meta';
+      if (model.area) {
+        const badge=document.createElement('span');badge.className='assistant-area-badge';
+        const icon=document.createElement('i');icon.setAttribute('data-lucide',model.area[1]);icon.setAttribute('aria-hidden','true');
+        const label=document.createElement('span');label.textContent=model.area[0];badge.append(icon,label);header.append(badge);
+      }
+      if (model.state) {const state=document.createElement('span');state.className='assistant-reply-state';state.setAttribute('data-state',model.state[1]);state.textContent=model.state[0];header.append(state);}
+      if (header.children.length) item.append(header);
+      const body=document.createElement('div');body.className='assistant-reply-body';
+      const inline=(parent,value)=>{for(const run of assistantInlineRuns(value)){const node=document.createElement(run.kind==='text'?'span':run.kind==='code'?'code':'strong');node.textContent=run.text;if(run.kind==='control')node.className='assistant-control-name';parent.append(node);}};
+      for (const block of model.blocks) {
+        const node=document.createElement(block.kind==='heading'?'h3':block.kind==='ordered'?'ol':block.kind==='bullets'?'ul':block.kind==='note'?'aside':'p');
+        if (block.kind==='ordered' || block.kind==='bullets') {
+          node.className='assistant-reply-steps';
+          for(const entry of block.items){const li=document.createElement('li');if(entry.number!==undefined)li.setAttribute('value',String(entry.number));inline(li,entry.text);node.append(li);}
+        } else {
+          if(block.kind==='note'){node.className='assistant-reply-note';const label=document.createElement('strong');label.className='assistant-note-label';label.textContent=block.label || 'Keep in mind';if(block.label?.toLowerCase()==='important')node.setAttribute('data-importance','important');node.append(label);}
+          inline(node,block.text);
+        }
+        body.append(node);
+      }
+      item.append(body);
+    } else item.textContent = text;
     thread.append(item);
+    window.lucide?.createIcons?.();
     // Bound long sessions without retaining hidden conversation copies.
     while (thread.children.length > 40) thread.firstElementChild.remove();
     requestAnimationFrame(() => { content.scrollTop = content.scrollHeight; });
@@ -68,19 +159,22 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     background.inert = false; launcher.setAttribute('aria-expanded', 'false'); byId('parent-assistant-backdrop').hidden = true;
     (returnFocus?.isConnected ? returnFocus : launcher).focus();
   }
-  function sources(item, entries, action = false) {
+  function sources(item, entries) {
     const actions = document.createElement('div'); actions.className = 'assistant-message-actions';
+    const seen=new Set();
     for (const source of (entries || []).slice(0, 3)) {
+      if(seen.has(source.tab))continue;
       if (!/^[a-z-]+$/.test(source.tab || '')) continue;
       const target = source.tab === 'account' ? null : byId(`tab-${source.tab}`);
       if (!target && source.tab !== 'account') continue;
-      const details = document.createElement('span'); details.className = 'cloud-assistant-source';
-      details.textContent = action ? source.title : `${source.title} · ${source.status === 'pending' ? 'Still being transferred' : source.status === 'partial' ? 'Partly connected' : 'Product guide'}`;
-      actions.append(details);
+      seen.add(source.tab);
+      if (source.status === 'pending' || source.status === 'partial') {
+        const details=document.createElement('span');details.className='cloud-assistant-source';details.textContent=source.status==='pending'?'Still being transferred':'Partly connected';actions.append(details);
+      }
       if (source.tab === 'account') {
         const link = document.createElement('a'); link.href = '/guard/account/'; link.target = '_top'; link.textContent = 'Open Account & billing'; actions.append(link);
       } else {
-        const button = document.createElement('button'); button.type = 'button'; button.textContent = action ? `Open ${source.title}` : 'Open this page';
+        const button = document.createElement('button'); button.type = 'button'; button.textContent = Object.hasOwn(ASSISTANT_AREAS,source.tab) ? 'Open '+ASSISTANT_AREAS[source.tab][0] : 'Open this page';
         button.addEventListener('click', () => { close(); navigate(source.tab); }); actions.append(button);
       }
     }
@@ -113,7 +207,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
           const response = await request('assistant-music-approve', {prompt:review.prompt, youtubeId:selected, approved:true, requestId:approvalId});
           if (current !== generation) return;
           saved = true; status.textContent = 'Approved';
-          const reply = message('assistant', response.message); sources(reply, response.sources, true);
+          const reply = message('assistant', response.message, '', response); sources(reply, response.sources);
           if (response.change?.changedCount > 0) onChange?.(response.change.feature);
           // Stop previews once the choice is saved, including videos in other cards.
           for (const frame of choices.querySelectorAll('iframe')) frame.remove();
@@ -212,10 +306,8 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       const response = await request('assistant-ask', body);
       if (current !== generation) return;
       pending.remove();
-      const reply = message('assistant', response.message);
-      const mode = document.createElement('small'); mode.className = 'cloud-assistant-mode';
-      mode.textContent = response.mode === 'action' ? 'Request saved' : response.mode === 'settings-review' || response.mode === 'game-time-review' ? 'Review and confirm this change' : response.mode === 'music-review' ? 'Your approval is needed to add a song' : response.mode === 'ai' ? 'OpenAI · grounded in the product guide' : response.mode === 'status' ? 'Current cloud check-ins' : 'Built-in product guide';
-      reply.append(mode); sources(reply, response.sources, response.mode === 'action' || response.mode === 'music-review');
+      const reply = message('assistant', response.message, '', response);
+      sources(reply, response.sources);
       if (response.mode === 'music-review') musicReview(reply, response.musicReview);
       if (response.mode === 'game-time-review') actionReview(reply, response.gameTimeReview, 'game-time');
       if (response.mode === 'settings-review') actionReview(reply, response.settingsReview, 'settings');

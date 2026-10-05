@@ -83,3 +83,54 @@
 .assistant-confirmation { flex-wrap: wrap; }
 .assistant-confirmation button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .assistant-confirmation p { flex-basis: 100%; margin: 4px 0 0; }
+/* Reply hierarchy: topic labels, distinct steps and quiet supporting details. */
+.assistant-rich { --assistant-accent: #9eddf0; }
+.cloud-assistant-content .assistant-message.assistant-rich {
+  width: 100%; white-space: normal; padding: 15px 16px;
+  border-inline-start: 3px solid var(--assistant-accent);
+  color: #d6e1ef; line-height: 1.55;
+}
+.assistant-rich[data-area="chores"] { --assistant-accent: #6ee7b7; }
+.assistant-rich[data-area="spelling"] { --assistant-accent: #fdbaac; }
+.assistant-rich[data-area="learning"] { --assistant-accent: #c4b5fd; }
+.assistant-rich[data-area="school"] { --assistant-accent: #67e8f9; }
+.assistant-rich[data-area="games"] { --assistant-accent: #d8b4fe; }
+.assistant-rich[data-area="videos"] { --assistant-accent: #fde68a; }
+.assistant-rich[data-area="music"] { --assistant-accent: #7dd3fc; }
+.assistant-rich[data-area="audiobooks"] { --assistant-accent: #fdba74; }
+.assistant-rich[data-area="messages"] { --assistant-accent: #93c5fd; }
+.assistant-rich[data-area="rewards"] { --assistant-accent: #fcd34d; }
+.assistant-rich[data-area="account"] { --assistant-accent: #cbd5e1; }
+.assistant-reply-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px; margin-bottom: 12px; }
+.assistant-area-badge { display: inline-flex; align-items: center; gap: 6px; color: var(--assistant-accent); font-size: 12px; font-weight: 750; }
+.assistant-area-badge svg { width: 16px; height: 16px; flex: 0 0 16px; }
+.assistant-reply-state { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 7px; border: 1px solid #41506a; border-radius: 6px; color: #b4c4d9; font-size: 11px; line-height: 1.4; }
+.assistant-reply-state[data-state="review"] { color: #fde68a; border-color: #857544; background: #403723; }
+.assistant-reply-state[data-state="saved"] { color: #a7f3d0; border-color: #396454; background: #1c3b34; }
+.assistant-reply-body { display: grid; gap: 12px; }
+.assistant-reply-body > * { margin: 0; min-width: 0; }
+.assistant-reply-body h3 { color: #f1f6ff; font-size: 17px; font-weight: 750; line-height: 1.35; letter-spacing: -.015em; }
+.assistant-reply-body strong { color: #f1f6ff; font-weight: 750; }
+.assistant-reply-body .assistant-control-name { color: var(--assistant-accent); }
+.assistant-reply-body code { padding: 1px 4px; border-radius: 4px; background: #0c1829; color: #dbeafe; font-size: .9em; overflow-wrap: anywhere; white-space: normal; }
+.assistant-reply-steps { display: grid; gap: 9px; padding-inline-start: 24px; }
+.assistant-reply-steps li { padding-inline-start: 3px; }
+.assistant-reply-steps li::marker { color: var(--assistant-accent); font-weight: 800; }
+.assistant-reply-note { padding: 10px 12px; border: 1px solid #34445d; border-radius: 9px; background: #101d31; color: #bfcee1; font-size: 13px; line-height: 1.55; }
+.assistant-reply-note .assistant-note-label { display: block; margin-bottom: 4px; color: #a9bed7; font-size: 11px; font-weight: 750; letter-spacing: .03em; }
+.assistant-rich .assistant-message-actions { margin-top: 13px; padding-top: 11px; border-top: 1px solid #34445d; }
+.assistant-rich .assistant-message-actions > button,
+.assistant-rich .assistant-message-actions > a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; max-width: 100%; padding: 9px 12px; font-size: 13px; line-height: 1.35; white-space: normal; overflow-wrap: anywhere; }
+.assistant-rich .assistant-message-actions > a { border: 1px solid #375775; border-radius: 9px; text-decoration: none; background: #142c40; font-weight: 700; }
+@media (max-width: 360px) {
+  .cloud-assistant-content .assistant-message.assistant-rich { padding: 13px 12px; }
+  .assistant-reply-meta { gap: 6px; }
+  .assistant-reply-body { gap: 10px; }
+}
+@media (forced-colors: active) {
+  .assistant-rich, .assistant-reply-note, .assistant-reply-state { border-color: CanvasText; }
+  .assistant-area-badge, .assistant-reply-body .assistant-control-name, .assistant-reply-steps li::marker { color: CanvasText; }
+}
+
+.assistant-reply-note[data-importance="important"] { border-color: #857544; }
+.assistant-reply-note[data-importance="important"] .assistant-note-label { color: #fde68a; }
