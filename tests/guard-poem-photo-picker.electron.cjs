@@ -39,6 +39,11 @@ let win;const watchdog=setTimeout(()=>{console.error('Poem photo fixture timed o
   const until=async(expression,label)=>{const end=Date.now()+10000;while(Date.now()<end){if(await(expression instanceof Function?expression():js(expression)))return;await new Promise(resolve=>setTimeout(resolve,50));}throw Error('Timed out: '+label);};
   // Electron executeJavaScript's userGesture flag exercises the native chooser without a real camera.
   const tap=async(selector,icon=false)=>js('(()=>{const el=d.querySelector('+JSON.stringify(selector)+');el.scrollIntoView({block:"center"});'+(icon?'el.querySelector("svg").dispatchEvent(new w.MouseEvent("click",{bubbles:true}));':'el.click();')+'return true;})()');
+  const expectScanFirst=async(label)=>{
+    const state=await js('(()=>{const card=d.querySelector(".poem-modal-card"),header=card.querySelector("header").getBoundingClientRect(),footer=card.querySelector(".poem-actions").getBoundingClientRect();return {scrollTop:card.scrollTop,dialogFocused:d.activeElement===card,buttons:["poem-take-photo","poem-choose-photos"].map(id=>{const el=d.getElementById(id),box=el.getBoundingClientRect();return {visible:box.top>=header.bottom&&box.bottom<=footer.top,hit:el.contains(d.elementFromPoint(box.left+box.width/2,box.top+box.height/2))};})};})()');
+    assert.equal(state.scrollTop,0,label+': opens at top');assert.equal(state.dialogFocused,true,label+': dialog receives focus without activating a text keyboard');
+    assert.ok(state.buttons.every(button=>button.visible&&button.hit),label+': both scan buttons are visible and tappable without scrolling');
+  };
   let nextSelection='cancel';
   await win.loadURL(origin);
   win.webContents.debugger.attach('1.3');
@@ -51,8 +56,17 @@ let win;const watchdog=setTimeout(()=>{console.error('Poem photo fixture timed o
     void win.webContents.debugger.sendCommand('DOM.setFileInputFiles',{backendNodeId:params.backendNodeId,files:nextSelection==='cancel'?[]:[photo]}).catch(error=>{console.error(error);app.exit(1);});
   });
   await until('w.ready && d.querySelector("#poem-student option")','poem list loaded');await js('(()=>{d.querySelector("#tab-poems").classList.add("active");return true;})()');await tap('#poem-add');await until('d.querySelector("#poem-modal").classList.contains("active")','editor open');
-  for(const width of [320,390,768]){win.setContentSize(width,844);await new Promise(resolve=>setTimeout(resolve,80));const boxes=await js('["poem-take-photo","poem-choose-photos"].map(id=>{const el=d.getElementById(id);return {tag:el.tagName,disabled:el.disabled,box:el.getBoundingClientRect().toJSON()};})');assert.ok(boxes.every(value=>value.tag==='BUTTON'&&!value.disabled&&value.box.width>=44&&value.box.height>=44),'real keyboard-accessible photo buttons fit mobile');assert.equal(await js('d.documentElement.scrollWidth<=w.innerWidth'),true);}
+  await expectScanFirst('Initial phone open');
+  for(const width of [320,390,768,1280]){
+    await js('(()=>{d.querySelector(".poem-modal-card").scrollTop=d.querySelector(".poem-modal-card").scrollHeight;return true;})()');await tap('#poem-cancel');
+    win.setContentSize(width,width===320?568:844);await new Promise(resolve=>setTimeout(resolve,80));await tap('#poem-add');
+    await expectScanFirst('Reopen at '+width+'px');
+    const boxes=await js('["poem-take-photo","poem-choose-photos"].map(id=>{const el=d.getElementById(id);return {tag:el.tagName,disabled:el.disabled,box:el.getBoundingClientRect().toJSON()};})');
+    assert.ok(boxes.every(value=>value.tag==='BUTTON'&&!value.disabled&&value.box.width>=44&&value.box.height>=44),'real keyboard-accessible photo buttons fit');assert.equal(await js('d.documentElement.scrollWidth<=w.innerWidth'),true);
+  }
   win.setContentSize(390,844);await new Promise(resolve=>setTimeout(resolve,80));
+  fs.mkdirSync(path.join(site,'.tmp/poem-scan-first-20261006'),{recursive:true});
+  fs.writeFileSync(path.join(site,'.tmp/poem-scan-first-20261006/mobile-opening.png'),(await win.webContents.capturePage()).toPNG());
   assert.equal(await js('d.querySelector("#poem-camera").getAttribute("capture")'),'environment');
   assert.equal(await js('d.querySelector("#poem-camera").multiple'),false);assert.equal(await js('d.querySelector("#poem-photos").multiple'),true);
   await js('(()=>{d.querySelector("#poem-title").value="Manual draft";d.querySelector("#poem-text").value="Keep this draft.";return true;})()');
@@ -68,9 +82,9 @@ let win;const watchdog=setTimeout(()=>{console.error('Poem photo fixture timed o
   await until(()=>choosers.length===3,'gallery button opens native picker');await until(()=>scanCalls.length===3,'same photo can be chosen again');assert.equal(choosers[2].mode,'selectMultiple');assert.notEqual(scanCalls[2].id,scanCalls[0].id);
   await until('!d.querySelector("#poem-take-photo").disabled','rescan finishes');
   await js('(()=>{d.querySelector(".poem-modal-card").scrollTop=0;return true;})()');
-  fs.mkdirSync(path.join(site,'.tmp/poem-photo-picker-20261005'),{recursive:true});fs.writeFileSync(path.join(site,'.tmp/poem-photo-picker-20261005/mobile-editor.png'),(await win.webContents.capturePage()).toPNG());
+  fs.mkdirSync(path.join(site,'.tmp/poem-scan-first-20261006'),{recursive:true});fs.writeFileSync(path.join(site,'.tmp/poem-scan-first-20261006/mobile-editor.png'),(await win.webContents.capturePage()).toPNG());
   await tap('#poem-cancel');scanningAvailable=false;await js('(()=>{w.controller.setActive(false);w.controller.setActive(true);return true;})()');await until('!d.querySelector("#poem-admin-status").textContent','unavailable state reloaded');await tap('#poem-add');
   assert.ok(await js('d.querySelector("#poem-take-photo").disabled && d.querySelector("#poem-choose-photos").disabled'),'unavailable scanner visibly disables both real controls');assert.match(await js('d.querySelector("#poem-scan-status").textContent'),/unavailable/);assert.equal(await js('d.querySelector("#poem-text").disabled'),false,'manual poem entry remains available');await tap('#poem-take-photo');assert.equal(choosers.length,3);
-  console.log('Poem photo picker passed: real camera/gallery and icon taps inside a same-origin iframe with strict CSP; native single/multi-file chooser events; cancellation preserves draft; 320/390/768px touch targets; real image compression; scan failure and exact retry; title/author/line/stanza review; same-photo reselection; busy/unavailable controls and manual fallback. No real camera, household, upload or AI provider used.');
+  console.log('Poem photo picker passed: real camera/gallery and icon taps inside a same-origin iframe with strict CSP; native single/multi-file chooser events; cancellation preserves draft; 320/390/768/1280px scan-first opening, dialog focus, scroll reset, hit testing and touch targets; real image compression; scan failure and exact retry; title/author/line/stanza review; same-photo reselection; busy/unavailable controls and manual fallback. No real camera, household, upload or AI provider used.');
   clearTimeout(watchdog);win.destroy();await new Promise(resolve=>server.close(resolve));app.quit();
 })().catch(error=>{console.error(error);clearTimeout(watchdog);if(win&&!win.isDestroyed())win.destroy();server.close();app.exit(1);});
