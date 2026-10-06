@@ -28,8 +28,11 @@ test('shared messages and reactions use the parent-authenticated bridge without 
   assert.equal((await bridge.post(request('bridge', { action: 'react-message', shared: true, messageId: 'message-1', emoji: '👍', householdId: 'foreign' }))).status, 200);
   assert.deepEqual(JSON.parse(bridge.calls[1][1].body), { shared: true, messageId: 'message-1', emoji: '👍' });
   assert.equal(bridge.calls[1][0], '/messages/react');
+  assert.equal((await bridge.post(request('bridge', { action: 'child-peer-message-settings', studentId: 'child-1', enabled: false, householdId: 'foreign' }))).status, 200);
+  assert.deepEqual(bridge.calls[2], ['/messages/peer/child-settings', { method: 'POST', body: JSON.stringify({ studentId: 'child-1', enabled: false }) }]);
   const signedOut = route('app/guard/dashboard/bridge/route.ts', false);
   assert.equal((await signedOut.post(request('bridge', { action: 'send-shared-message' }))).status, 401);
+  assert.equal((await signedOut.post(request('bridge', { action: 'child-peer-message-settings', studentId: 'child-1', enabled: false }))).status, 401);
   assert.equal(signedOut.calls.length, 0);
 });
 
