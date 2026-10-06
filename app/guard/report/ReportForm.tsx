@@ -35,6 +35,7 @@ export default function ReportForm({release}:{release:string}){
   const recorder=useRef<MediaRecorder|null>(null),stream=useRef<MediaStream|null>(null),timer=useRef<ReturnType<typeof setInterval>|null>(null),alive=useRef(true),restored=useRef('');
   const [replyFrozen,setReplyFrozen]=useState(false);
   const [storageLimited,setStorageLimited]=useState(false);
+  const [showEarlier,setShowEarlier]=useState(false);
   const [photos,setPhotos]=useState<DraftPhoto[]>([]),[replyPhotos,setReplyPhotos]=useState<DraftPhoto[]>([]),[photoBusy,setPhotoBusy]=useState(false);
   const sending=useRef(false),replyAttempt=useRef<Record<string,unknown>|null>(null);
   const draftKey=userId?'guard-bug-draft-v1:'+userId:'';
@@ -51,7 +52,7 @@ export default function ReportForm({release}:{release:string}){
       if(canceled)return;
       let next=blank(),nextPending:Record<string,unknown>|null=null,nextPhotos:DraftPhoto[]=[];
       try{const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(saved?.draft&&typeof saved.draft.description==='string'&&Array.isArray(saved.draft.studentIds)){next={...next,...saved.draft};nextPending=saved.pending||null;nextPhotos=(saved.pending?.photos||saved.photos||[]).filter((p:DraftPhoto)=>typeof p?.data==='string'&&p.data.length<=682668&&typeof p.id==='string').slice(0,3);}}catch{/* Storage may be unavailable. */}
-      restored.current=draftKey;setDraft(next);setPending(nextPending);setPhotos(nextPhotos);
+      restored.current=draftKey;setDraft(next);setShowEarlier(Boolean(next.occurredAt));setPending(nextPending);setPhotos(nextPhotos);
     });
     return()=>{canceled=true;};
   },[draftKey]);
@@ -98,7 +99,7 @@ export default function ReportForm({release}:{release:string}){
       const payload=pending||{action:'submit',...draft,photos,id:crypto.randomUUID(),occurredAt:draft.occurredAt?new Date(draft.occurredAt).toISOString():null,browser:clientInfo(release)};
       setPending(payload);
       try{
-        const result=await request<{report:BugReport}>(payload);setPending(null);setDraft(blank());setPhotos([]);setClip(null);setNotice('Report received · '+result.report.reference);
+        const result=await request<{report:BugReport}>(payload);setPending(null);setDraft(blank());setShowEarlier(false);setPhotos([]);setClip(null);setNotice('Report received · '+result.report.reference+' · '+new Date(result.report.createdAt).toLocaleString());
         setReports(value=>[result.report,...value.filter(r=>r.id!==result.report.id)]);setDetail(null);
       }catch(e){if(e instanceof RequestError&&e.status>=400&&e.status<500&&![401,408,409,429].includes(e.status))setPending(null);throw e;}
     });
@@ -121,8 +122,9 @@ export default function ReportForm({release}:{release:string}){
         <fieldset disabled={busy||photoBusy||!!pending||recording}>
           <label className={styles.field}>Describe the problem<textarea rows={6} value={draft.description} onChange={e=>change({description:e.target.value})} placeholder="My child was… Then they tapped… We expected… Instead…" required minLength={10} maxLength={12000}/><small>{draft.description.length.toLocaleString()} / 6,000 characters</small></label>
           <PhotoPicker photos={photos} onChange={setPhotos} disabled={busy||photoBusy||!!pending||recording} onBusy={setPhotoBusy}/>
-          <div className={styles.pair}><label className={styles.field}>Which area?<select value={draft.area} onChange={e=>change({area:e.target.value})}>{areas.map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
-          <label className={styles.field}>When? <small>Optional · your local time</small><input type="datetime-local" value={draft.occurredAt} onChange={e=>change({occurredAt:e.target.value})}/></label></div>
+          <label className={styles.field}>Which area?<select value={draft.area} onChange={e=>change({area:e.target.value})}>{areas.map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
+          <div className={styles.when}><Clock size={17}/><span>Date and time are recorded automatically when you send.</span><button type="button" aria-expanded={showEarlier} onClick={()=>{setShowEarlier(value=>!value);if(showEarlier)change({occurredAt:''});}}>{showEarlier?'Use submission time':'Happened earlier?'}</button></div>
+          {showEarlier&&<label className={styles.field}>When did it happen? <small>Your local date and time</small><input type="datetime-local" value={draft.occurredAt} onChange={e=>change({occurredAt:e.target.value})} required/></label>}
           {!!setup?.students.length&&<div className={styles.children}><span>Who was affected?</span><small>Leave blank for a general family report.</small><div>{setup.students.map(s=><label key={s.id}><input type="checkbox" checked={draft.studentIds.includes(s.id)} onChange={e=>change({studentIds:e.target.checked?[...draft.studentIds,s.id]:draft.studentIds.filter(id=>id!==s.id)})}/>{s.name}</label>)}</div></div>}
           <label className={styles.consent}><input type="checkbox" checked={draft.includeSetup} onChange={e=>change({includeSetup:e.target.checked})}/><span><strong>Include setup details</strong><small>App versions, linked computers, school provider and recent error references. No passwords, messages, school files or browsing history.</small></span></label>
           {draft.includeSetup&&<details className={styles.details}><summary><ShieldCheck size={17}/> Preview attached setup</summary>{selectedSetup?<SetupDetails setup={selectedSetup}/>:<p>{loading?'Loading setup…':'Setup preview unavailable. Retry loading, or uncheck setup details to send text only.'}</p>}<small>Parent browser, screen size, time zone and website version are included when you send.</small></details>}
@@ -133,7 +135,7 @@ export default function ReportForm({release}:{release:string}){
       </form>
     </section>
     <aside className={styles.history}><div className={styles.sectionTitle}><h2>Your reports</h2><button aria-label="Refresh reports" disabled={busy||loading} onClick={()=>void load()}><RefreshCw size={18}/></button></div>
-      {loading&&!reports.length?<p>Loading reports…</p>:!reports.length?<div className={styles.empty}><Bug size={25}/><p>Your reports and their progress will appear here.</p></div>:reports.map(r=><button className={styles.reportRow} key={r.id} disabled={busy||photoBusy} onClick={()=>void work(async()=>{setDetail(await request<ReportDetail>({action:'detail',id:r.id}));replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · {new Date(r.createdAt).toLocaleDateString()}</small><span className={styles.badge} data-status={r.status}>{statuses[r.status]}</span></span><ChevronRight size={18}/></button>)}
+      {loading&&!reports.length?<p>Loading reports…</p>:!reports.length?<div className={styles.empty}><Bug size={25}/><p>Your reports and their progress will appear here.</p></div>:reports.map(r=><button className={styles.reportRow} key={r.id} disabled={busy||photoBusy} onClick={()=>void work(async()=>{setDetail(await request<ReportDetail>({action:'detail',id:r.id}));replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{statuses[r.status]}</span></span><ChevronRight size={18}/></button>)}
       {hasMore&&<button disabled={busy} onClick={()=>void work(async()=>{const page=await request<{reports:BugReport[];hasMore:boolean}>({action:'list',offset:reports.length});setReports(value=>[...value,...page.reports]);setHasMore(page.hasMore);})}>Load earlier reports</button>}
       {detail&&<section className={styles.detail}><h3>{detail.report.reference}</h3><p className={styles.description}>{detail.report.description}</p><span className={styles.badge}>{statuses[detail.report.status]}</span>
         <SavedReportPhotos photos={detail.photos?.filter(p=>!p.eventId)}/>

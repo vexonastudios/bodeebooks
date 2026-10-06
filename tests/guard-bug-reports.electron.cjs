@@ -55,6 +55,11 @@ let win;const watchdog=setTimeout(()=>{console.error('Bug reports UI fixture tim
  await win.loadURL(origin);await until('document.body.textContent.includes("Alex")','context');
  for(const width of [320,390,768,1440]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,80));assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'no overflow '+width);}
  win.setContentSize(390,844);
+ assert.equal(await js('document.body.textContent.includes("Date and time are recorded automatically when you send.")'),true);
+ assert.equal(await js('!!document.querySelector("input[type=datetime-local]")'),false,'no date entry on the usual path');
+ await tap('Happened earlier?');assert.equal(await js('!!document.querySelector("input[type=datetime-local][required]")'),true);
+ await type('input[type=datetime-local]','2026-09-30T13:45');
+ await tap('Use submission time');assert.equal(await js('!!document.querySelector("input[type=datetime-local]")'),false);
  assert.equal(await js('document.querySelector("input[capture]").getAttribute("capture")'),'environment');
  assert.equal(await js('document.querySelector("input[multiple]").hasAttribute("capture")'),false);
  assert.equal(await js('document.body.textContent.includes("Take a photo of your child")'),true);
@@ -81,7 +86,7 @@ let win;const watchdog=setTimeout(()=>{console.error('Bug reports UI fixture tim
  const before=await js('document.querySelector("textarea").value');assert.ok(before.includes('Alex paused'));
  await win.reload();await until('document.body.textContent.includes("Retry sending")','draft restored');assert.equal(await js('document.querySelector("textarea").value'),before);
  assert.equal(await js('document.querySelectorAll("button[aria-label^=\\"Remove photo\\"]").length'),1,'photo retained after reload');
- await tap('Retry sending');await until('document.body.textContent.includes("Report received")','receipt');assert.equal(submits.length,2);assert.deepEqual(submits[0],submits[1]);assert.equal(await js('document.querySelector("textarea").value'),'');
+ await tap('Retry sending');await until('document.body.textContent.includes("Report received")','receipt');assert.equal(submits.length,2);assert.deepEqual(submits[0],submits[1]);assert.equal(submits[0].occurredAt,null);assert.equal(await js('document.querySelector("textarea").value'),'');
 
  await js('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("BUG-TEST")).click();true;');await until('document.body.textContent.includes("Retry photo")','image failure');
  await tap('Retry photo');await until('!!document.querySelector("button[aria-label=\\"Enlarge Attached photo 1\\"] img")','private parent photo');
