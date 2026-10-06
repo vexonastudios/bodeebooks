@@ -14,6 +14,9 @@ export async function POST(request:Request){
     else if(input.action==="operation-state")result=await operatorApi('/operations',{id:input.id,state:input.state,lastSeen:input.lastSeen});
     else if(input.action==="overview")result=await operatorApi();
     else if(input.action==="usage")result=await operatorApi(`/usage?days=${encodeURIComponent(String(input.days||7))}&family=${encodeURIComponent(String(input.family||"").slice(0,40))}`);
+    else if(input.action==="bug-reports")result=await operatorApi('/bug-reports?'+new URLSearchParams({status:String(input.status||'open'),search:String(input.search||'').slice(0,120),offset:String(input.offset||0)}));
+    else if(input.action==="bug-report-detail")result=await operatorApi('/bug-reports/detail?'+new URLSearchParams({id:String(input.id||''),householdId:String(input.householdId||'')}));
+    else if(input.action==="bug-report-update")result=await operatorApi('/bug-reports',{id:input.id,householdId:input.householdId,eventId:input.eventId,revision:input.revision,status:input.status,note:input.note,internalNote:input.internalNote});
     else if(input.action==="reports")result=await operatorApi(`/diagnostics?reference=${encodeURIComponent(String(input.reference||"").slice(0,40))}`);
     else if(["catalog","save","publish","upload","preview"].includes(input.action))result=await operatorApi("/control",input);
     else throw new OperatorError("Choose a staff action.",400);

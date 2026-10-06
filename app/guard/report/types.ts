@@ -1,0 +1,7 @@
+export const areas = [['general','Something else'],['school','School / Abeka'],['spelling','Spelling'],['vocabulary','Vocabulary'],['poems','Poems'],['messages','Messages'],['media','Video, music & audiobooks'],['games','Games'],['coins','Coins & rewards'],['chores','Chores'],['updates','Install / update'],['parent-dashboard','Parent dashboard']] as const;
+export const statuses = {new:'Received',investigating:'Investigating',waiting:'Needs more details',resolved:'Resolved'} as const;
+export type ReportStatus = keyof typeof statuses;
+export type Setup = {capturedAt:string;students:{id:string;name:string;grade?:string;schoolProvider?:string}[];devices?:{id:string;name:string;platform:string;appVersion:string;releaseChannel:string;studentId:string|null;lastSeenAt:string|null;locked:boolean;settingsRevision:number;acknowledgedRevision:number}[];school?:{rulesRevision:number;timeZone:string;scheduleEnabled:boolean};recentErrors?:{reference:string;deviceId:string;code:string;stage:string;version:string;receivedAt:string;occurredAt:number|null}[];browser?:Record<string,unknown>;setupIncluded?:boolean};
+export type BugReport = {id:string;reference:string;householdId?:string;description:string;area:string;occurredAt:string|null;inputKind:string;status:ReportStatus;revision:number;createdAt:string;updatedAt:string;context:Setup};
+export type ReportEvent = {id:string;role:'staff'|'parent';status:ReportStatus;note:string;internalNote?:string;createdAt:string};
+export type ReportDetail = {report:BugReport;events:ReportEvent[]};

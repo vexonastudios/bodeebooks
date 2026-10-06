@@ -43,6 +43,13 @@ export function setupCloudMobile({ navigate, refresh }) {
     const arrow = make('i', ''); arrow.dataset.lucide = 'chevron-right'; arrow.setAttribute('aria-hidden', 'true');
     link.append(mark, copy, arrow); accountLinks.append(link);
   }
+  const report = make('a', 'mobile-account-link cloud-report-bug');
+  report.href = '/guard/report/'; report.target = '_top';
+  const reportCopy = make('span', ''); reportCopy.append(make('strong', '', 'Report a bug'), make('small', '', 'Tell us what happened, by typing or recording.'));
+  report.append(icon('bug'), reportCopy, icon('chevron-right')); accountLinks.prepend(report);
+  const desktopReport = make('a', 'nav-item cloud-report-bug', 'Report a bug');
+  desktopReport.href = '/guard/report/'; desktopReport.target = '_top'; desktopReport.prepend(icon('bug'));
+  root.querySelector('.sidebar-nav').append(desktopReport);
   menus['mobile-more'].before(accountLinks);
   const addTabs = ['learning-videos', 'spelling', 'science-spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {

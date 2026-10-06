@@ -19,7 +19,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js';
 import { setupCloudMessages } from './cloud-messages.js?v=20261005-reply-focus1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
-import { setupCloudMobile } from './cloud-mobile.js';
+import { setupCloudMobile } from './cloud-mobile.js?v=20261006-bug-reports1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js';
