@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.291": {
+  "title": "Clearer conversations and fairer Earn Coins rounds",
+  "sections": [
+    {
+      "heading": "Version 1.2.291",
+      "headline": "Conversation history, accurate progress and fair practice",
+      "summary": "Child quick chat keeps the conversation visible, and Earn Coins avoids repeating earning questions within a round.",
+      "highlights": [
+        "Open child quick chats show conversation history and replies without repeated popups.",
+        "Completed school rings now fill the whole circle. Windows notification Reply in app opens and focuses the message composer.",
+        "Writing has visible Trash, Restore and Delete forever controls. Earn Coins excludes reserved questions and uses other enabled subjects when a mixed pool is short."
+      ]
+    }
+  ]
+},
   "1.2.290": {
   "title": "Spelling practice without a perfect-score gate",
   "sections": [
