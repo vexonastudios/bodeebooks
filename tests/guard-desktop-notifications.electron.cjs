@@ -26,6 +26,7 @@ modules['./workspace.module.css'] = 'exports.__esModule=true;exports.default=new
 modules['lucide-react'] = `const React=require('react');for(const name of ['Bell','BellOff','Send','X','Smartphone','Save','AlertTriangle'])exports[name]=props=>React.createElement('svg',{...props,width:props.size||24,height:props.size||24,viewBox:'0 0 24 24'},React.createElement('circle',{cx:12,cy:12,r:8,fill:'none',stroke:'currentColor'}));`;
 const bundle = Object.entries(modules).map(([id, source]) => `factories[${JSON.stringify(id)}]=function(module,exports,require){\n${source}\n};`).join('\n');
 let mode = 'setup', registered = false, messagePreview = false, unreadItems = [];
+let schoolCheckIn=false;
 const calls = [], errors = [];
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://fixture.local');
@@ -64,9 +65,10 @@ const server = http.createServer(async (req, res) => {
     const body = JSON.parse(raw); calls.push(body);
     if (body.operation === 'subscribe') registered = true;
     if (body.operation === 'preview') messagePreview = body.messagePreview;
+    if(body.operation==='school-check-in') schoolCheckIn=body.enabled;
     const devices = registered || mode === 'recovery' ? [{id:'a'.repeat(64),label:'Windows · Chrome',messagePreview,revokedAt:null,lastAcceptedAt:null,lastFailure:null}] : [];
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({supported:true,publicKey:Buffer.alloc(65,4).toString('base64url'),...(body.subscription?{deviceId:'a'.repeat(64)}:{}),devices,unread:unreadItems,sent:true})); return;
+    res.end(JSON.stringify({supported:true,publicKey:Buffer.alloc(65,4).toString('base64url'),...(body.subscription?{deviceId:'a'.repeat(64)}:{}),devices,unread:unreadItems,sent:true,schoolCheckIn:{enabled:schoolCheckIn}})); return;
   }
   res.writeHead(404);res.end();
 });
@@ -91,10 +93,10 @@ const until = async (win, expression) => {
   assert.equal(calls.filter(x=>x.operation==='test').length,1);
   assert.equal(await win.webContents.executeJavaScript("document.querySelector('a[href=\"ms-settings:notifications\"]').textContent"),'Open Windows notification settings');
   assert.ok(await win.webContents.executeJavaScript("document.querySelector('[aria-label=\"Windows notification settings\"]').textContent.includes('Turn on Notifications at the top')"));
-  assert.equal(await win.webContents.executeJavaScript("document.querySelectorAll('.notificationPreview').length"),1,'one preview switch for this device, never duplicated on remote devices');
-  assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').checked"),false);
-  await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').click()");
-  await until(win,"document.querySelector('.notificationPreview input').checked&&!document.querySelector('.notificationPreview input').disabled");
+  assert.equal(await win.webContents.executeJavaScript("document.querySelectorAll('.notificationPreview:not([data-school-check-in])').length"),1,'one preview switch for this device, never duplicated on remote devices');
+  assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview:not([data-school-check-in]) input').checked"),false);
+  await win.webContents.executeJavaScript("document.querySelector('.notificationPreview:not([data-school-check-in]) input').click()");
+  await until(win,"document.querySelector('.notificationPreview:not([data-school-check-in]) input').checked&&!document.querySelector('.notificationPreview:not([data-school-check-in]) input').disabled");
   assert.equal(calls.filter(x=>x.operation==='preview').length,1);assert.equal(messagePreview,true);
   fs.mkdirSync(path.join(site,'.tmp/notification-previews-20260929'),{recursive:true});
   fs.writeFileSync(path.join(site,'.tmp/notification-previews-20260929/desktop-notification-settings.png'),(await win.webContents.capturePage()).toPNG());
@@ -104,7 +106,11 @@ const until = async (win, expression) => {
   // Supply the trusted dashboard frame identity in this isolated UI fixture.
   await win.webContents.executeJavaScript("window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:document.querySelector('iframe').contentWindow,data:{type:'bodeeguard-phone-notifications'}}))");
   await until(win,"Boolean(document.querySelector('dialog[open]'))");
-  assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview input').checked"),true);
+  assert.equal(await win.webContents.executeJavaScript("document.querySelector('.notificationPreview:not([data-school-check-in]) input').checked"),true);
+  await win.webContents.executeJavaScript('document.querySelector("[data-school-check-in] input").click()');
+  await until(win,'document.querySelector("[data-school-check-in] input").checked && !document.querySelector("[data-school-check-in] input").disabled');
+  assert.equal(calls.filter(x=>x.operation==='school-check-in'&&x.enabled===true).length,1);
+  assert.equal(await win.webContents.executeJavaScript('fixture.permissionCalls'),0,'Check-in preference does not prompt');
   await win.setSize(390,844);
   assert.ok(await win.webContents.executeJavaScript("document.querySelector('dialog section').scrollWidth<=document.querySelector('dialog section').clientWidth"));
   fs.writeFileSync(path.join(site,'.tmp/notification-previews-20260929/phone-notification-settings.png'),(await win.webContents.capturePage()).toPNG());

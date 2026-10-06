@@ -49,7 +49,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
   let body: unknown;
   if (uploadOnly !== (input.action === "upload-file")) return response({ error: "Use the designated file upload endpoint." }, 400);
     switch (input.action) {
-    case "phone-notifications": path = "/notifications"; method = "POST"; body = { operation: input.operation, subscription: input.subscription, accountUserId: input.accountUserId, deviceId: input.deviceId, viewId: input.viewId, label: input.label, studentId: input.studentId, messageId: input.messageId, messagePreview: input.messagePreview }; break;
+    case "phone-notifications": path = "/notifications"; method = "POST"; body = { operation: input.operation, subscription: input.subscription, accountUserId: input.accountUserId, deviceId: input.deviceId, viewId: input.viewId, label: input.label, studentId: input.studentId, messageId: input.messageId, messagePreview: input.messagePreview, enabled: input.enabled }; break;
     case "approved-apps": path = "/apps"; method = "POST"; body = { action: input.operation, id: input.id, deviceId: input.deviceId, studentId: input.studentId, sha256: input.sha256, revision: input.revision, approved: input.approved }; break;
     case "push-ticket": path = "/push-ticket"; method = "POST"; body = {}; break;
     case "media": path="/media"; method="POST"; body={path:input.path,method:input.method,body:input.body,requestId:input.requestId,ifNoneMatch:input.ifNoneMatch}; break;

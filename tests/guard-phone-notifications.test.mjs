@@ -13,7 +13,7 @@ function fixture({ ios = false, standalone = true, permission = 'default', owner
   const browser = { document: { hidden: false }, Notification: { permission, requestPermission: () => { state.permissionCalls++; browser.Notification.permission = 'granted'; return Promise.resolve('granted'); } }, PushManager: {},
     navigator: { userAgent: ios ? 'iPhone' : 'Chrome', platform: 'fixture', serviceWorker: { ready: Promise.resolve({ pushManager: manager }),getRegistration:async()=>({pushManager:manager}) } },
     matchMedia: () => ({ matches: standalone }), atob, localStorage: { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) } };
-  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); if(operation==='preview')state.messagePreview=details.messagePreview; return {supported:state.configured,publicKey:state.configured?publicKey:null,deviceId:'a'.repeat(64),devices:state.owned&&(owner||state.sub)?[{id:'a'.repeat(64),label:'Phone',messagePreview:state.messagePreview,revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
+  const request = async (operation, subscription, userId,details) => { calls.push({ operation, subscription, userId,details }); if (state.offline) throw Error('offline'); if(operation==='preview')state.messagePreview=details.messagePreview;if(operation==='school-check-in')state.schoolCheckIn=details.enabled; return {schoolCheckIn:{enabled:state.schoolCheckIn===true},supported:state.configured,publicKey:state.configured?publicKey:null,deviceId:'a'.repeat(64),devices:state.owned&&(owner||state.sub)?[{id:'a'.repeat(64),label:'Phone',messagePreview:state.messagePreview,revokedAt:state.revoked?'2026-09-01':null,revokedReason:state.revoked?'remote':null}]:[],unread:[],enabled:operation==='subscribe',sent:true}; };
   const client = createParentNotifications({ userId: 'parent', browser, request, onChange: value => states.push(value) });
   return { client, browser, state, calls, states, data,request };
 }
@@ -213,4 +213,20 @@ test('Windows help is available in ordinary browser windows as well as the insta
     assert.equal(client.state().windows,true);assert.equal(client.state().desktopApp,standalone);client.dispose();
   }
   assert.equal(fixture({ios:true}).client.state().windows,false);
+});
+
+test('noon alerts keep child details private, preserve message badges and open the overview',async()=>{
+ const w=worker();w.self.badge=3;
+ await w.event('push',{data:{json:()=>({type:'school-check-in',schoolDate:'2026-10-06',body:'Secret names',url:'https://evil.test'})}});
+ assert.equal(w.notifications.length,1);const [title,options]=w.notifications[0];
+ assert.match(title,/Noon school check-in/);assert.equal(options.renotify,false);assert.equal(w.self.badge,3);
+ assert.equal(JSON.stringify(options).includes('Secret'),false);assert.equal(JSON.stringify(options).includes('evil.test'),false);
+ await w.event('notificationclick',{notification:options});assert.deepEqual(w.opened,['/dashboard/#overview']);
+});
+
+test('noon preference saves for the signed-in parent and an offline save never falsely toggles it',async()=>{
+ const f=fixture();await f.client.load();assert.equal(f.client.state().schoolCheckIn.enabled,false);
+ await f.client.setSchoolCheckIn(true);assert.equal(f.client.state().schoolCheckIn.enabled,true);
+ assert.equal(f.calls.at(-1).userId,'parent');assert.equal(f.calls.at(-1).details.enabled,true);assert.equal(f.state.permissionCalls,0);
+ f.state.offline=true;await f.client.setSchoolCheckIn(false);assert.equal(f.client.state().schoolCheckIn.enabled,true);assert.match(f.client.state().message,/offline/);
 });

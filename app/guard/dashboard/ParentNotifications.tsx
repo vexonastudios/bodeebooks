@@ -14,7 +14,7 @@ export default function ParentNotifications() {
   const client=useRef<ReturnType<typeof createParentNotifications>|null>(null),dialog=useRef<HTMLDialogElement>(null);
   const [open,setOpen]=useState(false),[dismissed,setDismissed]=useState(''),[label,setLabel]=useState('This device');
   const [replies,setReplies]=useState<NotificationDraft[]>([]);
-  const [state,setState]=useState({supported:false,desktopApp:false,windows:false,ready:false,permission:'default',setupDismissed:false,enabled:false,busy:true,message:'',iosInstall:false,attention:'',devices:[] as Device[],unread:[] as Unread[],deviceId:null as string|null});
+  const [state,setState]=useState({supported:false,desktopApp:false,windows:false,ready:false,permission:'default',setupDismissed:false,enabled:false,busy:true,message:'',iosInstall:false,attention:'',devices:[] as Device[],unread:[] as Unread[],deviceId:null as string|null,schoolCheckIn:{enabled:false}});
   useEffect(()=>{if(open)dialog.current?.showModal();},[open]);
   useEffect(()=>{
     if(!isLoaded)return;
@@ -115,6 +115,10 @@ export default function ParentNotifications() {
         <p>Get desktop or phone alerts when your children send messages. Choose whether alerts show your child’s name and a message preview.</p>
         {state.desktopApp&&<p className={styles.notificationHint}>Installing BodeeGuard and enabling alerts are separate steps. This computer needs its own notification permission, even if alerts already work on your phone.</p>}
         <p className={styles.notificationHint}>In a Windows alert, type your message and choose Send reply. For Enter-to-send, choose Reply in app. On other devices, tap the notification to open the conversation. Replies require your parent sign-in; test alerts have no reply button.</p>
+        <label className={styles.notificationPreview} data-school-check-in>
+          <input type="checkbox" aria-label="Noon school check-in" checked={state.schoolCheckIn.enabled} disabled={state.busy||!state.ready} onChange={event=>void client.current?.setSchoolCheckIn(event.target.checked)}/>
+          <span>Noon school check-in<small>One alert on school days for low activity, an offline computer, or lesson tracking that needs checking. Uses your school time zone. Turn on this device’s alerts to receive it.</small></span>
+        </label>
         {state.attention&&<p className={styles.notificationAttention} role="status">{state.attention}</p>}
         {state.iosInstall?<p>Add BodeeGuard to your Home Screen and open that icon to enable phone alerts.</p>:!state.supported?<p>Use Chrome or Edge on desktop, Chrome on Android, or the Home Screen app on iPhone for notifications.</p>:<>
           <p className={styles.notificationStatus}>{state.enabled?'On for this device':'Off for this device'}</p>

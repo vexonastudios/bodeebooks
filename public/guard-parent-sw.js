@@ -70,6 +70,13 @@ self.addEventListener('activate', event => event.waitUntil(self.clients.claim())
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data?.json() || {}; } catch { /* Empty pushes still display an alert. */ }
+  if(data.type==='school-check-in' && /^\d{4}-\d{2}-\d{2}$/.test(data.schoolDate||'')) {
+    event.waitUntil(self.registration.showNotification('BodeeGuard · Noon school check-in',{
+      body:'Some school activity or lesson tracking needs checking. Open your dashboard for details.',
+      icon:'/guard-icons/bodeeguard-parent-192.png',tag:'bodeeguard-school-check-in-'+data.schoolDate,
+      renotify:false,data:{type:'school-check-in'}
+    })); return;
+  }
   const studentId = validId(data.studentId) ? data.studentId : '';
   const unread = count(data.unread), test = data.type === 'test';
   const replyId = !test && studentId && validAccount(data.accountUserId) ? self.crypto?.randomUUID?.() : undefined;
@@ -135,6 +142,9 @@ self.addEventListener('pushsubscriptionchange', event => {
 });
 self.addEventListener('notificationclick', event => {
   const data = event.notification.data || {};
+  if(data.type==='school-check-in') {
+    event.notification.close();event.waitUntil(self.clients.openWindow('/dashboard/#overview'));return;
+  }
   if (event.action === 'reply' && typeof event.reply === 'string' && event.reply.trim()) {
     event.notification.close();
     event.waitUntil(sendReply({ ...data, pendingReply: event.reply.trim() }));

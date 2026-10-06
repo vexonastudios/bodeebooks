@@ -69,6 +69,8 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
     return {student,devices,device,online,connection,current,media,activity,goals,color:colors[index%colors.length],
       total:todaySeconds(snapshot,student.id),currentSeconds:current?goals.find(g=>g.id===current.id)?.seconds:null,
       done:required.filter(g=>g.complete).length,required:required.length,
+      portalChecks:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).map(p=>p.checked_at).filter(Boolean),
+      checkIn:snapshot.schoolCheckIn?.concerns?.find(c=>c.studentId===student.id),
       courses:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).flatMap(p=>p.courses)};
   }).sort((a,b)=>gradeOrder(b.student.grade)-gradeOrder(a.student.grade)
     || a.student.name.localeCompare(b.student.name, 'en', { sensitivity: 'base', numeric: true })
@@ -210,8 +212,8 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!model.online?model.connection:device.locked?'Computer locked':model.current?.title||'BodeeGuard connected'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
       const clocks=node('div','monitor-timer-row');
-      for(const [label,time,cls]of [['School today',model.total,''],['Subject today',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
-      clocks.title='Received school time and today’s time in the current subject. Values stay fixed until refresh.';card.append(clocks);
+      for(const [label,time,cls]of [['Recorded today',model.total,''],['Current subject',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
+      clocks.title='Time reported by the child app, separate from verified lesson completion. Abeka playback-only timing requires the updated child app; older totals cannot distinguish idle time.';card.append(clocks);
       const activity=node('div','monitor-activity-section'),head=node('div','monitor-activity-heading');head.append(node('span','','Used today'),node('span','','Module time'));activity.append(head);
       const list=node('div','monitor-activity-list');
       for(const item of model.activity){const row=node('div','monitor-activity-row');row.append(icon(item.icon),node('span','monitor-activity-name',item.label));if(item.complete)row.append(node('span','monitor-activity-done','✓'));row.append(node('span','monitor-activity-time',duration(item.seconds)));list.append(row);}
@@ -226,6 +228,18 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
         }
         card.append(lessons);
         if(model.courses.some(course=>abekaCourseStatus(course)==='refresh-needed'))card.append(node('p','cloud-abeka-refresh-note',abekaRefreshMessage));
+      }
+      if(model.courses.length){
+        const last=model.portalChecks.length?Math.min(...model.portalChecks.map(Date.parse)):NaN;
+        const checked=Number.isFinite(last)&&last<=now+60000;
+        const note=node('p','cloud-abeka-refresh-note',checked
+          ? 'Abeka lessons checked '+new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:snapshot.activityTimeZone||'America/Chicago'}).format(last)+(now-last>20*60000?' · Results may have changed.':'')
+          : 'Waiting for a current Abeka lesson check. Time alone does not confirm completed lessons.');
+        card.append(note);
+      }
+      if(model.checkIn){
+        const copy={'offline':'Noon check-in: computer offline. Schoolwork may not have synced.','tracking':'Noon check-in: lesson tracking needs checking. This does not prove your child was inactive.','little-activity':'Noon check-in: less than 15 minutes of required school activity reported.','paused':'Noon check-in: no required school activity reported in the past hour.'};
+        card.append(node('p','cloud-abeka-refresh-note',copy[model.checkIn.reason]||'Noon check-in: review today’s progress.'));
       }
       const actions=node('div','cloud-monitor-actions'),primary=node('div','cloud-monitor-actions monitor-primary-actions');
       top.after(primary);

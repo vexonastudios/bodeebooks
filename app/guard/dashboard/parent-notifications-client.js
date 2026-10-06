@@ -41,14 +41,14 @@ export function createParentNotifications({userId,browser=window,request=notific
   const supported=Boolean(browser.Notification&&browser.PushManager&&nav.serviceWorker&&(!ios||standalone));
   const desktopApp=Boolean(standalone&&!ios&&!/Android/.test(nav.userAgent));
   let reminder=null;try{reminder=JSON.parse(browser.localStorage.getItem(reminderKey)||'null');}catch{/* Optional reminder. */}
-  let state={supported,desktopApp,windows:/Windows/.test(nav.userAgent)&&!ios,ready:false,permission:browser.Notification?.permission||'default',setupDismissed:Boolean(reminder?.userId===userId&&reminder.until>Date.now()),enabled:false,busy:false,message:'',iosInstall:Boolean(ios&&!standalone),attention:'',devices:[],unread:[],deviceId:null};
+  let state={supported,desktopApp,windows:/Windows/.test(nav.userAgent)&&!ios,ready:false,permission:browser.Notification?.permission||'default',setupDismissed:Boolean(reminder?.userId===userId&&reminder.until>Date.now()),enabled:false,busy:false,message:'',iosInstall:Boolean(ios&&!standalone),attention:'',devices:[],unread:[],deviceId:null,schoolCheckIn:{enabled:false}};
   let publicKey=null,pending=false,disposed=false,lastCheck=0;
   const marker=()=>savedMarker(browser);
   const publish=value=>{state={...state,...value};if(!disposed)onChange(state);};
   const call=(operation,sub,details={})=>{if(disposed)throw Error('The parent account changed. Reopen notification settings.');return request(operation,sub,userId,details);};
   const saveMarker=(deviceId,renewed=Date.now())=>{if(disposed)return;try{browser.localStorage.setItem(markerKey,JSON.stringify({userId,deviceId,renewed}));}catch{/* Browser permission remains available. */}};
   function update(data) {
-    publish({...('devices' in data?{devices:data.devices}:{}),...('unread' in data?{unread:data.unread}:{}),...('deviceId' in data?{deviceId:data.deviceId}: {})});
+    publish({...('schoolCheckIn' in data?{schoolCheckIn:data.schoolCheckIn}:{}),...('devices' in data?{devices:data.devices}:{}),...('unread' in data?{unread:data.unread}:{}),...('deviceId' in data?{deviceId:data.deviceId}: {})});
   }
   async function run(work) {
     if(pending||disposed)return;
@@ -130,6 +130,10 @@ export function createParentNotifications({userId,browser=window,request=notific
       publish({message:'Alerts are off for that device. It cannot reconnect automatically.'});
     });},
     rename(deviceId,label){return run(async()=>{update(await call('rename',null,{deviceId,label}));publish({message:'Device name saved.'});});},
+    setSchoolCheckIn(enabled){return run(async()=>{
+      update(await call('school-check-in',null,{enabled}));
+      publish({message:enabled?'Noon school check-ins are on. Alerts use your school calendar and time zone.':'Noon school check-ins are off.'});
+    });},
     setPreview(messagePreview){return run(async()=>{
       if(!state.enabled||!state.deviceId||marker()?.userId!==userId)throw Error('Enable notifications on this device first.');
       update(await call('preview',null,{deviceId:state.deviceId,messagePreview}));
