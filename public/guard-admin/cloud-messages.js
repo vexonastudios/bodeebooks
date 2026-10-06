@@ -152,9 +152,10 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const peerSettings = textNode('div', '', 'cloud-peer-settings'); peerSettings.append(peerLabel, peerHint, settingsStatus); settingsDialog.append(peerSettings);
   const childSettings = textNode('section', '', 'cloud-child-peer-settings');
   childSettings.append(textNode('h3', 'Choose children'),
-    textNode('p', 'Pause sibling and group chats for a child who needs fewer distractions. Mom & Dad messages still work.', 'cloud-child-peer-hint'));
+    textNode('p', 'Pause family, sibling and group chats for a child who needs fewer distractions. Mom & Dad messages still work.', 'cloud-child-peer-hint'));
   const childSettingsRows = textNode('div', '', 'cloud-child-peer-rows');
-  childSettings.append(childSettingsRows); settingsDialog.append(childSettings);
+  const childSettingsStatus = textNode('p', '', 'cloud-chat-settings-status'); childSettingsStatus.setAttribute('role', 'status');
+  childSettings.append(childSettingsRows, childSettingsStatus); settingsDialog.append(childSettings);
   function renderChildPeerSettings() {
     const focusedId = childSettingsRows.contains(document.activeElement) ? document.activeElement.dataset.studentId : null;
     childSettingsRows.replaceChildren(...recipients().map(student => {
@@ -167,15 +168,15 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
       toggle.disabled = !childPeerSettings || childPeerSaving.has(student.id);
       toggle.addEventListener('change', async () => {
         const desired = toggle.checked; childPeerRevision++; childPeerSaving.add(student.id);
-        toggle.disabled = true; settingsStatus.classList.remove('is-error'); settingsStatus.textContent = `Saving ${student.name}…`;
+        toggle.disabled = true; childSettingsStatus.classList.remove('is-error'); childSettingsStatus.textContent = `Saving ${student.name}…`;
         try {
           const saved = await request('child-peer-message-settings', { studentId: student.id, enabled: desired });
           if (saved.studentId !== student.id || saved.enabled !== desired) throw new Error('The child messaging setting could not be confirmed.');
           childPeerSettings.set(student.id, desired);
-          settingsStatus.textContent = desired ? `${student.name} can use sibling and group chats.` : `${student.name}’s sibling and group chats are paused.`;
+          childSettingsStatus.textContent = desired ? `${student.name} can use family and sibling chats.` : `${student.name}’s family and sibling chats are paused.`;
         } catch (failure) {
-          settingsStatus.textContent = `${failure.message} ${student.name}’s previous setting is still shown.`;
-          settingsStatus.classList.add('is-error');
+          childSettingsStatus.textContent = `${failure.message} ${student.name}’s previous setting is still shown.`;
+          childSettingsStatus.classList.add('is-error');
         } finally { childPeerSaving.delete(student.id); renderChildPeerSettings(); }
       });
       row.append(label, toggle); return row;

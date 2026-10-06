@@ -198,6 +198,8 @@ async function run() {
   await wait('!document.querySelectorAll(".cloud-child-peer-row input")[1].disabled');
   assert.equal(childPeerSettings.get(fixture.students[1].id),false,'a parent can pause one child without changing the others');
   assert.equal(childPeerSettings.get(fixture.students[0].id),true);
+  assert.ok(await js('document.querySelector(".cloud-child-peer-settings .cloud-chat-settings-status").textContent.includes("Jamie")'),
+    'the save result is shown beside the child controls');
   win.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});win.webContents.sendInputEvent({type:'keyUp',keyCode:'Escape'});
   await wait('!document.querySelector("#messages-settings-dialog").open');
   assert.equal(await js('document.activeElement.id'),'messages-settings','closing returns focus to settings');
