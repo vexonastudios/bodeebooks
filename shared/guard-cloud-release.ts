@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.296": {
+    "title": "Child-controlled message sounds",
+    "sections": [
+      {
+        "heading": "Version 1.2.296",
+        "headline": "Children can mute message sounds",
+        "summary": "Each child can turn message chimes off or on without missing family conversations.",
+        "highlights": [
+          "A bell button in Messages and the quick conversation controls the alert sound.",
+          "Muted messages still arrive and remain visible in their conversations.",
+          "The sound choice stays with each child across app restarts."
+        ]
+      }
+    ]
+  },
   "1.2.295": {
   "title": "Keep Send clear in child Messages",
   "sections": [
