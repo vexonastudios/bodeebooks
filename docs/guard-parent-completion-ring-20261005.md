@@ -14,3 +14,7 @@ Validation:
 - Parent npm run build passed; git diff --check and official cloud remote check passed.
 
 Publication: pushed source for the next parent website deployment. This task does not deploy the website, API or a Windows child installer. The preceding parent notification reply fallback also remains queued.
+
+## Release status — October 5, 2026
+
+Published in Family Beta 1.2.291, parent deployment dpl_7Xn5pRn4TT4kAtNWPzVJ8fBFm27h. See [publication checks](guard-family-beta-1.2.291.md). Earlier source-only status describes the implementation task before this deployment. Physical family acceptance remains unobserved.

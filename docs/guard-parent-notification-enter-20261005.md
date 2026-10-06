@@ -32,3 +32,7 @@ References reviewed:
 ## Publication
 
 Source prepared for the next parent website deployment; not deployed by this task. No Windows installer, API deployment or update feed changed. Child quick-chat work in cloud source 11819f25 remains separately queued. Native toast Enter remains a browser/platform limitation and must not be described as resolved by this fallback.
+
+## Release status — October 5, 2026
+
+Published in Family Beta 1.2.291, parent deployment dpl_7Xn5pRn4TT4kAtNWPzVJ8fBFm27h. See [publication checks](guard-family-beta-1.2.291.md). Earlier source-only status describes the implementation task before this deployment. Physical family acceptance remains unobserved.
