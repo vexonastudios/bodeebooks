@@ -18,7 +18,8 @@ const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>>
       "summary": "White Noise controls move into the Messages header so children can reach the full composer.",
       "highlights": [
         "Private, family and group chats keep Send reachable, including on smaller or scaled screens.",
-        "White Noise keeps playing while the controls move between Messages and the dashboard."
+        "White Noise keeps playing while the controls move between Messages and the dashboard.",
+        "Children can pause, resume or choose White Noise directly from the Messages header."
       ]
     }
   ]
