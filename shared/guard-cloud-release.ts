@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.292": {
+  "title": "Responsive school controls and scheduled restarts",
+  "sections": [
+    {
+      "heading": "Version 1.2.292",
+      "headline": "Keep paused schoolwork safe and responsive",
+      "summary": "The paused-school close prompt stays inside BodeeGuard, and the thirty-minute restart choice now schedules a warned restart.",
+      "highlights": [
+        "Keep school paused and Escape cancel the close prompt without reloading the lesson or losing unfinished answers.",
+        "A slow or failed close request leaves the dashboard responsive. Changed school sessions dismiss outdated confirmations.",
+        "Restart in 30 minutes schedules the restart; open schoolwork and drafts still delay it until they are safe."
+      ]
+    }
+  ]
+},
   "1.2.291": {
   "title": "Clearer conversations and fairer Earn Coins rounds",
   "sections": [
