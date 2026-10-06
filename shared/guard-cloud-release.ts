@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.293": {
+  "title": "Keep your Abeka lesson while checking Grades",
+  "sections": [
+    {
+      "heading": "Version 1.2.293",
+      "headline": "Grades no longer restarts the open video",
+      "summary": "Abeka Grades & To-Do opens separately while the current lesson remains paused in place.",
+      "highlights": [
+        "Video Lessons returns to the same player, watched range and unfinished answers without reloading or autoplay.",
+        "Dashboard and breaks preserve the selected school page; hidden pages cannot play, count school time or request fullscreen.",
+        "If Grades crashes, children can return to the intact lesson. Parent locks, child changes and explicit reopening still close both pages."
+      ]
+    }
+  ]
+},
   "1.2.292": {
   "title": "Responsive school controls and scheduled restarts",
   "sections": [
