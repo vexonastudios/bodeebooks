@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.294": {
+  "title": "Clearer school progress and child conversations",
+  "sections": [
+    {
+      "heading": "Version 1.2.294",
+      "headline": "Abeka time follows the video, with clearer progress checks",
+      "summary": "Abeka time requires advancing video, confirmed daily lessons stay checked when the next lesson appears, and child Messages has a clearer conversation layout.",
+      "highlights": [
+        "Paused or stalled Abeka video no longer keeps counting from mouse or keyboard activity. The dashboard shows when lessons were last verified.",
+        "Optional noon school check-ins distinguish low recorded activity, offline computers and tracking that needs checking. Enable them in notification settings.",
+        "Child Messages has a searchable conversation list, a larger chat history and a compact composer. Parent bug reports accept reviewed photos of the child’s screen."
+      ]
+    }
+  ]
+},
   "1.2.293": {
   "title": "Keep your Abeka lesson while checking Grades",
   "sections": [
