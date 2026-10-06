@@ -9,6 +9,20 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.295": {
+  "title": "Keep Send clear in child Messages",
+  "sections": [
+    {
+      "heading": "Version 1.2.295",
+      "headline": "White Noise no longer covers Send",
+      "summary": "White Noise controls move into the Messages header so children can reach the full composer.",
+      "highlights": [
+        "Private, family and group chats keep Send reachable, including on smaller or scaled screens.",
+        "White Noise keeps playing while the controls move between Messages and the dashboard."
+      ]
+    }
+  ]
+},
   "1.2.294": {
   "title": "Clearer school progress and child conversations",
   "sections": [
