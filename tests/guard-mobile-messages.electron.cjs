@@ -26,6 +26,7 @@ const history = new Map();
 history.set('11111111-1111-4111-8111-000000000001', [{id:'incoming-1', sequence:'9', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 const messageGroups = Array.from({length:20},(_,i)=>({id:'group-' + i,kind:i%2?'parent':'siblings',closedAt:i===0?'2026-10-05T12:00:00Z':null,members:fixture.students.filter((_,j)=>i===19||[i%9,(i+1)%9,(i+2)%9].includes(j)).map(student=>({studentId:student.id,name:student.name}))}));
 let peerMessagingEnabled=false, failPeerSetting=true;
+const childPeerSettings=new Map(fixture.students.map(student=>[student.id,true]));
 let failSend = true, failSharedSend = true;
 const calls = [];
 const server = http.createServer(async (req, res) => {
@@ -50,7 +51,8 @@ const server = http.createServer(async (req, res) => {
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
     if (input.action === 'list-files') output = { files: [], usage: { bytes: 0 } };
-    if (input.action === 'list-message-groups') output = {groups:messageGroups,peerMessagingEnabled};
+    if (input.action === 'list-message-groups') output = {groups:messageGroups,peerMessagingEnabled,
+      childPeerSettings:[...childPeerSettings].map(([studentId,enabled])=>({studentId,enabled}))};
     if (input.action === 'list-family-messages') output = {messages:[],childrenCanPost:false,version:'0'};
     if (input.action === 'list-group-messages') output = {group:messageGroups.find(group=>group.id===input.groupId),messages:[],version:'0'};
     if (input.action === 'create-message-group') output = {group:messageGroups[19]};
@@ -61,6 +63,9 @@ const server = http.createServer(async (req, res) => {
     if (input.action === 'peer-message-settings') {
       if(failPeerSetting){failPeerSetting=false;res.statusCode=503;return res.end(JSON.stringify({error:'Connection interrupted.'}));}
       peerMessagingEnabled=input.enabled;output={peerMessagingEnabled};
+    }
+    if (input.action === 'child-peer-message-settings') {
+      childPeerSettings.set(input.studentId,input.enabled);output={studentId:input.studentId,enabled:input.enabled};
     }
     if (input.action === 'list-messages') output = { studentId: input.studentId, messages: input.before ? [{id:'older-1',sender:'child',body:'Yesterday’s message',createdAt:'2026-09-24T14:30:00Z'}] : history.get(input.studentId)||[], version: (history.get(input.studentId)||[]).length, nextBefore: input.before ? null : 'older-page' };
     if (input.action === 'send-message') {
@@ -188,6 +193,11 @@ async function run() {
   await js('document.querySelector(".cloud-peer-setting").click()');
   await wait('document.querySelector(".cloud-peer-setting input").checked && !document.querySelector(".cloud-peer-setting input").disabled');
   assert.equal(peerMessagingEnabled,true,'the existing API saves the toggle');
+  assert.equal(await js('document.querySelectorAll(".cloud-child-peer-row input").length'),9,'all children have individual controls');
+  await js('document.querySelectorAll(".cloud-child-peer-row input")[1].click()');
+  await wait('!document.querySelectorAll(".cloud-child-peer-row input")[1].disabled');
+  assert.equal(childPeerSettings.get(fixture.students[1].id),false,'a parent can pause one child without changing the others');
+  assert.equal(childPeerSettings.get(fixture.students[0].id),true);
   win.webContents.sendInputEvent({type:'keyDown',keyCode:'Escape'});win.webContents.sendInputEvent({type:'keyUp',keyCode:'Escape'});
   await wait('!document.querySelector("#messages-settings-dialog").open');
   assert.equal(await js('document.activeElement.id'),'messages-settings','closing returns focus to settings');

@@ -482,6 +482,12 @@
 .cloud-chat-settings-dialog .cloud-peer-setting input:disabled { opacity:.6; cursor:wait; }
 .cloud-chat-settings-dialog input:focus-visible, .cloud-chat-settings-close:focus-visible { outline:2px solid #a5b4fc; outline-offset:3px; }
 .cloud-chat-settings-dialog .cloud-peer-settings small { margin:6px 0 4px; font-size:13px; line-height:1.5; }
+.cloud-child-peer-settings { margin-top:16px; padding-top:14px; border-top:1px solid #ffffff22; }
+.cloud-child-peer-settings h3 { margin:0 0 4px; font-size:15px; }
+.cloud-child-peer-hint { margin:0 0 10px; color:#aebbd1; font-size:13px; line-height:1.45; }
+.cloud-child-peer-rows { display:grid; gap:4px; max-height:min(40dvh,360px); overflow:auto; overscroll-behavior:contain; }
+.cloud-child-peer-row { min-height:48px; padding:2px 8px; border-radius:9px; }
+.cloud-child-peer-row:nth-child(odd) { background:#ffffff08; }
 .cloud-chat-settings-status { margin:8px 0 0; font-size:12px; color:#9eefdd; line-height:1.5; }
 .cloud-chat-settings-status:empty { display:none; }
 .cloud-chat-settings-status.is-error { color:#ffb7b7; }

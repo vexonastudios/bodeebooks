@@ -169,6 +169,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "send-shared-message": path = "/messages/shared/send"; method = "POST"; body = { familyThreadId: input.familyThreadId, groupId: input.groupId, body: input.body, recipients: input.recipients }; break;
     case "family-message-settings": path = "/messages/family/settings"; method = "POST"; body = { childrenCanPost: input.childrenCanPost }; break;
     case "peer-message-settings": path = "/messages/peer/settings"; method = "POST"; body = { enabled: input.enabled }; break;
+    case "child-peer-message-settings": path = "/messages/peer/child-settings"; method = "POST"; body = { studentId: input.studentId, enabled: input.enabled }; break;
     case "list-message-groups": path = "/messages/groups/list"; method = "POST"; body = {}; break;
     case "create-message-group": path = "/messages/groups/create"; method = "POST"; body = { id: input.id, studentIds: input.studentIds }; break;
     case "close-message-group": path = "/messages/groups/close"; method = "POST"; body = { groupId: input.groupId }; break;
