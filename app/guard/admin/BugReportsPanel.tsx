@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {Bug,ChevronLeft,ChevronRight,RefreshCw,Save,Search} from 'lucide-react';
 import {statuses,areas,type BugReport,type ReportDetail,type ReportStatus} from '../report/types';
+import {SavedReportPhotos} from '../report/ReportPhotos';
 import SetupDetails from '../report/SetupDetails';
 import styles from './admin.module.css';
 async function request<T>(action:string,input:Record<string,unknown>={}):Promise<T>{
@@ -33,11 +34,12 @@ export default function BugReportsPanel(){
     </div><div>{detail?<article className={styles.panel}>
       <span className={styles.eyebrow}>{detail.report.reference}</span><h2>{areas.find(a=>a[0]===detail.report.area)?.[1]}</h2>
       <p className={styles.bugText}>{detail.report.description}</p>
+      <SavedReportPhotos photos={detail.photos?.filter(p=>!p.eventId)} staff householdId={detail.report.householdId}/>
       <p>Reported {new Date(detail.report.createdAt).toLocaleString()} · {detail.report.inputKind==='voice'?'Reviewed voice transcript':'Typed report'}</p>
       {detail.report.occurredAt&&<p>Parent’s incident time: {new Date(detail.report.occurredAt).toLocaleString()}</p>}
       <details className={styles.bugContext}><summary>Setup & recent diagnostics</summary><SetupDetails setup={detail.report.context}/></details>
       <details className={styles.bugContext}><summary>Identifiers for support investigation</summary><code>Family: {detail.report.householdId}</code>{detail.report.context.devices?.map(d=><code key={d.id}>{d.name}: {d.id}</code>)}</details>
-      {detail.events.map(event=><div key={event.id} className={styles.bugEvent}><small>{event.role==='staff'?'Staff':'Parent'} · {new Date(event.createdAt).toLocaleString()} · {statuses[event.status]}</small>{event.note&&<p className={styles.bugText}>{event.note}</p>}{event.internalNote&&<p className={styles.bugText}><strong>Internal note: </strong>{event.internalNote}</p>}</div>)}
+      {detail.events.map(event=><div key={event.id} className={styles.bugEvent}><small>{event.role==='staff'?'Staff':'Parent'} · {new Date(event.createdAt).toLocaleString()} · {statuses[event.status]}</small>{event.note&&<p className={styles.bugText}>{event.note}</p>}<SavedReportPhotos photos={detail.photos?.filter(p=>p.eventId===event.id)} staff householdId={detail.report.householdId}/>{event.internalNote&&<p className={styles.bugText}><strong>Internal note: </strong>{event.internalNote}</p>}</div>)}
       <form className={styles.bugReview} onSubmit={e=>{e.preventDefault();void work(async()=>{
         const input=saveAttempt.current||{id:detail.report.id,householdId:detail.report.householdId,revision:detail.report.revision,eventId:crypto.randomUUID(),status:nextStatus,note,internalNote};
         saveAttempt.current=input;

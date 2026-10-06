@@ -45,3 +45,11 @@ test('report routes and return paths work on the parent domain without changing 
  assert.deepEqual(guardRoute('https://guard.bodeebooks.com/report/api/','POST'),{kind:'rewrite',url:'https://guard.bodeebooks.com/guard/report/api/'});
  assert.equal(guardRoute('https://guard.bodeebooks.com/guard/report/').url,'https://guard.bodeebooks.com/report/');
 });
+
+test('report photos travel only through authenticated parent/staff proxies',async()=>{
+ const f=route(),id='f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1',photos=[{id,data:'synthetic'}];
+ await f.POST(req({action:'submit',id,photos}));assert.deepEqual(f.calls[0].body.photos,photos);
+ await f.POST(req({action:'reply',id,note:'',revision:1,eventId:id,photos}));assert.deepEqual(f.calls[1].body.photos,photos);
+ await f.POST(req({action:'photo',id,householdId:'foreign'}));assert.equal(f.calls[2].p,'/bug-reports/photos/'+id);assert.equal(f.calls[2].body,undefined);
+ assert.equal((await f.POST(req({action:'photo',id:'../../operator'}))).status,400);
+});

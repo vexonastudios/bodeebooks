@@ -4,4 +4,5 @@ export type ReportStatus = keyof typeof statuses;
 export type Setup = {capturedAt:string;students:{id:string;name:string;grade?:string;schoolProvider?:string}[];devices?:{id:string;name:string;platform:string;appVersion:string;releaseChannel:string;studentId:string|null;lastSeenAt:string|null;locked:boolean;settingsRevision:number;acknowledgedRevision:number}[];school?:{rulesRevision:number;timeZone:string;scheduleEnabled:boolean};recentErrors?:{reference:string;deviceId:string;code:string;stage:string;version:string;receivedAt:string;occurredAt:number|null}[];browser?:Record<string,unknown>;setupIncluded?:boolean};
 export type BugReport = {id:string;reference:string;householdId?:string;description:string;area:string;occurredAt:string|null;inputKind:string;status:ReportStatus;revision:number;createdAt:string;updatedAt:string;context:Setup};
 export type ReportEvent = {id:string;role:'staff'|'parent';status:ReportStatus;note:string;internalNote?:string;createdAt:string};
-export type ReportDetail = {report:BugReport;events:ReportEvent[]};
+export type ReportPhoto = {id:string;eventId:string|null;width:number;height:number;size:number};
+export type ReportDetail = {report:BugReport;events:ReportEvent[];photos?:ReportPhoto[]};
