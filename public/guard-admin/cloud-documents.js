@@ -1,4 +1,4 @@
-import { previewDocument, closeDocumentPreview } from './cloud-document-preview.js?v=20260929-documents2';
+import { previewDocument, closeDocumentPreview } from './cloud-document-preview.js?v=20261007-grade-preview1';
 
 export const documentNode = (tag, className = '', text = '') => {
   const node = document.createElement(tag); node.className = className; node.textContent = text; return node;

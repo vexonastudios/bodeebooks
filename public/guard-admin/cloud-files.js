@@ -19,10 +19,17 @@ export function setupCloudFiles({ endpoint, gradePaper }) {
       copy.append(tools.element('p', `${students.find(student => student.id === file.studentId)?.name || 'Student'} · ${new Date(file.createdAt).toLocaleString()}`));
       const tag = tools.element('span', file.gradeId ? 'Grade recorded' : file.purpose === 'message' ? 'Message attachment' : 'Needs a grade'); tag.className = 'gradebook-file-tag'; tag.prepend(gradebookIcon(file.gradeId ? 'circle-check' : 'clock-3')); copy.append(tag);
       const actions = tools.element('div'); actions.className = 'gradebook-file-actions';
-      if (file.ready) actions.append(gradebookButton('Open', 'eye', () => tools.preview(() => request('read-file', { id: file.id }), {
-        review: async input => { const value = await request('review-file', input); void refresh(); return value; },
-        remove: async id => { await request('remove-file', { id }); void refresh(); }
-      })));
+      if (file.ready) actions.append(gradebookButton('Open', 'eye', () => {
+        const read = () => request('read-file', { id: file.id });
+        const review = async input => { const value = await request('review-file', input); void refresh(); return value; };
+        // The hosted dashboard has a safe, paged PDF viewer shared with Documents.
+        // The isolated renderer retains its private-file fallback for other files.
+        if (file.purpose === 'paper' && typeof window.previewPrivatePaper === 'function') {
+          void window.previewPrivatePaper({ file, read, review,
+            childName: students.find(student => student.id === file.studentId)?.name || 'Student',
+            grade: !file.gradeId && students.some(student => student.id === file.studentId && !student.archived_at) ? gradePaper : null });
+        } else void tools.preview(read, { review, remove: async id => { await request('remove-file', { id }); void refresh(); } });
+      }));
       else copy.append(tools.element('p', 'Upload not yet confirmed. Retry the original upload or remove this incomplete copy.'));
       if (file.ready && file.purpose === 'paper' && !file.gradeId && students.some(student => student.id === file.studentId && !student.archived_at)) actions.append(gradebookButton('Record grade', 'notebook-pen', () => gradePaper(file), 'btn btn-primary'));
       actions.append(gradebookButton('Remove', 'trash-2', async () => {

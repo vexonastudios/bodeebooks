@@ -1,6 +1,6 @@
 // Render submitted copies in the parent's browser. PDF scripts, links and
 // attachments are never executed. No document bytes are persisted by this UI.
-import { documentNode as node, documentButton as button } from './cloud-documents.js?v=20260929-documents2';
+import { documentNode as node, documentButton as button } from './cloud-documents.js?v=20261007-grade-preview1';
 let current = null;
 export function closeDocumentPreview() { current?.close(); }
 export async function previewDocument({ file: initial, childName, read, review, grade, print = false }) {
@@ -9,7 +9,7 @@ export async function previewDocument({ file: initial, childName, read, review, 
   const urls = [], frames = [];
   const dialog = node('dialog', 'cloud-document-dialog'); dialog.setAttribute('aria-label', initial.name);
   const head = node('div', 'cloud-document-view-header');
-  const title = node('div'); title.append(node('h2', '', initial.name), node('p', 'cloud-note', childName));
+  const title = node('div'); title.append(node('span', 'cloud-document-kicker', 'Private family paper'), node('h2', '', initial.name), node('p', 'cloud-note', childName));
   const status = node('p', 'cloud-note', 'Opening document…'); status.setAttribute('role', 'status');
   function close() {
     if (!live) return; live = false;
@@ -135,3 +135,12 @@ export async function previewDocument({ file: initial, childName, read, review, 
 }
 window.addEventListener('pagehide', closeDocumentPreview);
 document.addEventListener('visibilitychange', () => { if (document.hidden) closeDocumentPreview(); });
+
+// Grades and Documents use the same private, canvas-rendered viewer. Keep the
+// reviewed/grade callbacks owned by the screen that opened the paper.
+window.previewPrivatePaper = ({ file, read, review, childName, grade }) => previewDocument({
+  file, read, childName,
+  review: async current => (await review({ id: current.id, rotation: current.rotation || 0,
+    reviewed: !current.reviewedAt, gradeId: current.gradeId })).file,
+  grade: grade ? current => grade(current) : null
+});

@@ -22,8 +22,8 @@ import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requ
 import { setupCloudMobile } from './cloud-mobile.js?v=20261006-mobile-media1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
-import { setupCloudFiles } from './cloud-files.js';
-import { setupCloudDocuments } from './cloud-documents.js?v=20260929-documents2';
+import { setupCloudFiles } from './cloud-files.js?v=20261007-grade-preview1';
+import { setupCloudDocuments } from './cloud-documents.js?v=20261007-grade-preview1';
 import { setupCloudGames } from './cloud-games-ui.js?v=20261001-game-time1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js?v=20261005-reply-format1';

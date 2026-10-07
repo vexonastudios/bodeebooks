@@ -24,6 +24,14 @@
 .cloud-inline-audio-status:empty { display: none; }
 .cloud-file-dialog audio, .cloud-chat-voice-preview audio { color-scheme: dark; }
 
+/* Keep attachment previews centered even when the dashboard sets dialog margins. */
+.cloud-file-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(960px,calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);padding:24px;box-shadow:0 28px 80px #0009}
+.cloud-file-dialog h2{margin:0 0 12px;font-size:clamp(20px,2vw,26px);line-height:1.2}
+.cloud-file-dialog>p[role=status]{color:#b9c9da;line-height:1.45}
+.cloud-file-dialog>button.btn:first-of-type{float:right;margin:0 0 12px 16px}
+.cloud-file-dialog .btn:focus-visible{outline:2px solid #8cf0d4;outline-offset:3px}
+@media(max-width:700px){.cloud-file-dialog{width:calc(100vw - 16px);max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:16px}.cloud-file-dialog .btn{max-width:100%;white-space:normal}}
+
 .cloud-inline-image { display: block; width: min(320px,100%); max-width: 100%; min-height: 72px; padding: 0; margin: 7px 0; border: 1px solid #8bd6cf44; border-radius: 12px; overflow: hidden; background: #0c1c2b99; color: #d3dbee; cursor: pointer; text-align: left; }
 .cloud-inline-image img { display: block; width: 100%; max-height: 280px; object-fit: contain; }
 .cloud-inline-image img:not([src]) { display: none; }
