@@ -9,7 +9,44 @@ export function studentAvatar(student, className = '') {
   }
   return avatar;
 }
-export function editStudentProfile({ student, editor, field, mutate }) {
+// A real button keeps the photo shortcut discoverable and keyboard accessible.
+// Long press is an additional route; vertical scrolling retains native behavior.
+export function studentPhotoShortcut(student, openEditor) {
+  const button = node('button', 'cloud-student-photo-shortcut');
+  button.type = 'button'; button.dataset.cloudMutation = 'true';
+  button.setAttribute('aria-label', `Edit ${student.name}’s profile picture`);
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.title = 'Tap or hold to change profile picture';
+  button.append(studentAvatar(student, 'monitor-avatar'));
+  const badge = node('span', 'cloud-student-photo-badge'); badge.append(profileIcon('camera')); button.append(badge);
+  let stopPress = () => {}, suppressClickUntil = 0;
+  function open() {
+    stopPress();
+    if (!button.disabled && button.isConnected && !document.getElementById('cloud-editor')?.open) openEditor();
+  }
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    if (Date.now() < suppressClickUntil) { event.preventDefault(); return; }
+    open();
+  });
+  button.addEventListener('pointerdown', event => {
+    stopPress(); suppressClickUntil = 0;
+    if (event.button !== 0 || !event.isPrimary || button.disabled) return;
+    const startX = event.clientX, startY = event.clientY, controller = new AbortController();
+    const options = { capture: true, passive: true, signal: controller.signal };
+    const timer = setTimeout(() => { suppressClickUntil = Date.now() + 900; open(); }, 500);
+    stopPress = () => { clearTimeout(timer); controller.abort(); };
+    window.addEventListener('pointermove', move => {
+      if (move.pointerId === event.pointerId && Math.hypot(move.clientX - startX, move.clientY - startY) > 10) stopPress();
+    }, options);
+    for (const type of ['pointerup', 'pointercancel', 'scroll', 'blur']) window.addEventListener(type, stopPress, options);
+    button.addEventListener('pointerleave', stopPress, options);
+  });
+  button.addEventListener('contextmenu', event => { event.preventDefault(); event.stopPropagation(); suppressClickUntil = Date.now() + 900; open(); });
+  button.addEventListener('dragstart', event => event.preventDefault());
+  return button;
+}
+export function editStudentProfile({ student, editor, field, mutate, photoOnly = false }) {
   let photo, bitmap, reading = false, generation = 0;
   const panel = node('section', 'cloud-profile-photo'), preview = node('div', 'cloud-profile-preview');
   preview.append(studentAvatar(student));
@@ -52,12 +89,42 @@ export function editStudentProfile({ student, editor, field, mutate }) {
     } catch (err) { if (current === generation) error.textContent = err.message || 'This photo could not be opened.'; }
     finally { if (current === generation) reading = false; file.value = ''; }
   };
-  editor('Edit Student', [panel, field('Name', 'name', student.name), field('Grade level (optional)', 'grade', student.grade || '', { required: false, maxLength: 30 })], async form => {
+  const fields = photoOnly ? [panel] : [panel, field('Name', 'name', student.name), field('Grade level (optional)', 'grade', student.grade || '', { required: false, maxLength: 30 })];
+  editor(photoOnly ? `${student.name}’s profile picture` : 'Edit Student', fields, async form => {
     if (reading) throw Error('Please wait for your photo to finish preparing.');
     if (photo && photo.length > 88000) throw Error('Choose a simpler photo or zoom out and try again.');
-    await mutate('edit-student', { studentId: student.id, name: form.get('name'), grade: form.get('grade'), ...(photo !== undefined ? { photo } : {}) });
+    await mutate('edit-student', { studentId: student.id, name: photoOnly ? student.name : form.get('name'), grade: photoOnly ? student.grade || '' : form.get('grade'), ...(photo !== undefined ? { photo } : {}) });
   });
   const dialog = document.getElementById('cloud-editor');
-  dialog.addEventListener('close', () => { generation++; bitmap?.close(); bitmap = null; }, { once: true });
+  dialog.classList.toggle('cloud-profile-photo-editor', photoOnly);
+  if (photoOnly && dialog.open) choose.focus({ preventScroll: true });
+  dialog.addEventListener('close', () => { generation++; bitmap?.close(); bitmap = null; dialog.classList.remove('cloud-profile-photo-editor'); }, { once: true });
   window.lucide?.createIcons();
+}
+
+// Destructive profile action stays separate from the reversible Archive action.
+export function confirmStudentDeletion({ student, remove }) {
+  if (document.getElementById('cloud-delete-student')) return;
+  const previous=document.activeElement, dialog=node('dialog','cloud-delete-student');
+  dialog.id='cloud-delete-student';dialog.setAttribute('aria-labelledby','cloud-delete-student-title');
+  dialog.setAttribute('aria-describedby','cloud-delete-student-description');
+  const heading=node('h2','',`Delete ${student.name}?`);heading.id='cloud-delete-student-title';
+  const description=node('p','','This removes the student profile from your family and disconnects their assigned computers. Saved school history and shared conversations stay in your family records.');
+  description.id='cloud-delete-student-description';
+  const note=node('p','cloud-delete-student-note','This cannot be restored. Choose Archive instead if you may want this profile back.');
+  const error=node('p','cloud-profile-error');error.setAttribute('role','alert');
+  const actions=node('div','cloud-delete-student-actions'),cancel=node('button','btn btn-secondary','No, keep student'),yes=node('button','btn cloud-student-delete','Yes, delete student');
+  cancel.type=yes.type='button';cancel.autofocus=true;yes.append(profileIcon('trash-2'));
+  let busy=false;
+  cancel.onclick=()=>dialog.close();
+  dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+  yes.onclick=async()=>{
+    if(busy)return;
+    busy=true;cancel.disabled=yes.disabled=true;error.textContent='';yes.textContent='Deleting…';dialog.setAttribute('aria-busy','true');
+    try {await remove({studentId:student.id,confirmation:true,expectedName:student.name});dialog.close();}
+    catch(err){error.textContent=err.message||'The student could not be deleted. Please try again.';}
+    finally {busy=false;cancel.disabled=yes.disabled=false;yes.textContent='Yes, delete student';dialog.removeAttribute('aria-busy');}
+  };
+  dialog.addEventListener('close',()=>{dialog.remove();if(previous?.isConnected)previous.focus({preventScroll:true});else document.querySelector('#students-list button')?.focus({preventScroll:true});},{once:true});
+  actions.append(cancel,yes);dialog.append(heading,description,note,error,actions);document.body.append(dialog);dialog.showModal();cancel.focus({preventScroll:true});window.lucide?.createIcons();
 }

@@ -1,0 +1,394 @@
+@import './cloud-student-day.css';
+@import './cloud-coin-history.css';
+@import './cloud-student-sleep.css';
+@import './cloud-white-noise.css';
+.cloud-student .school-access-recovery{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:18px;margin:0 0 20px;border:1px solid var(--accent-primary,#a78bfa);border-radius:18px;background:var(--bg-card,#181c30);color:var(--text-primary,#fff)}
+.school-access-recovery>div{flex:1;min-width:200px}.school-access-recovery h3{margin:0 0 6px;font-size:18px}.school-access-recovery p{margin:0;line-height:1.5}.school-access-recovery svg{width:22px;height:22px;flex:none}.school-access-recovery button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;font:inherit;touch-action:manipulation}
+.school-access-recovery button{border:1px solid var(--theme-border-strong,#8e80e988);border-radius:12px;background:var(--theme-surface-strong,#24203d);color:var(--theme-text,#fff);cursor:pointer}.school-access-recovery button:hover{filter:brightness(1.15)}.school-access-recovery button:disabled{opacity:.65;cursor:wait}
+.cloud-student .cloud-school-recovery .toolbar-btn,.cloud-student #pause{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font:600 14px/1.25 var(--font-body,system-ui,sans-serif);touch-action:manipulation}
+.cloud-student .cloud-school-recovery svg,.cloud-student #pause svg{width:18px;height:18px;flex:0 0 18px}
+.cloud-student .cloud-school-recovery #session-status{flex:1;min-width:180px;margin:6px 0;line-height:1.5}
+.cloud-student #pause{order:10;flex:0 0 auto;width:auto;padding:8px 12px;white-space:nowrap;border-color:var(--border-glass);background:var(--bg-glass)}
+.cloud-student .toolbar-actions{flex-wrap:wrap;max-width:100%}
+.cloud-student #toolbar-school-return:not(.assessment-active){color:var(--text-primary);border-color:var(--border-glass);background:var(--bg-glass)}
+.cloud-student #pause>*,.cloud-student .cloud-school-recovery .toolbar-btn>*{pointer-events:none}
+/* Transport/setup adaptations only. Card, header and toolbar styling is the
+   existing kiosk design system loaded before this stylesheet. */
+.cloud-student{display:flex;flex-direction:column}.cloud-student [hidden]{display:none!important}
+.cloud-student .cloud-startup{position:fixed;inset:0;z-index:900;display:grid;place-items:center;min-height:100%;box-sizing:border-box;background:var(--bg-primary,#0d1020);text-align:center}
+.cloud-startup-card{width:min(440px,100%);padding:24px;box-sizing:border-box}
+.cloud-startup-mark{display:grid;place-items:center;width:80px;height:80px;margin:0 auto 22px;border:1px solid #8e80e966;border-radius:24px;background:#8e80e91c;color:#c4b5fd}
+.cloud-startup-mark svg{width:44px;height:44px}.cloud-startup-brand{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.cloud-startup h1{font-size:clamp(24px,4vw,30px);line-height:1.3;margin:14px 0}.cloud-startup #student-loading-detail{font-size:15px;line-height:1.6;margin:0}
+.cloud-startup progress{display:block;appearance:none;width:min(260px,100%);height:5px;border:0;border-radius:8px;overflow:hidden;margin:28px auto;background:#c4b5fd22}
+.cloud-startup progress::-webkit-progress-bar{background:#c4b5fd22;border-radius:8px}.cloud-startup progress:indeterminate{background:linear-gradient(90deg,transparent,#a78bfa,transparent) -150px 0/150px 100% no-repeat,#c4b5fd22;animation:cloud-startup-progress 1.5s ease-in-out infinite}
+.cloud-startup-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:24px}.cloud-startup .cloud-startup-actions button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:0;font-size:13px}.cloud-startup-actions svg{width:17px;height:17px}
+@keyframes cloud-startup-progress{to{background-position:410px 0}}
+@media(prefers-reduced-motion:reduce){.cloud-startup progress:indeterminate{animation:none;background:#a78bfa66}}
+.cloud-student #parent-exit{border:1px solid #8474c7;border-radius:10px;background:#30274b;color:#f4f0ff;box-shadow:0 2px 5px #0003}
+.cloud-student #parent-exit:hover{background:#443560;transform:none}
+.cloud-student .cloud-student-status{display:contents}
+.cloud-student .local-device-button{border:1px solid var(--border-glass);border-radius:10px;background:var(--bg-glass);color:var(--text-primary)}
+/* Named actions need room for both icon and label at compact screen sizes.
+   The inherited header rules otherwise force every button to a 34px square. */
+.cloud-student .local-device-button{display:inline-flex;align-items:center;justify-content:center;width:auto!important;min-width:max-content!important;min-height:40px;height:auto!important;padding:10px 12px!important;gap:7px;flex-shrink:0;white-space:nowrap;font:600 13px/1.2 var(--font-body,system-ui,sans-serif);cursor:pointer}
+.cloud-student #parent-exit{display:inline-flex;align-items:center;justify-content:center;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;flex-shrink:0;cursor:pointer}
+.cloud-student #parent-exit svg{display:block;width:20px!important;height:20px!important;flex:0 0 20px}
+.cloud-student .local-device-button svg{display:block;width:18px!important;height:18px!important;flex:0 0 18px}
+.cloud-student .local-device-button:hover{background:var(--bg-card-hover);transform:none}
+.cloud-student .cloud-app-version{color:var(--text-secondary);font:500 12px/1.4 var(--font-body,system-ui,sans-serif)}
+.cloud-student .cloud-update-feedback{position:fixed;right:18px;bottom:18px;z-index:1100;display:grid;gap:8px;width:min(380px,calc(100vw - 36px));box-sizing:border-box;padding:18px 58px 18px 18px;border:1px solid var(--border-glass);border-radius:16px;background:var(--bg-secondary,#131b30);box-shadow:0 8px 28px #0005;color:var(--text-primary);font:500 15px/1.5 var(--font-body,system-ui,sans-serif);text-align:left}
+.cloud-student .cloud-update-dismiss{position:absolute;right:6px;top:6px;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation}
+.cloud-student .cloud-update-help{border:1px solid var(--border-glass);border-radius:9px;min-height:40px;padding:6px 12px;background:var(--bg-glass);color:var(--text-primary);font:600 13px var(--font-body,system-ui,sans-serif);cursor:pointer;touch-action:manipulation}
+.cloud-student .cloud-update-recover{grid-column:1/-1}
+.cloud-student .cloud-update-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.cloud-student .cloud-update-actions button{min-height:48px;padding:8px;border:1px solid var(--border-glass);border-radius:10px;background:var(--bg-glass);color:var(--text-primary);font:600 13px/1.4 var(--font-body,system-ui,sans-serif);cursor:pointer;touch-action:manipulation}
+.cloud-student .cloud-update-actions button:disabled{opacity:.6;cursor:default}
+.cloud-student .cloud-update-actions .cloud-update-now{background:var(--bg-card-hover,var(--bg-glass))}
+.cloud-student .cloud-update-dismiss svg{width:20px;height:20px}
+.cloud-student #dash-update-btn[aria-busy=true] svg{animation:cloud-refresh-spin 1s linear infinite}
+@keyframes cloud-refresh-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.cloud-student #dash-update-btn[aria-busy=true] svg{animation:none}}
+.cloud-student .cloud-update-feedback progress{width:100%;height:7px;appearance:none;border:none;border-radius:8px;overflow:hidden;background:var(--bg-secondary);accent-color:#34d399}
+.cloud-student .cloud-update-feedback progress::-webkit-progress-bar{background:var(--bg-secondary);border-radius:8px}
+.cloud-student .cloud-update-feedback progress::-webkit-progress-value{background:linear-gradient(90deg,#0ea5e9,#34d399);border-radius:8px}
+.cloud-student .cloud-update-bytes{color:var(--text-secondary);font-size:11px}
+.cloud-update-parent-controls{position:fixed;top:16px;right:24px;z-index:1200;padding:8px;border:1px solid var(--border-glass);border-radius:14px;background:var(--bg-secondary,#131b30)}
+.cloud-student .cloud-student-status #error:not(:empty),.cloud-student .cloud-student-status #update-status:not(:empty){position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1000;max-width:min(680px,90vw);padding:12px 18px;border-radius:12px;background:var(--bg-secondary);border:1px solid var(--border-glass);color:var(--text-primary)}
+.cloud-activity-study{flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 24px;background:var(--bg-secondary);border-bottom:1px solid var(--border-glass);color:var(--text-primary);font:14px/1.5 system-ui,sans-serif}.cloud-activity-study p{margin:0}.cloud-activity-study button{flex:none;font:inherit;font-weight:700;padding:10px 16px;border:1px solid var(--border-glass);border-radius:10px;background:var(--bg-glass);color:var(--text-primary);cursor:pointer}.cloud-activity-study button:disabled{opacity:.5;cursor:wait}
+/* The inherited #dashboard-screen rule forces display:flex!important. Match
+   its ID specificity so an invisible dashboard cannot intercept setup input. */
+.cloud-student #dashboard-screen[hidden],.cloud-student main>section[hidden]{display:none!important;pointer-events:none}
+.cloud-student-status{flex:none;padding:8px 24px;border-bottom:1px solid var(--border-glass);font-size:12px;line-height:1.45;background:var(--bg-secondary)}
+.cloud-student-status p:empty{display:none}.cloud-student-status .warning{color:#fbbf24}.cloud-student-status #error{color:#fda4af}.cloud-student-status #connection{color:#a7f3d0}
+.cloud-student main{position:relative;flex:1;min-height:0}.cloud-student main>.screen{position:absolute}
+.cloud-student #dashboard-screen{height:100%!important;overflow:auto!important}.cloud-student .dashboard-header{flex-wrap:wrap;gap:16px;flex:none}.cloud-student .header-right{flex-wrap:wrap}
+.cloud-student-cards{overflow:auto;min-height:0;flex:1}
+.cloud-student .subjects-container{overflow:visible!important;flex:none!important}.cloud-student .subject-card{text-align:left;font:inherit;color:var(--text-primary)}
+.cloud-subject-record-note{font-size:12px;color:var(--text-secondary);margin-top:10px}.cloud-student #typing-widget[aria-disabled=true]{cursor:default}.cloud-student #store-btn:disabled{opacity:.6;cursor:not-allowed}
+.cloud-student .subject-card:disabled{opacity:.6;cursor:not-allowed}.cloud-student .subject-card:focus-visible,.cloud-student button:focus-visible{outline:2px solid #67e8f9;outline-offset:4px}
+.cloud-student .subject-meta{margin-top:16px;color:var(--text-secondary);font-size:14px;line-height:1.5}
+/* Optional activities should be readable launch cards, not miniature reports.
+   Override the legacy short-screen rules without shrinking text to fit. */
+.cloud-student #subjects-container{grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr))!important;gap:14px!important;min-height:0!important;align-items:stretch}
+.cloud-student #subjects-container .subject-card{min-height:92px!important;padding:20px!important;border-radius:18px!important}
+.cloud-student #subjects-container .cloud-module-card-frame{position:relative;min-width:0}
+.cloud-student #subjects-container .cloud-module-card-frame>.subject-card{box-sizing:border-box;width:100%;height:100%}
+.cloud-student #subjects-container .cloud-module-card-frame .subject-card-header{padding-right:54px}
+.cloud-student .cloud-hide-module{position:absolute;top:12px;right:12px;z-index:1;min-height:32px;padding:5px 9px;border:1px solid var(--border-glass);border-radius:9px;background:var(--bg-secondary);color:var(--text-secondary);font:inherit;font-size:12px;font-weight:700;line-height:1.2;cursor:pointer}
+.cloud-student .cloud-hide-module:hover{color:var(--text-primary);border-color:var(--card-color,#67e8f9)}
+.cloud-student .cloud-hidden-modules{margin:0 24px 18px;padding:12px 16px;border:1px solid var(--border-glass);border-radius:14px;background:var(--bg-glass)}
+.cloud-student .cloud-hidden-modules[hidden]{display:none}
+.cloud-student .cloud-hidden-modules summary{cursor:pointer;color:var(--text-primary);font-weight:750;list-style-position:inside}
+.cloud-student .cloud-hidden-modules-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.cloud-student .cloud-hidden-module{display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid var(--border-glass);border-radius:10px;color:var(--text-primary);background:var(--bg-secondary)}
+.cloud-student .cloud-hidden-module button{min-height:32px;padding:5px 10px;border:1px solid var(--border-glass);border-radius:8px;background:var(--bg-glass);color:var(--text-primary);font:inherit;cursor:pointer}
+.cloud-student .cloud-hidden-module button:hover{border-color:#67e8f9}
+.cloud-student #subjects-container .subject-card-header{gap:12px!important;margin-bottom:0!important}
+.cloud-student #subjects-container .subject-icon{display:flex;align-items:center;justify-content:center;flex:0 0 28px;font-size:26px!important;color:var(--card-color,var(--text-primary))}
+.cloud-student #subjects-container .subject-icon svg{width:26px!important;height:26px!important}
+.cloud-student #subjects-container .subject-name{font-size:1.05rem!important;line-height:1.3!important;overflow-wrap:anywhere}
+.cloud-student #subjects-container .subject-meta{margin-top:14px;gap:8px;flex-wrap:wrap;line-height:1.5}
+.cloud-student #subjects-container .subject-time{font-size:.875rem!important;font-variant-numeric:tabular-nums}
+.cloud-student .subject-usage{display:flex;align-items:center;justify-content:space-between;gap:12px;width:fit-content;max-width:100%;margin-top:14px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--card-color) 38%,transparent);border-radius:10px;background:color-mix(in srgb,var(--card-color) 10%,transparent);font-variant-numeric:tabular-nums}
+.cloud-student .subject-usage-label{display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:.72rem;font-weight:800;letter-spacing:.045em;text-transform:uppercase;white-space:nowrap}
+.cloud-student .subject-usage-label svg{width:14px;height:14px;color:var(--card-color)}
+.cloud-student .subject-usage strong{color:var(--text-primary);font-size:.88rem;white-space:nowrap}
+.cloud-student .lock-pill svg{width:14px;height:14px;flex:0 0 auto}
+.cloud-student .lock-pill--complete{background:rgba(52,211,153,.14);color:#6ee7b7;border:1px solid rgba(52,211,153,.34)}
+.cloud-student #subjects-container .cloud-subject-record-note{font-size:.8125rem;line-height:1.45}
+.cloud-student #subjects-container .lock-pill{margin-top:12px!important;padding:5px 9px!important;font-size:.8rem!important;line-height:1.4}
+@media(min-width:1600px){.cloud-student #subjects-container{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+.cloud-student-panel{position:absolute;inset:0;overflow:auto;padding:28px;line-height:1.6}.cloud-student-panel h2{margin:20px 0 8px}.cloud-student-panel p{color:var(--text-secondary)}
+/* The original standalone Reading shelf shares the selected desk palette. */
+.cloud-student #student-reading-panel{--bg:var(--bg-primary);--card:var(--bg-secondary);--card2:var(--bg-glass);--text:var(--text-primary);--muted:var(--text-secondary);--border:var(--border-glass)}
+.cloud-student #student-reading-panel .header{background:var(--bg-secondary)}
+.cloud-student #student-reading-panel>.toolbar-btn,.cloud-student #student-reading-panel .reading-sync button{padding:10px 16px;margin:8px 8px 8px 0;font:inherit;border:1px solid var(--border-glass);border-radius:10px;background:var(--bg-secondary);color:var(--text-primary);cursor:pointer}
+.cloud-student #student-reading-panel>.toolbar-btn{margin-left:24px}.cloud-student .cloud-student-status,.cloud-student .cloud-student-status #connection,.cloud-student .cloud-student-status #error{color:var(--text-secondary)}
+.cloud-student-panel button,.cloud-student-status button{padding:10px 16px;border:1px solid var(--border-glass);border-radius:10px;background:var(--bg-glass);color:var(--text-primary);font:inherit;cursor:pointer;margin:8px 8px 8px 0}
+.cloud-student-panel button:disabled{opacity:.5;cursor:not-allowed}.cloud-student-panel label{display:block;margin:12px 0}.cloud-student-panel input,.cloud-student-panel textarea{font:inherit;padding:10px;color:var(--text-primary);background:var(--bg-secondary);border:1px solid var(--border-glass);border-radius:8px;max-width:100%}
+.cloud-student-panel #recovery-code{display:block}.cloud-student #pairing{user-select:text}.cloud-student .cloud-school-recovery{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:5px 16px;background:var(--bg-secondary);font-size:12px}.cloud-student .cloud-school-recovery p{color:var(--text-secondary)}
+.cloud-student #school-view{display:flex;flex:1;min-height:0}.cloud-student #school-view webview{display:flex;width:100%;height:100%;flex:1}
+.cloud-offline-study{margin:40px auto;padding:32px;width:min(650px,calc(100% - 48px));height:fit-content;border:1px solid var(--border);border-radius:20px;background:var(--bg-secondary);color:var(--text-primary)}
+.cloud-offline-study h2{font-size:28px;margin:0 0 20px}.cloud-offline-study p{line-height:1.6;margin:16px 0}.cloud-offline-study #offline-study-time{font-size:24px;font-weight:700}.cloud-offline-study button{margin-top:12px;padding:12px 20px;font-family:inherit;font-weight:700;font-size:16px;border-radius:12px;min-height:46px;cursor:pointer}.cloud-offline-study button:disabled{opacity:.6;cursor:wait}
+.cloud-student #toolbar-school-return,.cloud-student #toolbar-speed{display:inline-flex}.cloud-student #toolbar-timer{display:none}
+.cloud-student .toolbar-abeka-pages{display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:100%;padding:4px;border:1px solid var(--border-glass);border-radius:12px;background:var(--bg-glass)}
+.cloud-student .toolbar-abeka-pages .toolbar-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 10px;white-space:nowrap;font:600 13px/1.2 var(--font-body,system-ui,sans-serif);touch-action:manipulation}
+.cloud-student .toolbar-abeka-pages svg{width:17px;height:17px;flex:none}.cloud-student .toolbar-abeka-pages .toolbar-btn:focus-visible{outline:2px solid var(--accent-blue,#60a5fa);outline-offset:2px}
+.cloud-student .cloud-school-break{box-sizing:border-box;width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);margin:auto;padding:32px;border:1px solid var(--border-glass);border-radius:24px;background:var(--bg-secondary,#131b30);color:var(--text-primary,#edf5ff);text-align:center;overflow:auto;box-shadow:0 24px 80px #0008;font-family:var(--font-body,system-ui,sans-serif)}
+.cloud-school-break::backdrop{background:rgba(5,10,24,.82)}
+.cloud-school-break .cloud-break-icon{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 18px;border-radius:20px;background:#34d39920;color:#34d399}.cloud-break-icon svg{width:32px;height:32px}
+.cloud-school-break .cloud-break-eyebrow{margin:0 0 8px;color:#34d399;font-size:11px;font-weight:800;letter-spacing:.14em}.cloud-school-break h2{margin:0 0 12px;font-size:28px}.cloud-school-break p{line-height:1.6;color:var(--text-secondary,#b9c8dc)}
+.cloud-school-break #cloud-break-timer{margin:24px 0 12px;font-size:clamp(40px,10vw,64px);line-height:1.2;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.03em;color:var(--text-primary,#edf5ff)}
+.cloud-school-break .cloud-break-hint{font-size:14px}.cloud-school-break #cloud-break-error{color:#fca5a5;font-size:14px}.cloud-school-break #cloud-break-error:empty{display:none}
+.cloud-school-break button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:48px;margin-top:12px;padding:12px 18px;border:1px solid var(--border-glass);border-radius:12px;font:700 15px var(--font-body,system-ui,sans-serif);background:transparent;color:var(--text-secondary,#b9c8dc);cursor:pointer;touch-action:manipulation}.cloud-school-break #cloud-break-resume{background:#188460;border-color:#28ac80;color:#fff}.cloud-school-break button svg{width:18px;height:18px}.cloud-school-break button:disabled{opacity:.5;cursor:wait}
+.cloud-student .subject-toolbar{gap:8px;flex-wrap:wrap;height:auto;min-height:var(--toolbar-height);padding-block:6px}.cloud-student #toolbar-captions{display:inline-flex}.cloud-student #toolbar-grade-capture,.cloud-student #toolbar-done,.cloud-student #dash-whats-new-btn{display:none}
+@media(max-width:700px){.cloud-student .dashboard-header{padding:20px}.cloud-student-panel{padding:18px}.cloud-student .subjects-container{padding:20px}.cloud-student .header-right{gap:6px}}
+
+/* Parent setup uses the student palette, with a clear code-first working card. */
+.cloud-student-status{padding:12px 24px;font:14px/1.5 system-ui,sans-serif;color:#b8bdd6}
+.cloud-status-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px}
+.cloud-test-label{color:#d6cbff;background:#27203f;border:1px solid #493c69;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:750;letter-spacing:.04em}
+.cloud-status-row #connection{margin-left:auto;color:#c4cbe0}.cloud-status-row button{margin:0}
+.cloud-status-details{margin-top:6px}.cloud-status-details summary,.cloud-setup-footer summary{cursor:pointer;width:fit-content;color:#b6bfd8}
+.cloud-status-details p{margin:8px 0;max-width:1040px}.cloud-status-details .warning{color:#e6c577}
+.cloud-setup-shell{max-width:1000px;margin:0 auto;font:16px/1.6 system-ui,sans-serif;color:#f3f3fb}
+.cloud-setup-shell .cloud-setup-back{margin:0 0 24px;background:transparent;color:#bfc7df}
+.cloud-setup-eyebrow{font-size:12px;font-weight:750;letter-spacing:.1em;color:#aca0ed}
+.cloud-setup-heading h2{font-size:clamp(26px,3vw,34px);letter-spacing:-.035em;line-height:1.2;margin:8px 0 12px}
+.cloud-setup-heading>p{max-width:680px;color:#acb5d0;margin:0}
+.cloud-setup-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,1.08fr);align-items:start;gap:36px;margin-top:28px}
+.cloud-setup-steps{list-style:none;counter-reset:setup;padding:0;margin:0}
+.cloud-setup-steps li{position:relative;counter-increment:setup;padding:0 0 24px 44px}
+.cloud-setup-steps li::before{content:counter(setup);position:absolute;top:0;left:0;display:grid;place-items:center;width:28px;height:28px;border:1px solid #3e3b5c;border-radius:50%;color:#d1c6ff;background:#201e34;font-size:14px;font-weight:700}
+.cloud-setup-steps strong{display:block;font-weight:650;line-height:1.5}.cloud-setup-steps p{margin:6px 0 0;font-size:14px;line-height:1.65;color:#aeb7d0}
+.cloud-parent-address{display:block;color:#c8cef0;overflow-wrap:anywhere;user-select:text}
+.cloud-pairing-card{padding:26px;border:1px solid #373150;border-radius:18px;background:linear-gradient(145deg,#1b1932,#121322);box-shadow:0 14px 38px #0003}
+.cloud-pairing-card h3{font-size:21px;margin:7px 0 8px;letter-spacing:-.02em}.cloud-pairing-card p{font-size:14px;color:#afb8d3}
+.cloud-pairing-card #pairing-code{width:100%;max-width:100%;box-sizing:border-box;text-align:center;font:750 clamp(24px,3vw,34px)/1.3 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#eeeaff;background:#0e1020;border:1px solid #565077;border-radius:10px;padding:16px 8px;margin-top:14px;user-select:text;cursor:text}
+.cloud-pairing-card #pairing-expiry{margin:8px 0 14px}.cloud-pairing-actions{display:flex;gap:8px;flex-wrap:wrap}.cloud-pairing-actions button{margin:0;flex:1;white-space:nowrap;font-size:14px}
+.cloud-setup-shell .cloud-setup-primary{background:#7460d7;border-color:#9a85ef;color:white;font-weight:650}.cloud-setup-shell .cloud-setup-primary:hover:not(:disabled){background:#8670ea}
+.cloud-setup-shell .cloud-setup-link{background:transparent;border-color:transparent;color:#c4b9f6;font-size:14px;padding:6px 0;margin-right:16px}
+.cloud-pairing-card #pairing{margin:12px 0 0;color:#c7d6ee}.cloud-pairing-card #pairing:empty,.cloud-pairing-card #pairing-action-status:empty{display:none}.cloud-pairing-card #pairing-action-status{color:#8ee5cf;margin:8px 0 0}
+.cloud-pairing-card .cloud-pairing-hint{font-size:13px;line-height:1.6;margin:14px 0;color:#a9b0c9}
+.cloud-setup-footer{border-top:1px solid #27273d;margin-top:24px;padding-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.cloud-setup-footer button{margin:0}.cloud-setup-footer details{flex-basis:100%;font-size:13px}.cloud-setup-footer p{margin:8px 0;overflow-wrap:anywhere}
+.cloud-visually-hidden{position:absolute!important;width:1px;height:1px;padding:0!important;margin:-1px!important;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.daily-answer-option{padding:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-primary);cursor:pointer;font-weight:600;font-size:.85rem;transition:.2s}.daily-answer-option.riddle{text-align:left;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}.daily-answer-option:hover:not(:disabled){background:rgba(168,85,247,.15)}.daily-answer-option:disabled{opacity:.5;cursor:not-allowed}.daily-answer-option.correct{background:rgba(16,185,129,.3);border-color:#10b981;opacity:1}.daily-answer-option.incorrect{background:rgba(248,113,113,.3);border-color:#f87171;opacity:1}.daily-answer-option.pending{border-color:#38bdf8;opacity:1}#verse-reward-msg.daily-wrong,#riddle-reward-msg.daily-wrong{background:rgba(248,113,113,.15);color:#f87171}.daily-cloud-sync{font-size:12px;color:var(--text-secondary)}.daily-cloud-sync button{padding:5px 8px;margin:5px 6px 0 0;border:1px solid var(--border-glass);border-radius:6px;background:rgba(255,255,255,.08);color:var(--text-primary);cursor:pointer}
+@media(max-width:760px){.cloud-setup-grid{grid-template-columns:1fr;gap:18px}.cloud-pairing-card{grid-row:1;padding:22px}.cloud-test-reminder{display:none}.cloud-status-row #connection{margin-left:0}.cloud-student-status{padding:10px 18px}.cloud-setup-footer{align-items:flex-start}.cloud-setup-steps li:last-child{padding-bottom:0}}
+/* Parent recovery is a short, readable final setup step. */
+#student-recovery-panel { max-width: 760px; margin: 32px auto; padding: 32px; }
+#student-recovery-panel h2 { margin-bottom: 16px; }
+#student-recovery-panel p { line-height: 1.6; margin: 12px 0 20px; }
+#student-recovery-panel form { display: grid; gap: 12px; max-width: 480px; margin: 24px 0 12px; }
+#student-recovery-panel input { width: 100%; box-sizing: border-box; font: 500 1.2rem/1.4 monospace; padding: 14px; }
+#student-recovery-panel button, .cloud-setup-footer button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+#student-recovery-panel button svg, .cloud-setup-footer button svg { width: 18px; height: 18px; flex-shrink: 0; }
+#student-recovery-panel #confirm-recovery { min-height: 48px; background: #16866a; color: white; }
+#student-recovery-panel #test-recovery { min-height: 44px; }
+#student-recovery-panel button:disabled { opacity: .5; }
+/* A compact wallet: two actions, one history shortcut and earned-time badges. */
+.cloud-student .wallet-widget{--wallet-gold:var(--theme-warning-text,#fbbf24);container-type:inline-size;cursor:pointer;min-height:164px;min-width:0;box-sizing:border-box;padding:14px 16px;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:8px}
+.cloud-student .wallet-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cloud-student .wallet-heading h4{display:flex;align-items:center;gap:8px;margin:0;color:var(--theme-text);font-size:1rem;font-weight:700;line-height:1.25}
+.cloud-student .wallet-heading h4 svg{width:18px;height:18px;flex:none;color:var(--wallet-gold)}
+.cloud-student .wallet-heading .wallet-history{display:inline-flex;align-items:center;justify-content:center;flex:none;width:36px;height:36px;min-height:36px;padding:0;border:1px solid var(--theme-border);border-radius:10px;background:var(--theme-control-bg);color:var(--theme-text-secondary);cursor:pointer}
+.cloud-student .wallet-history svg{width:18px;height:18px}
+.cloud-student .wallet-balance-button{display:inline-flex;align-items:baseline;justify-content:center;gap:6px;border:0;background:transparent;color:var(--wallet-gold);font:inherit;width:100%;max-width:100%;min-width:0;white-space:nowrap;padding:0!important;margin:0;cursor:pointer}
+.cloud-student .wallet-balance-button #wallet-coins{color:var(--wallet-gold);font-size:min(2.25rem,calc((100cqi - 2.5rem) / var(--wallet-width,3.6)));font-weight:600;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap;overflow-wrap:normal;word-break:normal;flex:none}
+.cloud-student .wallet-balance-button span:last-child{color:var(--theme-text-secondary);flex:none;font-size:.875rem;font-weight:500}
+.cloud-student .wallet-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;width:100%}
+.cloud-student .wallet-actions :is(#wallet-store-btn,.challenge-entry){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:40px;margin:0;border:1px solid var(--theme-border-strong);border-radius:10px;background:var(--theme-control-bg);color:var(--theme-text);font:650 13px/1.25 var(--font-body,system-ui,sans-serif)!important;padding:8px 7px!important;white-space:nowrap;cursor:pointer;box-shadow:none}
+.cloud-student .wallet-actions #wallet-store-btn{background:var(--theme-primary);color:var(--theme-on-primary);border-color:transparent}
+.cloud-student .wallet-actions svg{width:17px;height:17px;flex:none}
+.cloud-student .wallet-actions button:hover:not(:disabled),.cloud-student .wallet-history:hover:not(:disabled){filter:brightness(.95);border-color:var(--theme-primary)}
+.cloud-student .wallet-widget button:focus-visible{outline:3px solid var(--theme-link);outline-offset:3px}
+.cloud-student .wallet-widget button:disabled{opacity:.56;cursor:default}
+.cloud-student .wallet-extra-time{display:none;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--theme-border);color:var(--theme-text-secondary);font:600 11px/1.3 var(--font-body,system-ui,sans-serif)}
+.cloud-student .wallet-time-label,.cloud-student .wallet-time-badge{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.cloud-student .wallet-time-label{flex-basis:100%;justify-content:center}
+.cloud-student .wallet-time-badge{padding:4px 7px;border-radius:7px;background:var(--theme-control-bg);color:var(--theme-text);border:1px solid var(--theme-border)}
+.cloud-student .wallet-extra-time svg{width:13px;height:13px;flex:none}
+.cloud-student .wallet-time-badge strong{font-weight:700;font-variant-numeric:tabular-nums}
+/* Keep the card's controls together when display scaling narrows the grid. */
+.cloud-student #banked-media-display{margin-top:0!important;padding:8px 0 0!important}
+@container(max-width:220px){
+  .cloud-student .wallet-actions{grid-template-columns:40px minmax(0,1fr)}
+  .cloud-student #wallet-store-btn span,.cloud-student .wallet-time-name{display:none}
+  .cloud-student .wallet-actions #wallet-store-btn{padding:0!important}
+}
+@media(min-width:1001px) and (max-width:1279px){.cloud-student .widgets-grid .wallet-widget{grid-column:span 2}}
+@media(min-width:1800px){.cloud-student .widgets-grid .wallet-widget{min-width:195px!important}}
+@media(any-pointer:coarse){.cloud-student .wallet-heading .wallet-history{width:44px;height:44px;min-height:44px}.cloud-student .wallet-actions :is(#wallet-store-btn,.challenge-entry){min-height:48px}}
+
+#cloud-parent-lock:not([hidden]) { position:fixed; inset:0; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:32px; text-align:center; background:#0d1024; color:#f2f0ff; }
+#cloud-parent-lock > svg { width:64px; height:64px; color:#b7a4ff; }
+#cloud-parent-lock h1 { margin:0; font-size:36px; }
+#cloud-parent-lock p { max-width:480px; margin:0 0 12px; font-size:18px; color:#b8b5d2; }
+#cloud-parent-lock .header-btn { display:inline-flex; align-items:center; gap:8px; width:auto; }
+#cloud-parent-lock button svg { width:18px; height:18px; }
+
+/* Only a live school website shares the protected app with Writing. */
+.cloud-student.cloud-writing-split #student-school-screen{right:50%}
+.cloud-student #toolbar-notes{display:inline-flex;align-items:center;gap:6px}
+
+/* A local status change must not replay the staggered entrance down the desk. */
+.cloud-student .subject-card,.cloud-student .animate-in{animation:none}
+
+/* Keep theme colors and borders without stacking a blur surface behind every
+   card. This is especially expensive on integrated graphics and large screens. */
+.cloud-student #dashboard-screen { --theme-card-backdrop: none; }
+.cloud-student #dashboard-screen .dashboard-header,
+.cloud-student #dashboard-screen .subject-card,
+.cloud-student #dashboard-screen .widgets-grid > * {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.cloud-student #dashboard-screen .subject-card {
+  transition-property: transform, border-color, background-color;
+  transition-duration: .12s;
+}
+
+/* any-pointer includes Surface computers used with both a mouse and touch. */
+.cloud-student button,.cloud-student select,.cloud-student [role=button]{touch-action:manipulation}
+@media(any-pointer:coarse){
+  .cloud-student button,.cloud-student select{min-height:48px}
+  .cloud-student .header-btn{min-width:48px!important;min-height:48px!important;width:auto!important;height:auto!important;padding:12px!important;transition:background .15s,border-color .15s}
+  .cloud-student .header-btn:hover,.cloud-student .subject-card:hover{transform:none}
+  .cloud-student #parent-exit,.cloud-student .local-device-button{min-height:48px;font-size:14px}
+  .cloud-student .header-right,.cloud-student .toolbar-actions{gap:10px;flex-wrap:wrap}
+  .cloud-student .toolbar-btn{min-width:48px;padding:12px}
+  .cloud-student input:not([type=checkbox]):not([type=range]),.cloud-student textarea,.cloud-student select{font-size:16px;min-height:48px}
+  .cloud-student input[type=checkbox]{width:24px;height:24px}
+  .cloud-student input[type=range]{min-height:48px}
+  .cloud-student .wallet-balance-button{min-width:48px}
+  .cloud-student .daily-answer-option{padding:12px;font-size:16px}
+  .cloud-student .cloud-update-dismiss{min-width:48px;min-height:48px}
+}
+@media(hover:none){.cloud-student .subject-card:hover,.cloud-student .header-btn:hover{transform:none}}
+
+/* Keep each activity's parent-plan accent on both shelves, including required
+   and completed schoolwork. Yellow/green labels still show work status. */
+.cloud-student #dashboard-screen .subject-card {
+  border-color:color-mix(in srgb,var(--card-color) 58%,var(--theme-border));
+  background:color-mix(in srgb,var(--card-color) 9%,var(--theme-surface));
+}
+.cloud-student #dashboard-screen .subject-card:hover { border-color:var(--card-color); }
+.cloud-student #dashboard-screen .subject-icon { color:var(--card-color); }
+.cloud-student .schoolwork-label { display:inline-block;align-self:flex-start;margin:8px 0 2px;padding:4px 9px;border-radius:6px;background:#fbbf2420;color:#ffe29a;font-size:12px;font-weight:700; }
+.cloud-student .completed-schoolwork .schoolwork-label { background:#34d39920;color:#8aefd2; }
+.cloud-student .header-right .cloud-apps-button { display:inline-flex;align-items:center;gap:7px;width:auto!important;padding:0 12px; }
+.cloud-student .cloud-apps-button svg { width:20px;height:20px;flex:0 0 20px; }
+
+/* The history browser cannot move past today. Make that boundary visible,
+   then restore the active treatment as soon as the child browses backward. */
+.cloud-student #fact-prev,
+.cloud-student #fact-next { transition:background-color .15s,color .15s,opacity .15s; }
+.cloud-student #fact-prev:hover:not(:disabled),
+.cloud-student #fact-next:hover:not(:disabled) { background:rgba(255,255,255,.16);color:var(--text-primary); }
+.cloud-student #fact-prev:disabled,
+.cloud-student #fact-next:disabled { opacity:.34;background:rgba(255,255,255,.035);color:var(--text-muted);cursor:default; }
+
+/* Cloud dashboard: consistently sized shortcuts, with device controls together. */
+.cloud-student .dashboard-header { padding:12px 24px!important; }
+.cloud-student .dashboard-header .header-right { min-width:0;max-width:100%;margin-left:auto;gap:12px!important;justify-content:flex-end;flex:0 1 auto; }
+.cloud-student .cloud-header-group { display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0; }
+.cloud-student .cloud-header-device { border-left:1px solid var(--border-glass);padding-left:12px; }
+.cloud-student .dashboard-header .header-btn {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;
+  padding:0!important;flex:none;font:600 13px/1.2 var(--font-body,system-ui,sans-serif);
+}
+.cloud-student .dashboard-header :is(#dash-planner-btn,#dash-grades-btn,.cloud-apps-button,.local-device-button) { width:auto!important;padding:0 12px!important; }
+.cloud-student .dashboard-header .header-btn svg { width:20px!important;height:20px!important;flex:0 0 20px; }
+.cloud-student .dashboard-header .grades-btn .grades-label { display:inline!important; }
+.cloud-student .dashboard-header .completion-badge { width:44px!important;height:44px!important;flex:none; }
+.cloud-student .dashboard-header .completion-text { font-size:11px!important; }
+.cloud-student .dashboard-header .cloud-app-version { font-size:11px; }
+
+/* Give the daily reading room across the desk, without stretching every
+   widget to its height. Long text still stays readable with page scrolling. */
+.cloud-student .widgets-grid {
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));
+  height:auto!important;max-height:none!important;overflow:visible!important;
+  margin:12px 24px!important;padding:0!important;gap:12px!important;
+  align-items:start!important;grid-auto-flow:dense;
+}
+.cloud-student .widgets-grid > * {
+  width:auto!important;min-width:0!important;max-width:none!important;
+  height:auto!important;max-height:none!important;min-height:128px;
+  padding:12px!important;overflow:visible!important;scrollbar-gutter:auto;
+  overflow-wrap:anywhere;
+}
+.cloud-student .widgets-grid :is(.wallet-widget,.typing-widget,.weather-widget) { overflow:hidden!important; }
+.cloud-student .widgets-grid :is(.fact-widget,.streak-widget) { grid-column:span 2; }
+.cloud-student .widgets-grid .verse-widget { grid-column:span 4;order:1; }
+.cloud-student .widgets-grid .riddle-widget { grid-column:span 2;order:1; }
+.cloud-student .widgets-grid :is(.verse-widget,.riddle-widget,.fact-widget) { gap:8px!important; }
+.cloud-student .widgets-grid :is(.verse-widget,.riddle-widget,.fact-widget) p { font-size:13px!important;line-height:1.4!important; }
+.cloud-student .widgets-grid h4 { font-size:14px!important;line-height:1.3; }
+.cloud-student :is(.verse-widget,.riddle-widget) > div:first-child { gap:8px!important; }
+.cloud-student :is(.verse-widget,.riddle-widget) > div:first-child > div:last-child,
+.cloud-student .fact-widget > div:last-child { min-width:0; }
+.cloud-student #verse-widget .student-source-59,
+.cloud-student #fact-widget .student-source-48 { flex-wrap:wrap;gap:6px; }
+.cloud-student :is(#verse-prev,#verse-next,#fact-prev,#fact-next) { min-width:28px;min-height:28px; }
+.cloud-student #verse-widget {
+  container-type:inline-size;flex-direction:row;flex-wrap:wrap;align-content:start;
+}
+.cloud-student #verse-widget > .student-source-55 {
+  display:grid;grid-template-columns:28px minmax(0,1fr);align-content:start;
+  flex:1.15 1 250px;width:auto;gap:4px 8px!important;
+}
+.cloud-student #verse-widget .student-source-56 { width:28px!important;height:28px!important; }
+.cloud-student #verse-widget .student-source-58 { display:contents; }
+.cloud-student #verse-widget .student-source-59 { grid-column:2; }
+.cloud-student #verse-text,.cloud-student #verse-ref { grid-column:1/-1;margin:0; }
+.cloud-student #verse-question-container {
+  flex:1 1 215px;min-width:0;width:auto;padding-top:8px!important;margin-top:0!important;
+}
+.cloud-student #verse-question { font-size:13px!important;line-height:1.4!important;margin-bottom:6px; }
+.cloud-student :is(#verse-options,#riddle-options) { grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important; }
+.cloud-student :is(#verse-options,#riddle-options) button { min-width:0;min-height:34px;padding:7px 8px!important;font-size:13px!important;line-height:1.35!important;white-space:normal; }
+.cloud-student :is(#verse-reward-msg,#riddle-reward-msg) { font-size:13px!important;line-height:1.4;padding:6px!important; }
+.cloud-student .daily-cloud-sync { display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex-basis:100%; }
+.cloud-student .daily-cloud-sync p { flex:1 1 180px;margin:0; }
+.cloud-student .daily-cloud-sync p:empty { display:none; }
+.cloud-student .daily-cloud-sync button { margin:0; }
+.cloud-student #streak-widget > div:first-child { flex-wrap:wrap;gap:8px; }
+.cloud-student #streak-widget .student-source-82 { min-width:88px; }
+.cloud-student #streak-label,.cloud-student #streak-tip { font-size:12px;line-height:1.4; }
+@container(min-width:500px) {
+  .cloud-student #verse-question-container { border-top:0;border-left:1px solid var(--border-glass);padding:0 0 0 12px!important; }
+}
+@media(min-width:1800px) {
+  .cloud-student .widgets-grid { display:flex!important;flex-wrap:nowrap!important; }
+  .cloud-student .widgets-grid > * { flex:.65 1 0!important;order:0!important; }
+  .cloud-student .widgets-grid .fact-widget { flex-grow:1!important; }
+  .cloud-student .widgets-grid .verse-widget { flex-grow:2.6!important; }
+  .cloud-student .widgets-grid .riddle-widget { flex-grow:1.5!important; }
+  .cloud-student .widgets-grid .streak-widget { flex-grow:.9!important; }
+}
+@media(max-width:1000px) {
+  .cloud-student .widgets-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .cloud-student .widgets-grid > * { grid-column:auto!important;order:0!important; }
+  .cloud-student .widgets-grid .verse-widget { grid-column:1/-1!important; }
+  .cloud-student .dashboard-header .header-right { margin-left:0;justify-content:flex-start; }
+}
+@media(max-width:600px) {
+  .cloud-student .widgets-grid { grid-template-columns:minmax(0,1fr);margin:12px 16px!important; }
+  .cloud-student .dashboard-header { padding:12px 16px!important; }
+  .cloud-student .cloud-header-device { padding-left:0;border-left:0; }
+}
+@media(any-pointer:coarse) {
+  .cloud-student #parent-exit { width:48px!important;min-width:48px!important;height:48px!important;min-height:48px!important; }
+  .cloud-student .dashboard-header .header-btn { width:48px!important;min-width:48px!important;height:48px!important;min-height:48px!important; }
+  .cloud-student :is(#verse-options,#riddle-options) button { min-height:48px; }
+}
+
+/* Setup support stays inline and readable before a child theme is selected. */
+.cloud-setup-support{margin-top:24px;padding:18px 22px;border:1px solid #45405e;border-radius:16px;background:#161628;color:#f3f3fb}
+.cloud-setup-support>summary{font-size:17px;font-weight:650;cursor:pointer}.cloud-setup-support p{font-size:14px;line-height:1.65;color:#c1c7dd;margin:12px 0}
+.cloud-setup-support button{font:600 14px/1.4 system-ui,sans-serif;min-height:42px;border:1px solid #625784;border-radius:10px;padding:10px 16px;background:#29253f;color:#f6f4ff;cursor:pointer;margin:4px 0}
+.cloud-setup-support button:disabled{opacity:.55;cursor:wait}.cloud-setup-support button:focus-visible,.cloud-setup-support summary:focus-visible{outline:3px solid #b6a3ff;outline-offset:3px}
+.cloud-setup-support #setup-summary{font-weight:650;color:#f3f3fb}.cloud-setup-support ul{list-style:none;margin:14px 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cloud-setup-support li{border:1px solid #46415b;border-radius:10px;padding:14px;overflow-wrap:anywhere}.cloud-setup-support li p{margin:6px 0 0}.cloud-setup-support li strong{font-size:14px}.cloud-setup-support .support-state{display:inline-block;font-size:12px;margin-left:8px;color:#f0cd87}
+.cloud-setup-support li[data-result="ok"] .support-state{color:#87e1bd}.cloud-setup-support .cloud-support-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.cloud-setup-support pre{font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;background:#10101f;padding:14px;border-radius:8px;user-select:text}
+.cloud-setup-support #setup-action-status:empty{display:none}@media(max-width:760px){.cloud-setup-support{padding:16px}.cloud-setup-support ul{grid-template-columns:1fr}.cloud-support-actions button{flex:1 1 100%}}
+
+.cloud-school-resume{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding:12px 16px;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-glass);border-radius:16px}
+.cloud-school-resume strong{flex:1;min-width:160px;font-size:15px}.cloud-school-resume button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:9px 14px;border:1px solid var(--border-glass);border-radius:12px;background:var(--bg-glass);color:var(--text-primary);font:600 14px var(--font-body,system-ui,sans-serif);cursor:pointer}.cloud-school-resume svg{width:18px;height:18px}.cloud-school-resume button:focus-visible{outline:2px solid var(--accent-primary);outline-offset:3px}.cloud-school-resume button:disabled{opacity:.65;cursor:wait}
+
+/* School close confirmation stays in Chromium's top layer, inside the kiosk. */
+.cloud-school-close{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:28px;border:1px solid var(--border-glass);border-radius:20px;background:var(--bg-card);color:var(--text-primary);box-shadow:0 24px 80px #0006;font-family:var(--font-body,system-ui,sans-serif)}
+.cloud-school-close::backdrop{background:#080713b3}
+.cloud-school-close h2{margin:0 32px 14px 0;font-size:22px;line-height:1.25}
+.cloud-school-close p{margin:0 0 24px;color:var(--text-secondary);font-size:16px;line-height:1.55}
+.cloud-school-close-actions{display:flex;flex-wrap:wrap;gap:10px}
+.cloud-school-close button{min-height:48px;border:1px solid var(--border-glass);border-radius:12px;background:var(--bg-glass);color:var(--text-primary);padding:10px 16px;font:600 15px var(--font-body,system-ui,sans-serif);cursor:pointer;touch-action:manipulation}
+.cloud-school-close-actions button{flex:1 1 180px}
+.cloud-school-close #cloud-school-close-keep{border-color:var(--accent-primary);font-weight:700}
+.cloud-school-close #cloud-school-close-dismiss{position:absolute;top:12px;right:12px;min-width:44px;min-height:44px;padding:4px;font-size:26px;border:0;background:transparent}
+.cloud-school-close button:focus-visible{outline:3px solid var(--accent-primary);outline-offset:3px}
+
+#school-view webview[hidden]{display:none}

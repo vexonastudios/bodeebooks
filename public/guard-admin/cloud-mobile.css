@@ -50,22 +50,29 @@
 .cloud-mobile .more-list { display: grid; gap: 10px; margin-top: 18px; }
 .cloud-mobile .more-list > button { width: 100%; text-align: left; min-height: 48px; padding: 14px; }
 
-/* The Add media tab opens the existing reviewed YouTube forms on a phone. */
-.cloud-mobile .mobile-media-intro { margin: 4px 0 18px; color: #a1aec4; font-size: 14px; line-height: 1.5; }
-.cloud-mobile .mobile-media-choices { display: grid; gap: 10px; }
-.cloud-mobile .mobile-media-choice { overflow: hidden; border: 1px solid #ffffff24; border-radius: 16px; background: linear-gradient(125deg, #1c2040, #11152b); }
-.cloud-mobile .mobile-media-open { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 78px; padding: 14px; border: 0; background: transparent; color: #f8fafc; text-align: left; cursor: pointer; }
-.cloud-mobile .mobile-media-symbol { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 13px; background: #6553b840; color: #c4b5fd; }
+/* Keep the frequent schoolwork actions first, with the same clear card pattern as media. */
+.cloud-mobile .mobile-section-heading { margin: 6px 0 12px; color: #e2e8f0; font-size: 18px; }
+.cloud-mobile .mobile-media-heading { margin-top: 28px; }
+.cloud-mobile .mobile-media-intro { margin: 0 0 14px; color: #a1aec4; font-size: 13px; line-height: 1.5; }
+.cloud-mobile :is(.mobile-schoolwork-choices, .mobile-media-choices) { display: grid; gap: 10px; }
+.cloud-mobile :is(.mobile-schoolwork-choice, .mobile-media-choice) { overflow: hidden; border: 1px solid #ffffff24; border-radius: 16px; background: linear-gradient(125deg, #1c2040, #11152b); }
+.cloud-mobile :is(.mobile-schoolwork-open, .mobile-media-open) { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 74px; padding: 14px; border: 0; background: transparent; color: #f8fafc; text-align: left; cursor: pointer; }
+.cloud-mobile :is(.mobile-schoolwork-open, .mobile-media-open):focus-visible { outline: 2px solid #a5b4fc; outline-offset: -3px; }
+.cloud-mobile :is(.mobile-schoolwork-symbol, .mobile-media-symbol) { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 13px; background: #6553b840; color: #c4b5fd; }
+.cloud-mobile [data-schoolwork-kind="spelling"] .mobile-schoolwork-symbol { background: #b96c2b40; color: #ffc28f; }
+.cloud-mobile [data-schoolwork-kind="vocabulary"] .mobile-schoolwork-symbol { background: #487bbb40; color: #a9caff; }
+.cloud-mobile [data-schoolwork-kind="poems"] .mobile-schoolwork-symbol { background: #af5c9a40; color: #f1b9e0; }
+.cloud-mobile [data-schoolwork-kind="worksheets"] .mobile-schoolwork-symbol { background: #168f7440; color: #76e5c5; }
+.cloud-mobile [data-schoolwork-kind="learning-videos"] .mobile-schoolwork-symbol { background: #6553b840; color: #c4b5fd; }
 .cloud-mobile [data-media-kind="videos"] .mobile-media-symbol { background: #2b79b940; color: #91d3ff; }
 .cloud-mobile [data-media-kind="audiobooks"] .mobile-media-symbol { background: #168f7440; color: #76e5c5; }
-.cloud-mobile .mobile-media-symbol svg { width: 22px; height: 22px; }
-.cloud-mobile .mobile-media-copy { flex: 1; min-width: 0; }
-.cloud-mobile .mobile-media-copy strong { display: block; font-size: 17px; }
-.cloud-mobile .mobile-media-copy small { display: block; margin-top: 3px; color: #b1bfd4; font-size: 12px; line-height: 1.35; }
-.cloud-mobile .mobile-media-open > svg { flex: 0 0 18px; width: 18px; height: 18px; }
+.cloud-mobile :is(.mobile-schoolwork-symbol, .mobile-media-symbol) svg { width: 22px; height: 22px; }
+.cloud-mobile :is(.mobile-schoolwork-copy, .mobile-media-copy) { flex: 1; min-width: 0; }
+.cloud-mobile :is(.mobile-schoolwork-copy, .mobile-media-copy) strong { display: block; font-size: 17px; }
+.cloud-mobile :is(.mobile-schoolwork-copy, .mobile-media-copy) small { display: block; margin-top: 3px; color: #b1bfd4; font-size: 12px; line-height: 1.35; }
+.cloud-mobile :is(.mobile-schoolwork-open, .mobile-media-open) > svg { flex: 0 0 18px; width: 18px; height: 18px; }
 .cloud-mobile .mobile-media-library { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 44px; padding: 9px; border: 0; border-top: 1px solid #ffffff18; background: #ffffff05; color: #c4b5fd; font-size: 12px; cursor: pointer; }
 .cloud-mobile .mobile-media-library svg { width: 16px; height: 16px; }
-.cloud-mobile .mobile-schoolwork-heading { margin: 24px 0 0; color: #e2e8f0; font-size: 17px; }
 .cloud-mobile .mobile-media-toolbar { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-bottom: 18px; }
 .cloud-mobile .mobile-media-toolbar > .text-button { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; color: #c4b5fd; font-size: 14px; }
 .cloud-mobile .mobile-media-toolbar h1 { margin: 0; font-size: 23px; }
@@ -168,3 +175,5 @@
 .cloud-mobile .mobile-spelling-coach[open] > summary > svg:last-child { transform: rotate(180deg); }
 .cloud-mobile .mobile-spelling-coach-body { padding: 0 14px 14px; }
 .cloud-mobile .mobile-spelling-coach .spelling-coach-heading h2 { font-size: 17px; }
+
+.cloud-student-report-banner{display:block;margin:0 0 16px;padding:13px 17px;border:1px solid #397b6f;border-radius:14px;background:#123e36;color:#b1f2df;font:600 15px/1.5 system-ui,sans-serif;text-decoration:none}.cloud-student-report-banner[hidden]{display:none!important}.cloud-student-report-banner:focus-visible{outline:3px solid #9be4d1;outline-offset:3px}

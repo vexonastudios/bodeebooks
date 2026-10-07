@@ -1,0 +1,69 @@
+/* A compact orientation row, using the child's existing theme. */
+.cloud-student .cloud-day-row {
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;
+  gap:18px;margin:18px 18px 24px;flex:none;
+}
+.cloud-student .cloud-day-row:has(>.cloud-planner-summary[hidden]) { grid-template-columns:1fr; }
+.cloud-student .cloud-day-row>.cloud-planner-summary,
+.cloud-student .student-day {
+  box-sizing:border-box;min-width:0;margin:0;padding:18px 20px;
+  border:1px solid var(--theme-border-strong);border-radius:var(--theme-card-radius,20px);
+  background:var(--theme-surface);color:var(--theme-text);
+  box-shadow:var(--theme-card-shadow);backdrop-filter:var(--theme-card-backdrop);
+}
+.cloud-student .cloud-day-row>.cloud-planner-summary {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;
+}
+.cloud-day-row .planner-summary-heading { min-width:0;gap:12px; }
+.cloud-day-row .planner-summary-heading>svg { width:24px;height:24px; }
+.cloud-day-row .planner-summary-heading h3 { font-size:18px; }
+.cloud-day-row #planner-upcoming { grid-column:1/-1;display:grid;gap:8px;order:initial; }
+.cloud-day-row #planner-upcoming:empty { display:none; }
+.cloud-day-row #planner-upcoming button { min-height:48px; }
+.cloud-day-row #planner-summary-open { grid-column:2;grid-row:1; }
+.student-day-heading { display:flex;align-items:center;gap:12px;margin-bottom:12px; }
+.student-day-heading>svg { width:24px;height:24px;color:var(--theme-primary); }
+.student-day-heading h3 { font-size:18px;line-height:1.3;margin:0; }
+.student-day-section { border-top:1px solid var(--theme-border); }
+.student-day-summary { display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 0;cursor:pointer;list-style:none;box-sizing:border-box; }
+.student-day-summary::-webkit-details-marker { display:none; }
+.student-day-icon { display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:10px;background:var(--theme-control-bg);color:var(--theme-primary); }
+.student-day-icon svg { width:19px;height:19px; }
+.student-day-copy { display:flex;flex-direction:column;min-width:0;gap:3px;flex:1; }
+.student-day-copy strong { font-size:14px;line-height:1.3; }
+.student-day-status { font-size:13px;line-height:1.4;color:var(--theme-text-secondary);overflow-wrap:anywhere; }
+.student-day-summary>svg { width:18px;height:18px;flex:none;color:var(--theme-text-secondary); }
+.student-day-section[open]>.student-day-summary>svg { transform:rotate(180deg); }
+.student-day-body { padding:0 0 14px; }
+.student-day-note { margin:0 0 10px;color:var(--theme-text-secondary);font-size:12px;line-height:1.5; }
+.student-day-list { display:grid;gap:7px; }
+.student-day-item { display:flex;align-items:center;gap:12px;width:100%;text-align:left;min-height:52px;padding:10px 12px;border:1px solid var(--theme-border);border-radius:11px;background:var(--theme-control-bg);color:inherit;font:inherit;cursor:pointer; }
+.student-day-item-copy { display:flex;flex:1;flex-direction:column;min-width:0;gap:4px;overflow-wrap:anywhere; }
+.student-day-item-copy strong { font-size:13px; }
+.student-day-item-copy>span { font-size:12px;line-height:1.45;color:var(--theme-text-secondary); }
+.student-day-item-state { font-size:12px;font-weight:750;color:var(--theme-link); }
+.student-day-item[data-done=true] .student-day-item-state { color:var(--theme-success-text); }
+.student-day-item:disabled { opacity:1;cursor:default; }
+.student-day-item:disabled .student-day-item-state { color:var(--theme-text-secondary); }
+.student-day-item:hover:not(:disabled) { border-color:var(--theme-primary); }
+.cloud-student .student-day .student-chore-card {
+  width:100%;margin:0;padding:10px 0;min-height:60px;gap:12px;border:0;
+  border-top:1px solid var(--theme-border);border-radius:0;background:transparent;
+  box-shadow:none;color:var(--theme-text);
+}
+.cloud-student .student-day .student-chore-card:hover { background:transparent; }
+.student-day .student-chore-card-icon { width:32px;height:32px;border-radius:10px;background:var(--theme-control-bg);color:var(--theme-primary); }
+.student-day .student-chore-card-icon svg { width:19px;height:19px; }
+.student-day .student-chore-card-copy strong { font-size:14px; }
+.student-day .student-chore-card-copy>span { font-size:13px;line-height:1.4;color:var(--theme-text-secondary); }
+.student-day .student-chore-card>svg:last-child { width:18px;height:18px;color:var(--theme-text-secondary); }
+.cloud-student .student-day :is(button,summary):focus-visible { outline:3px solid var(--theme-primary);outline-offset:2px;border-radius:10px; }
+@media(max-width:900px) {
+  .cloud-student .cloud-day-row { grid-template-columns:minmax(0,1fr);gap:14px; }
+  .cloud-day-row>.student-day { grid-row:1; }
+}
+@media(max-width:480px) {
+  .cloud-student .cloud-day-row>.cloud-planner-summary,.cloud-student .student-day { padding:16px; }
+  .cloud-student .cloud-day-row>.cloud-planner-summary { grid-template-columns:minmax(0,1fr);gap:12px; }
+  .cloud-day-row #planner-summary-open { grid-column:1;grid-row:auto;justify-content:center; }
+}

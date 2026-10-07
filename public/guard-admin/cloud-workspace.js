@@ -1,3 +1,4 @@
+import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { createParentSessionRecovery, createParentSessionNotice } from './cloud-parent-session.js';
@@ -11,15 +12,15 @@ import { setupParentStart } from './cloud-parent-start.js?v=20260927-finish1';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { setupCloudChores } from './cloud-chores.js';
-import { studentAvatar, editStudentProfile, profileIcon } from './cloud-student-profile.js?v=20260910-photos1';
+import { studentAvatar, editStudentProfile, profileIcon, confirmStudentDeletion } from './cloud-student-profile.js?v=20261007-avatar1';
 import { editCloudSubject } from './cloud-school-editor.js';
 import { setupActivityLibrary } from './cloud-activity-library.js';
-import { setupCloudSchoolReview } from './cloud-school-review.js';
+import { setupCloudSchoolReview } from './cloud-school-review.js?v=20261007-abeka-day1';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
-import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js';
+import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { setupCloudMessages } from './cloud-messages.js?v=20261006-child-peer1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
-import { setupCloudMobile } from './cloud-mobile.js?v=20261006-mobile-media1';
+import { setupCloudMobile } from './cloud-mobile.js?v=20261007-student-reports1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261007-grade-preview1';
@@ -33,7 +34,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
-import { setupMonitoring } from './cloud-monitoring.js?v=20261005-progress-ring1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20261007-avatar1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20261007-family1';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20261005-multi1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js?v=20261005-multi1';
@@ -42,7 +43,7 @@ import { setupCloudQuizzes } from './cloud-quizzes.js';
 import { setupCloudWorksheets } from './cloud-worksheets.js';
 import { setupCloudReading } from './cloud-reading.js';
 import { setupCloudTyping } from './cloud-typing.js?v=20260911-controls1';
-import { setupCloudEconomy } from './cloud-economy.js?v=20261001-challenges1';
+import { setupCloudEconomy } from './cloud-economy.js?v=20261007-opening1';
 import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 
 import { setupNotificationNavigation } from './cloud-notification-navigation.js?v=20261005-reply-focus1';
@@ -272,7 +273,10 @@ function renderStudents() {
       try { await mutate('archive-student', { studentId: student.id, archived }); } catch (_) { /* Existing feedback retains the error. */ }
     }); archive.dataset.cloudMutation = 'true'; archive.classList.add('cloud-student-archive'); archive.prepend(profileIcon(student.archived_at ? 'archive-restore' : 'archive')); archive.setAttribute('aria-label', `${student.archived_at ? 'Restore' : 'Archive'} ${student.name}`);
     const footer = node('div', 'cloud-student-card-footer'), state = node('span', 'cloud-student-state', student.archived_at ? 'Archived' : 'Active student'); state.prepend(profileIcon(student.archived_at ? 'archive' : 'user-round-check'));
-    footer.append(state, archive); wrapper.append(row, footer); list.append(wrapper);
+    const remove = button('Delete student', () => confirmStudentDeletion({ student, remove: data => mutate('delete-student', data) }), 'btn cloud-student-delete');
+    remove.dataset.cloudMutation = 'true'; remove.setAttribute('aria-label', `Delete ${student.name}`); remove.prepend(profileIcon('trash-2'));
+    const actions = node('div', 'cloud-student-card-actions'); actions.append(archive, remove);
+    footer.append(state, actions); wrapper.append(row, footer); list.append(wrapper);
   }
   if (!snapshot.students.length) list.append(node('p', 'cloud-panel', 'Add your first student to set up their profile and school.'));
 }
@@ -364,7 +368,7 @@ function addDayException(date = '', existing = null) {
 }
 function editor(title, fields, save) {
   if (!usable || mutating) return;
-  byId('cloud-editor').classList.remove('cloud-hours-editor');
+  byId('cloud-editor').classList.remove('cloud-hours-editor', 'cloud-profile-photo-editor');
   byId('cloud-editor-title').textContent = title;
   byId('cloud-editor-fields').replaceChildren(...fields);
   byId('cloud-editor-error').textContent = '';
@@ -409,6 +413,7 @@ setupSidebarGroups();
 const weeklyActivity = setupWeeklyActivity({ endpoint, getSnapshot: () => snapshot });
 const monitoring = setupMonitoring({
   setControls,
+  editProfilePhoto: student => editStudentProfile({ student, editor, field, mutate, photoOnly: true }),
   getSnapshot: () => snapshot,
   mutate: (action,data) => mutate(action,data,{notify:false}),
   navigate: selectTab,
@@ -511,8 +516,8 @@ const livePush=window.CloudPush.createCloudPushClient({
     return response.json();
   },
   onConnection:connected=>{byId('live-indicator').dataset.messagesConnected=String(connected);messaging.setLive(connected);},
-  onReady:()=>{window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
-  onSignal:hint=>{
+  onReady:()=>{window.dispatchEvent(new Event('cloud-student-report-refresh'));window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
+  onSignal:hint=>{if(hint.kind==='refresh')window.dispatchEvent(new Event('cloud-student-report-refresh'));
     if(hint.kind==='settings')void chores.refresh(true);
     if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
     if(hint.kind==='screenshots')screenshots.refresh();
@@ -528,6 +533,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => { connectionRefresh.stop(); pushTicketController?.abort(); livePush.stop(); clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); if (feature === 'games') { void games.refresh(); void refresh(); } if (feature === 'music') { void refresh(); } } });
+setupStudentPreview({getSnapshot:()=>snapshot,endpoint});
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');
 const notificationNavigation = setupNotificationNavigation({ messaging, navigate: selectTab, getStudents: () => snapshot?.students || [] });

@@ -1,0 +1,875 @@
+/* ===== DASHBOARD MAIN LAYOUT ===== */
+#dashboard-screen {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  box-sizing: border-box !important;
+  padding-bottom: var(--pinned-player-space, 0px) !important;
+  overflow: hidden !important;
+}
+
+.dashboard-header {
+  padding: 14px 32px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Horizontal Scrollable Widget Shelf — 230px height to accommodate questions */
+.widgets-grid {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  gap: 14px !important;
+  margin: 12px 32px 8px 32px !important;
+  padding-bottom: 12px !important;
+  flex-shrink: 0 !important;
+  height: 236px !important;
+  max-height: 236px !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255,255,255,0.2) transparent !important;
+}
+
+.widgets-grid::-webkit-scrollbar {
+  height: 8px !important;
+}
+
+.widgets-grid::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.widgets-grid::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2) !important;
+  border-radius: 4px !important;
+}
+
+/* Compact widgets */
+.wallet-widget,
+.weather-widget,
+.typing-widget,
+.streak-widget {
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+/* Text-heavy widgets need more width so they don't grow vertically */
+.verse-widget,
+.riddle-widget {
+  flex: 0 0 500px !important;
+  width: 500px !important;
+  min-width: 500px !important;
+  max-width: 500px !important;
+}
+
+#verse-prev:disabled,
+#verse-next:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+.fact-widget {
+  flex: 0 0 340px !important;
+  width: 340px !important;
+  min-width: 340px !important;
+  max-width: 340px !important;
+}
+
+.wallet-widget,
+.weather-widget,
+.typing-widget,
+.fact-widget,
+.verse-widget,
+.riddle-widget,
+.streak-widget {
+  height: 220px !important;
+  max-height: 220px !important;
+  padding: 14px 18px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  scrollbar-width: thin !important;
+}
+
+/* Keep overflow discoverable. Long verses and brain teasers can exceed the
+   compact card height on 720p displays; a visible, subtle scrollbar tells a
+   child that more answers or feedback are available below. */
+.wallet-widget,
+.weather-widget,
+.typing-widget,
+.fact-widget,
+.verse-widget,
+.riddle-widget,
+.streak-widget {
+  scrollbar-color: rgba(148, 163, 184, .48) transparent !important;
+  scrollbar-width: thin !important;
+  scrollbar-gutter: stable;
+}
+
+.wallet-widget::-webkit-scrollbar,
+.weather-widget::-webkit-scrollbar,
+.typing-widget::-webkit-scrollbar,
+.fact-widget::-webkit-scrollbar,
+.verse-widget::-webkit-scrollbar,
+.riddle-widget::-webkit-scrollbar,
+.streak-widget::-webkit-scrollbar {
+  display: block !important;
+  width: 6px !important;
+}
+
+.wallet-widget::-webkit-scrollbar-thumb,
+.weather-widget::-webkit-scrollbar-thumb,
+.typing-widget::-webkit-scrollbar-thumb,
+.fact-widget::-webkit-scrollbar-thumb,
+.verse-widget::-webkit-scrollbar-thumb,
+.riddle-widget::-webkit-scrollbar-thumb,
+.streak-widget::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(148, 163, 184, .42);
+}
+
+/* Compact widget internals */
+.wallet-widget div[style*="font-size:2.5rem"],
+.typing-widget div[style*="font-size:2.5rem"] {
+  font-size: 1.8rem !important;
+  margin: 4px 0 !important;
+}
+.wallet-widget button {
+  padding: 4px 14px !important;
+  font-size: 0.8rem !important;
+}
+
+/* Make icons smaller in verse/riddle/fact */
+.fact-widget > div:first-child,
+.verse-widget > div > div:first-child,
+.riddle-widget > div > div:first-child {
+  width: 36px !important;
+  height: 36px !important;
+}
+.fact-widget i, .verse-widget i {
+  width: 18px !important;
+  height: 18px !important;
+}
+.riddle-widget > div > div:first-child {
+  font-size: 18px !important;
+}
+
+/* Tighten text elements */
+.verse-widget p, .riddle-widget p, .fact-widget p {
+  line-height: 1.25 !important;
+  font-size: 0.85rem !important;
+}
+.verse-widget h4, .riddle-widget h4, .fact-widget h4 {
+  font-size: 1rem !important;
+}
+.verse-widget, .riddle-widget, .fact-widget {
+  gap: 6px !important;
+}
+#verse-question-container {
+  padding-top: 6px !important;
+  margin-top: 2px !important;
+}
+#verse-question {
+  margin-bottom: 6px !important;
+  font-size: 0.82rem !important;
+}
+#riddle-options, #verse-options {
+  gap: 6px !important;
+}
+#riddle-options button, #verse-options button {
+  padding: 6px 10px !important;
+  font-size: 0.8rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Subjects Container — THE MAIN FOCUS OF THE SCREEN */
+.subjects-container {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 12px 32px 16px 32px !important;
+  gap: 16px !important;
+}
+
+.main-subjects-container {
+  flex: 0 0 auto !important;
+  padding: 0 32px 0 32px !important;
+}
+
+.reward-section {
+  flex-shrink: 0 !important;
+  padding: 0 32px 12px 32px !important;
+}
+
+.reward-card {
+  padding: 12px 20px !important;
+}
+
+/* Compact dashboard for the 720p/768p monitors used by many student PCs.
+   Everything remains readable; the subject area scrolls instead of crushing
+   its cards and clipping their descriptions, timers, or lock explanations. */
+@media (max-height: 800px) {
+  .dashboard-header {
+    padding: 8px 24px !important;
+  }
+
+  .header-left {
+    gap: 12px;
+  }
+
+  .header-greeting {
+    font-size: 1.3rem;
+  }
+
+  .header-date {
+    font-size: 0.8rem;
+  }
+
+  .header-clock {
+    margin-top: 1px !important;
+    font-size: 21px !important;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  .header-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .header-btn.grades-btn { width: 40px; padding: 0; }
+  .header-btn.grades-btn .grades-label { display: none; }
+
+  .completion-badge {
+    width: 46px;
+    height: 46px;
+  }
+
+  .widgets-grid {
+    height: 196px !important;
+    max-height: 196px !important;
+    margin: 8px 24px 6px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .wallet-widget,
+  .weather-widget,
+  .typing-widget,
+  .fact-widget,
+  .verse-widget,
+  .riddle-widget,
+  .streak-widget {
+    height: 184px !important;
+    max-height: 184px !important;
+    padding: 11px 15px !important;
+  }
+
+  .subjects-container {
+    grid-auto-rows: max-content !important;
+    gap: 12px !important;
+    padding: 8px 24px 12px !important;
+  }
+
+  .main-subjects-container {
+    padding: 0 24px !important;
+  }
+
+  .main-subject-card {
+    min-height: 145px !important;
+    padding: 22px 24px !important;
+  }
+
+  .subject-card {
+    padding: 18px;
+  }
+
+  .subject-card-header {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .subject-icon {
+    font-size: 1.75rem;
+  }
+
+  .subject-name {
+    min-width: 0;
+    font-size: 1.05rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .subject-progress-bar {
+    margin-top: 10px;
+  }
+
+  .portal-course-progress {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .portal-course-progress-summary {
+    margin-bottom: 6px;
+  }
+
+  .portal-course-chip {
+    padding: 3px 7px;
+    font-size: 0.66rem;
+  }
+
+  .lock-pill {
+    margin-top: 6px;
+    padding: 3px 8px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .reward-section {
+    padding: 0 24px 8px !important;
+  }
+
+  .reward-card {
+    gap: 14px;
+    padding: 8px 16px !important;
+  }
+
+  .reward-icon {
+    font-size: 2rem;
+  }
+
+  .reward-btn {
+    padding: 9px 18px;
+    font-size: 0.88rem;
+  }
+}
+
+/* The family's 1080p/1152p displays are physically short even though their
+   CSS viewport is taller than the old 900px compact breakpoint. Treat this
+   common wide-screen shape as a compact dashboard in its own right. Keep all
+   required school cards on one shallow row and reserve the majority of the
+   screen for the subjects a child is trying to reach. */
+@media (min-width: 1180px) and (max-height: 1200px) {
+  .dashboard-header {
+    min-height: 0 !important;
+    padding: 8px 24px !important;
+  }
+
+  .header-left { gap: 10px !important; }
+
+  :root[class*="theme-"] .header-avatar,
+  .header-avatar {
+    min-width: 46px !important;
+    min-height: 46px !important;
+    width: 46px !important;
+    height: 46px !important;
+    padding: 2px !important;
+    border-radius: 14px !important;
+    font-size: 1.9rem !important;
+  }
+
+  .header-avatar img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .header-greeting {
+    margin: 0 !important;
+    font-size: 1.12rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .header-date {
+    margin: 1px 0 0 !important;
+    font-size: 0.72rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .header-clock {
+    margin-top: 2px !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+  }
+
+  #school-checkin-badge {
+    margin-top: 4px !important;
+    padding: 3px 8px !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+  }
+
+  .header-right { gap: 7px !important; }
+
+  .header-btn,
+  .header-btn.grades-btn {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  .header-btn.grades-btn .grades-label { display: none !important; }
+  .header-btn svg { width: 17px !important; height: 17px !important; }
+  .completion-badge { width: 40px !important; height: 40px !important; }
+  .completion-text { font-size: 0.58rem !important; }
+
+  .widgets-grid {
+    height: 154px !important;
+    max-height: 154px !important;
+    gap: 10px !important;
+    margin: 7px 24px 6px !important;
+    padding-bottom: 7px !important;
+  }
+
+  .wallet-widget,
+  .weather-widget,
+  .typing-widget,
+  .streak-widget {
+    flex-basis: 220px !important;
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+  }
+
+  .fact-widget {
+    flex-basis: 270px !important;
+    width: 270px !important;
+    min-width: 270px !important;
+    max-width: 270px !important;
+  }
+
+  .verse-widget,
+  .riddle-widget {
+    flex-basis: 430px !important;
+    width: 430px !important;
+    min-width: 430px !important;
+    max-width: 430px !important;
+  }
+
+  .wallet-widget,
+  .weather-widget,
+  .typing-widget,
+  .fact-widget,
+  .verse-widget,
+  .riddle-widget,
+  .streak-widget {
+    height: 143px !important;
+    max-height: 143px !important;
+    padding: 9px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .wallet-widget div[style*="font-size:2.5rem"],
+  .typing-widget div[style*="font-size:2.5rem"] {
+    margin: 3px 0 !important;
+    font-size: 1.55rem !important;
+  }
+
+  .wallet-widget h4,
+  .typing-widget h4 { font-size: 0.9rem !important; }
+  .wallet-widget button { padding: 4px 10px !important; font-size: 0.7rem !important; }
+  #banked-media-display { margin-top: 6px !important; padding: 5px 8px !important; }
+
+  .fact-widget > div:first-child,
+  .verse-widget > div > div:first-child,
+  .riddle-widget > div > div:first-child {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .verse-widget > div,
+  .riddle-widget > div { gap: 9px !important; }
+  .verse-widget h4, .riddle-widget h4, .fact-widget h4 { font-size: 0.88rem !important; }
+  .verse-widget p, .riddle-widget p, .fact-widget p { font-size: 0.72rem !important; line-height: 1.15 !important; }
+  #verse-question-container { margin-top: 2px !important; padding-top: 4px !important; }
+  #verse-question { margin-bottom: 4px !important; font-size: 0.71rem !important; }
+  #riddle-options, #verse-options { gap: 4px !important; }
+  #riddle-options button, #verse-options button {
+    padding: 4px 7px !important;
+    font-size: 0.67rem !important;
+    line-height: 1.08 !important;
+  }
+  #riddle-reward-msg, #verse-reward-msg {
+    margin-top: 4px !important;
+    padding: 5px !important;
+    font-size: 0.68rem !important;
+  }
+
+  /* Auto-fit is deliberate: four or five assigned school items stay on one
+     row instead of Spelling/Vocabulary creating a mostly empty second row. */
+  .main-subjects-container {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+    gap: 9px !important;
+    padding: 0 24px !important;
+  }
+
+  .main-subject-card {
+    min-height: 136px !important;
+    padding: 13px 15px !important;
+    justify-content: flex-start !important;
+  }
+
+  .main-subject-card .subject-name { font-size: 1rem !important; }
+  .main-subject-card .subject-icon i { width: 21px !important; height: 21px !important; }
+  .main-subject-card .subject-card-header { margin-bottom: 6px !important; }
+  .main-subject-card .subject-time { font-size: 0.68rem !important; }
+  .main-subject-card .subject-progress-bar { height: 4px !important; margin-top: 6px !important; }
+
+  .portal-course-progress { margin-top: 5px !important; padding-top: 5px !important; }
+  .portal-course-progress-summary { margin-bottom: 4px !important; font-size: 0.62rem !important; }
+  .portal-course-progress-summary strong { font-size: 0.65rem !important; }
+  .portal-course-list { gap: 3px !important; }
+  .portal-course-chip { padding: 2px 5px !important; font-size: 0.58rem !important; gap: 3px !important; }
+  .portal-course-status { font-size: 0.62rem !important; }
+
+  .weekly-spelling-title { font-size: 0.74rem !important; margin-top: 0 !important; }
+  .weekly-spelling-stats { gap: 4px !important; margin-top: 5px !important; }
+  .weekly-spelling-stats span { padding: 2px 5px !important; font-size: 0.6rem !important; }
+  .weekly-spelling-footer { gap: 7px !important; margin-top: 6px !important; font-size: 0.64rem !important; }
+  .weekly-spelling-check { top: 9px !important; right: 9px !important; }
+  .weekly-spelling-check svg { width: 17px !important; height: 17px !important; }
+
+  .subjects-container {
+    grid-auto-rows: max-content !important;
+    gap: 9px !important;
+    padding: 7px 24px 10px !important;
+    scrollbar-gutter: stable;
+  }
+
+  .subjects-container:not(.main-subjects-container) {
+    flex: 1 1 180px !important;
+    grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)) !important;
+    min-height: 150px !important;
+    padding-bottom: 14px !important;
+  }
+
+  .subjects-container:not(.main-subjects-container) .subject-card {
+    min-height: 96px !important;
+    padding: 11px 13px !important;
+    border-radius: 14px !important;
+  }
+
+  .subjects-container:not(.main-subjects-container) .subject-card-header {
+    gap: 7px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .subjects-container:not(.main-subjects-container) .subject-icon { font-size: 1.18rem !important; }
+  .subjects-container:not(.main-subjects-container) .subject-icon svg { width: 18px !important; height: 18px !important; }
+  .subjects-container:not(.main-subjects-container) .subject-name { font-size: 0.86rem !important; line-height: 1.08 !important; }
+  .subjects-container:not(.main-subjects-container) .subject-time { font-size: 0.67rem !important; }
+  .subjects-container:not(.main-subjects-container) .subject-progress-bar { height: 4px !important; margin-top: 6px !important; }
+  .subjects-container:not(.main-subjects-container) .lock-pill { margin-top: 4px !important; padding: 2px 6px !important; font-size: 0.62rem !important; }
+
+  .reward-section { padding: 0 24px 6px !important; }
+  .reward-card {
+    min-height: 46px !important;
+    gap: 9px !important;
+    padding: 6px 12px !important;
+    border-radius: 13px !important;
+  }
+  .reward-icon { font-size: 1.35rem !important; }
+  .reward-info h3 { font-size: 0.8rem !important; }
+  .reward-info p { font-size: 0.66rem !important; }
+  .reward-info .subject-progress-bar { display: none !important; }
+  .reward-btn { padding: 7px 12px !important; font-size: 0.72rem !important; }
+}
+
+/* Windows display scaling means a physically short 720p/768p monitor can
+   report a CSS viewport a little taller than 800px.  This is the real compact
+   dashboard: reduce decorative space aggressively, keep the learning cards
+   readable, and give the scrollable subject grid most of the screen. */
+@media (max-height: 900px) {
+  .dashboard-header {
+    min-height: 0 !important;
+    padding: 5px 18px !important;
+  }
+
+  .header-left {
+    min-width: 0;
+    gap: 8px !important;
+  }
+
+  .header-left > div {
+    display: grid;
+    grid-template-columns: minmax(0, auto) auto;
+    grid-template-areas:
+      "greeting clock"
+      "date date"
+      "checkin checkin";
+    align-items: center;
+    column-gap: 9px;
+  }
+
+  :root[class*="theme-"] .header-avatar,
+  .header-avatar {
+    min-width: 38px !important;
+    min-height: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 2px !important;
+    border-radius: 12px !important;
+    font-size: 1.65rem !important;
+  }
+
+  .header-avatar img {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .header-greeting {
+    grid-area: greeting;
+    margin: 0 !important;
+    font-size: 1rem !important;
+    line-height: 1.08 !important;
+    white-space: nowrap;
+  }
+
+  .header-date {
+    grid-area: date;
+    margin: 1px 0 0 !important;
+    font-size: 0.68rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .header-clock {
+    grid-area: clock;
+    margin: 0 !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+  }
+
+  #school-checkin-badge {
+    grid-area: checkin;
+    margin-top: 3px !important;
+    padding: 3px 7px !important;
+    font-size: 9px !important;
+    line-height: 1.1;
+  }
+
+  .header-right {
+    flex: 0 0 auto;
+    gap: 6px !important;
+  }
+
+  .header-btn,
+  .header-btn.grades-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  .header-btn.grades-btn .grades-label { display: none !important; }
+  .header-btn svg { width: 16px !important; height: 16px !important; }
+
+  .completion-badge {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .completion-text { font-size: 0.55rem !important; }
+
+  .widgets-grid {
+    height: 146px !important;
+    max-height: 146px !important;
+    gap: 8px !important;
+    margin: 5px 18px 4px !important;
+    padding-bottom: 7px !important;
+  }
+
+  .wallet-widget,
+  .weather-widget,
+  .typing-widget,
+  .streak-widget {
+    flex-basis: 195px !important;
+    width: 195px !important;
+    min-width: 195px !important;
+    max-width: 195px !important;
+  }
+
+  .fact-widget {
+    flex-basis: 245px !important;
+    width: 245px !important;
+    min-width: 245px !important;
+    max-width: 245px !important;
+  }
+
+  .verse-widget,
+  .riddle-widget {
+    flex-basis: 390px !important;
+    width: 390px !important;
+    min-width: 390px !important;
+    max-width: 390px !important;
+  }
+
+  .wallet-widget,
+  .weather-widget,
+  .typing-widget,
+  .fact-widget,
+  .verse-widget,
+  .riddle-widget,
+  .streak-widget {
+    height: 137px !important;
+    max-height: 137px !important;
+    padding: 8px 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .wallet-widget div[style*="font-size:2.5rem"],
+  .typing-widget div[style*="font-size:2.5rem"] {
+    margin: 2px 0 !important;
+    font-size: 1.45rem !important;
+  }
+
+  .wallet-widget h4,
+  .typing-widget h4 { font-size: 0.86rem !important; }
+  .wallet-widget button { padding: 3px 9px !important; font-size: 0.68rem !important; }
+  #banked-media-display { margin-top: 6px !important; padding: 5px 7px !important; }
+
+  .fact-widget > div:first-child,
+  .verse-widget > div > div:first-child,
+  .riddle-widget > div > div:first-child {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .verse-widget > div,
+  .riddle-widget > div { gap: 8px !important; }
+  .verse-widget h4, .riddle-widget h4, .fact-widget h4 { font-size: 0.84rem !important; }
+  .verse-widget p, .riddle-widget p, .fact-widget p { font-size: 0.7rem !important; line-height: 1.16 !important; }
+  #verse-question { margin-bottom: 4px !important; font-size: 0.7rem !important; }
+  #verse-question-container { padding-top: 4px !important; }
+  #riddle-options, #verse-options { gap: 4px !important; }
+  #riddle-options button, #verse-options button {
+    padding: 4px 7px !important;
+    font-size: 0.66rem !important;
+    line-height: 1.08 !important;
+  }
+  #riddle-reward-msg, #verse-reward-msg { margin-top: 4px !important; padding: 5px !important; font-size: 0.68rem !important; }
+
+  .main-subjects-container {
+    gap: 8px !important;
+    padding: 0 18px !important;
+  }
+
+  .main-subject-card {
+    min-height: 112px !important;
+    padding: 12px 16px !important;
+  }
+
+  .main-subject-card .subject-name { font-size: 1rem !important; }
+  .main-subject-card .subject-icon i { width: 20px !important; height: 20px !important; }
+
+  .subjects-container {
+    grid-auto-rows: max-content !important;
+    gap: 8px !important;
+    padding: 7px 18px 9px !important;
+    scroll-padding-bottom: 14px;
+    scrollbar-gutter: stable;
+  }
+
+  .subjects-container:not(.main-subjects-container) {
+    grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)) !important;
+  }
+
+  .subject-card {
+    padding: 11px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .subject-card-header {
+    gap: 7px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .subject-icon { font-size: 1.2rem !important; }
+  .subject-icon svg { width: 18px !important; height: 18px !important; }
+  .subject-name { font-size: 0.88rem !important; line-height: 1.08 !important; }
+  .subject-time { font-size: 0.68rem !important; }
+  .subject-progress-bar { height: 4px !important; margin-top: 6px !important; }
+  .portal-course-progress { margin-top: 5px !important; padding-top: 5px !important; }
+  .portal-course-progress-summary { margin-bottom: 4px !important; font-size: 0.62rem !important; }
+  .portal-course-chip { padding: 2px 5px !important; font-size: 0.57rem !important; }
+  .lock-pill { margin-top: 4px !important; padding: 2px 6px !important; font-size: 0.62rem !important; }
+
+  .reward-section { padding: 0 18px 5px !important; }
+  .reward-card {
+    min-height: 44px;
+    gap: 8px !important;
+    padding: 5px 10px !important;
+    border-radius: 13px !important;
+  }
+  .reward-icon { font-size: 1.25rem !important; }
+  .reward-info h3 { font-size: 0.78rem !important; }
+  .reward-info p { font-size: 0.65rem !important; }
+  .reward-info .subject-progress-bar { display: none !important; }
+  .reward-btn { padding: 6px 10px !important; font-size: 0.7rem !important; }
+}
+
+/* On exceptionally short displays, the dashboard still presents every major
+   section without the header and widgets consuming half the viewport. */
+@media (max-height: 700px) {
+  .widgets-grid { height: 124px !important; max-height: 124px !important; }
+  .wallet-widget,
+  .weather-widget,
+  .typing-widget,
+  .fact-widget,
+  .verse-widget,
+  .riddle-widget,
+  .streak-widget { height: 115px !important; max-height: 115px !important; }
+  .main-subject-card { min-height: 98px !important; padding: 9px 13px !important; }
+  .header-date { display: none !important; }
+  .reward-card { min-height: 38px; }
+}
+
+@media (max-width: 1100px) {
+  .dashboard-header {
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .widgets-grid {
+    margin-right: 20px !important;
+    margin-left: 20px !important;
+  }
+
+  .subjects-container {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+  }
+
+  .main-subjects-container,
+  .reward-section {
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+  }
+}
+
+/* Short 800px-wide laptops still have room for the two required-subject
+   cards side by side. Stacking them would consume the entire viewport before
+   enrichment subjects and their scroll area can begin. */
+@media (min-width: 640px) and (max-width: 900px) and (max-height: 800px) {
+  .main-subjects-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .main-subject-card .subject-name {
+    font-size: 1.1rem !important;
+  }
+}
+
+

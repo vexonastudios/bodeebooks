@@ -65,11 +65,19 @@ const server = http.createServer(async (req, res) => {
     const waitWrite = async predicate => { for (let i = 0; i < 160; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 50)); } throw Error('Timed out waiting for media save'); };
     await win.loadURL(origin);
     await wait('document.querySelectorAll(".mobile-media-choice").length===3');
-    assert.equal(await evalJs('document.getElementById("tab-mobile-add").scrollWidth<=document.querySelector(".main-content").clientWidth+1'), true);
+    assert.deepEqual(await evalJs('[...document.querySelectorAll(".mobile-schoolwork-copy strong")].map(el=>el.textContent)'),
+      ['Spelling', 'Vocabulary', 'Poems', 'Worksheets', 'Learning videos']);
+    assert.equal(await evalJs('document.querySelector(".mobile-schoolwork-choices").getBoundingClientRect().top < document.querySelector(".mobile-media-choices").getBoundingClientRect().top'), true);
     if (process.env.BODEE_CAPTURE) {
       const folder = path.join(site, '.tmp', 'mobile-media-ui'); fs.mkdirSync(folder, { recursive: true });
       fs.writeFileSync(path.join(folder, 'add-media.png'), await win.webContents.capturePage().then(image => image.toPNG()));
     }
+    for (const kind of ['spelling', 'vocabulary', 'poems', 'worksheets', 'learning-videos']) {
+      await evalJs(`document.querySelector('[data-schoolwork-kind="${kind}"] .mobile-schoolwork-open').click()`);
+      await wait(`document.getElementById('tab-${kind}').classList.contains('active')`);
+      await evalJs("window.fixtureNavigate('mobile-add')");
+    }
+    assert.equal(await evalJs('document.getElementById("tab-mobile-add").scrollWidth<=document.querySelector(".main-content").clientWidth+1'), true);
     assert.deepEqual(await evalJs('[...document.querySelectorAll(".mobile-media-copy strong")].map(el=>el.textContent)'), ['Videos', 'Music', 'Audiobooks']);
     for (const [kind, input, audience] of [['videos', 'video-yt-url', 'video-global-input'], ['music', 'music-yt-url', 'music-all-students-input'], ['audiobooks', 'ab-youtube-url', 'ab-global']]) {
       await evalJs(`document.querySelector('[data-media-kind="${kind}"] .mobile-media-open').click()`);

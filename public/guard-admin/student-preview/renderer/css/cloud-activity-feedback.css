@@ -1,0 +1,55 @@
+html { background: #071827; color-scheme: dark; }
+body:has(.activity-feedback) { padding-bottom: 104px; }
+.activity-feedback { position: fixed; z-index: 120; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: min(620px, calc(100vw - 32px)); display: grid; gap: 8px; pointer-events: none; }
+.activity-feedback .activity-status { margin: 0; padding: 12px 18px; border: 1px solid #386279; border-radius: 14px; background: #102c40; color: #e4f4fc; font: 500 14px/1.45 system-ui, sans-serif; box-shadow: 0 6px 20px #0004; overflow-wrap: anywhere; text-align: center; }
+.activity-status[data-kind="busy"]::before { content: ''; display: inline-block; width: 12px; height: 12px; margin-right: 9px; border: 2px solid #46657a; border-top-color: #7dd3fc; border-radius: 50%; vertical-align: -2px; animation: activity-spin 1s linear infinite; }
+.activity-feedback .activity-status[data-kind="error"] { color: #ffdfda; background: #48282d; border-color: #bf797b; }
+.activity-feedback .activity-status[data-kind="success"] { color: #b6f5d2; border-color: #3c8366; }
+.activity-feedback [hidden], .activity-feedback :empty { display: none !important; }
+.activity-loader { min-height: 55vh; display: grid; align-content: center; justify-items: center; gap: 14px; margin: 12px auto; padding: 24px; color: #e9f5fc; font-family: system-ui, sans-serif; text-align: center; background: #071827; }
+.activity-loader svg { width: 52px; height: 52px; color: #5eead4; }
+.activity-loader strong { font-size: 24px; letter-spacing: -.03em; }
+.activity-loader h2 { margin: 0; font-size: 19px; font-weight: 500; }
+.activity-loader p { max-width: 380px; margin: 0; color: #9ebfce; font-size: 14px; }
+.activity-loader .activity-spinner { width: 26px; height: 26px; border: 3px solid #214158; border-top-color: #5eead4; border-radius: 50%; animation: activity-spin 1s linear infinite; }
+body:has(#activity-loader) :is(#poems-content, #spelling-content, #vocabulary-content, #practice-content, #typing-workspace) > :not(#activity-loader) { display: none !important; }
+button[aria-busy="true"] { cursor: progress; }
+@keyframes activity-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .activity-spinner, .activity-status[data-kind="busy"]::before { animation: none !important; } }
+
+/* A consistent, compact BodeeGuard bar across the child learning modules. */
+:is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) {
+  position: sticky; top: 0; z-index: 80; box-sizing: border-box; width: 100%; min-height: 58px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; padding: 9px 16px;
+  border: 0; border-bottom: 1px solid rgba(125,211,252,.2); border-radius: 0;
+  background: linear-gradient(135deg, #0b2032 0%, #111a33 58%, #17203d 100%); color: #eef7ff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22); font: 600 13px/1.2 system-ui, sans-serif;
+}
+:is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) > button {
+  min-height: 38px; padding: 8px 13px; border: 1px solid rgba(148,163,184,.32); border-radius: 10px;
+  background: rgba(30,51,74,.78); color: #e8f2fb; font: 700 13px/1 system-ui, sans-serif; cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease, background-color .12s ease;
+}
+:is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) > button:first-of-type {
+  padding-inline: 14px 17px; border-color: rgba(94,234,212,.45); background: linear-gradient(135deg, rgba(13,148,136,.34), rgba(15,118,110,.2)); color: #d7fff7;
+}
+:is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) > button:hover:not(:disabled) {
+  transform: translateY(-1px); border-color: rgba(125,211,252,.66); background-color: rgba(45,74,104,.92);
+}
+:is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) > button:focus-visible {
+  outline: 3px solid rgba(94,234,212,.72); outline-offset: 2px;
+}
+:is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) > button:disabled { opacity: .45; cursor: default; transform: none; }
+:is(.cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) > p { flex: 1 1 240px; margin: 0; color: #afc3d4; text-align: right; }
+#typing-status { flex: 1 1 220px; color: #afc3d4; text-align: right; }
+.module-study-time { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 8px; min-width: 190px; padding: 7px 12px; border: 1px solid rgba(94,234,212,.22); border-radius: 11px; background: rgba(4,21,34,.5); }
+.module-study-label { color: #9eb7c8; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.module-study-time strong { color: #f2fbff; font-size: 16px; font-variant-numeric: tabular-nums; }
+#typing-study-goal { color: #9eb7c8; font-size: 11px; text-align: right; }
+.module-study-track { grid-column: 1 / -1; height: 3px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: rgba(148,163,184,.2); }
+.module-study-track > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2dd4bf, #38bdf8); transition: width .3s ease; }
+@media (max-width: 760px) {
+  :is(#typing-connection, .cloud-practice-controls, .cloud-spelling-controls, .cloud-vocabulary-controls, .cloud-poem-controls, .cloud-quiz-controls, .cloud-science-controls) { padding: 8px 10px; gap: 7px; }
+  #typing-status { order: 5; flex-basis: 100%; text-align: left; }
+  .module-study-time { flex: 1; min-width: 160px; }
+}

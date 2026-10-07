@@ -659,3 +659,15 @@ test('learning challenge controls use authenticated fixed routes without client 
   assert.equal((await load('bridge/route.ts', { authenticated: false }).POST(request(input))).status, 401);
   assert.equal((await route.POST(request(input, { requestOrigin: 'https://foreign.example' }))).status, 403);
 });
+
+
+test('student deletion requires explicit confirmation and strips forged authority',async()=>{
+ const calls=[],route=load('bridge/route.ts',{api:async(...args)=>{calls.push(args);return{deleted:true};}});
+ for(const input of [{confirmation:false},{confirmation:'true'},{studentId:'../other'},{expectedName:''}]){
+  assert.equal((await route.POST(request({action:'delete-student',studentId:deviceId,confirmation:true,expectedName:'Test Child',...input}))).status,400);
+ }
+ assert.equal(calls.length,0);
+ const result=await route.POST(request({action:'delete-student',studentId:deviceId,confirmation:true,expectedName:'Test Child',householdId:'foreign',path:'/admin'}));
+ assert.equal(result.status,200);
+ assert.deepEqual(calls,[[`/students/${deviceId}/delete`,{method:'POST',body:JSON.stringify({confirmation:true,expectedName:'Test Child'})}]]);
+});

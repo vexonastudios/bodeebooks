@@ -3,6 +3,7 @@ import { createVoiceRecorder } from './voice-recording.js';
 import { createMessageThread } from './message-thread.js';
 import { createMessageReactions } from './message-reactions.js';
 import { createParentSessionRecovery } from './cloud-parent-session.js';
+import { createMessageMediaActions } from './cloud-message-media-actions.js';
 export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const el = id => document.getElementById(id);
   const ALL_KIDS = 'all-kids';
@@ -13,6 +14,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const recipients = () => students.filter(student => !student.archived_at);
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
+  const mediaActions = createMessageMediaActions({ request, getStudents: () => students });
   let peerSaving = false, peerRevision = 0, childPeerRevision = 0;
   let childPeerSettings = null;
   const childPeerSaving = new Set();
@@ -370,6 +372,8 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         if (attachment) row.append(attachment);
         row.append(meta);
         const child = selected;
+        const unlock = mediaActions.attach({ message, studentId: child, canAct: () => selected === child && conversationVisible() });
+        if (unlock) row.append(unlock.node);
         const reactions = createMessageReactions({ messageElement: row, otherChild: students.find(student => student.id === child)?.name || 'Child', onReact: async emoji => {
           if (selected !== child || !conversationVisible()) throw new Error('Reopen this conversation before reacting.');
           const result = await request('react-message', { studentId: child, messageId: message.id, emoji });
@@ -380,7 +384,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
           return result.reactions;
         } });
         row.messageReactions = reactions; row.append(reactions.node);
-        return { node: row, dispose: () => { reactions.dispose(); attachment?.dispose?.(); } };
+        return { node: row, dispose: () => { reactions.dispose(); attachment?.dispose?.(); unlock?.dispose(); } };
       } });
       thread.dataset.rendered = key;
       if (atBottom) thread.scrollTop = thread.scrollHeight;
@@ -616,7 +620,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     familyEmpty.hidden = unique.length > 0 || newGroup;
     if (familyEmpty.parentElement !== familyRows) familyRows.append(familyEmpty);
     familyThreadRows.update(unique, {
-      fingerprint: message => JSON.stringify([message.sender, message.senderName, message.body, message.attachment]),
+      fingerprint: message => JSON.stringify([selected, message.sender, message.authorStudentId, message.senderName, message.body, message.attachment]),
       refresh: (row, message) => row.messageReactions.update(message.reactions),
       create: message => {
         const row = textNode('article', '', `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`);
@@ -625,6 +629,8 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
         if (attachment) row.append(attachment);
         row.append(textNode('small', new Date(message.createdAt).toLocaleString()));
         const conversation = selected;
+        const unlock = mediaActions.attach({ message, studentId: message.authorStudentId, canAct: () => selected === conversation && conversationVisible() });
+        if (unlock) row.append(unlock.node);
         const reactions = createMessageReactions({ messageElement: row, onReact: async emoji => {
           if (selected !== conversation || !conversationVisible()) throw new Error('Reopen this conversation before reacting.');
           const result = await request('react-message', { shared: true, groupId: groupId(conversation), messageId: message.id, emoji });
@@ -634,7 +640,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
           render(); return result.reactions;
         } });
         row.messageReactions = reactions; row.append(reactions.node);
-        return { node: row, dispose: () => { reactions.dispose(); attachment?.dispose?.(); } };
+        return { node: row, dispose: () => { reactions.dispose(); attachment?.dispose?.(); unlock?.dispose(); } };
       }
     });
     if (atBottom) thread.scrollTop = thread.scrollHeight;

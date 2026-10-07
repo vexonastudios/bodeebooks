@@ -1,0 +1,21 @@
+.bg-learning-library { font-size:1rem; }
+.bg-learning-library form { display:grid; gap:14px; max-width:720px; margin:20px 0; padding:22px; background:var(--bg-card,#141b2a); border:1px solid var(--border,#344258); border-radius:14px; }
+.bg-learning-library label { display:grid; gap:6px; font-size:1rem; }
+.bg-learning-library input,.bg-learning-library select { min-height:44px; width:100%; box-sizing:border-box; padding:10px; border:1px solid #556477; border-radius:8px; background:var(--bg-input,#101727); color:var(--text-primary,#eef3ff); font:inherit; }
+.bg-learning-library input[type=checkbox] { width:22px; min-height:22px; }
+.bg-video-actions,.bg-player-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.bg-video-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr)); gap:16px; margin:18px 0; }
+.bg-video-card { padding:20px; border:1px solid var(--border,#344258); border-radius:14px; background:var(--bg-card,#141b2a); overflow-wrap:anywhere; }
+.bg-video-card h3 { font-size:1.15rem; margin:0 0 10px; }
+.bg-video-card p { margin:10px 0; }
+.bg-video-card button,.bg-learning-library button,.bg-learning-player button { min-height:44px; padding:10px 15px; border:1px solid #71829c; border-radius:9px; background:#1c314b; color:#f3f7ff; cursor:pointer; font:inherit; }
+.bg-learning-library button:disabled { opacity:.55; cursor:wait; }
+.bg-learning-library button:focus-visible,.bg-learning-player button:focus-visible { outline:3px solid #5dcbea; outline-offset:3px; }
+.bg-video-preview { width:100%; height:560px; border:1px solid #344258; border-radius:12px; }
+.bg-learning-player { margin:0; background:#0c1320; color:#edf3ff; font:16px/1.5 system-ui,sans-serif; }
+.bg-learning-player main { max-width:1100px; margin:auto; padding:20px; }
+.bg-player-stage { width:100%; aspect-ratio:16/9; min-height:200px; background:#000; }
+.bg-player-stage iframe { width:100%; height:100%; border:0; }
+.bg-player-controls { margin-top:16px; }
+#seek-feedback { font-size:1.3rem; color:#67e8d2; min-width:150px; }
+.bg-learning-player [hidden] { display:none; }

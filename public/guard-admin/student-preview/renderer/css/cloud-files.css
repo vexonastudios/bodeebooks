@@ -1,0 +1,40 @@
+.cloud-file-dialog{width:min(960px,94vw);max-height:92vh;overflow:auto;background:#101728;color:#eff6ff;border:1px solid #41506b;border-radius:16px;padding:24px}.cloud-file-dialog::backdrop{background:#000b}.cloud-file-dialog button,.cloud-file-dialog a{margin:6px}.cloud-file-dialog audio{display:block;width:100%;margin:20px 0}.cloud-file-viewport{overflow:auto;max-height:65vh;margin:18px 0;text-align:center}.cloud-file-image{max-width:100%;max-height:60vh;object-fit:contain}.cloud-file-viewport.zoomed .cloud-file-image{max-width:none;max-height:none}.cloud-file-image.rotate-90{transform:rotate(90deg)}.cloud-file-image.rotate-180{transform:rotate(180deg)}.cloud-file-image.rotate-270{transform:rotate(270deg)}.cloud-file-row{padding:14px;margin:10px 0;border:1px solid #42506b;border-radius:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}.cloud-file-row span{flex:1 1 230px;overflow-wrap:anywhere}.cloud-file-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:18px 0}.cloud-file-controls input{max-width:100%}.cloud-papers{margin-top:28px;padding:20px;border:1px solid #42506b;border-radius:16px}.cloud-file-dialog h2{overflow-wrap:anywhere}
+/* Voice controls stay inside the message and fit narrow phone bubbles. */
+.cloud-inline-audio { width: 300px; max-width: 100%; min-width: 0; display: grid; gap: 6px; margin-top: 8px; }
+.cloud-inline-audio-controls { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 10px; padding: 8px; border: 1px solid #8bd6cf24; border-radius: 14px; background: #0c1c2b99; }
+.cloud-inline-audio button { display: grid; place-items: center; width: 44px; height: 44px; padding: 10px; border: 1px solid transparent; border-radius: 50%; cursor: pointer; color: #b9ddd9; background: transparent; }
+.cloud-inline-audio .cloud-inline-audio-play { border-color: #65e4c344; background: #65e4c31c; color: #8cf0d4; }
+.cloud-inline-audio button:hover { background: #65e4c32b; color: #d1fff0; }
+.cloud-inline-audio button:disabled { opacity: .55; cursor: wait; }
+.cloud-inline-audio button:focus-visible, .cloud-inline-audio input:focus-visible { outline: 2px solid #8cf0d4; outline-offset: 3px; }
+.cloud-inline-audio button svg { width: 22px; height: 22px; }
+.cloud-inline-audio-play[data-playing="true"] .voice-play-icon, .cloud-inline-audio-play:not([data-playing="true"]) .voice-pause-icon,
+.cloud-inline-audio-mute[data-muted="true"] .voice-sound-icon, .cloud-inline-audio-mute:not([data-muted="true"]) .voice-muted-icon { display: none; }
+.cloud-inline-audio-timeline { display: grid; min-width: 0; gap: 2px; }
+.cloud-inline-audio input[type="range"] { appearance: none; -webkit-appearance: none; display: block; width: 100%; min-width: 0; height: 28px; margin: 0; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
+.cloud-inline-audio input::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, #65e4c3 var(--voice-position, 0%), #526378 var(--voice-position, 0%)); }
+.cloud-inline-audio input::-moz-range-track { height: 4px; border-radius: 4px; background: #526378; }
+.cloud-inline-audio input::-moz-range-progress { height: 4px; border-radius: 4px; background: #65e4c3; }
+.cloud-inline-audio input::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4px; border: 0; border-radius: 50%; background: #8cf0d4; }
+.cloud-inline-audio input::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #8cf0d4; }
+.cloud-inline-audio input:disabled { opacity: .5; cursor: default; }
+.cloud-inline-audio-time { color: #bdccd9; font: 12px/1.4 system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cloud-inline-audio [hidden] { display: none !important; }
+.cloud-inline-audio-status { color: #d3dbee; font: 12px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
+.cloud-inline-audio-status:empty { display: none; }
+.cloud-file-dialog audio, .cloud-chat-voice-preview audio { color-scheme: dark; }
+
+/* Keep attachment previews centered even when the dashboard sets dialog margins. */
+.cloud-file-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(960px,calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);padding:24px;box-shadow:0 28px 80px #0009}
+.cloud-file-dialog h2{margin:0 0 12px;font-size:clamp(20px,2vw,26px);line-height:1.2}
+.cloud-file-dialog>p[role=status]{color:#b9c9da;line-height:1.45}
+.cloud-file-dialog>button.btn:first-of-type{float:right;margin:0 0 12px 16px}
+.cloud-file-dialog .btn:focus-visible{outline:2px solid #8cf0d4;outline-offset:3px}
+@media(max-width:700px){.cloud-file-dialog{width:calc(100vw - 16px);max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:16px}.cloud-file-dialog .btn{max-width:100%;white-space:normal}}
+.cloud-inline-image { display: block; width: min(320px,100%); max-width: 100%; min-height: 72px; padding: 0; margin: 7px 0; border: 1px solid #8bd6cf44; border-radius: 12px; overflow: hidden; background: #0c1c2b99; color: #d3dbee; cursor: pointer; text-align: left; }
+.cloud-inline-image img { display: block; width: 100%; max-height: 280px; object-fit: contain; }
+.cloud-inline-image img:not([src]) { display: none; }
+.cloud-inline-image-status { display: block; padding: 12px; font: 13px/1.4 system-ui,sans-serif; }
+.cloud-inline-image-status:empty { display: none; }
+.cloud-inline-image:focus-visible { outline: 2px solid #8cf0d4; outline-offset: 3px; }
+.cloud-paper-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}.cloud-paper-toolbar button{margin:0}.cloud-paper-tab.active{border-color:#65e4c3!important;background:#65e4c31c!important;color:#b1ffe4!important}.cloud-paper-tab:focus-visible,.cloud-paper-trash-action:focus-visible{outline:2px solid #8cf0d4;outline-offset:2px}.cloud-paper-trash-action{color:#ffb5bb!important;border-color:#ff8d984d!important}.cloud-paper-toolbar [hidden]{display:none}

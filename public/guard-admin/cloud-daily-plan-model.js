@@ -15,8 +15,8 @@ const handwriting = () => ({ key:'preset:handwriting', preset:'handwriting', tit
 const isNumerals = value => { try { const url = new URL(value); return url.origin === 'https://numerals.bodeebooks.com' && !url.username && !url.password; } catch { return false; } };
 const numerals = () => ({ key:'preset:numerals', preset:'numerals', title:'Numerals · Roman Numerals', icon:'hash', color:'#f59e0b',
   url:'https://numerals.bodeebooks.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
-const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'learning-videos': 'Learning Videos', poems: 'Poems' };
-const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
+const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'long-division': 'Long Division', 'learning-videos': 'Learning Videos', poems: 'Poems' };
+const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', 'long-division': 'divide', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
 icons.games = 'gamepad-2';
 const mediaKinds = { music: 'music', videos: 'video', audiobooks: 'audiobook', games:'family_game' };
 const defaultDays = placement => placement === 'school' ? [1,2,3,4,5] : [0,1,2,3,4,5,6];

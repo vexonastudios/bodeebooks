@@ -1,0 +1,123 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BodeeGuard — Vocabulary Mastery</title><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-vocabulary.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-activity-feedback.css"><link id="student-theme-styles" rel="stylesheet" href="/guard-admin/student-preview/renderer/css/kiosk/themes.css"><link id="student-theme-surfaces" rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-student-theme.css"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'"><link rel="stylesheet" href="/guard-admin/student-preview/preview.css"></head><body><div class="cloud-vocabulary-controls"><button id="vocabulary-close">← Dashboard</button> <button id="vocabulary-refresh">Refresh words</button> <button id="vocabulary-retry" hidden>Retry saved work</button> <button id="vocabulary-discard" hidden>Discard local retry…</button><p id="vocabulary-cloud-status" role="status">Connecting to Vocabulary…</p></div><div id="vocabulary-content"><section id="activity-loader" class="activity-loader" role="status" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3 3 7v6c0 4 5 7 9 9 4-2 9-5 9-9V7L12 3Z"/><path d="m8 12 3 3 5-6"/></svg><strong>BodeeGuard</strong><div class="activity-spinner" aria-hidden="true"></div><h2>Opening Vocabulary…</h2><p>Getting your practice ready</p></section>
+  <main class="vocabulary-shell">
+    <header class="vocabulary-header">
+      <div class="vocabulary-brand">
+        <span class="vocabulary-mark" aria-hidden="true">V</span>
+        <div>
+          <p class="eyebrow">Vocabulary Mastery</p>
+          <h1>Make every word yours</h1>
+        </div>
+      </div>
+      <button class="quiet-button" id="back-button" type="button">← Dashboard</button>
+    </header>
+
+    <section class="surface loading-surface" id="loading-view" aria-live="polite">
+      <div class="loader" aria-hidden="true"></div>
+      <h2>Building your best review…</h2>
+      <p>BodeeGuard is choosing the words that will help you most today.</p>
+    </section>
+
+    <section class="overview hidden" id="overview-view">
+      <div class="hero surface">
+        <div class="hero-copy">
+          <p class="eyebrow" id="list-kicker">Current word list</p>
+          <h2 id="list-title">Vocabulary</h2>
+          <p id="list-message">Understand the words, recall them, and use them in a new situation.</p>
+          <div class="meta-row" id="list-meta"></div>
+          <div class="today-status" id="today-status" role="status"></div>
+          <button class="primary-button" id="continue-button" type="button">Continue Vocabulary</button>
+          <p class="continue-note" id="continue-note">BodeeGuard chooses the most useful next activity. You do not need to pick a mode.</p>
+        </div>
+        <aside class="readiness-panel" aria-label="Vocabulary readiness">
+          <div class="readiness-ring" id="readiness-ring" style="--readiness:0">
+            <span id="readiness-number">0%</span>
+          </div>
+          <strong>Test readiness</strong>
+          <span id="readiness-copy">A starting check helps focus your practice.</span>
+        </aside>
+      </div>
+
+      <section class="vault-section surface" aria-labelledby="vault-heading">
+        <div class="section-heading">
+          <div><p class="eyebrow">Your Word Vault</p><h2 id="vault-heading">Watch your knowledge grow</h2></div>
+          <p>Words move forward only when you can understand and recall them in different ways.</p>
+        </div>
+        <div class="vault-grid" id="vault-grid"></div>
+      </section>
+    </section>
+
+    <section class="session hidden" id="session-view">
+      <div class="session-topline">
+        <div>
+          <p class="eyebrow" id="step-phase">Vocabulary session</p>
+          <h2 id="session-title">Make the word yours</h2>
+        </div>
+        <div class="progress-label" id="progress-label">1 of 8</div>
+      </div>
+      <div class="progress-track" aria-hidden="true"><span id="progress-fill"></span></div>
+
+      <article class="learning-card surface" id="learning-card" aria-live="polite">
+        <div class="term-heading hidden" id="term-heading">
+          <div>
+            <div class="term-line"><span id="term-text"></span><span class="part-of-speech" id="part-of-speech"></span></div>
+            <div class="pronunciation" id="pronunciation"></div>
+          </div>
+          <button class="listen-button" id="listen-button" type="button" aria-label="Hear this vocabulary word">🔊 Hear it</button>
+        </div>
+
+        <div class="teach-content hidden" id="teach-content">
+          <img class="teach-image hidden" id="teach-image" alt="">
+          <div class="meaning-block exact-meaning"><span>Book meaning</span><p id="exact-meaning"></p></div>
+          <div class="meaning-block friendly-meaning"><span>In plain words</span><p id="friendly-meaning"></p></div>
+          <div class="examples-grid">
+            <div id="examples-panel"><h3>Examples</h3><ul id="examples-list"></ul></div>
+            <div id="nonexamples-panel"><h3>Not examples</h3><ul id="nonexamples-list"></ul></div>
+          </div>
+          <div class="word-connections" id="word-connections"></div>
+        </div>
+
+        <div class="question-content hidden" id="question-content">
+          <p class="question-type" id="question-type"></p>
+          <h3 id="question-prompt"></h3>
+          <p class="question-context hidden" id="question-context"></p>
+          <div class="choice-grid hidden" id="choice-grid" role="radiogroup" aria-label="Answer choices"></div>
+          <div class="typed-answer hidden" id="typed-answer">
+            <label for="answer-input" id="answer-label">Your answer</label>
+            <textarea id="answer-input" rows="3" autocomplete="off" spellcheck="true"></textarea>
+          </div>
+          <button class="oral-button hidden" id="oral-button" type="button">🎙️ I said my answer out loud</button>
+        </div>
+
+        <div class="feedback-panel hidden" id="feedback-panel" role="status">
+          <strong id="feedback-heading"></strong>
+          <p id="feedback-copy"></p>
+          <p class="feedback-remember hidden" id="feedback-remember"></p>
+        </div>
+
+        <div class="card-actions">
+          <button class="primary-button" id="step-button" type="button">Continue</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="surface results hidden" id="results-view" aria-live="polite">
+      <div class="result-mark" aria-hidden="true">✓</div>
+      <p class="eyebrow">Review complete</p>
+      <h2 id="result-title">Good work—your Word Vault grew today.</h2>
+      <p id="result-copy">BodeeGuard will bring words back at the right time so they stay with you.</p>
+      <div class="result-summary" id="result-summary"></div>
+      <div class="result-actions">
+        <button class="primary-button" id="practice-again-button" type="button">Practice Again</button>
+        <button class="quiet-button" id="finish-button" type="button">Back to Dashboard</button>
+      </div>
+    </section>
+
+    <section class="surface empty hidden" id="empty-view" aria-live="polite">
+      <div class="empty-mark" aria-hidden="true">📚</div>
+      <h2 id="empty-title">No vocabulary review is due</h2>
+      <p id="empty-copy">When Mom or Dad assigns a list, or an older word is ready for review, it will appear here.</p>
+      <button class="primary-button hidden" id="empty-retry-button" type="button">Try Again</button>
+      <button class="quiet-button" id="empty-back-button" type="button">Back to Dashboard</button>
+    </section>
+  </main>
+</div><script src="/guard-admin/student-preview/lucide.js"></script><script src="/guard-admin/student-preview/vocabulary.js"></script></body></html>

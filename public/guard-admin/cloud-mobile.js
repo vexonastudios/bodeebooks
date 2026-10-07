@@ -24,7 +24,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   actions.append(reload, account); header.append(brand, actions); root.prepend(header);
 
   const menus = {};
-  for (const [id, title] of [['mobile-add', 'Add media & schoolwork'], ['mobile-more', 'More']]) {
+  for (const [id, title] of [['mobile-add', 'Add schoolwork & media'], ['mobile-more', 'More']]) {
     const nav = button(title, () => navigate(id), 'nav-item'); nav.dataset.tab = id; nav.hidden = true;
     root.querySelector('.sidebar-nav').append(nav);
     const section = make('section', 'tab-content cloud-mobile-menu'); section.id = `tab-${id}`;
@@ -51,23 +51,51 @@ export function setupCloudMobile({ navigate, refresh }) {
   desktopReport.href = '/guard/report/'; desktopReport.target = '_top'; desktopReport.prepend(icon('bug'));
   root.querySelector('.sidebar-nav').append(desktopReport);
   menus['mobile-more'].before(accountLinks);
-  const addTabs = ['music', 'videos', 'audiobooks', 'learning-videos', 'spelling', 'science-spelling', 'vocabulary', 'poems', 'worksheets'];
+  const reportNotice=make('a','cloud-student-report-banner');reportNotice.href='/guard/report/#student-reports';reportNotice.target='_top';reportNotice.hidden=true;main.prepend(reportNotice);
+  let reportCountBusy=false;
+  async function refreshStudentReports(){
+    if(reportCountBusy||document.hidden)return;reportCountBusy=true;
+    try{const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});if(!response.ok)return;const data=await response.json(),count=Math.max(0,Math.min(999,Number(data.count)||0));reportNotice.hidden=!count;reportNotice.textContent=count===1?'Your child reported a problem · Review report':count+' student problem reports · Review';reportCopy.querySelector('small').textContent=count?count+' student '+(count===1?'report needs':'reports need')+' your review.':'Tell us what happened, or review a child’s report.';desktopReport.setAttribute('aria-label',count?'Report a bug · '+count+' student reports to review':'Report a bug');}catch{/* Leave the saved inbox available if this badge cannot refresh. */}finally{reportCountBusy=false;}
+  }
+  window.addEventListener('cloud-student-report-refresh',()=>void refreshStudentReports());
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshStudentReports();});
+  void refreshStudentReports();
+
+  const addTabs = ['music', 'videos', 'audiobooks', 'learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
     const label = nav.textContent.trim();
     const menuButton = () => button(label + '  ›', () => navigate(id));
     menus['mobile-more'].append(menuButton());
-    if (addTabs.includes(id) && !['music', 'videos', 'audiobooks'].includes(id)) menus['mobile-add'].append(menuButton());
   }
   const addMenu = byId('tab-mobile-add');
   addMenu.classList.add('mobile-media-hub');
+  const schoolHeading = make('h2', 'mobile-section-heading', 'Schoolwork');
+  menus['mobile-add'].before(schoolHeading);
+  menus['mobile-add'].className = 'mobile-schoolwork-choices';
+  for (const [id, title, glyph, description] of [
+    ['spelling', 'Spelling', 'spell-check', 'Create or assign a word list'],
+    ['vocabulary', 'Vocabulary', 'book-a', 'Add words for your children'],
+    ['poems', 'Poems', 'book-open', 'Scan or assign a poem'],
+    ['worksheets', 'Worksheets', 'file-text', 'Add a worksheet or assignment'],
+    ['learning-videos', 'Learning videos', 'graduation-cap', 'Add a lesson video']
+  ]) {
+    if (!byId('tab-' + id)) continue;
+    const card = make('div', 'mobile-schoolwork-choice'); card.dataset.schoolworkKind = id;
+    const open = button('', () => navigate(id), 'mobile-schoolwork-open');
+    const symbol = make('span', 'mobile-schoolwork-symbol'); symbol.append(icon(glyph));
+    const copy = make('span', 'mobile-schoolwork-copy'); copy.append(make('strong', '', title), make('small', '', description));
+    open.append(symbol, copy, icon('chevron-right'));
+    open.setAttribute('aria-label', 'Open ' + title.toLowerCase());
+    card.append(open); menus['mobile-add'].append(card);
+  }
+  const mediaHeading = make('h2', 'mobile-section-heading mobile-media-heading', 'Videos, music & audiobooks');
+  menus['mobile-add'].after(mediaHeading);
   const mediaIntro = make('p', 'mobile-media-intro', 'Find something on YouTube, review it, then choose who can see it.');
-  menus['mobile-add'].before(mediaIntro);
+  mediaHeading.after(mediaIntro);
   const mediaChoices = make('div', 'mobile-media-choices');
   mediaIntro.after(mediaChoices);
-  const schoolHeading = make('h2', 'mobile-schoolwork-heading', 'Schoolwork');
-  menus['mobile-add'].before(schoolHeading);
   for (const [id, title, glyph, description, inputId, subtab] of [
     ['videos', 'Videos', 'video', 'Add a video for your children', 'video-yt-url', '[data-vstab="vlib"]'],
     ['music', 'Music', 'music-2', 'Add a song from YouTube', 'music-yt-url', '[data-stab="mlib"]'],

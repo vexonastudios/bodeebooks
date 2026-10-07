@@ -1,4 +1,4 @@
-import { setupChallengeSettings } from './cloud-challenges.js?v=20261001-challenges1';
+import { setupChallengeSettings } from './cloud-challenges.js?v=20261007-opening1';
 /* global document, fetch, AbortSignal, crypto, window, structuredClone */
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' })[character]);
 const mediaLabels = { music:'Music', video:'Videos', audiobook:'Audiobooks', family_game:'Family Games' };

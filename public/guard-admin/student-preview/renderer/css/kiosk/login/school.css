@@ -1,0 +1,556 @@
+/* ===== SUBJECT VIEW (Toolbar + Webview) ===== */
+.subject-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 0 20px;
+  height: var(--toolbar-height);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-glass);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  min-width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.toolbar-btn:not(:disabled):hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-glow);
+  transform: translateY(-1px);
+}
+
+.toolbar-home {
+  color: var(--text-primary);
+}
+
+.toolbar-break {
+  color: var(--accent-orange);
+}
+
+.toolbar-done {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-green);
+}
+
+.toolbar-done:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.toolbar-subject-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.toolbar-icon {
+  font-size: 1.3rem;
+}
+
+.toolbar-name {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== BACK / FORWARD NAV GROUP ===== */
+.toolbar-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-back, .toolbar-fwd {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  padding: 6px 10px !important;
+  min-width: 34px;
+}
+
+.toolbar-back:disabled, .toolbar-fwd:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* A provider's final Exit button may call window.close(), which cannot close
+   BodeeGuard's protected school webview. Keep a host-owned escape route in the
+   existing toolbar so it never covers or alters the school's test UI. */
+.toolbar-school-return {
+  gap: 5px;
+  padding-inline: 9px !important;
+  color: #bae6fd;
+  border-color: rgba(56, 189, 248, .38);
+  background: rgba(14, 116, 144, .16);
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.toolbar-school-return:not(:disabled):hover {
+  color: #e0f2fe;
+  border-color: rgba(56, 189, 248, .68);
+  background: rgba(14, 116, 144, .28);
+}
+
+.toolbar-school-return.assessment-active {
+  color: #fff7ed;
+  border-color: rgba(251, 146, 60, .9);
+  background: linear-gradient(135deg, rgba(234, 88, 12, .92), rgba(194, 65, 12, .92));
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, .2), 0 5px 18px rgba(124, 45, 18, .42);
+}
+
+.toolbar-school-return.assessment-active:not(:disabled):hover {
+  color: #fff;
+  border-color: #fdba74;
+  background: linear-gradient(135deg, #f97316, #c2410c);
+}
+
+/* LinkIt is an assessment, not an Abeka lesson player. Remove the lesson-only
+   controls while it is open so the child's escape route stays prominent even
+   on compact school laptops. */
+.subject-toolbar.school-assessment-active .toolbar-speed,
+.subject-toolbar.school-assessment-active .toolbar-captions,
+.subject-toolbar.school-assessment-active .toolbar-volume {
+  display: none !important;
+}
+
+/* ===== PROGRESS BAR TIMER ===== */
+.toolbar-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-sm);
+  min-width: 160px;
+  transition: background 0.5s ease, border-color 0.5s ease;
+}
+
+.toolbar-progress-wrap.goal-met {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  animation: goal-pulse 2s ease-in-out infinite;
+}
+
+@keyframes goal-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50%       { box-shadow: 0 0 10px 3px rgba(16, 185, 129, 0.25); }
+}
+
+.toolbar-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.toolbar-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-orange), #fbbf24);
+  border-radius: 2px;
+  transition: width 1s ease, background 0.5s ease;
+}
+
+.toolbar-progress-fill.goal-met {
+  background: linear-gradient(90deg, var(--accent-green), #6ee7b7);
+}
+
+.toolbar-progress-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-icon { font-size: 0.95rem; }
+
+.timer-display {
+  font-family: 'Outfit', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-orange);
+  min-width: 48px;
+}
+
+.progress-goal {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ===== HELP BUTTON ===== */
+.toolbar-help {
+  background: rgba(236, 72, 153, 0.12) !important;
+  border-color: rgba(236, 72, 153, 0.3) !important;
+  color: #f9a8d4 !important;
+}
+
+.toolbar-help:hover {
+  background: rgba(236, 72, 153, 0.25) !important;
+}
+
+.toolbar-help.sent {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.toolbar-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 9px;
+  border: 1px solid rgba(56, 189, 248, .28);
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, .09);
+  color: #7dd3fc;
+  flex: 0 0 auto;
+}
+
+.toolbar-speed svg {
+  width: 16px;
+  height: 16px;
+}
+
+.toolbar-speed select {
+  min-width: 61px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: 750 .82rem 'Outfit', sans-serif;
+  cursor: pointer;
+}
+
+.toolbar-speed select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.toolbar-captions {
+  gap: 5px;
+  padding-inline: 9px;
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, .32);
+  background: rgba(16, 185, 129, .1);
+}
+
+.toolbar-captions svg {
+  width: 17px;
+  height: 17px;
+}
+
+.toolbar-captions-label,
+.toolbar-captions-short {
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+}
+
+.toolbar-captions-short {
+  display: none;
+}
+
+.toolbar-captions:disabled {
+  cursor: wait;
+}
+
+@media (max-width: 1400px) {
+  .subject-toolbar { gap: 6px; padding-inline: 8px; }
+  .toolbar-progress-wrap { min-width: 125px; padding-inline: 8px; }
+  .toolbar-volume { padding-inline: 8px; }
+  .volume-slider { width: 58px; }
+  .toolbar-actions { gap: 4px; }
+  .toolbar-btn { padding-inline: 8px; }
+  .toolbar-speed { padding-inline: 7px; }
+  .toolbar-captions { padding-inline: 7px; }
+  .toolbar-captions-label { display: none; }
+  .toolbar-captions-short { display: inline; }
+}
+
+/* School portals can expose a large set of controls at once (navigation,
+   progress, speed, captions, volume, notes, messaging, grade capture, break,
+   and done). Keep every action reachable on the older 1024/1366px displays
+   without allowing the right-hand buttons to be pushed off-screen. */
+@media (max-width: 1180px) {
+  .subject-toolbar {
+    gap: 5px;
+    padding-inline: 6px;
+  }
+
+  .toolbar-name { max-width: 112px; }
+  .toolbar-progress-wrap { min-width: 108px; }
+  .progress-goal { display: none; }
+  .toolbar-volume { gap: 5px; padding-inline: 6px; }
+  .volume-slider { width: 46px; }
+
+  .toolbar-actions .toolbar-btn {
+    width: 38px;
+    padding-inline: 0;
+    font-size: 0;
+  }
+
+  .toolbar-actions .toolbar-btn svg {
+    width: 17px !important;
+    height: 17px !important;
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .subject-toolbar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-color: rgba(148, 163, 184, .4) transparent;
+    scrollbar-width: thin;
+  }
+
+  .subject-toolbar > *,
+  .toolbar-actions,
+  .toolbar-actions > * { flex: 0 0 auto; }
+  .toolbar-nav-group {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    padding-right: 5px;
+    background: var(--bg-secondary);
+  }
+  .toolbar-subject-info { margin-right: 2px; }
+  .toolbar-name { display: none; }
+  .toolbar-speed svg,
+  .toolbar-volume .volume-icon { display: none !important; }
+  .toolbar-progress-wrap { min-width: 96px; }
+  .timer-display { min-width: 42px; font-size: .9rem; }
+}
+
+.weekly-spelling-card { position: relative; }
+.weekly-spelling-title { color: var(--text-secondary); font-size: .9rem; margin-top: 2px; }
+.weekly-spelling-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.weekly-spelling-stats span { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.22); color: #fdba74; border-radius: 999px; padding: 4px 8px; font-size: .72rem; font-weight: 700; }
+.weekly-spelling-footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: var(--text-muted); font-size: .78rem; margin-top: 12px; }
+.weekly-spelling-footer strong { color: #fb923c; }
+.weekly-spelling-check { position: absolute; top: 14px; right: 14px; color: #22c55e; }
+.weekly-spelling-check svg { width: 22px; height: 22px; }
+
+.toolbar-grade-capture {
+  color: #fef3c7;
+  background: linear-gradient(135deg, rgba(245, 158, 11, .24), rgba(217, 119, 6, .18));
+  border-color: rgba(245, 158, 11, .48);
+}
+
+.toolbar-grade-capture:hover {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(245, 158, 11, .42), rgba(217, 119, 6, .3));
+}
+
+.toolbar-grade-capture:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
+
+/* ===== VOLUME CONTROL ===== */
+.toolbar-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+
+.volume-icon {
+  font-size: 1.1rem;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 90px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent-purple) 0%,
+    var(--accent-purple) var(--vol-pct, 100%),
+    rgba(255,255,255,0.15) var(--vol-pct, 100%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-purple);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Split Screen Container */
+.split-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* Webview container */
+.webview-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  background: #0a0a1a; /* Dark bg — never show white flash while webview loads */
+  transition: flex 0.3s ease;
+}
+
+.notes-container {
+  flex: 0;
+  width: 0;
+  overflow: hidden;
+  background: #fff;
+  transition: flex 0.3s ease, border-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.split-container.split-active .webview-container {
+  flex: 0 0 60%;
+}
+
+.split-container.split-active .notes-container {
+  flex: 0 0 40%;
+  border-left: 1px solid var(--border-glass);
+}
+
+/* Give a deliberately opened notebook enough room on the lower-resolution
+   monitors used by the children. Its own narrow layout then stacks the note
+   picker above the editor, while the school portal remains fully usable. */
+@media (max-width: 1440px) {
+  .split-container.split-active .webview-container {
+    flex-basis: 50%;
+  }
+
+  .split-container.split-active .notes-container {
+    flex-basis: 50%;
+  }
+}
+
+/* A fixed-width school portal is not usable in a 50/50 split on a 1024px
+   monitor. Below this point Notes becomes a full-width toggle view. The
+   portal remains mounted, so returning to the lesson preserves its session,
+   media position, and form state. */
+@media (max-width: 1100px) {
+  .split-container.split-active .webview-container {
+    flex-basis: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .split-container.split-active .notes-container {
+    flex-basis: 100%;
+    border-left: 0;
+  }
+}
+
+.notes-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.webview-container webview,
+.webview-container iframe {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+}
+
+/* Electron relies on flex layout inside <webview> to stretch its guest iframe.
+   Do not change this to block; that collapses external school portals to the
+   browser's 300x150 fallback viewport even when the outer container is full. */
+.webview-container webview {
+  display: flex;
+}
+
+#webview-cache-container {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.webview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  gap: 16px;
+}
+
+.webview-placeholder-icon {
+  font-size: 4rem;
+  opacity: 0.5;
+}
+
+.webview-placeholder-text {
+  font-size: 1.1rem;
+}
+

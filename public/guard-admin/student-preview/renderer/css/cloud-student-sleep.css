@@ -1,0 +1,15 @@
+.cloud-student-sleep {
+  position: fixed; inset: 0; margin: auto;
+  box-sizing: border-box; width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+  overflow: auto; padding: 32px; border: 1px solid #66588b; border-radius: 24px;
+  background: #16142b; color: #f5f1ff; text-align: center; box-shadow: 0 24px 90px #0008;
+}
+.cloud-student-sleep::backdrop { background: #080713d9; }
+.cloud-student-sleep > svg { width: 44px; height: 44px; color: #c4b5fd; }
+.cloud-student-sleep h2 { margin: 16px 0; font-size: 24px; }
+.cloud-student-sleep [role="timer"] { margin: 20px 0; font-size: clamp(24px, 6vw, 36px); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cloud-student-sleep progress { width: 100%; height: 10px; accent-color: #b7a4ff; }
+.cloud-student-sleep #cloud-sleep-help { color: #c9c3dc; line-height: 1.6; }
+.cloud-student-sleep button { width: 100%; min-height: 52px; padding: 12px 20px; border: 1px solid #a18acb; border-radius: 12px; background: #34284e; color: #fff; font: inherit; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+.cloud-student-sleep button:focus-visible { outline: 3px solid #d9c5ff; outline-offset: 4px; }
+.cloud-student-sleep button:disabled { opacity: .55; cursor: wait; }

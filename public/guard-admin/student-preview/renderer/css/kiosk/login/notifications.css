@@ -1,0 +1,589 @@
+/* ===== LOCK SCREEN OVERLAY ===== */
+.lock-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 26, 0.96);
+  backdrop-filter: blur(20px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.lock-overlay.active {
+  display: flex;
+}
+
+.lock-content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.lock-icon {
+  font-size: 6rem;
+  animation: lockBounce 3s ease-in-out infinite;
+}
+
+@keyframes lockBounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  20% { transform: scale(1.1) rotate(-5deg); }
+  40% { transform: scale(1) rotate(5deg); }
+  60% { transform: scale(1.1) rotate(0deg); }
+}
+
+.lock-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin: 20px 0 12px;
+}
+
+.lock-message {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Real-time unlocks share one compact, nonblocking bottom-right toast. */
+.unlock-toast {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 99999;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  width: min(370px, calc(100vw - 32px));
+  max-height: min(440px, calc(100vh - 32px));
+  padding: 16px 46px 16px 16px;
+  overflow: auto;
+  border: 1px solid rgba(167, 139, 250, 0.52);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #1e1b4b 0%, #25245f 100%);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.62), 0 0 26px rgba(139, 92, 246, 0.18);
+  color: #f8fafc;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0) scale(0.97);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.unlock-toast.show {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.unlock-toast.is-closing {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0) scale(0.98);
+  pointer-events: none;
+}
+
+.unlock-toast-icon {
+  font-size: 29px;
+  line-height: 1;
+}
+
+.unlock-toast-title {
+  margin-bottom: 7px;
+  color: #ddd6fe;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.unlock-toast-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #c4b5fd;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.unlock-toast-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.unlock-toast-list li::before {
+  content: '✓';
+  margin-right: 7px;
+  color: #86efac;
+}
+
+.unlock-toast-list li > span:first-child {
+  flex: 1;
+}
+
+.unlock-toast-count {
+  flex: 0 0 auto;
+  color: #a78bfa;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.unlock-toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #c4b5fd;
+  cursor: pointer;
+  font: 700 24px/1 system-ui, sans-serif;
+}
+
+.unlock-toast-close:hover,
+.unlock-toast-close:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  outline: none;
+}
+
+@media (max-width: 560px), (max-height: 650px) {
+  .unlock-toast {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(370px, calc(100vw - 16px));
+    max-height: calc(100vh - 16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unlock-toast { transition: none; }
+}
+
+/* Compact parent-message toast: stays visible without blocking the child's work. */
+.parent-message-overlay {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 100000;
+  width: min(400px, calc(100vw - 28px));
+  max-height: calc(100vh - 28px);
+  pointer-events: none;
+  animation: parent-message-toast-in 0.22s ease-out;
+}
+
+@keyframes parent-message-toast-in {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.parent-message-card {
+  width: 100%;
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+  pointer-events: auto;
+  padding: 16px;
+  border: 1px solid rgba(167, 139, 250, 0.42);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #17172b 0%, #101827 100%);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.58), 0 0 30px rgba(124, 58, 237, 0.14);
+  color: #f8fafc;
+}
+
+.parent-message-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 12px;
+}
+
+.parent-message-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 13px;
+  background: rgba(139, 92, 246, 0.2);
+  font-size: 23px;
+}
+
+.parent-message-eyebrow,
+.parent-message-time,
+.parent-message-count,
+.parent-message-status {
+  margin: 0;
+}
+
+.parent-message-eyebrow {
+  color: #c4b5fd;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.parent-message-heading h2 {
+  margin: 3px 0 2px;
+  color: #f8fafc;
+  font: 800 17px/1.18 'Outfit', sans-serif;
+}
+
+.parent-message-time {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.parent-message-audience {
+  margin: -2px 0 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 11px;
+  background: rgba(251, 191, 36, 0.1);
+  color: #fde68a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.parent-message-content {
+  max-height: 124px;
+  overflow: auto;
+  margin: 0 0 12px;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.parent-message-content p {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.parent-message-content audio {
+  display: block;
+  width: 100%;
+}
+
+.parent-message-audio {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: #ede9fe;
+  color: #4c1d95;
+  font: 800 14px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.parent-message-reply label {
+  display: block;
+  margin-bottom: 6px;
+  color: #ddd6fe;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.parent-message-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.parent-message-quick-replies button {
+  padding: 7px 10px;
+  border: 1px solid rgba(196, 181, 253, 0.28);
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #ddd6fe;
+  font: 700 12px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+#parent-message-reply-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 58px;
+  max-height: 92px;
+  resize: none;
+  padding: 10px 11px;
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  border-radius: 13px;
+  outline: none;
+  background: #0b1220;
+  color: #f8fafc;
+  font: 500 13px/1.4 'Inter', sans-serif;
+}
+
+#parent-message-reply-input:focus {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+#parent-message-reply-input::placeholder {
+  color: #64748b;
+}
+
+.parent-message-status {
+  min-height: 16px;
+  padding-top: 3px;
+  color: #c4b5fd;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.parent-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.parent-message-actions button {
+  min-height: 36px;
+  padding: 8px 13px;
+  border-radius: 11px;
+  font: 800 12px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.parent-message-dismiss {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #cbd5e1;
+}
+
+.parent-message-send {
+  border: 0;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.28);
+}
+
+.parent-message-actions button:disabled,
+.parent-message-quick-replies button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.parent-message-count {
+  margin-top: 8px;
+  color: #64748b;
+  text-align: center;
+  font-size: 11px;
+}
+
+@media (max-width: 560px), (max-height: 650px) {
+  .parent-message-overlay {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(400px, calc(100vw - 16px));
+    max-height: calc(100vh - 16px);
+  }
+  .parent-message-card { max-height: calc(100vh - 16px); border-radius: 15px; }
+}
+
+/* Family Game Room time warning stays in the kiosk shell, outside the game
+   iframe. Buying time therefore never reloads or destroys a live match. */
+.family-game-time-offer[hidden] { display: none !important; }
+
+.family-game-time-offer {
+  position: fixed;
+  inset: 0;
+  z-index: 12500;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(2, 6, 23, 0.76);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.family-game-time-offer.active { opacity: 1; }
+
+.family-game-time-offer-card {
+  position: relative;
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  padding: 26px;
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(14, 165, 233, 0.18), transparent 34%),
+    linear-gradient(145deg, #101b35, #0a1022 72%);
+  color: #f8fafc;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), 0 0 50px rgba(14, 165, 233, 0.12);
+  transform: translateY(12px) scale(0.985);
+  transition: transform 180ms ease;
+}
+
+.family-game-time-offer.active .family-game-time-offer-card { transform: translateY(0) scale(1); }
+
+.family-game-time-offer-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: rgba(56, 189, 248, 0.14);
+  font-size: 30px;
+}
+
+.family-game-time-offer-heading p {
+  margin: 0 0 4px;
+  color: #38bdf8;
+  font: 800 11px/1.2 'Inter', sans-serif;
+  letter-spacing: 0.16em;
+}
+
+.family-game-time-offer-heading h2 {
+  margin: 0 0 5px;
+  color: #fff;
+  font: 800 clamp(23px, 3vw, 31px)/1.1 'Outfit', sans-serif;
+}
+
+.family-game-time-offer-heading span {
+  display: block;
+  color: #a8b6d1;
+  font: 500 14px/1.45 'Inter', sans-serif;
+}
+
+.family-game-time-offer-clock {
+  min-width: 94px;
+  padding: 10px 14px;
+  align-self: start;
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  border-radius: 16px;
+  background: rgba(251, 191, 36, 0.08);
+  text-align: center;
+}
+
+.family-game-time-offer-clock strong {
+  display: block;
+  color: #fbbf24;
+  font: 800 24px/1 'Outfit', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.family-game-time-offer-clock small { color: #d7b968; font: 700 10px/1.2 'Inter', sans-serif; text-transform: uppercase; }
+
+.family-game-time-offer-balance {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 15px;
+  border: 1px solid rgba(251, 191, 36, 0.18);
+  border-radius: 14px;
+  background: rgba(251, 191, 36, 0.06);
+  color: #a8b6d1;
+  font-size: 13px;
+}
+
+.family-game-time-offer-balance strong { color: #fbbf24; font-size: 15px; }
+
+.family-game-time-offer-options {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.family-game-time-reward {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border: 1px solid rgba(52, 211, 153, 0.34);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(14, 165, 233, 0.09));
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.family-game-time-reward:hover:not(:disabled),
+.family-game-time-reward:focus-visible:not(:disabled) {
+  border-color: #34d399;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(14, 165, 233, 0.16));
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.family-game-time-reward.unavailable {
+  cursor: not-allowed;
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(148, 163, 184, 0.06);
+  color: #7d8ba3;
+  opacity: 0.76;
+}
+
+.family-game-time-reward-icon { font-size: 25px; }
+.family-game-time-reward-copy strong,
+.family-game-time-reward-price strong { display: block; font: 800 16px/1.2 'Outfit', sans-serif; }
+.family-game-time-reward-copy small,
+.family-game-time-reward-price small { display: block; margin-top: 3px; color: #9dacc4; font: 600 11px/1.25 'Inter', sans-serif; }
+.family-game-time-reward-price { text-align: right; }
+.family-game-time-reward-price strong { color: #fbbf24; }
+.family-game-time-reward.unavailable .family-game-time-reward-price strong { color: #8a95a8; }
+
+.family-game-time-offer-loading,
+.family-game-time-offer-empty {
+  padding: 18px;
+  border: 1px dashed rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  color: #a8b6d1;
+  text-align: center;
+  font: 600 13px/1.45 'Inter', sans-serif;
+}
+
+.family-game-time-offer-status {
+  grid-column: 1 / -1;
+  min-height: 18px;
+  margin: 0;
+  color: #cbd5e1;
+  text-align: center;
+  font: 700 13px/1.35 'Inter', sans-serif;
+}
+
+.family-game-time-offer-status.success { color: #6ee7b7; }
+.family-game-time-offer-status.error { color: #fca5a5; }
+
+.family-game-time-offer-dismiss {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 13px;
+  background: rgba(148, 163, 184, 0.08);
+  color: #dbe5f5;
+  font: 800 13px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.family-game-time-offer-dismiss:hover,
+.family-game-time-offer-dismiss:focus-visible { border-color: rgba(148, 163, 184, 0.48); background: rgba(148, 163, 184, 0.14); outline: none; }
+
+@media (max-width: 620px), (max-height: 650px) {
+  .family-game-time-offer { padding: 10px; }
+  .family-game-time-offer-card { width: min(560px, calc(100vw - 20px)); max-height: calc(100vh - 20px); padding: 18px; gap: 12px; border-radius: 18px; }
+  .family-game-time-offer-icon { width: 46px; height: 46px; border-radius: 14px; font-size: 23px; }
+  .family-game-time-offer-clock { min-width: 78px; padding: 8px 10px; }
+  .family-game-time-offer-clock strong { font-size: 20px; }
+  .family-game-time-reward { padding: 11px 12px; }
+}
+

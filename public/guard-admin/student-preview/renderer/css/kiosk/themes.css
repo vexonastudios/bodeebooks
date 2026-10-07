@@ -1,0 +1,725 @@
+/* ======================================================
+   STUDENT DESK THEMES
+   Complete visual systems shared by the dashboard and
+   same-origin student apps. Existing saved IDs remain valid.
+   ====================================================== */
+
+:root.theme-default {
+  --theme-link: #7dd3fc;
+  color-scheme: dark;
+  --theme-bg: #07111f;
+  --theme-bg-secondary: #10233c;
+  --theme-surface: rgba(18, 43, 70, 0.82);
+  --theme-surface-strong: #142b46;
+  --theme-surface-hover: rgba(34, 74, 112, 0.9);
+  --theme-border: rgba(125, 211, 252, 0.18);
+  --theme-border-strong: rgba(125, 211, 252, 0.42);
+  --theme-text: #f0f9ff;
+  --theme-text-secondary: #a8c7de;
+  --theme-text-muted: #a8c7de;
+  --theme-primary: #38bdf8;
+  --theme-secondary: #2dd4bf;
+  --theme-tertiary: #818cf8;
+  --theme-page: radial-gradient(circle at 14% 4%, rgba(56,189,248,.2), transparent 28%), radial-gradient(circle at 86% 92%, rgba(45,212,191,.12), transparent 30%), linear-gradient(145deg, #06101d 0%, #0b1b2d 48%, #081522 100%);
+  --theme-pattern: linear-gradient(rgba(125,211,252,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(125,211,252,.035) 1px, transparent 1px);
+  --theme-pattern-size: 34px 34px;
+  --theme-card-radius: 18px;
+  --theme-control-radius: 12px;
+  --theme-card-shadow: 0 16px 40px rgba(0, 8, 20, .34), inset 0 1px 0 rgba(255,255,255,.04);
+  --theme-card-backdrop: blur(16px);
+  --theme-header: rgba(7, 19, 33, .86);
+  --theme-control-bg: rgba(56, 189, 248, .1);
+  --theme-progress-track: rgba(125, 211, 252, .11);
+  --theme-on-primary: #032536;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #c4b5fd;
+}
+
+:root.theme-pink {
+  --theme-link: #9d174d;
+  color-scheme: light;
+  --theme-bg: #fff2f7;
+  --theme-bg-secondary: #ffe2ef;
+  --theme-surface: rgba(255, 255, 255, .84);
+  --theme-surface-strong: #fff9fc;
+  --theme-surface-hover: #ffffff;
+  --theme-border: rgba(190, 24, 93, .18);
+  --theme-border-strong: rgba(219, 39, 119, .48);
+  --theme-text: #4a1731;
+  --theme-text-secondary: #8a4568;
+  --theme-text-muted: #7c3c5c;
+  --theme-primary: #db2777;
+  --theme-secondary: #f97316;
+  --theme-tertiary: #8b5cf6;
+  --theme-page: radial-gradient(circle at 8% 10%, rgba(244,114,182,.38), transparent 24%), radial-gradient(circle at 92% 14%, rgba(253,186,116,.38), transparent 22%), linear-gradient(135deg, #fff7fb 0%, #ffe8f2 48%, #fff2df 100%);
+  --theme-pattern: radial-gradient(circle, rgba(219,39,119,.14) 2px, transparent 2.5px);
+  --theme-pattern-size: 26px 26px;
+  --theme-card-radius: 28px;
+  --theme-control-radius: 999px;
+  --theme-card-shadow: 0 14px 34px rgba(190,24,93,.14), 0 3px 0 rgba(255,255,255,.9) inset;
+  --theme-card-backdrop: blur(10px);
+  --theme-header: rgba(255, 247, 251, .9);
+  --theme-control-bg: rgba(219, 39, 119, .09);
+  --theme-progress-track: rgba(190, 24, 93, .12);
+  --theme-on-primary: #ffffff;
+  --theme-success-text: #047857;
+  --theme-danger-text: #b91c1c;
+  --theme-warning-text: #9a3412;
+  --theme-info-text: #6d28d9;
+}
+
+:root.theme-teal {
+  --theme-link: #99f6e4;
+  color-scheme: dark;
+  --theme-bg: #032d3a;
+  --theme-bg-secondary: #06495a;
+  --theme-surface: rgba(4, 57, 70, .76);
+  --theme-surface-strong: #075467;
+  --theme-surface-hover: rgba(8, 87, 102, .9);
+  --theme-border: rgba(103, 232, 249, .2);
+  --theme-border-strong: rgba(94, 234, 212, .48);
+  --theme-text: #ecfeff;
+  --theme-text-secondary: #a5f3fc;
+  --theme-text-muted: #a5d3d9;
+  --theme-primary: #2dd4bf;
+  --theme-secondary: #22d3ee;
+  --theme-tertiary: #60a5fa;
+  --theme-page: radial-gradient(ellipse at 50% -15%, rgba(34,211,238,.3), transparent 40%), radial-gradient(ellipse at 85% 110%, rgba(45,212,191,.28), transparent 42%), linear-gradient(165deg, #021f2a 0%, #043c4b 52%, #032832 100%);
+  --theme-pattern: repeating-radial-gradient(ellipse at 50% 120%, transparent 0 20px, rgba(103,232,249,.055) 21px 23px, transparent 24px 42px);
+  --theme-pattern-size: 100% 90px;
+  --theme-card-radius: 22px 22px 36px 22px;
+  --theme-control-radius: 14px 14px 20px 14px;
+  --theme-card-shadow: 0 18px 38px rgba(0,20,28,.36), inset 0 1px rgba(165,243,252,.08);
+  --theme-card-backdrop: blur(18px);
+  --theme-header: rgba(2, 35, 45, .88);
+  --theme-control-bg: rgba(45, 212, 191, .11);
+  --theme-progress-track: rgba(103, 232, 249, .12);
+  --theme-on-primary: #022c35;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #bfdbfe;
+}
+
+:root.theme-dark-green {
+  --theme-link: #bef264;
+  color-scheme: dark;
+  --theme-bg: #13251a;
+  --theme-bg-secondary: #203b28;
+  --theme-surface: rgba(29, 52, 35, .88);
+  --theme-surface-strong: #294a31;
+  --theme-surface-hover: #355d3e;
+  --theme-border: rgba(217, 249, 157, .16);
+  --theme-border-strong: rgba(190, 242, 100, .38);
+  --theme-text: #f4f7e8;
+  --theme-text-secondary: #cad8b1;
+  --theme-text-muted: #cad8b1;
+  --theme-primary: #84cc16;
+  --theme-secondary: #fbbf24;
+  --theme-tertiary: #34d399;
+  --theme-page: radial-gradient(circle at 18% 0%, rgba(132,204,22,.16), transparent 31%), linear-gradient(115deg, rgba(74,51,31,.36), transparent 38%), linear-gradient(160deg, #101f16 0%, #1d3423 56%, #15271a 100%);
+  --theme-pattern: repeating-linear-gradient(92deg, rgba(217,249,157,.025) 0 1px, transparent 1px 12px), repeating-linear-gradient(2deg, rgba(0,0,0,.045) 0 2px, transparent 2px 9px);
+  --theme-pattern-size: auto;
+  --theme-card-radius: 10px;
+  --theme-control-radius: 8px;
+  --theme-card-shadow: 0 10px 0 rgba(5,16,8,.22), 0 18px 36px rgba(2,12,5,.28), inset 0 1px rgba(255,255,255,.035);
+  --theme-card-backdrop: blur(8px);
+  --theme-header: rgba(18, 35, 23, .94);
+  --theme-control-bg: rgba(132, 204, 22, .1);
+  --theme-progress-track: rgba(217, 249, 157, .1);
+  --theme-on-primary: #14200b;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #bae6fd;
+}
+
+:root.theme-orange {
+  --theme-link: #fdba74;
+  color-scheme: dark;
+  --theme-bg: #1b1028;
+  --theme-bg-secondary: #32153c;
+  --theme-surface: rgba(43, 18, 55, .86);
+  --theme-surface-strong: #482052;
+  --theme-surface-hover: #5b275e;
+  --theme-border: rgba(251, 146, 60, .28);
+  --theme-border-strong: rgba(251, 191, 36, .7);
+  --theme-text: #fff7ed;
+  --theme-text-secondary: #fed7aa;
+  --theme-text-muted: #fed7aa;
+  --theme-primary: #f97316;
+  --theme-secondary: #facc15;
+  --theme-tertiary: #f43f5e;
+  --theme-page: radial-gradient(circle at 80% 5%, rgba(250,204,21,.24), transparent 20%), linear-gradient(155deg, transparent 0 48%, rgba(249,115,22,.09) 48% 52%, transparent 52%), linear-gradient(135deg, #170d24 0%, #38143c 52%, #21102d 100%);
+  --theme-pattern: linear-gradient(30deg, rgba(249,115,22,.08) 12%, transparent 12.5%, transparent 87%, rgba(249,115,22,.08) 87.5%), linear-gradient(150deg, rgba(250,204,21,.055) 12%, transparent 12.5%, transparent 87%, rgba(250,204,21,.055) 87.5%);
+  --theme-pattern-size: 54px 94px;
+  --theme-card-radius: 5px;
+  --theme-control-radius: 4px;
+  --theme-card-shadow: 6px 6px 0 rgba(249,115,22,.2), 0 18px 32px rgba(10,3,20,.4), inset 0 0 20px rgba(244,63,94,.04);
+  --theme-card-backdrop: blur(5px);
+  --theme-header: rgba(25, 10, 34, .93);
+  --theme-control-bg: rgba(249, 115, 22, .13);
+  --theme-progress-track: rgba(251, 146, 60, .14);
+  --theme-on-primary: #431407;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #ddd6fe;
+}
+
+:root.theme-purple {
+  --theme-link: #d8b4fe;
+  color-scheme: dark;
+  --theme-bg: #090619;
+  --theme-bg-secondary: #19103c;
+  --theme-surface: rgba(28, 18, 66, .72);
+  --theme-surface-strong: #241657;
+  --theme-surface-hover: rgba(58, 34, 112, .9);
+  --theme-border: rgba(196, 181, 253, .2);
+  --theme-border-strong: rgba(216, 180, 254, .52);
+  --theme-text: #faf5ff;
+  --theme-text-secondary: #d8b4fe;
+  --theme-text-muted: #b8a4d8;
+  --theme-primary: #a855f7;
+  --theme-secondary: #ec4899;
+  --theme-tertiary: #60a5fa;
+  --theme-page: radial-gradient(circle at 18% 20%, rgba(126,34,206,.36), transparent 28%), radial-gradient(circle at 82% 78%, rgba(236,72,153,.2), transparent 30%), radial-gradient(circle at 52% 4%, rgba(96,165,250,.14), transparent 24%), #080514;
+  --theme-pattern: radial-gradient(circle, rgba(255,255,255,.62) 0 1px, transparent 1.5px), radial-gradient(circle, rgba(216,180,254,.38) 0 1px, transparent 1.5px);
+  --theme-pattern-size: 47px 47px, 79px 79px;
+  --theme-card-radius: 26px;
+  --theme-control-radius: 18px;
+  --theme-card-shadow: 0 0 0 1px rgba(216,180,254,.05), 0 20px 55px rgba(69,16,130,.32), inset 0 1px rgba(255,255,255,.07);
+  --theme-card-backdrop: blur(20px);
+  --theme-header: rgba(9, 5, 24, .82);
+  --theme-control-bg: rgba(168, 85, 247, .12);
+  --theme-progress-track: rgba(216, 180, 254, .1);
+  --theme-on-primary: #210735;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #bfdbfe;
+}
+
+:root.theme-aurora {
+  --theme-link: #8adbf0;
+  color-scheme: dark;
+  --theme-bg: #04162b;
+  --theme-bg-secondary: #0c2e4a;
+  --theme-surface: rgba(8, 50, 79, .86);
+  --theme-surface-strong: #14557b;
+  --theme-surface-hover: #1b68a0;
+  --theme-border: rgba(34, 211, 238, .22);
+  --theme-border-strong: rgba(34, 211, 238, .58);
+  --theme-text: #e4f8ff;
+  --theme-text-secondary: #b7dbea;
+  --theme-text-muted: #b7dbea;
+  --theme-primary: #22d3ee;
+  --theme-secondary: #0ea5e9;
+  --theme-tertiary: #22c55e;
+  --theme-page: radial-gradient(circle at 20% 6%, rgba(56, 189, 248,.28), transparent 33%), radial-gradient(circle at 80% 88%, rgba(45,212,191,.2), transparent 36%), linear-gradient(165deg, #04172a 0%, #0b2942 54%, #031722 100%);
+  --theme-pattern: repeating-radial-gradient(circle at 50% 50%, rgba(125,211,252,.05) 0 1px, transparent 2px 26px);
+  --theme-pattern-size: 40px 40px;
+  --theme-card-radius: 20px;
+  --theme-control-radius: 15px;
+  --theme-card-shadow: 0 18px 42px rgba(3, 24, 39,.38), inset 0 1px rgba(255,255,255,.07);
+  --theme-card-backdrop: blur(16px);
+  --theme-header: rgba(4, 27, 43, .9);
+  --theme-control-bg: rgba(34, 211, 238, .13);
+  --theme-progress-track: rgba(56, 189, 248, .12);
+  --theme-on-primary: #021725;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #bfdbfe;
+}
+
+:root.theme-crimson {
+  --theme-link: #fda4af;
+  color-scheme: dark;
+  --theme-bg: #24080e;
+  --theme-bg-secondary: #3d0f19;
+  --theme-surface: rgba(65, 14, 26, .88);
+  --theme-surface-strong: #541828;
+  --theme-surface-hover: #6c2031;
+  --theme-border: rgba(248, 113, 113, .24);
+  --theme-border-strong: rgba(239, 68, 68, .58);
+  --theme-text: #fff1f2;
+  --theme-text-secondary: #fca5a5;
+  --theme-text-muted: #fda4af;
+  --theme-primary: #ef4444;
+  --theme-secondary: #fb923c;
+  --theme-tertiary: #f87171;
+  --theme-page: radial-gradient(circle at 12% 15%, rgba(239, 68, 68,.2), transparent 34%), radial-gradient(circle at 82% 86%, rgba(251, 191, 36,.2), transparent 30%), linear-gradient(145deg, #1f090e 0%, #3d1320 56%, #290a12 100%);
+  --theme-pattern: linear-gradient(90deg, rgba(239, 68, 68,.045) 1px, transparent 1px), linear-gradient(180deg, rgba(239, 68, 68,.045) 1px, transparent 1px);
+  --theme-pattern-size: 22px 22px;
+  --theme-card-radius: 12px;
+  --theme-control-radius: 10px;
+  --theme-card-shadow: 0 14px 40px rgba(15, 1, 5,.38), inset 0 1px rgba(255,255,255,.07);
+  --theme-card-backdrop: blur(14px);
+  --theme-header: rgba(26, 8, 13, .9);
+  --theme-control-bg: rgba(239, 68, 68, .12);
+  --theme-progress-track: rgba(239, 68, 68,.11);
+  --theme-on-primary: #2c050d;
+  --theme-success-text: #86efac;
+  --theme-danger-text: #fecaca;
+  --theme-warning-text: #fde68a;
+  --theme-info-text: #bfdbfe;
+}
+
+:root.theme-sunset-gold {
+  --theme-link: #85400c;
+  color-scheme: light;
+  --theme-bg: #fff6ea;
+  --theme-bg-secondary: #ffe0c7;
+  --theme-surface: #fff8ee;
+  --theme-surface-strong: #fff1dd;
+  --theme-surface-hover: #ffe8cd;
+  --theme-border: rgba(217, 119, 6, .18);
+  --theme-border-strong: rgba(245, 158, 11, .54);
+  --theme-text: #2f1403;
+  --theme-text-secondary: #7f3f1a;
+  --theme-text-muted: #7f3f1a;
+  --theme-primary: #f59e0b;
+  --theme-secondary: #ef4444;
+  --theme-tertiary: #ec4899;
+  --theme-page: radial-gradient(circle at 16% 12%, rgba(251, 191, 36,.35), transparent 24%), radial-gradient(circle at 84% 82%, rgba(244, 63, 94,.2), transparent 28%), linear-gradient(145deg, #fff6ea 0%, #ffddc2 52%, #f8d4a8 100%);
+  --theme-pattern: radial-gradient(circle, rgba(217, 119, 6,.12) 0 1px, transparent 1.5px);
+  --theme-pattern-size: 22px 22px;
+  --theme-card-radius: 18px;
+  --theme-control-radius: 14px;
+  --theme-card-shadow: 0 14px 34px rgba(123, 62, 13,.17), 0 2px 0 rgba(255,255,255,.5) inset;
+  --theme-card-backdrop: blur(10px);
+  --theme-header: rgba(255, 247, 236, .9);
+  --theme-control-bg: rgba(245, 158, 11, .12);
+  --theme-progress-track: rgba(217, 119, 6, .16);
+  --theme-on-primary: #3a1f05;
+  --theme-success-text: #166534;
+  --theme-danger-text: #b91c1c;
+  --theme-warning-text: #78350f;
+  --theme-info-text: #7c3aed;
+}
+
+/* Map each full theme to the variable dialects used by older student apps. */
+:root[class*="theme-"] {
+  --bg-primary: var(--theme-bg);
+  --bg-secondary: var(--theme-bg-secondary);
+  --bg-card: var(--theme-surface);
+  --bg-card-hover: var(--theme-surface-hover);
+  --bg-glass: var(--theme-surface);
+  --border-glass: var(--theme-border);
+  --border-glow: var(--theme-border-strong);
+  --text-primary: var(--theme-text);
+  --text-secondary: var(--theme-text-secondary);
+  --text-muted: var(--theme-text-muted);
+  --accent-blue: var(--theme-tertiary);
+  --accent-purple: var(--theme-primary);
+  --accent-green: var(--theme-secondary);
+  --accent-cyan: var(--theme-tertiary);
+  --accent-orange: var(--theme-secondary);
+  --accent-pink: var(--theme-primary);
+  --shadow-glow: 0 0 32px color-mix(in srgb, var(--theme-primary) 24%, transparent);
+  --shadow-card: var(--theme-card-shadow);
+  --shadow-float: 0 24px 70px rgba(0, 0, 0, .42);
+  --radius-sm: var(--theme-control-radius);
+  --radius-md: var(--theme-control-radius);
+  --radius-lg: var(--theme-card-radius);
+  --radius-xl: var(--theme-card-radius);
+
+  --bg: var(--theme-bg);
+  --surface: var(--theme-surface);
+  --surface2: var(--theme-surface-strong);
+  --card: var(--theme-surface);
+  --card2: var(--theme-surface-strong);
+  --sidebar-bg: var(--theme-bg-secondary);
+  --border: var(--theme-border);
+  --text: var(--theme-text);
+  --text-main: var(--theme-text);
+  --muted: var(--theme-text-secondary);
+  --accent: var(--theme-primary);
+  --purple: var(--theme-primary);
+  --pink: var(--theme-secondary);
+  --blue: var(--theme-tertiary);
+
+  /* Shared semantic colors for legacy subject pages. */
+  --green: var(--theme-success-text);
+  --success: var(--theme-success-text);
+  --red: var(--theme-danger-text);
+  --error: var(--theme-danger-text);
+  --yellow: var(--theme-warning-text);
+  --gold: var(--theme-warning-text);
+  --orange: var(--theme-secondary);
+
+  /* Typing School declares its own variables later in the cascade. These
+     important aliases keep it on the selected student desk theme. */
+  --typing-bg: var(--theme-bg) !important;
+  --typing-surface: var(--theme-surface) !important;
+  --typing-surface-2: var(--theme-surface-strong) !important;
+  --typing-border: var(--theme-border) !important;
+  --typing-text: var(--theme-text) !important;
+  --typing-muted: var(--theme-text-secondary) !important;
+  --typing-accent: var(--theme-primary) !important;
+  --typing-accent-2: var(--theme-tertiary) !important;
+  --typing-green: var(--theme-success-text) !important;
+  --typing-red: var(--theme-danger-text) !important;
+}
+
+:root[class*="theme-"] { background-color: var(--theme-bg); }
+
+:root[class*="theme-"] body {
+  background: var(--theme-page) !important;
+  color: var(--theme-text);
+}
+
+:root[class*="theme-"] .gate {
+  background: var(--theme-page) !important;
+}
+
+:root[class*="theme-"] .gate > button {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-border-strong) !important;
+  border-radius: var(--theme-control-radius) !important;
+  color: var(--theme-on-primary) !important;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--theme-primary) 24%, transparent);
+}
+
+/* Dashboard canvas and atmosphere. */
+:root[class*="theme-"] #dashboard-screen {
+  background: var(--theme-page);
+  isolation: isolate;
+}
+
+:root[class*="theme-"] #dashboard-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--theme-pattern);
+  background-size: var(--theme-pattern-size);
+  opacity: .72;
+}
+
+:root[class*="theme-"] .dashboard-header,
+:root[class*="theme-"] .subject-toolbar {
+  background: var(--theme-header);
+  border-color: var(--theme-border);
+  backdrop-filter: blur(22px) saturate(130%);
+  box-shadow: 0 10px 34px rgba(0,0,0,.12);
+}
+
+:root[class*="theme-"] .header-avatar {
+  min-width: 58px;
+  min-height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: var(--theme-card-radius);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 25%, transparent), color-mix(in srgb, var(--theme-secondary) 18%, transparent));
+  border: 1px solid var(--theme-border-strong);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-primary) 18%, transparent);
+}
+
+:root[class*="theme-"] .header-btn,
+:root[class*="theme-"] .store-btn {
+  background: var(--theme-control-bg) !important;
+  border-color: var(--theme-border-strong) !important;
+  border-radius: var(--theme-control-radius) !important;
+  color: var(--theme-link) !important;
+}
+
+:root[class*="theme-"] .subject-card {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  border-radius: var(--theme-card-radius);
+  box-shadow: var(--theme-card-shadow);
+  backdrop-filter: var(--theme-card-backdrop);
+}
+
+:root[class*="theme-"] .subject-card:hover {
+  background: var(--theme-surface-hover);
+  border-color: var(--theme-border-strong);
+  box-shadow: var(--theme-card-shadow), 0 0 28px color-mix(in srgb, var(--theme-primary) 18%, transparent);
+}
+
+:root[class*="theme-"] .subject-card::before {
+  height: 5px;
+  border-radius: var(--theme-card-radius) var(--theme-card-radius) 0 0;
+}
+
+:root[class*="theme-"] .subject-progress-bar,
+:root[class*="theme-"] .toolbar-progress-bar {
+  background: var(--theme-progress-track);
+}
+
+:root[class*="theme-"] .wallet-widget,
+:root[class*="theme-"] .weather-widget,
+:root[class*="theme-"] .typing-widget,
+:root[class*="theme-"] .fact-widget,
+:root[class*="theme-"] .verse-widget,
+:root[class*="theme-"] .riddle-widget,
+:root[class*="theme-"] .streak-widget,
+:root[class*="theme-"] .reward-card {
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-border) !important;
+  border-radius: var(--theme-card-radius) !important;
+  box-shadow: var(--theme-card-shadow) !important;
+  backdrop-filter: var(--theme-card-backdrop);
+}
+
+:root[class*="theme-"] .reward-btn,
+:root[class*="theme-"] .celebration-btn {
+  background: var(--theme-primary);
+  border-radius: var(--theme-control-radius);
+}
+
+/* Each choice has a recognizable silhouette, not merely a recolor. */
+:root.theme-pink .subject-card {
+  border-width: 2px;
+}
+:root.theme-pink .subject-card:nth-child(odd) {
+  transform: rotate(-.25deg);
+}
+:root.theme-pink .subject-card:nth-child(even) {
+  transform: rotate(.25deg);
+}
+:root.theme-pink .subject-card:hover {
+  transform: translateY(-5px) rotate(0deg);
+}
+
+:root.theme-teal .subject-card::after {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  right: -32px;
+  bottom: -42px;
+  border: 10px solid rgba(103,232,249,.07);
+  border-radius: 50%;
+}
+
+:root.theme-dark-green .subject-card {
+  border-left: 5px solid color-mix(in srgb, var(--card-color, var(--theme-primary)) 70%, #d9f99d);
+}
+:root.theme-dark-green .subject-card::before {
+  display: none;
+}
+
+:root.theme-orange .subject-card,
+:root.theme-orange .wallet-widget,
+:root.theme-orange .weather-widget,
+:root.theme-orange .typing-widget,
+:root.theme-orange .fact-widget,
+:root.theme-orange .verse-widget,
+:root.theme-orange .riddle-widget,
+:root.theme-orange .streak-widget {
+  border-width: 2px !important;
+}
+:root.theme-orange .header-greeting,
+:root.theme-orange .subject-name {
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+:root.theme-purple .subject-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(125deg, rgba(255,255,255,.07), transparent 28%, transparent 70%, rgba(168,85,247,.08));
+}
+
+/* Theme picker */
+.theme-picker-card {
+  background: var(--theme-surface-strong) !important;
+  border: 1px solid var(--theme-border-strong) !important;
+  border-radius: var(--theme-card-radius) !important;
+  box-shadow: var(--shadow-float), 0 0 60px color-mix(in srgb, var(--theme-primary) 16%, transparent) !important;
+}
+
+.theme-choice {
+  min-height: 142px;
+  text-align: left;
+  overflow: hidden;
+  position: relative;
+}
+
+.theme-choice:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0,0,0,.2);
+}
+
+.theme-choice.active {
+  box-shadow: 0 0 0 2px var(--theme-surface-strong), 0 0 0 5px var(--choice-color);
+}
+
+@media (max-width: 640px) {
+  .theme-picker-card #theme-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ======================================================
+   INTERNAL SUBJECT CONTRAST CONTRACT
+
+   Several early subject pages contain dark-desk colors in inline styles.
+   The theme bridge is intentionally loaded before those styles, so this
+   layer uses important semantic overrides to keep every subject legible on
+   both light and dark student desks. Page layout and subject accent colors
+   remain untouched.
+   ====================================================== */
+
+:root[class*="theme-"] { background-color: var(--theme-bg); }
+
+:root[class*="theme-"] body {
+  color: var(--theme-text) !important;
+}
+
+/* App chrome and large content surfaces. */
+:root[class*="theme-"] :is(.header, .store-header, .school-header, .tp-header, .chat-header) {
+  background: var(--theme-header) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[class*="theme-"] :is(
+  .card, .question-card, .quiz-card, .intro-card, .results-card, .stat-box,
+  .tip-card, .geo-fact, .book-card, .modal-box, .hero, .course, .empty,
+  .video-card, .track-card, .playlist-card, .channel-card, .store-item,
+  .tp-text-wrap, .tp-results, .result-stat-card, .state-card,
+  .lesson-overview, .lesson-player, .typing-task, .keyboard-zone, .voice-panel
+) {
+  background: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+/* Primary copy must never inherit the old pale-on-dark ink. */
+:root[class*="theme-"] :is(
+  .header-title, .gate-title, .scenario-text, .question-text, .sentence-display,
+  .book-title, .video-title, .player-title, .empty-title, .modal-title,
+  .intro-title, .results-title, .result-title, .done-screen h2, .state-card h2,
+  .lesson-overview h2, .lesson-player h2
+) {
+  color: var(--theme-text) !important;
+  -webkit-text-fill-color: var(--theme-text) !important;
+}
+
+/* Supporting copy uses the darker light-theme secondary ink. */
+:root[class*="theme-"] :is(
+  .header-sub, .header-subtitle, .gate-sub, .progress-wrap, .progress-label,
+  .prompt-text, .region-hint, .tip-explanation, .tip-example, .book-author,
+  .video-channel, .player-channel, .time-lbl, .empty-state, .empty-sub,
+  .modal-label, .intro-desc, .results-subtitle, .stat-label, .loading,
+  .coin-pop .label, .done-screen p, .parent-note, .parent-badge,
+  .course-progress-copy, .lesson-nav-copy span, .overview-copy > p,
+  .coach-preview p, .state-card p
+) {
+  color: var(--theme-text-secondary) !important;
+  -webkit-text-fill-color: var(--theme-text-secondary) !important;
+}
+
+/* Neutral choices, fields, and secondary actions. */
+:root[class*="theme-"] :is(
+  .opt-btn, .choice-btn, .chain-item, .header-back, .btn-done, .btn-skip,
+  .back-btn, .card-btn, .quick-chip, .hidden-channel-pill, .emoji-opt,
+  .modal-btn.cancel, .secondary-btn, .quiet-btn, .voice-btn, .school-tab,
+  .lesson-nav-item, .mode-btn, .channel-search, .spelling-input, .short-input,
+  .modal-input, .compose-area textarea
+) {
+  background-color: var(--theme-surface-strong) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  -webkit-text-fill-color: var(--theme-text) !important;
+}
+
+:root[class*="theme-"] :is(
+  input[type="text"], input[type="search"], input[type="number"],
+  input[type="password"], textarea, select
+) {
+  background-color: var(--theme-surface-strong) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[class*="theme-"] :is(input, textarea)::placeholder {
+  color: var(--theme-text-muted) !important;
+  opacity: 1;
+}
+
+:root[class*="theme-"] option {
+  background: var(--theme-surface-strong);
+  color: var(--theme-text);
+}
+
+/* Action labels have a theme-specific foreground with sufficient contrast. */
+:root[class*="theme-"] :is(
+  .next-btn, .done-btn, .check-order-btn, .btn-primary, .btn-submit, .add-btn,
+  .modal-btn.primary, .primary-btn, .school-tab.active
+) {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-border-strong) !important;
+  color: var(--theme-on-primary) !important;
+  -webkit-text-fill-color: var(--theme-on-primary) !important;
+}
+
+/* Correct and incorrect feedback remains readable, particularly on Pink. */
+:root[class*="theme-"] :is(
+  .opt-btn.correct, .choice-btn.correct, .feedback.correct-fb,
+  .feedback-banner.correct, .blank.correct-word, .toast.success,
+  .book-status-badge.badge-finished
+) {
+  color: var(--theme-success-text) !important;
+  -webkit-text-fill-color: var(--theme-success-text) !important;
+}
+
+:root[class*="theme-"] :is(
+  .opt-btn.wrong, .choice-btn.wrong, .feedback.wrong-fb,
+  .feedback-banner.incorrect, .blank.wrong-word, .spelling-input.incorrect
+) {
+  color: var(--theme-danger-text) !important;
+  -webkit-text-fill-color: var(--theme-danger-text) !important;
+}
+
+:root[class*="theme-"] :is(.type-fair-unfair, .done-coins, .coin-pop .amount) {
+  color: var(--theme-warning-text) !important;
+}
+
+:root[class*="theme-"] :is(.question-text, .tip-rule, .tip-example strong, .explain-q) {
+  color: var(--theme-link) !important;
+  -webkit-text-fill-color: var(--theme-link) !important;
+}
+
+:root[class*="theme-"] :is(.progress-bar-track, .progress-track, .gate-bar-wrap, .prog-track) {
+  background: var(--theme-progress-track) !important;
+}
+
+/* Typing School and the speed test contain fixed dark glass panels. */
+:root[class*="theme-"] .course-sidebar {
+  background: var(--theme-bg-secondary) !important;
+  border-color: var(--theme-border) !important;
+}
+
+:root[class*="theme-"] :is(.school-tabs, .course-progress-card, .overview-meta span, .setup-reminders span) {
+  background: var(--theme-control-bg) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text-secondary) !important;
+}
+
+:root[class*="theme-"] .tp-char.pending {
+  color: var(--theme-text-secondary) !important;
+}
+
+:root[class*="theme-"] .tp-start-overlay {
+  background: color-mix(in srgb, var(--theme-bg) 82%, transparent) !important;
+  color: var(--theme-text) !important;
+}
+
+/* Preserve real ink on the Writing paper regardless of the desk theme. */
+:root[class*="theme-"] :is(.ql-editor, #doc-title) {
+  color: var(--paper-ink, #172033) !important;
+  -webkit-text-fill-color: var(--paper-ink, #172033) !important;
+}

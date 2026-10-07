@@ -103,6 +103,7 @@ export function abekaCourseLabel(course) {
 // cannot tell us whether the earlier lesson is done; wait for a fresh child scan.
 export function abekaCourseStatus(course) {
   if (course.completed === true) return 'complete';
+  if (course.upcoming === true) return 'upcoming';
   const days = new Set(abekaLessonTokens(course).filter(token => /^\d+$/.test(token)).map(Number));
   return days.size > 1 ? 'refresh-needed' : 'incomplete';
 }

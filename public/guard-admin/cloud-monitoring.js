@@ -1,7 +1,7 @@
 import { setupAbekaParent } from './cloud-abeka-parent.js';
 import { parentActionFeedback } from './cloud-action-feedback.js';
-import { connectionState, connectionExpiresAt, todaySeconds, subjectProgress, assignmentFor, abekaCourseLabel, abekaCourseStatus, abekaRefreshMessage } from './cloud-workspace-model.js';
-import { studentAvatar } from './cloud-student-profile.js';
+import { connectionState, connectionExpiresAt, todaySeconds, subjectProgress, assignmentFor, abekaCourseLabel, abekaCourseStatus, abekaRefreshMessage } from './cloud-workspace-model.js?v=20261007-abeka-day1';
+import { studentAvatar, studentPhotoShortcut } from './cloud-student-profile.js?v=20261007-avatar1';
 import { cardColor, activityAccent } from './cloud-activity-colors.js';
 
 const mediaTypes = [['music','Music','music'],['video','Video','video'],['audiobook','Audiobooks','headphones']];
@@ -15,13 +15,13 @@ const duration = value => value < 60 ? '<1m' : value < 3600 ? `${Math.floor(valu
 const creativeStudioUrls = new Set(['app://coloring','app://coloring-studio']);
 function quickUnlockChoices(goals) {
   const studio = goals.filter(goal => creativeStudioUrls.has(goal.url));
-  if (!studio.length) return goals.map(goal => ({ ...goal, subjectIds: [goal.id] }));
+  if (!studio.length) return goals.map(goal => ({...goal, subjectIds:[goal.id]}));
   let shown = false;
   return goals.flatMap(goal => {
-    if (!creativeStudioUrls.has(goal.url)) return [{ ...goal, subjectIds: [goal.id] }];
+    if (!creativeStudioUrls.has(goal.url)) return [{...goal, subjectIds:[goal.id]}];
     if (shown) return [];
     shown = true;
-    return [{ ...goal, label: 'Art & Coloring Studio', icon: 'palette', subjectIds: studio.map(item => item.id) }];
+    return [{...goal, label:'Art & Coloring Studio', icon:'palette', subjectIds:studio.map(item => item.id)}];
   });
 }
 // Saved grades are free text. Sort recognized school levels numerically;
@@ -91,7 +91,7 @@ function ring(model){
   }
   box.title=`${model.done} of ${model.required} subject goals completed`;box.append(svg,node('span','ring-label',`${model.done}/${model.required}`));return box;
 }
-export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile,setControls=()=>{}}){
+export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editProfilePhoto,mobile,setControls=()=>{}}){
   const notices = parentActionFeedback();
   let screenshotExpiry = null, connectionExpiry = null;
   let observedSnapshot = null, observedAt = 0;
@@ -130,7 +130,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
   async function run(control,callback,notice) {
     const key=control.dataset.actionFeedbackControl, hadFocus=document.activeElement===control;
     const ticket=notices.begin(key,notice.pending,control.dataset.actionFeedbackGroup);control.disabled=true;
-    try{await callback();notices.finish(ticket,notice.title,notice.detail);}
+    try{await callback();notices.finish(ticket,notice.title,notice.detail,false,notice.prominent===true);}
     catch(error){notices.finish(ticket,notice.errorTitle||'This change needs attention',error.message,true);}
     finally{
       if(control.isConnected)control.disabled=control.dataset.requiresDevice==='false';setControls();
@@ -143,7 +143,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     const row=node('div','monitor-media-action');row.dataset.media=kind;
     const unlocked=model.media[kind].unlocked, key=model.student.id+':'+kind, child=model.student.name;
     const change=extra=>mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:model.student.id,...extra}});
-    const main=button(unlocked?`${label} bypass on`:kind==='audiobook'?'Bypass Audiobooks':`Bypass ${label} rules`,unlocked?'lock-open':glyph,
+    const main=button(unlocked?`${label} unlocked`:kind==='audiobook'?'Bypass Audiobooks':`Unlock ${label}`,unlocked?'lock-open':glyph,
       el=>run(el,()=>change({operation:'override',unlocked:!unlocked}),{pending:(unlocked?'Restoring '+label.toLowerCase()+' rules':'Unlocking '+label.toLowerCase())+' for '+child+'…',title:unlocked?label+' rules restored for '+child:label+' unlocked for '+child,detail:unlocked?'Saved. School and schedule requirements apply again on the child app’s next sync.':'Saved for today. Daily time limits still apply. The child app receives the change on its next sync.',errorTitle:'Could not confirm '+label.toLowerCase()+' access for '+child}),'monitor-media-main');
     notices.bind(main,key);main.dataset.cloudMutation='true';main.title=unlocked?'Restore the usual school and schedule requirements':'Bypass school and schedule requirements for today. The daily time limit still applies.';
     const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));summary.setAttribute('aria-label',`Add ${label.toLowerCase()} time for ${model.student.name}`);
@@ -208,7 +208,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
     for(const model of models){
       const {student,device}=model;
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
-      const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
+      const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=editProfilePhoto?studentPhotoShortcut(student,()=>editProfilePhoto(student)):studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
       const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!model.online?model.connection:device.locked?'Computer locked':model.current?.title||'BodeeGuard connected'));
       identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
       const clocks=node('div','monitor-timer-row');
@@ -221,9 +221,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       if(model.courses.length){
         const lessons=node('div','cloud-abeka-courses');lessons.setAttribute('aria-label',"Today's Abeka lessons");
         for(const course of model.courses){
-          const state=abekaCourseStatus(course),label=abekaCourseLabel(course);
-          const chip=node('span',`cloud-abeka-course ${state}`,`${state==='complete'?'✓':state==='refresh-needed'?'?':'○'} ${label}`);
-          chip.setAttribute('aria-label',`${label}: ${state==='complete'?'complete':state==='refresh-needed'?'waiting for lesson refresh':'incomplete'}`);
+          const state=abekaCourseStatus(course),label=abekaCourseLabel(course)+(state==='upcoming'?' · Upcoming':'');
+          const chip=node('span',`cloud-abeka-course ${state}`,`${state==='complete'?'✓':state==='refresh-needed'?'?':state==='upcoming'?'›':'○'} ${label}`);
+          chip.setAttribute('aria-label',`${label}: ${state==='complete'?'complete':state==='refresh-needed'?'waiting for lesson refresh':state==='upcoming'?'upcoming, not required today':'incomplete'}`);
+          if(state==='upcoming')chip.title=`Activities comes after Lesson ${course.schoolLesson}, which most completed classes report today. It does not block today's school completion.`;
           lessons.append(chip);
         }
         card.append(lessons);
@@ -254,7 +255,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,mobile
       const pair=node('div','monitor-student-actions');
       const pause=button(device?.locked?'Unlock computer':'Lock computer',device?.locked?'lock-open':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked}),{pending:(device?.locked?'Unlocking ':'Locking ')+student.name+'’s computer…',title:(device?.locked?'Unlock':'Lock')+' requested for '+student.name,detail:'Saved to your family account. The child app will apply it on its next sync.'}),'monitor-student-action monitor-student-action--lock');notices.bind(pause,student.id+':computer-lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
       pair.append(pause,button('Message','send',()=>openMessages(student.id),'monitor-student-action monitor-student-action--message'));actions.append(pair);notices.mount(actions,student.id+':computer-lock');card.append(actions);
-      const close=button('Close BodeeGuard','power',el=>run(el,()=>mutate('computer-command',{kind:'close',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a close request to '+student.name+'…',title:'Close requested for '+student.name,detail:'The request expires in two minutes if the child app does not receive it.'}),'monitor-control monitor-control--close');
+      const close=button('Close BodeeGuard','power',el=>run(el,()=>mutate('computer-command',{kind:'close',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a close request to '+student.name+'…',title:'Close request saved for '+student.name,detail:'The child app has not confirmed it closed. If BodeeGuard remains open after two minutes, refresh the dashboard and try again.',prominent:true}),'monitor-control monitor-control--close');
       notices.bind(close,student.id+':close');
       const parts=String(device?.app_version||'').split('.').map(Number),supportsClose=parts.length===3&&parts.every(Number.isInteger)&&(parts[0]>1||parts[0]===1&&(parts[1]>2||parts[1]===2&&parts[2]>=201));
       close.disabled=!supportsClose||!model.online;close.dataset.requiresDevice=String(supportsClose&&model.online);close.dataset.cloudMutation='true';

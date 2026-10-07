@@ -49,6 +49,9 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
   let body: unknown;
   if (uploadOnly !== (input.action === "upload-file")) return response({ error: "Use the designated file upload endpoint." }, 400);
     switch (input.action) {
+    case "student-preview":
+      if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
+      path = "/student-preview"; method = "POST"; body = { studentId: input.studentId }; break;
     case "phone-notifications": path = "/notifications"; method = "POST"; body = { operation: input.operation, subscription: input.subscription, accountUserId: input.accountUserId, deviceId: input.deviceId, viewId: input.viewId, label: input.label, studentId: input.studentId, messageId: input.messageId, messagePreview: input.messagePreview, enabled: input.enabled }; break;
     case "approved-apps": path = "/apps"; method = "POST"; body = { action: input.operation, id: input.id, deviceId: input.deviceId, studentId: input.studentId, sha256: input.sha256, revision: input.revision, approved: input.approved }; break;
     case "push-ticket": path = "/push-ticket"; method = "POST"; body = {}; break;
@@ -154,6 +157,10 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       break;
     }
     case "remove-grade": path = "/grades/remove"; method = "POST"; body = { id: input.id, revision: input.revision }; break;
+    case "delete-student": {
+      if (typeof input.studentId !== "string" || !uuid.test(input.studentId) || input.confirmation !== true || typeof input.expectedName !== "string" || !input.expectedName.trim() || input.expectedName.length > 100) return response({ error: "Confirm the student you want to delete." }, 400);
+      path = `/students/${input.studentId}/delete`; method = "POST"; body = { confirmation: true, expectedName: input.expectedName }; break;
+    }
     case "archive-student": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId) || typeof input.archived !== "boolean") return response({ error: "Choose a child and archive or restore." }, 400);
       path = `/students/${input.studentId}/archive`; method = "POST"; body = { archived: input.archived }; break;

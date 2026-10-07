@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.297": {
+    "title": "School progress and faster family controls",
+    "sections": [{
+      "heading": "Version 1.2.297",
+      "headline": "Clearer school checks and easier family tools",
+      "summary": "See why Earn Coins is waiting, check Abeka activities more accurately, and manage children with fewer steps.",
+      "highlights": [
+        "Abeka Activities now distinguishes the current lesson from an upcoming one; Earn Coins lists the school tasks still waiting for confirmation.",
+        "Parents can choose a daily Earn Coins opening time, such as 11:45 a.m., while allowing children through as soon as school is finished.",
+        "Preview a child's assigned dashboard safely, update a profile photo from the student card, or delete an archived student with confirmation.",
+        "Review a child's screenshot bug report and send it to support, or unlock requested music, videos and audiobooks directly from a message.",
+        "Assign Long Division as its own daily activity while retaining it in Math Coach; Daily Verse and Brain Teaser have more questions."
+      ]
+    }]
+  },
   "1.2.296": {
     "title": "Child-controlled message sounds",
     "sections": [

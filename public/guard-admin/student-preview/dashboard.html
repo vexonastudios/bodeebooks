@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>BodeeGuard — Student</title><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/kiosk/base.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/kiosk/login.css"><link id="student-theme-styles" rel="stylesheet" href="/guard-admin/student-preview/renderer/css/kiosk/themes.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-student-source.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-student.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-planner.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-student-bug-report.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-messages.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-student-chat.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-chores.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-learning-challenges.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/kiosk/child-emoji-picker.css"><link id="student-theme-surfaces" rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-student-theme.css"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'"><link rel="stylesheet" href="/guard-admin/student-preview/preview.css"></head>
+<body class="cloud-student" data-cloud-student="true"><header class="cloud-student-status"><p id="connection" hidden></p><button id="parent-exit" type="button" class="header-btn" title="Parent controls" aria-label="Parent controls" hidden><i data-lucide="lock-keyhole" aria-hidden="true"></i></button><div id="private-status-details" hidden><p id="protection-status"></p></div><p id="error" role="alert"></p></header>
+<section id="cloud-parent-lock" hidden aria-live="polite"><i data-lucide="lock-keyhole" aria-hidden="true"></i><h1>Computer locked</h1><p>Your parent will unlock BodeeGuard when it’s time to continue.</p><button id="locked-parent-exit" class="header-btn" type="button"><i data-lucide="lock-keyhole" aria-hidden="true"></i>Parent controls</button></section>
+<section id="student-loading-panel" class="cloud-student-panel cloud-startup" aria-labelledby="student-loading-title" aria-busy="true"><div class="cloud-startup-card"><div class="cloud-startup-mark"><i data-lucide="graduation-cap" aria-hidden="true"></i></div><p class="cloud-startup-brand">BodeeGuard</p><h1 id="student-loading-title">Getting your dashboard ready</h1><p id="student-loading-detail" role="status">Opening your saved school and activities…</p><progress id="student-loading-progress" aria-label="Loading your dashboard"></progress><div class="cloud-startup-actions"><button id="student-loading-retry" type="button" hidden><i data-lucide="refresh-cw" aria-hidden="true"></i>Try again</button><button id="student-loading-parent" type="button"><i data-lucide="lock-keyhole" aria-hidden="true"></i>Parent controls</button></div></div></section><main><section id="dashboard-screen" class="screen" hidden inert>
+    <div class="dashboard-header">
+        <div class="header-left">
+        <span class="header-avatar" id="dash-avatar"></span>
+        <div>
+          <h2 class="header-greeting" id="dash-greeting"></h2>
+          <p class="header-date" id="dash-date"></p>
+          <div class="student-source-0 header-clock" id="dash-clock"></div>
+          <span class="student-source-1 streak-badge" id="streak-badge"></span>
+          <span id="school-checkin-badge" class="student-source-2"></span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="student-source-3 header-btn message-btn" id="dash-message-btn" title="Message Mom & Dad"><i data-lucide="message-square-text" class="student-source-4"></i></button>
+        <button class="student-source-5 header-btn grades-btn" id="dash-grades-btn" title="Open My Grades" aria-label="Open My Grades"><i data-lucide="clipboard-check" class="student-source-6"></i><span class="grades-label">Grades</span><b id="grade-notification-badge" class="grade-notification-badge" hidden></b></button>
+        <button class="student-source-7 header-btn store-btn" id="store-btn" title="Store / Coin Shop"><i data-lucide="shopping-cart" class="student-source-8"></i></button>
+        <button class="student-source-9 header-btn" id="dash-whats-new-btn" title="What’s new in BodeeGuard" aria-label="What’s new in BodeeGuard"><i data-lucide="sparkles" class="student-source-10"></i></button>
+        <div class="completion-badge" id="completion-badge">
+          <svg class="completion-ring" viewBox="0 0 36 36">
+            <path class="completion-ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="completion-ring-fill" id="completion-ring-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          </svg>
+          <span class="completion-text" id="completion-text">—</span>
+        </div>
+        <button class="student-source-11 header-btn sleep-btn" id="dash-sleep-btn" title="Sleep (save power)"><i data-lucide="moon" class="student-source-12"></i></button>
+        <button class="student-source-13 header-btn update-btn" id="dash-update-btn" title="Check / Apply Update"><i data-lucide="refresh-cw" class="student-source-14"></i></button>
+      </div>
+    </div>
+
+    <section id="school-access-recovery" class="school-access-recovery" hidden aria-labelledby="school-access-recovery-title">
+      <i data-lucide="wifi" aria-hidden="true"></i><div><h3 id="school-access-recovery-title">Let’s get school ready</h3><p id="school-access-recovery-detail" role="status"></p></div>
+      <button id="school-access-retry" type="button"><i data-lucide="refresh-cw" aria-hidden="true"></i>Try school again</button>
+      <button id="school-access-wifi" type="button"><i data-lucide="settings-2" aria-hidden="true"></i>Check Wi-Fi</button>
+    </section>
+    <!-- Horizontal Scrollable Widgets Shelf (Capped at 140px height) -->
+    <div class="widgets-grid">
+
+      <!-- Wallet Widget -->
+      <div class="wallet-widget">
+        <div class="wallet-heading"><h4><i data-lucide="wallet" aria-hidden="true"></i> My Wallet</h4><button id="wallet-history-btn" class="wallet-history" type="button" title="Coin history" aria-label="Open coin history" disabled><i data-lucide="history" aria-hidden="true"></i></button></div>
+        <div class="wallet-amount"><span id="wallet-coins">—</span><span>coins</span></div>
+        <div class="wallet-actions" role="group" aria-label="Wallet actions"><button id="wallet-store-btn" type="button" aria-label="Open Rewards Store" title="Open Rewards Store"><i data-lucide="shopping-cart" aria-hidden="true"></i><span>Store</span></button></div>
+        <div id="banked-media-display" class="wallet-extra-time" aria-label="Extra earned time"><span class="wallet-time-label"><i data-lucide="clock-plus" aria-hidden="true"></i> Extra time</span><span id="banked-music-text" class="wallet-time-badge" title="Extra earned music time"><i data-lucide="music" aria-hidden="true"></i><span class="wallet-time-name">Music</span><strong id="banked-music-val">0m</strong></span><span id="banked-video-text" class="wallet-time-badge" title="Extra earned video time"><i data-lucide="video" aria-hidden="true"></i><span class="wallet-time-name">Video</span><strong id="banked-video-val">0m</strong></span></div>
+      </div>
+
+
+      <!-- Typing Speedometer Widget -->
+      <div class="student-source-35 typing-widget" id="typing-widget">
+        <div class="student-source-36">
+          <i data-lucide="keyboard" class="student-source-37"></i>
+        </div>
+        <div class="student-source-38">
+          <h4 id="typing-widget-title" class="student-source-39">Typing School</h4>
+        </div>
+        <div class="student-source-40">
+          <span id="typing-wpm">--</span>
+          <span id="typing-metric-unit" class="student-source-41">LESSONS</span>
+        </div>
+        <p id="typing-last-practiced" class="student-source-42">Keep practicing!</p>
+        <p id="typing-widget-tip" class="student-source-43">Accuracy first—speed comes later.</p>
+      </div>
+
+
+      <!-- Fact Widget -->
+      <div class="student-source-44 fact-widget" id="fact-widget">
+        <div class="student-source-45">
+          <i data-lucide="book-open" class="student-source-46"></i>
+        </div>
+        <div class="student-source-47">
+          <div class="student-source-48">
+            <h4 id="fact-title" class="student-source-49">On this day...</h4>
+            <div class="student-source-50">
+              <button id="fact-prev" class="student-source-51">←</button>
+              <button id="fact-next" disabled class="student-source-52">→</button>
+            </div>
+          </div>
+          <p id="fact-text" class="student-source-53"></p>
+        </div>
+      </div>
+
+
+      <!-- Verse Widget -->
+      <div class="student-source-54 verse-widget" id="verse-widget">
+
+        <!-- Top part: Icon and Text -->
+        <div class="student-source-55">
+          <div class="student-source-56">
+            <i data-lucide="book" class="student-source-57"></i>
+          </div>
+          <div class="student-source-58">
+            <div class="student-source-59">
+              <h4 class="student-source-60">Daily Verse</h4>
+              <div class="student-source-61">
+                <button id="verse-prev" class="student-source-62">←</button>
+                <button id="verse-next" disabled class="student-source-63">→</button>
+              </div>
+            </div>
+            <p id="verse-text" class="student-source-64"></p>
+            <p id="verse-ref" class="student-source-65"></p>
+          </div>
+        </div>
+
+        <!-- Interactive Question Part -->
+        <div id="verse-question-container" class="student-source-66">
+          <p id="verse-question" class="student-source-67"></p>
+          <div id="verse-options" class="student-source-68">
+            <!-- Buttons injected here by JS -->
+          </div>
+          <div id="verse-reward-msg" class="student-source-69">
+            <i data-lucide="coins" class="student-source-70"></i> <span id="verse-reward-text"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Riddle Widget -->
+      <div class="student-source-71 riddle-widget" id="riddle-widget">
+        <div class="student-source-72">
+          <div class="student-source-73">🧩</div>
+          <div class="student-source-74">
+            <h4 class="student-source-75">Daily Brain Teaser</h4>
+            <p id="riddle-text" class="student-source-76"></p>
+          </div>
+        </div>
+        <div id="riddle-options" class="student-source-77"></div>
+        <div id="riddle-reward-msg" class="student-source-78"></div>
+      </div>
+
+      <!-- Streak Widget -->
+      <div class="student-source-79 streak-widget" id="streak-widget">
+        <div class="student-source-80">
+          <div id="streak-fire-icon" class="student-source-81">🔥</div>
+          <div class="student-source-82">
+            <div class="student-source-83">Study Streak</div>
+            <div id="streak-count" class="student-source-84">0</div>
+            <div id="streak-label" class="student-source-85">weekdays in a row</div>
+          </div>
+          <div class="student-source-86">
+            <div class="student-source-87">🏆 Best</div>
+            <div id="streak-best" class="student-source-88">0</div>
+          </div>
+        </div>
+        <div id="streak-tip" class="student-source-89"></div>
+      </div>
+
+      <!-- Weather Widget -->
+      <div class="student-source-90 weather-widget" id="weather-widget">
+        <div class="student-source-91">
+          <div id="weather-icon" class="student-source-92">☀️</div>
+          <div class="student-source-93"><span id="weather-temp">--</span>°</div>
+        </div>
+        <p id="weather-msg" class="student-source-94">It's a beautiful day!</p>
+      </div>
+    </div>
+
+    <div class="student-source-95 subjects-container main-subjects-container" id="main-subjects-container">
+      <!-- Main Subject cards populated by JS -->
+    </div>
+
+    <div class="subjects-container" id="subjects-container">
+      <!-- Subject cards populated by JS -->
+    </div>
+
+    <!-- Reward section -->
+    <div class="student-source-96 reward-section" id="reward-section">
+      <div class="reward-card">
+        <span class="reward-icon">🎮</span>
+        <div class="student-source-97 reward-info">
+          <h3>BodeeBooks Game Time</h3>
+          <p id="reward-status"></p>
+          <div class="student-source-98 subject-progress-bar" id="reward-progress-container">
+            <div id="reward-progress-fill" class="student-source-99 subject-progress-fill"></div>
+          </div>
+        </div>
+        <button class="reward-btn" id="reward-play-btn">Open BodeeBooks Games</button>
+      </div>
+    </div>
+</section>
+<section id="student-school-screen" class="screen" hidden>    <div class="subject-toolbar" id="subject-toolbar">
+      <div class="toolbar-nav-group">
+        <button class="toolbar-btn toolbar-home" id="toolbar-home" title="Back to Dashboard"><i data-lucide="home" class="student-source-100"></i></button>
+        <button class="toolbar-btn toolbar-back" id="toolbar-back" title="Go Back" disabled><i data-lucide="arrow-left" class="student-source-101"></i></button>
+        <button class="toolbar-btn toolbar-fwd"  id="toolbar-fwd"  title="Go Forward" disabled><i data-lucide="arrow-right" class="student-source-102"></i></button>
+        <button class="student-source-103 toolbar-btn toolbar-school-return" id="toolbar-school-return" type="button" title="Reload school in this window" aria-label="Reload school in this window">
+          <i data-lucide="rotate-cw" class="student-source-104"></i>
+          <span id="toolbar-school-return-label">Reload</span>
+        </button>
+      </div>
+      <div id="toolbar-abeka-pages" class="toolbar-abeka-pages" role="group" aria-label="Abeka pages" hidden>
+        <button id="toolbar-abeka-dashboard" class="toolbar-btn" type="button" title="Open your Abeka grades and to-do list"><i data-lucide="list-checks" aria-hidden="true"></i><span>Grades &amp; To-Do</span></button>
+        <button id="toolbar-abeka-lessons" class="toolbar-btn" type="button" title="Return to Abeka video lessons"><i data-lucide="clapperboard" aria-hidden="true"></i><span>Video Lessons</span></button>
+      </div>
+      <div class="toolbar-subject-info">
+        <span class="toolbar-icon" id="toolbar-subject-icon"></span>
+        <span class="toolbar-name" id="toolbar-subject-name"></span>
+      </div>
+      <div class="toolbar-progress-wrap" id="toolbar-timer" title="Time studied today">
+        <div class="toolbar-progress-bar">
+          <div class="toolbar-progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="toolbar-progress-label">
+          <span class="student-source-105 timer-icon"><i data-lucide="timer" class="student-source-106"></i></span>
+          <span class="timer-display" id="timer-display">00:00</span>
+          <span class="progress-goal" id="progress-goal"></span>
+        </div>
+      </div>
+      <label class="student-source-107 toolbar-speed" id="toolbar-speed" title="Lesson playback speed">
+        <i data-lucide="gauge" aria-hidden="true"></i>
+        <span class="sr-only">Lesson speed</span>
+        <select id="school-speed-select" aria-label="Lesson playback speed">
+          <option value="1">1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+        </select>
+      </label>
+      <button class="student-source-108 toolbar-btn toolbar-captions" id="toolbar-captions" type="button" title="Live Captions (Ctrl+Alt+C — also works in full screen)" aria-label="Open live captions">
+        <i data-lucide="captions" aria-hidden="true"></i>
+        <span class="toolbar-captions-label">Live Captions</span>
+        <span class="toolbar-captions-short" aria-hidden="true">CC</span>
+      </button>
+      <div class="toolbar-volume" id="toolbar-volume" title="Volume">
+        <span class="student-source-109 volume-icon" id="volume-icon"><i data-lucide="volume-2" class="student-source-110"></i></span>
+        <input type="range" id="volume-slider" class="volume-slider"
+               min="0" max="100" value="100" step="5">
+      </div>
+      <div class="toolbar-actions"><button id="pause" class="toolbar-btn cloud-end-session" type="button" title="End school and return to your dashboard"><i data-lucide="log-out" aria-hidden="true"></i><span>End session</span></button>
+        <button class="toolbar-btn toolbar-notes" id="toolbar-notes" title="Open Notes (Split Screen)"><i data-lucide="file-text" class="student-source-111"></i> Notes</button>
+        <button class="toolbar-btn toolbar-help"  id="toolbar-help"  title="Message Mom & Dad"><i data-lucide="message-square" class="student-source-112"></i> Message</button>
+        <button class="student-source-113 toolbar-btn toolbar-grade-capture" id="toolbar-grade-capture" title="Capture the grade shown on this test"><i data-lucide="camera" class="student-source-114"></i> Save Test Grade</button>
+        <button class="toolbar-btn toolbar-break" id="toolbar-break" title="Take a Break"><i data-lucide="coffee" class="student-source-115"></i> Break</button>
+        <button class="toolbar-btn toolbar-done"  id="toolbar-done"  title="Mark Complete"><i data-lucide="check-circle-2" class="student-source-116"></i> Done</button>
+      </div>
+    </div>
+<div class="cloud-school-recovery" hidden><button id="return" hidden tabindex="-1" aria-hidden="true">Return to school</button><button id="home" hidden tabindex="-1" aria-hidden="true">School home</button><p id="session-status" role="status"></p><button id="reload" class="toolbar-btn" type="button"><i data-lucide="rotate-cw" aria-hidden="true"></i><span>Try again</span></button></div><div id="school-view"></div></section>
+<section id="student-setup-panel" class="cloud-student-panel" hidden><div class="cloud-setup-shell"><div class="cloud-setup-heading"><span class="cloud-setup-eyebrow">PARENT SETUP</span><h2>Set up this child computer</h2><p>Keep this app open. Use your phone or another parent device to approve this computer. You do not need a parent computer or shared Wi-Fi.</p></div>
+<div class="cloud-setup-grid"><ol id="pairing-steps" class="cloud-setup-steps"><li><strong>Get this computer’s code</strong><p>It appears here automatically.</p></li><li><strong>Approve it on a parent device</strong><p>Open <span class="cloud-parent-address">guard.bodeebooks.com/activate/</span>, sign in, and enter the code shown here.</p></li><li><strong>Return here</strong><p>This app checks approval automatically and moves you to the final step.</p></li></ol>
+<div class="cloud-pairing-card"><span class="cloud-setup-eyebrow">THIS CHILD COMPUTER</span><h3>Pair this computer</h3><p id="pairing-empty">Creating a pairing code…</p><div id="pairing-code-panel" hidden><label class="cloud-visually-hidden" for="pairing-code">This child computer’s pairing code</label><input id="pairing-code" readonly autocomplete="off" spellcheck="false" aria-describedby="pairing-expiry"><p id="pairing-expiry"></p><div class="cloud-pairing-actions"><button id="copy-pairing-code" type="button" class="cloud-setup-primary" disabled>Copy code</button><button id="open-parent-approval" type="button" disabled>Open parent approval ↗</button></div><p class="cloud-pairing-hint">Use your phone, or open approval in a parent browser. This app stays open and checks automatically.</p></div>
+<button id="pair" class="cloud-setup-primary" type="button" hidden>Try again — get a new code</button><p id="pairing" role="status" aria-live="polite"></p><p id="pairing-action-status" role="status" aria-live="polite"></p><button id="poll" class="cloud-setup-link" type="button" disabled>Check approval</button></div></div>
+<details id="setup-support" class="cloud-setup-support"><summary>Connection help</summary><p>Check this computer’s clock, BodeeGuard connection, app version and protection service.</p><button id="setup-check" class="cloud-setup-primary" type="button">Check connection</button><div id="setup-results" hidden><p id="setup-summary" role="status" aria-live="polite"></p><ul id="setup-checks" aria-label="Connection check results"></ul><div class="cloud-support-actions"><button id="setup-retry-pairing" type="button" disabled>Retry pairing</button><button id="setup-date-time" type="button" hidden>Open date/time settings</button><button id="setup-copy-report" type="button" disabled>Copy support report</button></div><details><summary>What is in the support report?</summary><p>Technical check results only. No children’s names, documents, passwords or pairing codes. Nothing is sent when you copy it.</p><pre id="setup-report"></pre></details></div><p id="setup-action-status" role="status" aria-live="polite"></p></details>
+<div class="cloud-setup-footer"><button id="sync" class="cloud-setup-link" type="button"><i data-lucide="refresh-cw"></i> Refresh connection</button><details><summary>Version &amp; support details</summary><p id="child-build-info"></p></details></div></div></section>
+<section id="student-reading-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><div class="reading-sync"><button id="reading-refresh" type="button">Refresh shelf</button><p id="reading-status" role="status"></p><p id="reading-wallet"></p><div id="reading-pending" hidden><p id="reading-pending-description"></p><button data-reading-action="retry">Retry saved change</button><button data-reading-action="discard">Discard saved change…</button></div></div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">📚</div>
+    <div>
+      <div class="header-title">My Reading Log</div>
+      <div class="header-subtitle" id="reading-header-sub">Loading your bookshelf...</div>
+    </div>
+  </div>
+  <button class="add-btn" data-reading-action="openAddBook">+ Add Book</button>
+</div>
+
+<div class="stats-bar" id="reading-stats-bar"></div>
+
+<div class="books-container">
+  <div id="reading-reading-section">
+    <div class="section-title">📖 Currently Reading</div>
+    <div class="books-grid" id="reading-reading-grid"></div>
+  </div>
+  <div id="reading-finished-section" class="reading-source-0">
+    <div class="section-title">✅ Finished Books</div>
+    <div class="books-grid" id="reading-finished-grid"></div>
+  </div>
+</div>
+
+<!-- Add Book Modal -->
+<div class="reading-source-1 modal-overlay" id="reading-add-modal">
+  <div class="modal-box">
+    <div class="modal-title">📖 Add a Book</div>
+    <div class="modal-field">
+      <label class="modal-label">Book Title *</label>
+      <input class="modal-input" id="reading-add-title" placeholder="e.g. Charlotte's Web" maxlength="100">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Author</label>
+      <input class="modal-input" id="reading-add-author" placeholder="e.g. E.B. White">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Total Pages (optional)</label>
+      <input class="modal-input" id="reading-add-pages" type="number" placeholder="e.g. 192" min="1" max="9999">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Pick a Cover Emoji</label>
+      <div class="emoji-picker" id="reading-add-emoji-picker"></div>
+      <input class="reading-source-2 modal-input" id="reading-add-emoji" value="📖" placeholder="📖" maxlength="4">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" data-reading-action="closeModals">Cancel</button>
+      <button class="modal-btn primary" data-reading-action="saveBook">Add Book</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Reading Modal -->
+<div class="reading-source-3 modal-overlay" id="reading-log-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="reading-log-modal-title">📖 Log Reading</div>
+    <div class="modal-field">
+      <label class="modal-label">Pages Read Today</label>
+      <input class="modal-input" id="reading-log-pages" type="number" placeholder="e.g. 15" min="1" max="9999">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Quick Note (optional)</label>
+      <input class="modal-input" id="reading-log-note" placeholder="What happened in the story today?">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" data-reading-action="closeModals">Cancel</button>
+      <button class="modal-btn primary" data-reading-action="saveSession">Log It! 📚</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom confirm modal -->
+<div class="reading-source-4 modal-overlay" id="reading-confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="reading-confirm-title">Are you sure?</div>
+    <div id="reading-confirm-msg"></div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" data-reading-action="confirmResolve" data-value="false">Cancel</button>
+      <button class="modal-btn primary" id="reading-confirm-ok-btn" data-reading-action="confirmResolve" data-value="true">OK</button>
+    </div>
+  </div>
+</div>
+
+</section>
+<section id="student-challenges-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button></section>
+<section id="student-store-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><div class="parent-note"><button id="store-refresh" type="button">Refresh Store</button><p id="store-status" role="status"></p></div><div class="parent-note" id="store-pending" hidden><span id="store-pending-description"></span><button id="store-retry">Retry saved purchase</button><button id="store-discard">Discard retry…</button></div>
+  <header class="store-header">
+    <div><h1 class="store-title">🛒 Rewards Store</h1><p class="store-subtitle">Spend wisely. Bigger rewards take patience and steady work.</p></div>
+    <div class="coin-badge"><span>🪙</span><span class="coin-badge-amount" id="store-coin-balance">—</span><span class="coin-badge-label">coins</span></div>
+  </header>
+  <nav class="store-view-actions" aria-label="Wallet views"><button id="store-rewards-toggle" type="button" aria-pressed="true" aria-controls="store-rewards-view"><i data-lucide="gift" aria-hidden="true"></i> Rewards</button><button id="store-history-toggle" type="button" aria-pressed="false" aria-controls="store-history-view"><i data-lucide="history" aria-hidden="true"></i> Coin history</button></nav>
+  <div id="store-rewards-view"><div class="parent-note"><span>🪙</span><span>Time boosts deduct coins and stay banked until used—even on a later day. They do not skip school schedules. Family privileges and cash rewards go to Mom or Dad for approval.</span></div>
+  <section class="store-section" id="store-time-section"><div class="section-heading"><h2 class="section-title">⏱️ Time Boosts</h2><span class="section-hint">Unused time carries over</span></div><div class="items-grid" id="store-time-grid"></div></section>
+  <section class="store-section" id="store-privilege-section"><div class="section-heading"><h2 class="section-title">🏡 Family Privileges</h2><span class="section-hint">Mom or Dad approves these</span></div><div class="items-grid" id="store-privilege-grid"></div></section>
+  <section class="store-section" id="store-cash-section"><div class="section-heading"><h2 class="section-title">💵 Save &amp; Cash Out</h2><span class="section-hint">Long-term goals</span></div><div class="items-grid" id="store-cash-grid"></div></section>
+  <div class="toast" id="store-toast"></div>
+  <div class="store-section"><h2 class="section-title">Your rewards</h2><div id="store-receipts"></div><p id="store-banks"></p></div></div>
+  <section id="store-history-view" hidden aria-labelledby="store-history-title"><h2 id="store-history-title">Your coin history</h2><p id="store-history-status" role="status"></p><p id="store-history-updated"></p><p id="store-history-opening" hidden></p><ol id="store-history-list" aria-label="Coin transactions"></ol><button id="store-history-more" type="button" hidden>Older changes</button></section></section>
+<section id="student-recovery-panel" class="cloud-student-panel" hidden><h2 id="finish-setup-title">Finish setup</h2><p id="recovery-next-step" role="status">Choose a parent password in your dashboard, then enter it here.</p>
+<form id="recovery-form"><label for="recovery-code">Parent password</label><input id="recovery-code" type="password" inputmode="text" autocomplete="off" spellcheck="false" maxlength="80" placeholder="Parent password" required><button id="confirm-recovery" type="submit"><i data-lucide="shield-check"></i> Confirm password</button></form>
+<p id="recovery-feedback" role="status" aria-live="polite"></p><button id="test-recovery" type="button"><i data-lucide="key-round"></i> Test parent password</button></section>
+<section id="student-messages-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><div><button id="message-refresh" type="button">Check messages</button><button id="message-older" type="button" disabled>Older messages</button></div>
+  <div class="chat-wrapper">
+    <!-- Header -->
+    <div class="chat-header">
+      <span class="student-chat-avatar"><i data-lucide="heart" aria-hidden="true"></i></span>
+      <div><h1>Mom &amp; Dad</h1><p>Private conversation</p></div>
+    </div>
+
+    <!-- History -->
+    <div id="history-container">
+      <div class="message-source-1">
+        <i data-lucide="loader-2" class="message-source-2"></i> Loading history...
+      </div>
+    </div>
+
+    <!-- Compose -->
+    <div class="compose-area">
+      <div class="quick-chips">
+        <button class="quick-chip" data-msg="🙋 I need help with my school work!">
+          <i data-lucide="help-circle" class="message-source-3"></i> Need Help
+        </button>
+        <button class="quick-chip" data-msg="🥛 Can I get a quick drink/snack break?">
+          <i data-lucide="coffee" class="message-source-4"></i> Break
+        </button>
+        <button class="quick-chip" data-msg="❓ I finished my work, what should I do?">
+          <i data-lucide="check-circle-2" class="message-source-5"></i> Finished
+        </button>
+      </div>
+
+      <div id="recording-preview">
+        <audio id="recording-audio" controls></audio>
+        <span id="recording-duration" class="message-source-6"></span>
+        <button id="send-recording-btn" class="recording-action" type="button">Send</button>
+        <button id="discard-recording-btn" class="recording-action" type="button">Discard</button>
+      </div>
+      <div id="recording-status" class="message-source-7"></div>
+      <div id="message-status" role="alert" aria-live="polite"></div>
+      <label class="message-file-label">Attach a photo, PDF or audio (up to 2 MB)<input id="message-file" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,.wav,.mp3,.webm,.ogg"></label><div class="input-row">
+        <div id="message-emoji-picker"></div>
+        <textarea id="msg-input" aria-label="Message Mom and Dad" maxlength="1000" placeholder="Type a message..." rows="1"></textarea>
+        <button id="record-btn" type="button" title="Record a voice message (up to 60 seconds)" aria-label="Record a voice message">
+          <i data-lucide="mic" class="message-source-8"></i>
+        </button>
+        <button id="send-btn" title="Send Message">
+          <i data-lucide="send" class="message-source-9"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</section><section id="student-papers-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><h2>My submitted papers</h2><p>Send an image or PDF up to 2 MB for your parent to review. Keep the original scan. Pending uploads are saved privately here; use Retry after reconnecting.</p><form id="paper-form"><label>Paper<input id="paper-file" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf" required></label><button id="paper-upload">Send paper</button></form><div class="cloud-paper-toolbar"><button id="paper-refresh" type="button">Check papers / pending uploads</button><button id="paper-active-tab" class="cloud-paper-tab active" type="button" aria-pressed="true">My papers</button><button id="paper-trash-tab" class="cloud-paper-tab" type="button" aria-pressed="false">Trash <span id="paper-trash-count" hidden></span></button></div><p id="paper-status" role="status"></p><div id="paper-list"></div></section><section id="student-grades-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><h2>My grades</h2><p>Your parent’s saved grades and learning notes. The latest page is saved privately on this computer for offline viewing.</p><button id="grades-refresh">Check grades / newest</button><button id="grades-older" disabled>Older grades</button><p id="grades-status" role="status"></p><div id="grades-list"></div></section><section id="student-games-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><h2>Family Games</h2><p>Choose a family game. Download larger adventures in the Windows app.</p><button id="games-toggle" disabled>Open game room</button><div id="cloud-family-games" hidden></div></section><section id="student-learning-panel" class="cloud-student-panel" hidden><button class="toolbar-btn" data-student-home type="button">← Dashboard</button><h2>Learning Videos</h2><p>Your parent’s approved YouTube library. Internet is needed, but no parent computer is needed nearby. When this is an assigned subject, study time counts while the approved video is playing in the foreground. Close the player and use Finish this subject when you are done. Playback positions stay on this computer.</p><button id="learning-videos-toggle" disabled>Open learning videos</button><div id="cloud-learning-videos" hidden></div></section>
+</main><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-learning-videos.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-games.css"><link rel="stylesheet" href="/guard-admin/student-preview/renderer/css/cloud-files.css"><script src="/guard-admin/student-preview/lucide.js"></script><script src="/guard-admin/student-preview/dashboard.js"></script></body></html>

@@ -7,16 +7,9 @@ import {areas,statuses,type BugReport,type ReportDetail,type Setup} from './type
 import SetupDetails from './SetupDetails';
 import {PhotoPicker,SavedReportPhotos,type DraftPhoto} from './ReportPhotos';
 import styles from './report.module.css';
+import {request,RequestError} from './report-client';
+import StudentReports from './StudentReports';
 
-class RequestError extends Error{constructor(message:string,public status=0){super(message);}}
-async function request<T>(body:Record<string,unknown>):Promise<T>{
-  let response:Response;
-  try{response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});}
-  catch{throw new RequestError('Connection interrupted. Your report has not been cleared. Please retry.');}
-  const result=await response.json().catch(()=>({}));
-  if(!response.ok)throw new RequestError(result.error||'Unable to complete this request.',response.status);
-  return result as T;
-}
 const blank=()=>({description:'',area:'general',studentIds:[] as string[],occurredAt:'',includeSetup:true,inputKind:'typed'});
 type Draft=ReturnType<typeof blank>;
 function clientInfo(release:string){
@@ -111,6 +104,7 @@ export default function ReportForm({release}:{release:string}){
     {error&&<div role="alert" className={styles.error}>{error} <Link href="/guard/sign-in/?redirect_url=%2Fguard%2Freport%2F">Sign in</Link></div>}
     {storageLimited&&<p role="status" className={styles.hint}>This browser could not save a temporary draft. Keep this page open until your report is received.</p>}
     {notice&&<div role="status" className={styles.success}><CheckCircle2 size={20}/>{notice}</div>}
+    <StudentReports onForwarded={()=>void load()}/>
     <div className={styles.layout}><section className={styles.card}>
       <form onSubmit={e=>{e.preventDefault();void submit();}}>
         <h2>What happened?</h2>

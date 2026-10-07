@@ -6,7 +6,7 @@ const activityColors = {
   'app://spelling':'#f97316','app://vocabulary':'#70cbb5','app://poems':'#f7c948',
   'app://quizzes':'#818cf8','app://worksheets':'#38bdf8','app://geography':'#22c55e',
   'app://learning-videos':'#22d3ee','app://spanish':'#fb923c','app://coloring':'#f472b6',
-  'app://coloring-studio':'#34d399','app://piano':'#a78bfa','app://math-coach':'#38bdf8','app://games':'#f7c948'
+  'app://coloring-studio':'#34d399','app://piano':'#a78bfa','app://math-coach':'#38bdf8','app://long-division':'#34d399','app://games':'#f7c948'
 };
 export const cardColor = subject => /^#[\da-f]{3,8}$/i.test(subject.color || '') ? subject.color : '#38bdf8';
 export function activityAccent(subject) {

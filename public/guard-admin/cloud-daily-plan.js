@@ -144,6 +144,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     if (summary !== 'Uses your activity settings' && !['handwriting','numerals'].includes(card.preset)) el.append(make('p', 'daily-plan-card-summary', summary));
     if (card.placement === 'school') el.append(make('p', 'daily-plan-required-days', requiredDaysText(card)));
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
+    if (!isBlocked && card.module === 'long-division') el.append(make('p', 'cloud-note', 'Assign this to School and set Required minutes for daily practice. Long Division works without AI question allowance.'));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
     else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
     if (isBlocked && card.notAssigned) el.append(make('p', 'daily-plan-off', 'Not assigned to this child. Move to an allowed group, or apply the family default.'));

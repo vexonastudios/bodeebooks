@@ -53,3 +53,11 @@ test('report photos travel only through authenticated parent/staff proxies',asyn
  await f.POST(req({action:'photo',id,householdId:'foreign'}));assert.equal(f.calls[2].p,'/bug-reports/photos/'+id);assert.equal(f.calls[2].body,undefined);
  assert.equal((await f.POST(req({action:'photo',id:'../../operator'}))).status,400);
 });
+
+
+test('student report review proxy keeps identity and staff approval out of client authority',async()=>{
+ const f=route(),id='f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1';
+ await f.POST(req({action:'student-list',reviewState:'all',householdId:'foreign'}));assert.equal(f.calls[0].p,'/bug-reports?origin=child&reviewState=pending&offset=0');
+ await f.POST(req({action:'student-count'}));assert.equal(f.calls[1].p,'/bug-reports/pending-count');
+ await f.POST(req({action:'review',id,eventId:id,revision:1,decision:'forwarded',note:'I saw it too.',householdId:'foreign',status:'resolved',actor:'staff'}));assert.deepEqual(f.calls[2],{p:'/bug-reports/'+id+'/review',body:{eventId:id,revision:1,decision:'forwarded',note:'I saw it too.'}});
+});

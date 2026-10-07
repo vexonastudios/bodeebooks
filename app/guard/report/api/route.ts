@@ -18,6 +18,12 @@ export async function POST(request:Request){
   try{
     const base='/bug-reports';let path=base,body:unknown=undefined;
     if(input.action==='context')path+='/context';
+    else if(input.action==='student-count')path+='/pending-count';
+    else if(input.action==='student-list')path+='?origin=child&reviewState='+(input.reviewState==='dismissed'?'dismissed':'pending')+'&offset='+encodeURIComponent(String(input.offset||0));
+    else if(input.action==='review'){
+      if(typeof input.id!=='string'||!/^[a-f0-9-]{36}$/i.test(input.id))return reply({error:'Choose a student report.'},400);
+      path+='/'+input.id+'/review';body={eventId:input.eventId,revision:input.revision,decision:input.decision,note:input.note};
+    }
     else if(input.action==='list')path+='?offset='+encodeURIComponent(String(input.offset||0));
     else if(input.action==='photo'){
       if(typeof input.id!=='string'||!/^[a-f0-9-]{36}$/i.test(input.id))return reply({error:'Choose a photo.'},400);
