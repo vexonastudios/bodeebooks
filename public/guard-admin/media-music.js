@@ -92,6 +92,14 @@ async function loadStudents() {
 
 // ── Library Tab ──────────────────────────────────────
 function wireLibraryButtons() {
+  const screenedControl = document.getElementById('music-screened-input');
+  if (screenedControl && !document.getElementById('music-all-students-input')) {
+    const audience = document.createElement('label');
+    audience.className = 'music-all-students-control';
+    audience.htmlFor = 'music-all-students-input';
+    audience.innerHTML = '<input type="checkbox" id="music-all-students-input"> Add to every child’s music playlist';
+    screenedControl.parentElement.after(audience);
+  }
   // Save global settings
   document.getElementById('save-music-settings-btn').addEventListener('click', async () => {
     await mpost('/api/music/settings', {
@@ -125,6 +133,7 @@ function wireLibraryButtons() {
     document.getElementById('music-preview-thumb').src  = `https://img.youtube.com/vi/${vid}/mqdefault.jpg`;
     document.getElementById('music-preview').style.display = 'block';
     document.getElementById('music-screened-input').checked = false;
+    document.getElementById('music-all-students-input').checked = document.getElementById('tab-music').classList.contains('mobile-media-add');
     btn.disabled = false; btn.textContent = '🔍 Look Up';
   });
 
@@ -138,10 +147,14 @@ function wireLibraryButtons() {
     const title  = document.getElementById('music-title-input').value.trim();
     const artist = document.getElementById('music-artist-input').value.trim();
     const screened = document.getElementById('music-screened-input').checked;
+    const allStudents = document.getElementById('music-all-students-input').checked;
     if (!title) { alert('Please enter a song title.'); return; }
+    if (allStudents && !screened) { alert('Preview and approve the song before adding it to every child.'); return; }
     const btn = document.getElementById('music-add-btn');
     btn.disabled = true; btn.textContent = 'Adding…';
     try {
+      if (allStudents && !_allStudents.length) await loadStudents();
+      if (allStudents && !_allStudents.length) throw new Error('Could not load your children. Please try again.');
       const r = await mpost('/api/music/tracks', {
         title, artist, youtube_id: vid,
         thumbnail_url: `https://img.youtube.com/vi/${vid}/mqdefault.jpg`
@@ -149,11 +162,24 @@ function wireLibraryButtons() {
       if (screened && r.id) {
         await mpost(`/api/music/tracks/${r.id}`, { screened: true }, 'PATCH');
       }
+      let failed = 0;
+      if (allStudents && r.id) {
+        const assignments = await Promise.allSettled(_allStudents.map(student =>
+          mpost('/api/music/assign', { student_id: student.id, track_id: r.id })));
+        assignments.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            const studentId = _allStudents[index].id;
+            if (!_assignments[studentId]) _assignments[studentId] = [];
+            if (!_assignments[studentId].includes(r.id)) _assignments[studentId].push(r.id);
+          } else failed++;
+        });
+      }
       document.getElementById('music-preview').style.display = 'none';
       document.getElementById('music-yt-url').value = '';
       await loadMusicTracks();
-      if (window.showToast) window.showToast(`✅ "${title}" added!`);
-    } catch(e) { alert('Failed to add song.'); }
+      if (failed) window.showToast?.(`Song saved, but ${failed} of ${_allStudents.length} child playlists did not update. Open Music → Playlists to finish.`, true);
+      else window.showToast?.(allStudents ? `"${title}" added to every child’s playlist.` : `"${title}" added to the library.`);
+    } catch(e) { alert(e.message || 'Failed to add song.'); }
     btn.disabled = false; btn.textContent = '➕ Add to Library';
   });
 }

@@ -51,14 +51,64 @@ export function setupCloudMobile({ navigate, refresh }) {
   desktopReport.href = '/guard/report/'; desktopReport.target = '_top'; desktopReport.prepend(icon('bug'));
   root.querySelector('.sidebar-nav').append(desktopReport);
   menus['mobile-more'].before(accountLinks);
-  const addTabs = ['learning-videos', 'spelling', 'science-spelling', 'vocabulary', 'poems', 'worksheets'];
+  const addTabs = ['music', 'videos', 'audiobooks', 'learning-videos', 'spelling', 'science-spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
     const label = nav.textContent.trim();
     const menuButton = () => button(label + '  ›', () => navigate(id));
     menus['mobile-more'].append(menuButton());
-    if (addTabs.includes(id)) menus['mobile-add'].append(menuButton());
+    if (addTabs.includes(id) && !['music', 'videos', 'audiobooks'].includes(id)) menus['mobile-add'].append(menuButton());
+  }
+  const addMenu = byId('tab-mobile-add');
+  addMenu.classList.add('mobile-media-hub');
+  const mediaIntro = make('p', 'mobile-media-intro', 'Find something on YouTube, review it, then choose who can see it.');
+  menus['mobile-add'].before(mediaIntro);
+  const mediaChoices = make('div', 'mobile-media-choices');
+  mediaIntro.after(mediaChoices);
+  const schoolHeading = make('h2', 'mobile-schoolwork-heading', 'Schoolwork');
+  menus['mobile-add'].before(schoolHeading);
+  for (const [id, title, glyph, description, inputId, subtab] of [
+    ['videos', 'Videos', 'video', 'Add a video for your children', 'video-yt-url', '[data-vstab="vlib"]'],
+    ['music', 'Music', 'music-2', 'Add a song from YouTube', 'music-yt-url', '[data-stab="mlib"]'],
+    ['audiobooks', 'Audiobooks', 'headphones', 'Add a book or read-aloud', 'ab-youtube-url', '[data-abtab="ab-library"]']
+  ]) {
+    const card = make('div', 'mobile-media-choice'); card.dataset.mediaKind = id;
+    const open = button('', () => openMedia(true), 'mobile-media-open');
+    const symbol = make('span', 'mobile-media-symbol'); symbol.append(icon(glyph));
+    const copy = make('span', 'mobile-media-copy'); copy.append(make('strong', '', title), make('small', '', description));
+    open.append(symbol, copy, icon('chevron-right'));
+    open.setAttribute('aria-label', 'Add ' + title.toLowerCase());
+    const library = button('View library and playlists', () => openMedia(false), 'mobile-media-library');
+    library.prepend(icon('library'));
+    card.append(open, library); mediaChoices.append(card);
+    function openMedia(add) {
+      const panel = byId('tab-' + id);
+      const input = byId(inputId);
+      const form = input?.closest('.settings-section');
+      if (!panel) return;
+      if (!panel.querySelector('.mobile-media-toolbar')) {
+        const toolbar = make('div', 'mobile-media-toolbar cloud-mobile-only');
+        const back = button('', () => navigate('mobile-add'), 'text-button');
+        back.append(icon('arrow-left'), document.createTextNode('Add media'));
+        const heading = make('h1', '', title);
+        const manage = button('View library', () => openMedia(false), 'btn btn-secondary mobile-media-manage');
+        manage.prepend(icon('library'));
+        toolbar.append(back, heading, manage); panel.prepend(toolbar);
+      }
+      panel.classList.add('mobile-media-page');
+      panel.classList.toggle('mobile-media-add', Boolean(add && form));
+      panel.querySelector('.mobile-media-toolbar h1').textContent = (add && form ? 'Add ' : '') + title.toLowerCase();
+      if (form) {
+        form.classList.add('mobile-media-add-form');
+        input.parentElement.classList.add('mobile-media-link-row');
+        for (let parent = form.parentElement; parent && parent !== panel; parent = parent.parentElement) parent.classList.add('mobile-media-add-path');
+        form.querySelector('[id$="preview"]')?.classList.add('mobile-media-preview');
+      }
+      if (!add) panel.querySelector(subtab)?.click();
+      navigate(id);
+      window.lucide?.createIcons();
+    }
   }
   const install = button('Add to Home Screen', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin));
   install.classList.add('cloud-parent-mobile-install'); install.hidden = true;

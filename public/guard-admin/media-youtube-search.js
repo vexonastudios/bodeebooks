@@ -111,7 +111,19 @@ function chooseResult(index) {
   if (target.name && document.getElementById(target.name)) document.getElementById(target.name).value = item.title;
   closeModal();
   if (target.lookup) document.getElementById(target.lookup)?.click();
-  url.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const preview = url.closest('.settings-section')?.querySelector('[id$="-preview"]');
+  if (target.lookup && preview && document.body.classList.contains('cloud-mobile')) {
+    const reveal = () => window.requestAnimationFrame(() => preview.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    if (preview.style.display !== 'none') reveal();
+    else {
+      const observer = new window.MutationObserver(() => {
+        if (preview.style.display === 'none') return;
+        observer.disconnect(); reveal();
+      });
+      observer.observe(preview, { attributes: true, attributeFilter: ['style'] });
+      setTimeout(() => observer.disconnect(), 10000);
+    }
+  } else url.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 export function setupYouTubeSearch() {

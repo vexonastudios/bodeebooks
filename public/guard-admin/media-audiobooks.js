@@ -335,7 +335,7 @@ async function lookupAudiobook() {
     }
   } catch (error) { logger.warn('audiobooks', 'Metadata lookup failed', error); }
   document.getElementById('ab-screened').checked = false;
-  document.getElementById('ab-global').checked = false;
+  document.getElementById('ab-global').checked = document.getElementById('tab-audiobooks')?.classList.contains('mobile-media-add') || false;
   document.getElementById('ab-preview').style.display = 'block';
   button.disabled = false;
   button.innerHTML = '<i data-lucide="search" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px;"></i> Look Up';
@@ -352,6 +352,8 @@ async function addAudiobook() {
   const author = document.getElementById('ab-author').value.trim();
   const youtubeId = document.getElementById('ab-youtube-id').value;
   if (!title || !youtubeId) return toast('Audiobook title is required.', true);
+  if (document.getElementById('ab-global').checked && !document.getElementById('ab-screened').checked)
+    return toast('Preview and approve the audiobook before adding it for every child.', true);
   const button = document.getElementById('ab-add');
   button.disabled = true;
   try {
@@ -368,7 +370,7 @@ async function addAudiobook() {
     });
     resetPreview();
     await loadLibrary();
-    toast('Audiobook added to the library.');
+    toast(document.getElementById('ab-global').checked ? 'Audiobook added for every child.' : 'Audiobook added to the library.');
   } catch (error) { toast(error.message || 'Failed to add audiobook.', true); }
   finally { button.disabled = false; }
 }

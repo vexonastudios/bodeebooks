@@ -312,7 +312,7 @@ async function lookupVideo(rawInput) {
   document.getElementById('video-channel-input').value = '';
   document.getElementById('video-video-id').value = ytId;
   document.getElementById('video-screened-input').checked = false;
-  if (document.getElementById('video-global-input')) document.getElementById('video-global-input').checked = false;
+  if (document.getElementById('video-global-input')) document.getElementById('video-global-input').checked = document.getElementById('tab-videos')?.classList.contains('mobile-media-add') || false;
 
   try {
     const oembed = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${ytId}`);
@@ -340,6 +340,10 @@ async function addVideoToLibrary() {
     if (window.showToast) window.showToast('❌ Title is required.', true);
     return;
   }
+  if (isGlobal && !screened) {
+    window.showToast?.('Preview and approve the video before adding it for every child.', true);
+    return;
+  }
 
   const btn = document.getElementById('video-add-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
@@ -354,17 +358,18 @@ async function addVideoToLibrary() {
     if (!res.ok) throw new Error(data.error || 'Failed to add video');
 
     if (data.id && (screened || isGlobal)) {
-      await fetch(`${API}/video/videos/${data.id}`, {
+      const approval = await fetch(`${API}/video/videos/${data.id}`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify({ screened: screened || false, is_global: isGlobal || false })
       });
+      if (!approval.ok) throw new Error('Video saved, but approval or child visibility did not save. Review it in the Video library.');
     }
 
     document.getElementById('video-preview').style.display = 'none';
     document.getElementById('video-yt-url').value = '';
     loadVideoLibrary();
-    if (window.showToast) window.showToast('✅ Video added to library!');
+    if (window.showToast) window.showToast(isGlobal ? 'Video added for every child.' : 'Video added to the library.');
   } catch(e) {
     if (window.showToast) window.showToast(e.message || 'Failed to add video.', true);
   } finally {
