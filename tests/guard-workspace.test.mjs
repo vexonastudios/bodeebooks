@@ -671,3 +671,23 @@ test('student deletion requires explicit confirmation and strips forged authorit
  assert.equal(result.status,200);
  assert.deepEqual(calls,[[`/students/${deviceId}/delete`,{method:'POST',body:JSON.stringify({confirmation:true,expectedName:'Test Child'})}]]);
 });
+
+test('parent dashboard startup imports all resolve to deployed assets', () => {
+  const assetRoot = path.resolve('public/guard-admin');
+  const pending = ['cloud-workspace.js', 'cloud-media-admin.js'];
+  const visited = new Set();
+  while (pending.length) {
+    const asset = pending.pop();
+    if (visited.has(asset)) continue;
+    visited.add(asset);
+    const source = fs.readFileSync(path.join(assetRoot, asset), 'utf8');
+    for (const { fileName } of ts.preProcessFile(source, true, true).importedFiles) {
+      if (!fileName.startsWith('.')) continue;
+      const imported = path.resolve(assetRoot, path.dirname(asset), fileName.split('?')[0]);
+      assert.ok(imported.startsWith(assetRoot + path.sep), `Unexpected dashboard import: ${asset} -> ${fileName}`);
+      assert.ok(fs.existsSync(imported), `Missing deployed dashboard asset: ${asset} -> ${fileName}`);
+      if (imported.endsWith('.js')) pending.push(path.relative(assetRoot, imported));
+    }
+  }
+  assert.ok(visited.size > 80, `Expected dashboard dependency graph, found ${visited.size} modules`);
+});
