@@ -5,6 +5,17 @@
 #cloud-math-coach .cloud-math-family h2 { grid-column:1/-1; margin:0; font-size:18px; }
 #cloud-math-coach .cloud-math-family h2 svg { color:#fbbf24; }
 #cloud-math-coach .cloud-math-family-copy { grid-column:1/-1; margin:-8px 0 0; color:var(--text-muted); }
+#cloud-math-coach .cloud-math-shared { margin:0 0 18px; padding:20px 24px; border:1px solid rgba(56,189,248,.3); border-radius:16px; background:linear-gradient(135deg,rgba(8,47,73,.65),rgba(21,24,44,.96)); }
+#cloud-math-coach .cloud-math-shared h2 { margin:0 0 8px; font-size:18px; }
+#cloud-math-coach .cloud-math-shared h2 svg { width:20px; color:#67e8f9; }
+#cloud-math-coach .cloud-math-shared-copy { margin:0 0 16px; color:var(--text-muted); font-size:14px; line-height:1.45; }
+#cloud-math-coach .cloud-math-shared-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:12px; }
+#cloud-math-coach .cloud-math-select-field { display:grid; gap:7px; font-size:13px; font-weight:700; }
+#cloud-math-coach .cloud-math-select-field select { width:100%; min-width:0; }
+#cloud-math-coach .cloud-math-shared [hidden] { display:none; }
+#cloud-math-coach .cloud-math-bulk-saver { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 16px; }
+#cloud-math-coach .cloud-math-bulk-saver .cloud-math-save-status { margin:0; }
+#cloud-math-coach .cloud-math-student.cloud-math-dirty { border-color:#fbbf24; box-shadow:0 0 0 1px rgba(251,191,36,.18),0 16px 32px rgba(0,0,0,.12); }
 #cloud-math-coach .cloud-math-students { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr)); align-items:start; }
 #cloud-math-coach .cloud-math-child { display:grid; gap:10px; min-width:0; }
 #cloud-math-coach .cloud-math-student { padding:20px; }
@@ -48,4 +59,4 @@
 #cloud-math-coach .cloud-math-message strong { display:flex; align-items:center; gap:6px; }
 #cloud-math-coach .cloud-math-message strong svg { width:15px; color:#a78bfa; }
 #cloud-math-coach .cloud-math-message p { margin:5px 0 0; white-space:pre-wrap; }
-@media (max-width:720px) { #cloud-math-coach .cloud-math-family { grid-template-columns:1fr; gap:12px; padding:18px; } #cloud-math-coach .cloud-math-number-field input { width:100%; } }
+@media (max-width:720px) { #cloud-math-coach .cloud-math-family { grid-template-columns:1fr; gap:12px; padding:18px; } #cloud-math-coach .cloud-math-shared { padding:18px; } #cloud-math-coach .cloud-math-number-field input { width:100%; } #cloud-math-coach .cloud-math-bulk-saver .btn { width:100%; justify-content:center; } }

@@ -34,7 +34,7 @@ import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
 import { setupMonitoring } from './cloud-monitoring.js?v=20261005-progress-ring1';
-import { setupCloudMathCoach } from './cloud-math-coach.js';
+import { setupCloudMathCoach } from './cloud-math-coach.js?v=20261007-family1';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20261005-multi1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js?v=20261005-multi1';
 import { setupCloudPoems } from './cloud-poems.js?v=20261006-scan-first1';
