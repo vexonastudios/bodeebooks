@@ -5,6 +5,8 @@ import { setupOnlineTabletop } from './cloud-online-tabletop.js';
 export function setupCloudGames({ root, request, parent = false, renderAvatar, externalRequest, lanRequest, tabletop = parent || !!lanRequest, assetBase = new URL('assets/family-games/v1/', window.location.href) }) {
   let external={supported:false,games:[]};
   const gameActions=new Map();
+  const childLibrary = !parent && tabletop;
+  let childView = 'adventures';
   let active = false, room = null, selected = null, square = null, timer = null, loading = false, busy = false;
   let generation = 0, failures = 0, fresh = false, pending = null, settingsOpen = false;
   function node(tag, text = '', className = '') { const n = document.createElement(tag); n.textContent = text; n.className = className; return n; }
@@ -14,9 +16,11 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   function button(text, click, disabled = false, symbol) { const b = node('button', '', 'btn btn-secondary'); if (symbol) b.append(icon(symbol)); b.append(document.createTextNode(text)); b.type = 'button'; b.disabled = disabled; b.addEventListener('click', click); return b; }
   const status = node('p', 'Opening your family room…', 'cloud-game-status'); status.setAttribute('role','status');
   const controls = node('div', '', 'cloud-game-actions');
-  const title = node('div', '', 'cloud-game-title'); title.append(node('span', 'BODEEGUARD', 'cloud-game-eyebrow'), heading('h2', 'Family Game Room', 'gamepad-2'));
+  const title = node('div', '', 'cloud-game-title'); title.append(node('span', 'BODEEGUARD', 'cloud-game-eyebrow'), heading('h2', parent ? 'Family Game Room' : 'Family Games', 'gamepad-2'));
   const toolbar = node('div', '', 'cloud-game-toolbar'); toolbar.append(controls, status);
-  const header = node('header', '', 'cloud-game-header'); header.append(title, toolbar);
+  const header = node('header', '', 'cloud-game-header');
+  const currentAccess = node('div', '', 'cloud-game-current-access');
+  header.append(title, ...(childLibrary ? [currentAccess] : []), toolbar);
   const content = node('div', '', 'cloud-game-layout');
   const formArea = node('div');
   const gallery = makeGallery();
@@ -24,8 +28,31 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   const onlineRoot=node('section');
   const onlineUI=setupOnlineTabletop({root:onlineRoot,request,parent});
   const tabletopUI=tabletop?setupTabletop({root:tabletopRoot,request:lanRequest,parent}):null;
-  root.classList.add('cloud-family-room'); root.classList.toggle('is-parent', parent);
-  root.append(header, formArea, content);
+  const boardArea = node('div', '', 'cloud-game-board-area');
+  const childNav = node('nav', '', 'cloud-game-child-nav'); childNav.setAttribute('aria-label', 'Choose game type');
+  const videoTab = button('Video games', () => { childView = 'adventures'; applyChildView(); }, false, 'gamepad-2');
+  const boardTab = button('Board games', () => { childView = 'boards'; applyChildView(); }, false, 'dices');
+  childNav.append(videoTab, boardTab); childNav.hidden = !childLibrary;
+  root.classList.add('cloud-family-room'); root.classList.toggle('is-parent', parent); root.classList.toggle('is-child-room', childLibrary);
+  root.append(header, childNav, formArea, content);
+  function applyChildView() {
+    if (!childLibrary) return;
+    const view = external.supported ? childView : 'boards';
+    root.dataset.gameView = view;
+    videoTab.hidden = !external.supported;
+    videoTab.setAttribute('aria-pressed', String(view === 'adventures')); boardTab.setAttribute('aria-pressed', String(view === 'boards'));
+    gallery.hidden = view !== 'adventures'; boardArea.hidden = view !== 'boards';
+    const people = content.querySelector('.cloud-game-people'); if (people) people.hidden = view !== 'boards';
+  }
+  function updateCurrentAccess() {
+    if (!childLibrary) return;
+    currentAccess.replaceChildren();
+    const access = room?.children.find(child => child.id === room.studentId)?.access;
+    if (!access) { currentAccess.append(node('span', 'Checking game time…')); return; }
+    const text = node('span'); text.append(node('strong', access.allowed ? Math.ceil(Math.max(0, access.remainingSeconds || 0) / 60) + ' min left' : 'Games locked'),
+      node('small', access.allowed ? 'Your game time today' : access.reason || 'Ask your parent to unlock games.'));
+    currentAccess.append(icon(access.allowed ? 'clock-3' : 'lock-keyhole'), text);
+  }
   function note(text) { status.textContent = text; }
   function controlsView() {
     controls.replaceChildren(button(loading ? 'Refreshing…' : 'Refresh', refresh, loading || busy || !active, 'refresh-cw'));
@@ -52,7 +79,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   function makeGallery() {
     const section = node('section', '', 'cloud-game-gallery'); section.setAttribute('aria-label', 'More family games');
     const top = node('div', '', 'cloud-game-section-heading'); top.append(heading('h3', 'Family adventures', 'sparkles'), node('span', 'Windows games', 'cloud-game-badge'));
-    section.append(top, node('p', 'These are separate Windows games. Lesson Village is single-player; the other games support family multiplayer on the same home Wi-Fi.', 'cloud-note'));
+    section.append(top, node('p', parent ? 'These are separate Windows games. Lesson Village is single-player; the other games support family multiplayer on the same home Wi-Fi.' : 'Choose an adventure. Play on your own or with family on the same home Wi-Fi.', 'cloud-note'));
     const steps=node('ol','','cloud-game-start-steps');
     for(const text of (parent?[
       'Allow Family Games for each child using Access & game time on the left, or Daily Plan.',
@@ -60,14 +87,23 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       'To join on your Windows computer, use the Windows download below and open the game. Choose Mom or Dad as your player name.',
       'For multiplayer, one player hosts in the game lobby. Everyone else joins from the same home Wi-Fi. Keep everyone on the same game version.'
     ]:['Choose Download & play below. The first download can take a few minutes.','Next time, choose Play. BodeeGuard checks for game updates automatically.','For multiplayer, one person hosts in the game lobby and the others join on the same home Wi-Fi.']))steps.append(node('li',text));
-    section.append(steps);
+    if (parent) section.append(steps);
+    else { const help = node('details', '', 'cloud-game-library-help'); help.append(node('summary', 'How to download & play together'), steps); section.append(help); }
     const banners = node('div', '', 'cloud-game-banners');
     FAMILY_GAME_PREVIEWS.forEach((game, index) => {
       const card = button('', () => preview(index, card)); card.className = 'cloud-game-banner'; card.style.setProperty('--game-accent', game.color); card.setAttribute('aria-label', `Preview ${game.name}`);
       const img = node('img'); img.src = new URL(game.image, assetBase).href; img.alt = game.alt; img.loading = 'lazy'; img.decoding = 'async'; img.width = 960; img.height = 540;
+      const cover = node('span', '', 'cloud-game-cover'); cover.dataset.titleStyle = game.coverTitle?.style || 'default';
+      const emblem = node('span', '', 'cloud-game-cover-emblem'); emblem.setAttribute('aria-hidden', 'true'); emblem.append(icon(game.icon));
+      const wordmark = node('h4', '', 'cloud-game-wordmark'); wordmark.setAttribute('aria-label', game.name);
+      for (const [lineIndex, text] of (game.coverTitle?.lines || [game.name]).entries()) {
+        if (lineIndex) wordmark.append(document.createTextNode(' '));
+        wordmark.append(node('span', text, 'cloud-game-title-line'));
+      }
+      cover.append(img, emblem, wordmark);
       const label = node('div', '', 'cloud-game-banner-label'), category = node('span', game.genre, 'cloud-game-banner-genre');
       const action = node('span', '', 'cloud-game-banner-action'); action.append(icon('expand'), document.createTextNode('View game'));
-      label.append(category, heading('h4', game.name, game.icon), action); card.append(img, label);
+      label.append(category, action); card.append(cover, label);
       const item=node('article','','cloud-game-install-card'),actions=node('div','','cloud-game-install-actions');
       gameActions.set(game.id,actions);item.append(card,actions);banners.append(item);
     });
@@ -78,8 +114,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     for(const game of FAMILY_GAME_PREVIEWS){
       const area=gameActions.get(game.id);area.replaceChildren();
       const downloadReady=FAMILY_GAME_DOWNLOADS[game.id]?.available!==false;
-      if(game.details)area.append(node('small',game.details,'cloud-note'));
-      if(game.help)area.append(node('small',game.help,'cloud-note'));
+      if(parent && game.details)area.append(node('small',game.details,'cloud-note'));
+      if(parent && game.help)area.append(node('small',game.help,'cloud-note'));
       if(parent){
         if(!downloadReady){area.append(button('Awaiting signed release',()=>{},true,'clock'),node('p',game.availability,'cloud-note'));continue;}
         const link=node('a','Download for my Windows PC','btn btn-secondary');link.href=familyGameDownloadUrl(game.id);link.target='_blank';link.rel='noopener noreferrer';link.prepend(icon('download'));
@@ -88,12 +124,15 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       if(!external.supported)continue;
       const record=external.games.find(item=>item.key===game.id);
       const run=async action=>{try{await externalRequest(action,game.id);}catch(error){note(error.message);}};
-      area.append(button(record?.installed?'Play':downloadReady?'Download & play':'Awaiting signed release',()=>run('play'),external.busy||!!external.playing||(!record?.installed&&!downloadReady),'play'));
-      if(record?.installed)area.append(button('Update / repair',()=>run('update'),external.busy||!!external.playing||!downloadReady,'download'));
-      area.append(node('small',record?.version?`Installed ${record.version}`:game.availability||'Download once · Automatic updates','cloud-note'));
-      if(game.id==='mountain-rush')area.append(node('small','LAN Multiplayer: one person hosts; others choose the host or enter its IP. Players on the same Windows account share saved progress.','cloud-note'));
+      const playButton = button(record?.installed ? 'Play' : downloadReady ? 'Download & play' : 'Awaiting signed release', () => run('play'), external.busy || !!external.playing || (!record?.installed && !downloadReady), 'play');
+      playButton.classList.add('btn-primary', 'cloud-game-launch'); playButton.setAttribute('aria-label', (record?.installed ? 'Play ' : 'Download & play ') + game.name);
+      const actions = node('div', '', 'cloud-game-launch-row'); actions.append(playButton);
+      if (record?.installed) { const repair = button('Update / repair', () => run('update'), external.busy || !!external.playing || !downloadReady, 'download'); repair.classList.add('cloud-game-repair'); repair.setAttribute('aria-label', 'Update or repair ' + game.name); actions.append(repair); }
+      area.append(node('small', game.playLabel || game.players, 'cloud-note cloud-game-player-count'), actions,
+        node('small', record?.version ? 'Installed ' + record.version : downloadReady ? 'Download once · Automatic updates' : game.availability, 'cloud-note cloud-game-install-status'));
       if(external.progress?.gameKey===game.id){const meter=node('progress');meter.max=100;if(external.progress.percent!=null)meter.value=external.progress.percent;meter.setAttribute('aria-label',`${game.name} download progress`);area.append(meter);}
     }
+    applyChildView();
     if(external.message)note(external.message);icons();
   }
   setExternalState(external);
@@ -187,7 +226,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   function render() {
     const focusedElement = document.activeElement;
     const focusedSquare = content.contains(document.activeElement) && document.activeElement.classList.contains('cloud-checkers-square') ? document.activeElement.getAttribute('aria-label')?.split(' ')[0] : null;
-    controlsView();
+    controlsView(); updateCurrentAccess();
     if (!room) { content.replaceChildren(); return; }
     const people = node('aside', '', 'cloud-game-people'); people.append(heading('h3', parent ? 'Family game access' : 'Your family', 'users-round'));
     people.append(node('p', parent ? 'Choose when each child can play.' : tabletop ? 'Family Games access and daily time.' : 'Invite a sibling to play Checkers.', 'cloud-note'));
@@ -259,11 +298,12 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     }
     const play = node('main', '', 'cloud-game-play');
     if(tabletop){
-      play.append(onlineRoot,tabletopRoot);
+      if (childLibrary) { boardArea.replaceChildren(onlineRoot, tabletopRoot); play.append(boardArea); }
+      else play.append(onlineRoot,tabletopRoot);
       if(parent&&room.matches.length){const old=node('details');old.append(node('summary','Previous online Checkers matches'),matches);if(match)old.append(display);play.append(old);}
     }else{if (match) play.append(display);play.append(matches);}
     play.append(gallery);
-    content.replaceChildren(people, play); icons();
+    content.replaceChildren(people, play); applyChildView(); icons();
     if (focusedSquare) [...content.querySelectorAll('.cloud-checkers-square')].find(cell => cell.getAttribute('aria-label')?.startsWith(focusedSquare+' '))?.focus({ preventScroll: true });
     else if (content.contains(focusedElement)) focusedElement.focus({ preventScroll: true });
   }
@@ -285,7 +325,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     }
   }
   function setActive(value) { active = value; onlineUI.setActive(value); clearTimeout(timer); if (active) refresh(); else { generation++; fresh = false; square = null; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); } }
-  function clear() { onlineUI.clear(); generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
+  function clear() { childView = 'adventures'; onlineUI.clear(); generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); fresh = false; if (!document.hidden && active) refresh(); else render(); });
   window.addEventListener('pagehide', () => { active = false; clear(); clearTimeout(timer); });
   return { setActive, clear, refresh, setExternalState, setLanState:value=>tabletopUI?.setState(value), isEditing: () => settingsOpen };
