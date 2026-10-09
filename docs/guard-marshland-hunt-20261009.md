@@ -11,3 +11,9 @@ Only public/guard-admin/cloud-games-catalog.js, cloud-games-ui.js, their two wor
 Validation: 72 workspace/dashboard/startup tests passed. The actual exported gallery fixture tests/guard-marshland-gallery.electron.cjs passed disabled downloads, all three screenshots, required content/save notices and 390px/320px layouts. The fixture uses a local HTTP server and synthetic empty-family responses, not a live household. Fixture lint passed. Ignored evidence is in .tmp/marshland-tests.log and .tmp/marshland/.
 
 The child/API/native contract and full verification receipt live in BodeeGuard's docs/cloud-marshland-hunt-20261009.md. Activation requires verified publication of the signed game release, coordinated source availability flags, physical acceptance and a separately requested BodeeGuard release. No production deployment or source push was performed.
+
+## Critter County Hunting 1.5.1 follow-up
+
+The final renamed game release was independently verified live at 2026-10-09T14:10:20Z. The parent catalog now displays Critter County Hunting and standalone version 1.5.1. The existing game key, download filenames and repository remain unchanged, preserving compatibility and avoiding a duplicate card. This standalone release has no managed signed envelope or Authenticode signing, so protected downloads remain disabled. Only the catalog module and its manifest hash changed in the parent export; no production deployment was performed.
+
+Rename validation passed all 72 workspace/dashboard/startup tests, fixture lint, and the actual exported gallery at 390px and 320px. The saved mobile image was visually inspected for the longer title and availability notice. The offscreen fixture now lets queued frames settle after closing the preview and resizing before saving its image. Evidence: .tmp/marshland/rename-parent-tests.log, rename-source-hashes.json and parent-mobile.png.

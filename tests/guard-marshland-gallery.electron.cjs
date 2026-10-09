@@ -13,22 +13,24 @@ const server=http.createServer((req,res)=>{
 let window;async function run(){
  await app.whenReady();await new Promise(r=>server.listen(0,'127.0.0.1',r));window=new BrowserWindow({show:false,width:390,height:844,webPreferences:{sandbox:true,nodeIntegration:false,contextIsolation:true,backgroundThrottling:false,offscreen:true}});window.setContentSize(390,844);await window.loadURL(`http://127.0.0.1:${server.address().port}/`);
  const evaluate=code=>window.webContents.executeJavaScript(code);async function wait(code){for(let i=0;i<100;i++){if(await evaluate(code))return;await new Promise(r=>setTimeout(r,30));}throw Error('UI timeout: '+code);}
- await wait('document.querySelector("[aria-label=\\"Preview Marshland Hunt\\"]")');
+ await wait('document.querySelector("[aria-label=\\"Preview Critter County Hunting\\"]")');
  assert.equal(await evaluate('document.querySelectorAll("a[href*=huntinggame-releases]").length'),0);
  assert.equal(await evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent==="Awaiting signed release").disabled'),true);
- await evaluate('document.querySelector("[aria-label=\\"Preview Marshland Hunt\\"]").click()');await wait('document.querySelector("dialog[open] img").naturalWidth>0');
+ await evaluate('document.querySelector("[aria-label=\\"Preview Critter County Hunting\\"]").click()');await wait('document.querySelector("dialog[open] img").naturalWidth>0');
  assert.equal(await evaluate('document.querySelector("dialog[open]").textContent.includes("stylized animal hunting")'),true);
  for(let i=0;i<2;i++){await evaluate('[...document.querySelectorAll("dialog[open] button")].find(b=>b.textContent==="Next picture").click()');await wait('document.querySelector("dialog[open] img").complete&&document.querySelector("dialog[open] img").naturalWidth>0');}
  assert.equal(await evaluate('document.querySelector("dialog[open] img").src.includes("marshland-clay")'),true);await evaluate('document.querySelector("dialog[open]").close()');
  for(const width of [390,320]){window.setContentSize(width,844);assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),true);}
- window.setContentSize(390,844);await evaluate('document.querySelector("[aria-label=\\"Preview Marshland Hunt\\"]").scrollIntoView()');await wait('document.querySelector("[aria-label=\\"Preview Marshland Hunt\\"] img").naturalWidth>0');
- await evaluate('document.querySelector("[aria-label=\\"Preview Marshland Hunt\\"] img").decode()');
+ window.setContentSize(390,844);await evaluate('document.querySelector("[aria-label=\\"Preview Critter County Hunting\\"]").scrollIntoView()');await wait('document.querySelector("[aria-label=\\"Preview Critter County Hunting\\"] img").naturalWidth>0');
+ await evaluate('document.querySelector("[aria-label=\\"Preview Critter County Hunting\\"] img").decode()');
  await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+ // Flush queued offscreen frames after closing the preview and resizing.
+ await new Promise(resolve=>setTimeout(resolve,200));
  const picture=await new Promise((resolve,reject)=>{const paint=(_event,_rect,image)=>{if(image.isEmpty()||image.getSize().width!==390)return;clearTimeout(timeout);window.webContents.removeListener('paint',paint);resolve(image);};const timeout=setTimeout(()=>{window.webContents.removeListener('paint',paint);reject(Error('Gallery screenshot did not paint'));},3000);window.webContents.on('paint',paint);window.webContents.invalidate();});
  fs.mkdirSync(path.join(root,'.tmp/marshland'),{recursive:true});const screenshot=picture.toPNG();assert.ok(screenshot.length>10000,'screenshot must contain the visible gallery');fs.writeFileSync(path.join(root,'.tmp/marshland/parent-mobile.png'),screenshot);
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'app/guard/dashboard/generated/workspace.json'),'utf8'));
  for(const name of ['cloud-games-catalog.js','cloud-games-ui.js'])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(assets,name))).digest('hex'),manifest.hashes['renderer/js/'+name]);
- await evaluate('window.gameTest.setActive(false)');console.log('Parent Marshland gallery passed: unsigned managed downloads disabled, three real screenshots, content/saves guidance, 390/320px layout, exact export hashes.');
+ await evaluate('window.gameTest.setActive(false)');console.log('Parent Critter County Hunting gallery passed: unsigned managed downloads disabled, three real screenshots, content/saves guidance, 390/320px layout, exact export hashes.');
 }
 function cleanup(){window?.destroy();server.close();}
 run().then(()=>{cleanup();app.quit();}).catch(e=>{console.error(e);cleanup();app.exit(1);});
