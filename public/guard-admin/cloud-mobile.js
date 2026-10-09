@@ -52,10 +52,12 @@ export function setupCloudMobile({ navigate, refresh }) {
   root.querySelector('.sidebar-nav').append(desktopReport);
   menus['mobile-more'].before(accountLinks);
   const reportNotice=make('a','cloud-student-report-banner');reportNotice.href='/guard/report/#student-reports';reportNotice.target='_top';reportNotice.hidden=true;main.prepend(reportNotice);
+  const reportNoticeText=make('span','cloud-student-report-copy');
+  reportNotice.append(icon('triangle-alert'),reportNoticeText,icon('chevron-right'));
   let reportCountBusy=false;
   async function refreshStudentReports(){
     if(reportCountBusy||document.hidden)return;reportCountBusy=true;
-    try{const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});if(!response.ok)return;const data=await response.json(),count=Math.max(0,Math.min(999,Number(data.count)||0));reportNotice.hidden=!count;reportNotice.textContent=count===1?'Your child reported a problem · Review report':count+' student problem reports · Review';reportCopy.querySelector('small').textContent=count?count+' student '+(count===1?'report needs':'reports need')+' your review.':'Tell us what happened, or review a child’s report.';desktopReport.setAttribute('aria-label',count?'Report a bug · '+count+' student reports to review':'Report a bug');}catch{/* Leave the saved inbox available if this badge cannot refresh. */}finally{reportCountBusy=false;}
+    try{const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});if(!response.ok)return;const data=await response.json(),count=Math.max(0,Math.min(999,Number(data.count)||0));reportNotice.hidden=!count;reportNoticeText.textContent=count===1?'Your child reported a problem · Review report':count+' student problem reports · Review';reportCopy.querySelector('small').textContent=count?count+' student '+(count===1?'report needs':'reports need')+' your review.':'Tell us what happened, or review a child’s report.';desktopReport.setAttribute('aria-label',count?'Report a bug · '+count+' student reports to review':'Report a bug');}catch{/* Leave the saved inbox available if this badge cannot refresh. */}finally{reportCountBusy=false;}
   }
   window.addEventListener('cloud-student-report-refresh',()=>void refreshStudentReports());
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshStudentReports();});
