@@ -266,7 +266,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         <dl className={accountStyles.snapshot} aria-label="Family account summary">
           <div><dt><CreditCard size={15} /> Plan</dt><dd>{planSummary}</dd></div>
           <div><dt><Laptop size={15} /> Computers</dt><dd>{childDevices.length} <span>/ {computerLimit}</span></dd></div>
-          <div><dt><Download size={15} /> Child app</dt><dd>{release ? release.version : "Coming soon"}</dd></div>
+          <div><dt><Download size={15} /> Child app</dt><dd>{installerAvailable && release ? <a className={accountStyles.versionDownload} href="/guard/download/windows" target="_blank" rel="noopener noreferrer" aria-label={`Download latest child app for Windows, version ${release.version}`}>{release.version}<Download size={15} aria-hidden="true" /></a> : release ? release.version : "Coming soon"}</dd></div>
         </dl>
         <div className={accountStyles.sections}>
           <details id="account-billing" className={accountStyles.section} open={billingNeedsAttention}>
@@ -391,7 +391,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             {installerAvailable && <InstallerShareLink />}
             <div className={styles.setupDownload}>
               {installerAvailable ? (
-                <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} secondary />
+                <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} />
               ) : (
                 <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
               )}

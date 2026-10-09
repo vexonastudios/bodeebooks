@@ -114,7 +114,10 @@
 .setupToggle { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #cbdcdf; border-radius: 9px; color: #087a8f; background: white; font: 750 .875rem var(--font-sans); cursor: pointer; }
 .setupToggle:focus-visible { outline: 3px solid #159cb4; outline-offset: 3px; }
 .childSetup [hidden] { display: none; }
-.setupDownload { display: flex; flex-wrap: wrap; }
+.setupDownload { display:flex; flex-wrap:wrap; margin:24px 0 20px; }
+.setupDownload .installerDownload > a { min-height:56px; max-width:100%; margin-top:0; padding:16px 24px; border-radius:12px; font-size:.95rem; line-height:1.4; text-align:center; }
+.setupDownload .installerDownload > a svg { flex-shrink:0; }
+.setupDownload .installerDownload > a:hover:not([aria-disabled="true"]) { background:linear-gradient(135deg,#0667bc,#087f89); box-shadow:0 8px 22px #0974aa30; }
 .firstDownloadVisit .setupDownload .portalButton { outline: 3px solid #0ca6a4; outline-offset: 5px; box-shadow: 0 0 0 10px #0ca6a41c, 0 8px 24px #0878d838; animation: firstDownloadGlow 1.8s ease-in-out 3; }
 @keyframes firstDownloadGlow { 50% { outline-color: #59d8c9; box-shadow: 0 0 0 15px #0ca6a428, 0 8px 30px #0878d850; } }
 @media (prefers-reduced-motion: reduce) { .firstDownloadVisit .setupDownload .portalButton { animation: none; } }

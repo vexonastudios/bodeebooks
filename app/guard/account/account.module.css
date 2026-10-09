@@ -30,6 +30,9 @@
 .snapshot dt svg { flex-shrink:0; }
 .snapshot dd { margin-top:5px; color:#254d3b; font-size:.96rem; font-weight:750; line-height:1.3; overflow-wrap:anywhere; }
 .snapshot dd span { color:#657b70; font-size:.84rem; font-weight:500; }
+.versionDownload { display:inline-flex; align-items:center; gap:7px; min-height:44px; max-width:100%; padding:8px; margin:-8px; border-radius:8px; color:#176545; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; }
+.versionDownload svg { flex-shrink:0; }
+.versionDownload:hover { color:#114a32; background:#e0efe7; }
 .sections { display:grid; gap:10px; }
 .section { min-width:0; border:1px solid #d8e4dc; border-radius:15px; background:#fff; scroll-margin-top:90px; }
 .sectionSummary { display:flex; align-items:center; gap:13px; min-height:76px; padding:14px 18px; cursor:pointer; list-style:none; border-radius:15px; }
