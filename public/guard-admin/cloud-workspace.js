@@ -1,3 +1,4 @@
+import { setupCloudBible } from './cloud-bible-family.js';
 import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
@@ -106,7 +107,7 @@ function selectTab(id) {
   screenshots.setActive(id === 'screenshots');
   mathCoach.setActive(id === 'math-coach');
   vocabulary.setActive(id === 'vocabulary');
-  poems.setActive(id === 'poems');
+  poems.setActive(id === 'poems'); bibleFamily.setActive(id === 'bible');
   quizzes.setActive(id === 'quizzes');
   worksheets.setActive(id === 'worksheets');
   economy.setActive(id === 'economy'); typing.setActive(id === 'typing');
@@ -441,6 +442,7 @@ const mathCoach = setupCloudMathCoach({ endpoint, navigate: selectTab });
 const spelling = setupCloudSpelling({ endpoint });
 const vocabulary = setupCloudVocabulary();
 const poems = setupCloudPoems();
+const bibleFamily = setupCloudBible();
 const quizzes = setupCloudQuizzes();
 const worksheets = setupCloudWorksheets();
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });
