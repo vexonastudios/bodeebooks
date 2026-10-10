@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.303": {
+    "title": "Your Bible, your colors",
+    "sections": [
+      {
+        "heading": "Version 1.2.303",
+        "headline": "A comfortable Bible for every child",
+        "summary": "Children can choose their own theme colors or a simple white Bible.",
+        "highlights": [
+          "Bible reading, Topics, plans and memory practice now follow the child’s selected theme.",
+          "Theme colors and Plain white buttons are easy to reach at the top of the Bible.",
+          "Each child’s Bible appearance is remembered on that computer without changing their dashboard theme.",
+          "Verse highlights stay readable, and the verse editor is centered."
+        ]
+      }
+    ]
+  },
   "1.2.302": {
     "title": "Explore the Bible by topic",
     "sections": [
