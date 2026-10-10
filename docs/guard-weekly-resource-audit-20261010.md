@@ -14,3 +14,7 @@ Changes in this website:
 - `tests/guard-usage-panel.test.mjs` exercises real component rendering with synthetic counters: concentrated audiobook failures, rejected diagnostic requests, expensive low-volume features and zero-traffic handling.
 
 Validation: four rendering tests passed; `npx tsc --noEmit --incremental false` and focused ESLint passed. Child source tests cover the shared dashboard helper. This is a local source verification, not a live deployment or a measured reduction in production usage. Build/deployment and post-deployment checks remain part of the next authorized release.
+
+## Release status
+
+Published October 10 with [Family Beta 1.2.305](guard-cloud-efficiency-release-20261010.md). Earlier pending statements above describe the pre-release verification stage.

@@ -22,3 +22,7 @@ Regression tests simulate 12 hours left visible: no further connection or full-d
 Exact source hashes and results are retained in ignored .tmp/parent-idle-stop-20261010/source-evidence.json. Earlier API optimization/policy-sync changes remain a separate pending batch with their own receipts. The stricter stop policy supersedes the earlier five-minute interval recorded in .tmp/parent-idle-20261010/.
 
 Validation: 301 focused dashboard/messaging unit cases and all 8 selected isolated Electron scenarios passed. The website passed 72 tests, TypeScript and focused ESLint; the final exported activity helper also passed its 11 overnight/activity/message/presence cases. No production deployment or GitHub Actions run.
+
+## Release status
+
+Published October 10 with [Family Beta 1.2.305](guard-cloud-efficiency-release-20261010.md). Earlier pending statements above describe the pre-release verification stage.
