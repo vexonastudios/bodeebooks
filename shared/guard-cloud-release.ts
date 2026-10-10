@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.305": {
+  "title": "Less background activity, responsive family controls",
+  "sections": [
+    {
+      "heading": "Version 1.2.305",
+      "headline": "Your dashboard rests when you do",
+      "summary": "BodeeGuard uses fewer background requests while keeping your family controls and message notifications available.",
+      "highlights": [
+        "Routine dashboard checks stop after three minutes without interaction and refresh when you return.",
+        "Child computers reuse unchanged settings and send smaller school updates.",
+        "Media and game requests do less repeated work; failed diagnostic uploads retry more gently."
+      ]
+    }
+  ]
+},
   "1.2.304": {
     "title": "Find Bible topics in everyday words",
     "sections": [
