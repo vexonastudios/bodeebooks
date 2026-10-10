@@ -1,12 +1,19 @@
 import { FAMILY_GAME_PREVIEWS, FAMILY_GAME_DOWNLOADS, familyGameDownloadUrl } from './cloud-games-catalog.js';
 import { setupTabletop } from './cloud-tabletop-ui.js';
 import { setupOnlineTabletop } from './cloud-online-tabletop.js';
+export const GAME_TIME_REQUEST_MESSAGE = "I'm out of game time. Can I have 30 more minutes of Family Games, please?";
+function gameMessage(value) {
+  const message = String(value?.message || value || '').replace(/^Error invoking remote method '[^']+':\s*/, '').replace(/^Error:\s*/, '');
+  return message === 'Daily game time used' ? "You've used all of today's game time." : message;
+}
 // LAN traffic stays in the installed main process. Parent access remains cloud-managed.
-export function setupCloudGames({ root, request, parent = false, renderAvatar, externalRequest, lanRequest, tabletop = parent || !!lanRequest, assetBase = new URL('assets/family-games/v1/', window.location.href) }) {
+export function setupCloudGames({ root, request, parent = false, renderAvatar, externalRequest, lanRequest, requestExtraTime, tabletop = parent || !!lanRequest, assetBase = new URL('assets/family-games/v1/', window.location.href) }) {
   let external={supported:false,games:[]};
   const gameActions=new Map();
   const childLibrary = !parent && tabletop;
   let childView = 'adventures';
+  let messaging = null, timeRequest = null, exhaustedByAction = false;
+  const requestStates = new Map();
   let active = false, room = null, selected = null, square = null, timer = null, loading = false, busy = false;
   let generation = 0, failures = 0, fresh = false, pending = null, settingsOpen = false;
   function node(tag, text = '', className = '') { const n = document.createElement(tag); n.textContent = text; n.className = className; return n; }
@@ -21,6 +28,13 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   const header = node('header', '', 'cloud-game-header');
   const currentAccess = node('div', '', 'cloud-game-current-access');
   header.append(title, ...(childLibrary ? [currentAccess] : []), toolbar);
+  const timeNotice = node('section', '', 'cloud-game-time-notice'); timeNotice.hidden = true; timeNotice.setAttribute('aria-label', 'Game time');
+  const timeCopy = node('div', '', 'cloud-game-time-copy');
+  const timeHeading = heading('h3', "You're out of game time", 'alarm-clock');
+  const timeHelp = node('p', "You've used today's game time. Your parent can add 30 more minutes.");
+  const timeStatus = node('p', '', 'cloud-game-request-status'); timeStatus.setAttribute('role', 'status');
+  const askTime = button('Ask for 30 more minutes', askForTime, false, 'message-circle'); askTime.classList.add('btn-primary');
+  timeCopy.append(timeHeading, timeHelp, timeStatus); timeNotice.append(timeCopy, askTime);
   const content = node('div', '', 'cloud-game-layout');
   const formArea = node('div');
   const gallery = makeGallery();
@@ -34,7 +48,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   const boardTab = button('Board games', () => { childView = 'boards'; applyChildView(); }, false, 'dices');
   childNav.append(videoTab, boardTab); childNav.hidden = !childLibrary;
   root.classList.add('cloud-family-room'); root.classList.toggle('is-parent', parent); root.classList.toggle('is-child-room', childLibrary);
-  root.append(header, childNav, formArea, content);
+  root.append(header, timeNotice, childNav, formArea, content);
   function applyChildView() {
     if (!childLibrary) return;
     const view = external.supported ? childView : 'boards';
@@ -44,16 +58,64 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     gallery.hidden = view !== 'adventures'; boardArea.hidden = view !== 'boards';
     const people = content.querySelector('.cloud-game-people'); if (people) people.hidden = view !== 'boards';
   }
+  function ownAccess() { return room?.children.find(child => child.id === room.studentId)?.access; }
+  function outOfTime() { const access = ownAccess(); return exhaustedByAction || access?.allowed === false && access.reason === 'Daily game time used'; }
+  function requestKey() { return room?.studentId && room?.date ? room.studentId + ':' + room.date : null; }
+  function messageDate(value) {
+    if (!value) return '';
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: room.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value)); }
+    catch (_) { return ''; }
+  }
+  function requestState() {
+    const key = requestKey();
+    if (key && messaging?.studentId === room.studentId) {
+      const matches = message => message.body === GAME_TIME_REQUEST_MESSAGE && messageDate(message.createdAt) === room.date;
+      if (messaging.messages?.some(message => message.sender === 'child' && matches(message))) requestStates.set(key, 'sent');
+      else if (messaging.pending?.some(matches)) requestStates.set(key, 'queued');
+    }
+    return requestStates.get(key);
+  }
+  function updateTimeNotice() {
+    timeNotice.hidden = parent || !outOfTime();
+    if (timeNotice.hidden) return;
+    const saved = requestState(), sending = timeRequest?.key === requestKey();
+    askTime.hidden = !requestExtraTime;
+    askTime.disabled = !active || sending || !!saved || !requestKey();
+    askTime.textContent = sending ? 'Sending request…' : saved === 'sent' ? 'Request sent' : saved === 'queued' ? 'Request saved' : 'Ask for 30 more minutes';
+    timeStatus.textContent = sending ? 'Sending your parent a message…' : saved === 'sent' ? 'Your parent has your request. Games stay locked until more time is available.' : saved === 'queued' ? 'Your request is saved and will send when connected. You can check it in Messages.' : timeRequest?.error || '';
+  }
+  async function askForTime() {
+    const key = requestKey(), studentId = room?.studentId;
+    if (!requestExtraTime || parent || !active || !outOfTime() || !key || timeRequest?.key === key || requestState()) return;
+    const attempt = {key}; timeRequest = attempt; updateTimeNotice();
+    try {
+      const receipt = await requestExtraTime(studentId, GAME_TIME_REQUEST_MESSAGE);
+      if (timeRequest !== attempt) return;
+      if (!receipt?.id || receipt.queued !== true) throw Error('The request could not be confirmed. Check Messages before trying again.');
+      requestStates.set(key, 'queued'); timeRequest = null;
+    } catch (error) {
+      if (timeRequest !== attempt) return;
+      timeRequest = {error: gameMessage(error) || 'The request could not be sent. Try again.'};
+    }
+    updateTimeNotice();
+  }
+  function reportError(error) {
+    note(gameMessage(error));
+    if (/Daily game time used/.test(String(error?.message || error))) exhaustedByAction = true;
+    updateCurrentAccess(); updateTimeNotice(); renderExternalState(); icons();
+    void refresh();
+  }
+  function setMessageState(value) { messaging = value; updateTimeNotice(); }
   function updateCurrentAccess() {
     if (!childLibrary) return;
     currentAccess.replaceChildren();
-    const access = room?.children.find(child => child.id === room.studentId)?.access;
+    const access = ownAccess();
     if (!access) { currentAccess.append(node('span', 'Checking game time…')); return; }
     const text = node('span'); text.append(node('strong', access.allowed ? Math.ceil(Math.max(0, access.remainingSeconds || 0) / 60) + ' min left' : 'Games locked'),
-      node('small', access.allowed ? 'Your game time today' : access.reason || 'Ask your parent to unlock games.'));
+      node('small', access.allowed ? 'Your game time today' : gameMessage(access.reason) || 'Ask your parent to unlock games.'));
     currentAccess.append(icon(access.allowed ? 'clock-3' : 'lock-keyhole'), text);
   }
-  function note(text) { status.textContent = text; }
+  function note(text) { status.textContent = gameMessage(text); }
   function controlsView() {
     controls.replaceChildren(button(loading ? 'Refreshing…' : 'Refresh', refresh, loading || busy || !active, 'refresh-cw'));
     if (pending) controls.append(button('Retry the same action', () => send(pending), busy || !active, 'rotate-ccw'));
@@ -110,7 +172,13 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     section.append(banners); return section;
   }
   function setExternalState(value){
-    external=value||{supported:false,games:[]};gallery.hidden=!parent&&!external.supported;
+    const message = value?.message;
+    external=value||{supported:false,games:[]};
+    if(message) { note(message); if (/Daily game time used/.test(message)) exhaustedByAction = true; }
+    renderExternalState(); updateTimeNotice();
+  }
+  function renderExternalState(){
+    gallery.hidden=!parent&&!external.supported;
     for(const game of FAMILY_GAME_PREVIEWS){
       const area=gameActions.get(game.id);area.replaceChildren();
       const downloadReady=FAMILY_GAME_DOWNLOADS[game.id]?.available!==false;
@@ -123,17 +191,18 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       }
       if(!external.supported)continue;
       const record=external.games.find(item=>item.key===game.id);
-      const run=async action=>{try{await externalRequest(action,game.id);}catch(error){note(error.message);}};
-      const playButton = button(record?.installed ? 'Play' : downloadReady ? 'Download & play' : 'Awaiting signed release', () => run('play'), external.busy || !!external.playing || (!record?.installed && !downloadReady), 'play');
+      const canLaunch = active && fresh && !loading && ownAccess()?.allowed === true && !outOfTime();
+      const run=async action=>{if(!active || !fresh || loading || ownAccess()?.allowed !== true || outOfTime())return;const ticket=generation;try{await externalRequest(action,game.id);}catch(error){if(ticket===generation)reportError(error);}};
+      const playButton = button(record?.installed ? 'Play' : downloadReady ? 'Download & play' : 'Awaiting signed release', () => run('play'), !canLaunch || external.busy || !!external.playing || (!record?.installed && !downloadReady), 'play');
       playButton.classList.add('btn-primary', 'cloud-game-launch'); playButton.setAttribute('aria-label', (record?.installed ? 'Play ' : 'Download & play ') + game.name);
       const actions = node('div', '', 'cloud-game-launch-row'); actions.append(playButton);
-      if (record?.installed) { const repair = button('Update / repair', () => run('update'), external.busy || !!external.playing || !downloadReady, 'download'); repair.classList.add('cloud-game-repair'); repair.setAttribute('aria-label', 'Update or repair ' + game.name); actions.append(repair); }
+      if (record?.installed) { const repair = button('Update / repair', () => run('update'), !canLaunch || external.busy || !!external.playing || !downloadReady, 'download'); repair.classList.add('cloud-game-repair'); repair.setAttribute('aria-label', 'Update or repair ' + game.name); actions.append(repair); }
       area.append(node('small', game.playLabel || game.players, 'cloud-note cloud-game-player-count'), actions,
         node('small', record?.version ? 'Installed ' + record.version : downloadReady ? 'Download once · Automatic updates' : game.availability, 'cloud-note cloud-game-install-status'));
       if(external.progress?.gameKey===game.id){const meter=node('progress');meter.max=100;if(external.progress.percent!=null)meter.value=external.progress.percent;meter.setAttribute('aria-label',`${game.name} download progress`);area.append(meter);}
     }
     applyChildView();
-    if(external.message)note(external.message);icons();
+    icons();
   }
   setExternalState(external);
   async function send(input) {
@@ -226,7 +295,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   function render() {
     const focusedElement = document.activeElement;
     const focusedSquare = content.contains(document.activeElement) && document.activeElement.classList.contains('cloud-checkers-square') ? document.activeElement.getAttribute('aria-label')?.split(' ')[0] : null;
-    controlsView(); updateCurrentAccess();
+    controlsView(); updateCurrentAccess(); updateTimeNotice(); renderExternalState();
     if (!room) { content.replaceChildren(); return; }
     const people = node('aside', '', 'cloud-game-people'); people.append(heading('h3', parent ? 'Family game access' : 'Your family', 'users-round'));
     people.append(node('p', parent ? 'Choose when each child can play.' : tabletop ? 'Family Games access and daily time.' : 'Invite a sibling to play Checkers.', 'cloud-note'));
@@ -314,7 +383,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     try {
       const result = await request('room', { matchId: selected });
       if (ticket !== generation) return;
-      room = result; fresh = true; failures = 0;
+      room = result; fresh = true; failures = 0; exhaustedByAction = false;
       if (!room.matches.some(m => m.id === selected)) selected = room.matches.find(m => m.status === 'active')?.id || room.matches[0]?.id || null;
       if (!pending) note(`Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`);
     } catch (error) { if (ticket === generation) { fresh = false; failures++; note(`${error.message} Moves are paused; your saved match is not deleted.`); } }
@@ -325,8 +394,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     }
   }
   function setActive(value) { active = value; onlineUI.setActive(value); clearTimeout(timer); if (active) refresh(); else { generation++; fresh = false; square = null; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); } }
-  function clear() { childView = 'adventures'; onlineUI.clear(); generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
+  function clear() { messaging = null; timeRequest = null; requestStates.clear(); exhaustedByAction = false; childView = 'adventures'; onlineUI.clear(); generation++; room = null; selected = null; square = null; pending = null; fresh = false; settingsOpen = false; root.querySelectorAll('dialog').forEach(dialog => dialog.close()); formArea.replaceChildren(); render(); }
   document.addEventListener('visibilitychange', () => { clearTimeout(timer); fresh = false; if (!document.hidden && active) refresh(); else render(); });
   window.addEventListener('pagehide', () => { active = false; clear(); clearTimeout(timer); });
-  return { setActive, clear, refresh, setExternalState, setLanState:value=>tabletopUI?.setState(value), isEditing: () => settingsOpen };
+  return { setActive, clear, refresh, reportError, setMessageState, setExternalState, setLanState:value=>tabletopUI?.setState(value), isEditing: () => settingsOpen };
 }

@@ -59,7 +59,11 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
         required:!subject.isReward&&plannedToday&&(plan?plan.placement==='school':(subject.accessTier||'school')==='school')&&(!module||curriculum?.assigned===true&&curriculum.required===true)};
     });
     const media=Object.fromEntries(mediaTypes.map(([kind])=>[kind,snapshot.monitoring?.media?.find(row=>row.studentId===student.id&&row.kind===kind)||{seconds:0,unlocked:false}]));
-    const activity=goals.filter(g=>g.seconds>0||g.complete).map(g=>({...g}));
+    // Game receipts are authoritative; foreground catalog time is not play.
+    const activity=goals.filter(g=>g.url!=='app://games'&&(g.seconds>0||g.complete)).map(g=>({...g}));
+    const games=snapshot.monitoring?.date===snapshot.activityDate
+      ? snapshot.monitoring?.games?.find(row=>row.studentId===student.id) : null;
+    if(seconds(games?.seconds)>0)activity.push({label:'Family Games',url:'app://games',icon:'gamepad-2',seconds:seconds(games.seconds)});
     for(const [kind,label,icon]of mediaTypes){const used=seconds(media[kind].seconds);if(!used)continue;
       const existing=activity.find(row=>row.url===`app://${({video:'videos',audiobook:'audiobooks'})[kind]||kind}`);
       if(existing)existing.seconds=Math.max(existing.seconds,used);else activity.push({label,icon,seconds:used});
@@ -93,6 +97,7 @@ function ring(model){
 }
 export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editProfilePhoto,mobile,setControls=()=>{}}){
   const notices = parentActionFeedback();
+  const gameTimeRequests = new Map(), gameTimePending = new Set();
   let screenshotExpiry = null, connectionExpiry = null;
   let observedSnapshot = null, observedAt = 0;
   // Age the server's connection snapshot locally, even when a refresh fails.
@@ -150,6 +155,37 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
     const options=node('div','monitor-media-time-popover');options.append(node('strong','',`Extra ${label.toLowerCase()} time today`));
     for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await change({operation:'extra-time',minutes});menu.open=false;},{pending:'Adding '+minutes+' '+label.toLowerCase()+' minutes for '+child+'…',title:minutes+' '+label.toLowerCase()+' minutes added for '+child,detail:'Saved to today’s allowance. School and schedule requirements still apply.'}),'btn btn-secondary');notices.bind(add,key+':'+minutes,key);add.dataset.cloudMutation='true';options.append(add);}
     menu.append(summary);row.append(main,menu,options);notices.mount(row,key);for(const minutes of [15,30,60])notices.mount(row,key+':'+minutes);return row;
+  }
+  function gameControl(model){
+    const {student}=model,key=student.id+':game-time';
+    const row=node('div','monitor-media-action');row.dataset.media='games';
+    const main=button('Family Game Room','gamepad-2',()=>navigate('family-games'),'monitor-media-main');
+    main.title='Open the Family Game Room and game settings';
+    const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));
+    summary.setAttribute('aria-label','Add game time for '+student.name);
+    const options=node('div','monitor-media-time-popover');options.append(node('strong','','Extra game time today'));
+    for(const minutes of [15,30,60]){
+      const add=button('+'+minutes+' minutes','clock-plus',el=>{
+        if(gameTimePending.has(student.id))return;
+        const snapshot=getSnapshot(),date=snapshot.activityDate||snapshot.serverTime?.slice(0,10);
+        const retryKey=student.id+':'+date+':'+minutes;
+        const request=gameTimeRequests.get(retryKey)||{studentId:student.id,minutes,requestId:crypto.randomUUID()};
+        gameTimeRequests.set(retryKey,request);gameTimePending.add(student.id);
+        return run(el,async()=>{
+          try{await mutate('game-add-time',request);}
+          catch(error){throw new Error(error.message+' Retry the same amount to safely confirm this request.');}
+          gameTimeRequests.delete(retryKey);
+          // Saving refreshes the cards, so close the replacement menu too.
+          menu.open=false;
+          [...grid.children].find(card=>card.dataset.studentId===student.id)?.querySelector('[data-media=games] details')?.removeAttribute('open');
+        },{pending:'Adding '+minutes+' game minutes for '+student.name+'…',title:minutes+' game minutes added for '+student.name,
+          detail:'Saved for today. Schoolwork, chores and allowed game hours still apply.',errorTitle:'Could not confirm game time for '+student.name})
+          .finally(()=>gameTimePending.delete(student.id));
+      },'btn btn-secondary');
+      notices.bind(add,key);add.dataset.cloudMutation='true';options.append(add);
+    }
+    options.append(node('span','','Schoolwork and allowed game hours still apply.'));
+    menu.append(summary);row.append(main,menu,options);notices.mount(row,key);return row;
   }
   function renderQuickDialog(model){
     const priorStatus=quickDialog.querySelector('.cloud-quick-status')?.textContent||'';
@@ -246,6 +282,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
       top.after(primary);
       const shot=button('Snap Screen','camera',el=>run(el,async()=>{if(!canScreenshot(student.id)){el.dataset.requiresDevice='false';throw Error('The child app must be online. Refresh to check its connection.');}await mutate('request-screenshot',{studentId:student.id});navigate('screenshots');},{pending:'Requesting a screenshot from '+student.name+'…',title:'Screenshot requested for '+student.name,detail:'Opening Screenshots. The image appears when the child app sends it.'}),'monitor-control monitor-control--screenshot');notices.bind(shot,student.id+':screenshot');shot.disabled=!canScreenshot(student.id);shot.dataset.requiresDevice=String(!shot.disabled);shot.dataset.cloudMutation='true';shot.title=shot.disabled?'Open the child app, then refresh to check its connection.':'Capture the child’s BodeeGuard screen';actions.append(shot);notices.mount(actions,student.id+':screenshot');
       for(const args of mediaTypes)actions.append(mediaControl(model,...args));
+      actions.append(gameControl(model));
       if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
         const lockMedia=button('Lock Media','lock-keyhole',el=>run(el,async()=>{
           for(const [kind] of mediaTypes)if(model.media[kind].unlocked)await mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:student.id,operation:'override',unlocked:false}});

@@ -111,3 +111,14 @@
 .is-child-room .cloud-game-board-area>section:first-child>.tabletop-room>.cloud-game-actions{margin:0}
 @media(max-width:1100px){.is-child-room .cloud-game-banners{grid-template-columns:repeat(2,minmax(0,1fr))}.cloud-game-current-access{max-width:280px;padding:0 14px}.is-child-room .cloud-game-header{gap:14px}}
 @media(max-width:650px){.cloud-family-room.is-child-room .cloud-game-header{padding:16px;gap:14px}.is-child-room .cloud-game-title{flex-basis:100%}.is-child-room .cloud-game-title h2{font-size:25px}.cloud-game-current-access{padding:0;border:0;flex:1;max-width:none}.cloud-game-current-access strong{font-size:17px}.is-child-room .cloud-game-toolbar{align-items:flex-end}.is-child-room .cloud-game-status{font-size:10px;text-align:right}.cloud-game-child-nav{width:100%;box-sizing:border-box}.cloud-family-room .cloud-game-child-nav .btn{flex:1;min-width:0;padding:10px 8px;font-size:13px}.is-child-room .cloud-game-banners{grid-template-columns:1fr}.is-child-room .cloud-game-section-heading h3{font-size:18px}}
+
+/* A time limit is an actionable state, not a small connection error. */
+.cloud-family-room .cloud-game-time-notice[hidden]{display:none}
+.cloud-game-time-notice{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px;margin:0 0 20px;border:2px solid var(--theme-warning-text,#fde68a);border-left-width:7px;border-radius:16px;background:var(--theme-surface-strong,#172337);color:var(--theme-text,#ecf5ff)}
+.cloud-game-time-copy{min-width:0;max-width:760px}
+.cloud-family-room .cloud-game-time-notice h3{font-size:24px;line-height:1.3;color:var(--theme-warning-text,#fde68a);margin:0 0 8px}
+.cloud-game-time-notice h3 svg{width:30px;height:30px}
+.cloud-game-time-notice p{font-size:16px;line-height:1.5}
+.cloud-game-time-notice .cloud-game-request-status:not(:empty){margin-top:10px;font-size:14px;font-weight:600}
+.cloud-family-room .cloud-game-time-notice .btn{flex-shrink:0;min-height:52px;padding:14px 20px;font-size:16px}
+@media(max-width:780px){.cloud-game-time-notice{align-items:stretch;flex-direction:column;padding:20px;gap:18px}.cloud-family-room .cloud-game-time-notice h3{font-size:22px}.cloud-game-time-notice .btn{width:100%}}
