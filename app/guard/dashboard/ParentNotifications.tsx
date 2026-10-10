@@ -40,7 +40,7 @@ export default function ParentNotifications() {
     }});client.current=controller;
     const presence=createConversationPresence({
       send:(studentId,viewId)=>{askView();return controller.view(studentId,viewId);},
-      isVisible:()=>!document.hidden&&document.hasFocus()&&Date.now()-lastView<25000
+      isVisible:()=>!document.hidden&&document.documentElement?.dataset.parentIdle!=='true'&&document.hasFocus()&&Date.now()-lastView<25000
     });
     const refreshUnread=async()=>{
       if(checkingUnread){checkAgain=true;return;}checkingUnread=true;
@@ -56,7 +56,7 @@ export default function ParentNotifications() {
       if(event.data?.type==='bodeeguard-conversation-view'&&(event.data.studentId===null||validId(event.data.studentId))){lastView=Date.now();presence?.set(event.data.studentId);}
       if(event.data?.type==='bodeeguard-message-opened')pendingMessage=null;
       if(event.data?.type==='bodeeguard-message-hint')void refreshUnread();
-      if(event.data?.type==='bodeeguard-conversation-read'&&validId(event.data.studentId)&&validId(event.data.messageId)&&!document.hidden){
+      if(event.data?.type==='bodeeguard-conversation-read'&&validId(event.data.studentId)&&validId(event.data.messageId)&&!document.hidden&&document.documentElement?.dataset.parentIdle!=='true'){
         const key=event.data.studentId+event.data.messageId;if(reading.has(key))return;reading.add(key);
         void controller.read(event.data.studentId,event.data.messageId).then(result=>{
           if(result)navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-conversation-read',studentId:result.studentId,throughSequence:result.throughSequence,totalUnread:result.unread.reduce((sum:number,item:Unread)=>sum+item.count,0)});
@@ -86,13 +86,15 @@ export default function ParentNotifications() {
       frame()?.postMessage({type:'bodeeguard-open-messages',studentId:pendingMessage},location.origin);
     };
     const visible=()=>{presence?.refresh();if(!document.hidden){askView();void controller.renew().catch(()=>{});navigator.serviceWorker?.controller?.postMessage({type:'bodeeguard-replies-resume',accountUserId:userId});}};
+    const activity=()=>{presence?.refresh();if(document.documentElement?.dataset.parentIdle!=='true')askView();};
+    document.addEventListener('bodeeguard-parent-activity',activity);
     const hidden=()=>presence?.set(null);
     const blur=()=>presence?.refresh();
     window.addEventListener('message',request);document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
     window.addEventListener('focus',visible);window.addEventListener('blur',blur);
     window.addEventListener('pagehide',hidden);window.addEventListener('pageshow',visible);
     navigator.serviceWorker?.addEventListener('message',notification);visible();
-    return()=>{presence?.dispose();controller.dispose();client.current=null;window.removeEventListener('message',request);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);window.removeEventListener('focus',visible);window.removeEventListener('blur',blur);window.removeEventListener('pagehide',hidden);window.removeEventListener('pageshow',visible);navigator.serviceWorker?.removeEventListener('message',notification);};
+    return()=>{document.removeEventListener('bodeeguard-parent-activity',activity);presence?.dispose();controller.dispose();client.current=null;window.removeEventListener('message',request);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);window.removeEventListener('focus',visible);window.removeEventListener('blur',blur);window.removeEventListener('pagehide',hidden);window.removeEventListener('pageshow',visible);navigator.serviceWorker?.removeEventListener('message',notification);};
   },[userId]);
   const openSettings=()=>{setOpen(true);void client.current?.load();};
   const enableHere=()=>void client.current?.enable(label).then(()=>setOpen(true));

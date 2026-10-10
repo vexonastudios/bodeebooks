@@ -20,7 +20,7 @@ export function watchParentRelease(loadedRelease: string, onUpdate: (release: st
   let lastCheck = 0;
   async function check() {
     clearTimeout(timer);
-    if (stopped || document.hidden || !navigator.onLine || active) return;
+    if (stopped || document.hidden || document.documentElement?.dataset.parentIdle === 'true' || !navigator.onLine || active) return;
     const request = new AbortController();
     active = request;
     lastCheck = Date.now();
@@ -30,22 +30,24 @@ export function watchParentRelease(loadedRelease: string, onUpdate: (release: st
     } catch { /* Stay on the working page when offline or the check fails. */ }
     finally {
       if (active === request) active = undefined;
-      if (!stopped && !document.hidden && navigator.onLine) timer = setTimeout(check, CHECK_INTERVAL);
+      if (!stopped && !document.hidden && document.documentElement?.dataset.parentIdle !== 'true' && navigator.onLine) timer = setTimeout(check, CHECK_INTERVAL);
     }
   }
   function visibility() {
-    if (document.hidden) { clearTimeout(timer); active?.abort(); }
+    if (document.hidden || document.documentElement?.dataset.parentIdle === 'true') { clearTimeout(timer); active?.abort(); }
     else void check();
   }
   function focus() { if (Date.now() - lastCheck >= 60_000) void check(); }
   function online() { void check(); }
   document.addEventListener("visibilitychange", visibility);
+  document.addEventListener("bodeeguard-parent-activity", visibility);
   window.addEventListener("focus", focus);
   window.addEventListener("online", online);
   void check();
   return () => {
     stopped = true; clearTimeout(timer); active?.abort();
     document.removeEventListener("visibilitychange", visibility);
+    document.removeEventListener("bodeeguard-parent-activity", visibility);
     window.removeEventListener("focus", focus);
     window.removeEventListener("online", online);
   };

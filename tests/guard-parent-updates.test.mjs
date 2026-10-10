@@ -127,3 +127,20 @@ test('mutable dashboard assets revalidate while versioned games remain immutable
   assert.match(value('/guard-admin/family-games/v1/:file*'), /immutable/);
   assert.ok(headers.findIndex(row => row.source === '/guard-admin/family-games/v1/:file*') > headers.findIndex(row => row.source === '/guard-admin/:path*'));
 });
+
+
+test('idle release checks leave no recurring timer and resume when the parent returns', async () => {
+  let calls = 0; const b = browser(async () => { calls++; return Response.json({ release: 'loaded' }); });
+  b.document.documentElement = { dataset: { parentIdle: 'false' } }; let stop;
+  try {
+    stop = releaseModule().watchParentRelease('loaded', () => {}); await settle();
+    assert.equal(calls, 1); assert.equal(b.timers.size, 1);
+    b.document.documentElement.dataset.parentIdle = 'true';
+    b.document.dispatchEvent(new Event('bodeeguard-parent-activity')); await settle();
+    assert.equal(b.timers.size, 0); b.window.dispatchEvent(new Event('online')); await settle(); assert.equal(calls, 1);
+    b.document.documentElement.dataset.parentIdle = 'false';
+    b.document.dispatchEvent(new Event('bodeeguard-parent-activity')); await settle();
+    assert.equal(calls, 2); assert.equal(b.timers.size, 1);
+    stop(); b.document.dispatchEvent(new Event('bodeeguard-parent-activity')); await settle(); assert.equal(calls, 2);
+  } finally { stop?.(); b.restore(); }
+});

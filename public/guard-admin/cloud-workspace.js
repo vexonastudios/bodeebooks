@@ -165,7 +165,7 @@ async function refresh() {
       snapshot = data;
       usable = true;
       failures = 0;
-      byId('live-text').textContent = 'Connections checked every 30s';
+      byId('live-text').textContent = 'Connections checked automatically';
       byId('live-indicator').dataset.connected = 'true';
       feedback('');
       showSnapshot();
@@ -187,7 +187,7 @@ async function refresh() {
         loader.parentElement.setAttribute('aria-busy', 'false');
         loader.remove();
       }
-      if (!document.hidden) timer = setTimeout(refresh, failures ? Math.min(300000,30000 * (2 ** Math.min(failures,4))) : 1800000);
+      if (!document.hidden && !connectionRefresh.isIdle()) timer = setTimeout(() => { if (!connectionRefresh.isIdle()) void refresh(); }, failures ? Math.min(300000,30000 * (2 ** Math.min(failures,4))) : 1800000);
     }
   })();
   return inFlight;
@@ -495,7 +495,9 @@ byId('cloud-editor-form').addEventListener('submit', async event => {
 byId('cloud-recovery-close').addEventListener('click', () => byId('cloud-recovery').close());
 byId('cloud-recovery').addEventListener('close', clearRecovery);
 const connectionRefresh = createConnectionRefresh({
+  onIdleChange: idle => { clearTimeout(timer); if (!idle) void refresh(); },
   refresh: async signal => {
+    if (!usable) return;
     const response = await fetch(endpoint, {method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.any([signal,AbortSignal.timeout(10000)]),body:JSON.stringify({action:'connection-status'})});
     if (!response.ok) throw new Error('Connection check unavailable');
     const status = await response.json(); signal.throwIfAborted();
@@ -530,10 +532,10 @@ const livePush=window.CloudPush.createCloudPushClient({
 document.addEventListener('visibilitychange', () => {
   clearTimeout(timer);
   if (document.hidden) { connectionRefresh.stop(); pushTicketController?.abort(); livePush.stop(); clearRecovery(); byId('cloud-recovery').close(); }
-  else refresh();
+  else { connectionRefresh.start(); refresh(); }
 });
 window.addEventListener('pagehide', () => { connectionRefresh.stop(); pushTicketController?.abort(); livePush.stop(); clearTimeout(timer); clearRecovery(); });
-window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); refresh(); } });
+window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); connectionRefresh.start(); refresh(); } });
 setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); if (feature === 'games') { void games.refresh(); void refresh(); } if (feature === 'music') { void refresh(); } } });
 setupStudentPreview({getSnapshot:()=>snapshot,endpoint});
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
@@ -541,4 +543,5 @@ mobile.setActive('overview');
 const notificationNavigation = setupNotificationNavigation({ messaging, navigate: selectTab, getStudents: () => snapshot?.students || [] });
 window.lucide?.createIcons();
 setControls();
+connectionRefresh.start();
 refresh();

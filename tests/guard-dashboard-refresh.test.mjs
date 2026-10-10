@@ -7,7 +7,7 @@ const { createCloudPushClient } = createRequire(import.meta.url)('../public/guar
 const flush = async () => { for (let n = 0; n < 20; n++) await Promise.resolve(); };
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 
-function fixture({ hidden = false, snapshot, computers } = {}) {
+function fixture({ hidden = false, snapshot, computers, canRefresh = () => true } = {}) {
   const doc = new EventTarget(), win = new EventTarget(); doc.hidden = hidden;
   const requests = [], errors = [], busy = [], connection = [];
   let now = 0, id = 0;
@@ -16,7 +16,7 @@ function fixture({ hidden = false, snapshot, computers } = {}) {
     setTimer(fn, delay) { const key = ++id; timers.set(key, { fn, at: now + delay }); return key; },
     clearTimer(key) { timers.delete(key); },
   };
-  const dashboard = createDashboardRefresh({ document: doc, window: win, ...clock,
+  const dashboard = createDashboardRefresh({ document: doc, window: win, ...clock, now: () => now, canRefresh,
     requestComputers: async signal => { requests.push({ kind: 'computers', signal }); await computers?.(signal); },
     refreshSnapshot: async signal => { requests.push({ kind: 'snapshot', signal }); await snapshot?.(signal); },
     onError: error => errors.push(error), onBusy: value => busy.push(value),
@@ -84,7 +84,7 @@ test('an old response cannot schedule a timer or cancel the new run after rapid 
   assert.equal(previousSignal.aborted, true);
   old.resolve(); await flush();
   await f.advance(1800);
-  assert.equal(f.requests.length, 4); assert.equal(f.timers.size, 1);
+  assert.equal(f.requests.length, 3); assert.equal(f.timers.size, 1);
   assert.equal(f.errors.length, 0); assert.equal(f.busy.at(-1), false);
   f.dashboard.stop();
 });
@@ -154,4 +154,20 @@ test('a screenshot response received after hiding cannot trigger thumbnail downl
     assert.equal(requests.length, 1);
     assert.equal(JSON.parse(requests[0].body).action, 'screenshots-overview');
   } finally { Object.assign(globalThis, previous); }
+});
+
+ test('idle pauses full snapshots and computer requests overnight; returning refreshes once', async () => {
+  let awake = true; const f = fixture({ canRefresh: () => awake });
+  f.dashboard.start(); await f.advance(1800); assert.equal(f.requests.length, 2);
+  awake = false; f.dashboard.pauseAutomatic(); await f.advance(12 * 3600000);
+  assert.equal(f.requests.length, 2); assert.equal(f.timers.size, 0);
+  awake = true; await f.dashboard.refresh(); assert.equal(f.requests.length, 3);
+  await f.advance(1800000); await f.advance(1800); assert.equal(f.requests.length, 5);
+  f.dashboard.stop();
+});
+ test('a full snapshot finishing after idle does not schedule background retries', async () => {
+  let awake = true; const work = deferred(); const f = fixture({ canRefresh: () => awake, snapshot: () => work.promise });
+  f.dashboard.start(); await f.advance(1800); awake = false; f.dashboard.pauseAutomatic();
+  work.resolve(); await flush(); await f.advance(12 * 3600000);
+  assert.equal(f.requests.length, 2); assert.equal(f.timers.size, 0); f.dashboard.stop();
 });

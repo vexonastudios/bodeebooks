@@ -227,7 +227,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   window.addEventListener('message', event => {
     if(event.origin===location.origin && event.source===window.parent && event.data?.type==='bodeeguard-conversation-view-request') publishConversationView();
   });
-  function conversationVisible() { return active && !document.hidden && selected && (!mobile.matches || section.dataset.messageView === 'thread'); }
+  function conversationVisible() { return active && !document.hidden && document.documentElement.dataset.parentIdle !== 'true' && selected && (!mobile.matches || section.dataset.messageView === 'thread'); }
   function sizeInput() {
     const input = el('messages-reply-input'); input.style.removeProperty('height');
     if (mobile.matches) { input.style.height = '44px'; input.style.height = `${Math.min(112, Math.max(44, input.scrollHeight + 2))}px`; }
@@ -755,6 +755,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     finally { loading = false; controls(); if (conversationVisible() && (refreshQueued || ticket !== generation || !live)) timer = setTimeout(refresh, refreshQueued || ticket !== generation ? 0 : 5 * 60000); refreshQueued = false; }
   });
   function pauseMedia() { if (recordingBusy()) voice.cancel(); el('messages-voice-audio').pause(); threadRows.pause(); familyThreadRows.pause(); }
+  document.addEventListener('bodeeguard-parent-activity', () => { publishConversationView(); clearTimeout(timer); if (conversationVisible()) void refresh(); });
   document.addEventListener('visibilitychange', () => { publishConversationView(); clearTimeout(timer); if (!document.hidden) { if (active) void loadGroups(); void refresh(); } else pauseMedia(); });
   window.addEventListener('focus', () => { if (error && !loading) void refresh(); });
   window.addEventListener('online', () => { if (error && !loading) void refresh(); });
