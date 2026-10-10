@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.302": {
+    "title": "Explore the Bible by topic",
+    "sections": [
+      {
+        "heading": "Version 1.2.302",
+        "headline": "Help children find Scripture by topic",
+        "summary": "The Bible now includes an offline Topics index with passages from the Berean Standard Bible.",
+        "highlights": [
+          "Explore twelve starting topics or search more than 5,600 historical topic headings.",
+          "Read passages in context, bookmark a verse or add it to Scripture memory.",
+          "Topic search works offline and keeps each child’s existing Bible notes and memory collection."
+        ]
+      }
+    ]
+  },
   "1.2.297": {
     "title": "School progress and faster family controls",
     "sections": [{
