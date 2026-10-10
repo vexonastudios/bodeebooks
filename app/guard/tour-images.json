@@ -1,0 +1,68 @@
+[
+  {
+    "id": "parent",
+    "width": 2000,
+    "height": 993,
+    "bytes": 95044
+  },
+  {
+    "id": "child",
+    "width": 2000,
+    "height": 993,
+    "bytes": 64282
+  },
+  {
+    "id": "plan",
+    "width": 2000,
+    "height": 993,
+    "bytes": 91020
+  },
+  {
+    "id": "messages",
+    "width": 2000,
+    "height": 993,
+    "bytes": 39656
+  },
+  {
+    "id": "parent-mobile",
+    "width": 390,
+    "height": 844,
+    "bytes": 34936
+  },
+  {
+    "id": "games",
+    "width": 1440,
+    "height": 1200,
+    "bytes": 132308
+  },
+  {
+    "id": "bible-reader",
+    "width": 1344,
+    "height": 935,
+    "bytes": 46450
+  },
+  {
+    "id": "bible-topics",
+    "width": 1344,
+    "height": 935,
+    "bytes": 40338
+  },
+  {
+    "id": "bible-memory",
+    "width": 1344,
+    "height": 935,
+    "bytes": 39008
+  },
+  {
+    "id": "bible-plan",
+    "width": 1344,
+    "height": 935,
+    "bytes": 46528
+  },
+  {
+    "id": "abeka",
+    "width": 1265,
+    "height": 809,
+    "bytes": 24984
+  }
+]
