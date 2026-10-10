@@ -1,6 +1,6 @@
 # Parent Family Games settings
 
-Validated on codex/bible-family over 12a57ff; approved for Family Beta 1.2.306 publication.
+Published with Family Beta 1.2.306 on 2026-10-10T21:06:45Z.
 
 The shared cloud game editor now supports Settings for all children as well as
 individual settings. Its mobile form keeps Save/Cancel and error feedback visible
@@ -29,4 +29,10 @@ Verified locally:
   website differences.
 
 Ignored evidence: out/game-settings/build.log, source.json and parent-mobile.png.
-No live household settings, downloads, versions or release feeds changed.
+No live household settings were changed by the test fixtures.
+
+Published parent source: dc2e256. Deployment: dpl_HUWpbiyPGo3rGG3xNdmP6eVpNYHB.
+Matching API: dpl_F4AiEUNXqEgn11VRzmC37DKS5La7.
+Live Games JS/CSS, Daily Plan and workspace assets match verified source.
+The signed child update/recovery feed and Windows download are version 1.2.306.
+See the cloud repository docs/cloud-release-1.2.306.md for all artifact hashes.
