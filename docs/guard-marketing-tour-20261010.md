@@ -3,7 +3,7 @@
 ## Scope and publication
 
 Redesign of `https://www.bodeebooks.com/guard/` in the Bodee Books website.
-Prepared locally for review; not deployed or pushed in this task. No child-app build, version bump, API deployment, GitHub Actions run, or family-record change is needed.
+Published to the existing BodeeBooks website on October 10, 2026. This website-only update does not build or release the child app, deploy the API, change family records or start Mac/Windows release jobs.
 
 ## What changed
 
@@ -45,4 +45,18 @@ Local preview uses `http://localhost:43920/guard/`; `localhost` is required by t
 
 Added Abeka to the hero and search description and as the first tour navigation item, with a dedicated section explaining the lesson toolbar, reported lesson progress and Daily Plan integration. The user supplied the desired lesson screenshot directly after account navigation was blocked by automatic approval review. The anonymous lesson-player crop is now included; no further account inspection was needed. The official public sample link remains included. The capture is accurately labeled as an Abeka lesson view, not a BodeeGuard fixture.
 
-Final Abeka verification: focused ESLint and TypeScript no-emit passed; git diff --check passed. The player image loaded at 1440px desktop and 390px phone widths with no horizontal overflow. The enlarged screenshot displayed the correct Abeka source label and closed correctly. The final phone proof is saved as bodeeguard-abeka-mobile.jpg in the task visualization directory. No publication was performed.
+Final Abeka verification: focused ESLint and TypeScript no-emit passed; git diff --check passed. The player image loaded at 1440px desktop and 390px phone widths with no horizontal overflow. The enlarged screenshot displayed the correct Abeka source label and closed correctly. The final phone proof is saved as bodeeguard-abeka-mobile.jpg in the task visualization directory. These checks completed before the website-only publication recorded below.
+
+## Published website
+
+- Source commit: `4d9afaae707653ce368dd4901af9f2b99213baa1` on `codex/bible-family`.
+- Deployment: `dpl_8vypFoWGvb7JZdTSKLAQ86issHmd`.
+- Live page: https://www.bodeebooks.com/guard/
+- Verified at: 2026-10-10T19:20:13.956Z.
+- Previous healthy deployment / rollback target: `dpl_3YXZ9PfdFZNL1iXxsdznjZNpenji`.
+
+Built once from a clean Git archive in ignored `out/guard-marketing-20261010/source`. The production Next.js build and TypeScript check passed. Reused the reviewed lint/type/layout evidence; all 13 bounded parent account tests passed. The candidate page, Abeka image bytes, protected download route and unchanged recovery manifest passed before promotion.
+
+After promotion, both public aliases reported the new deployment, all eleven public image files matched source SHA-256 hashes, and the signed recovery manifest remained byte-for-byte unchanged (`1ab90308c8a3c8fd61bf084bc21227ef57eb7443231d35bd8592f2215d8325c5`). Download verification followed the public website’s normal canonical redirect to the parent-app sign-in route. Live Chrome verification confirmed the 390px layout has no horizontal overflow, the Abeka image loads, enlargement opens and closes, both account CTAs render, and no browser errors were recorded.
+
+Ignored evidence: `out/guard-marketing-20261010/` contains the clean archive, candidate build/result, candidate probes and `live-verification.json`. Live screenshot: `bodeeguard-abeka-live.jpg` in the task visualization directory. Child installer version remains 1.2.305.
