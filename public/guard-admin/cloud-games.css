@@ -122,3 +122,18 @@
 .cloud-game-time-notice .cloud-game-request-status:not(:empty){margin-top:10px;font-size:14px;font-weight:600}
 .cloud-family-room .cloud-game-time-notice .btn{flex-shrink:0;min-height:52px;padding:14px 20px;font-size:16px}
 @media(max-width:780px){.cloud-game-time-notice{align-items:stretch;flex-direction:column;padding:20px;gap:18px}.cloud-family-room .cloud-game-time-notice h3{font-size:22px}.cloud-game-time-notice .btn{width:100%}}
+
+/* Keep the save action and feedback in view while a phone scrolls the settings. */
+.cloud-family-room .cloud-game-editor{width:min(680px,calc(100vw - 24px));overflow:hidden;max-height:calc(100dvh - 24px)}
+.cloud-game-editor .cloud-game-settings{padding:0;gap:0;max-height:calc(100dvh - 26px);grid-template-rows:auto minmax(0,1fr) auto}
+.cloud-game-settings-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px;border-bottom:1px solid #35516c}
+.cloud-game-settings-header h3{font-size:20px;min-width:0}.cloud-game-settings-header .btn{flex-shrink:0}
+.cloud-game-settings-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:20px;display:grid;gap:18px}
+.cloud-game-settings-targets{font-weight:650;color:#a1edce;overflow-wrap:anywhere}
+.cloud-game-settings-footer{padding:14px 20px max(14px,env(safe-area-inset-bottom));border-top:1px solid #35516c;background:#111c2f;display:grid;gap:12px}
+.cloud-game-settings-footer .cloud-game-actions{justify-content:flex-end}.cloud-game-settings-footer .btn[hidden]{display:none}
+.cloud-game-settings-footer .btn-primary{flex:1}.cloud-game-settings-feedback{font-size:14px;line-height:1.45;max-height:24dvh;overflow:auto;overflow-wrap:anywhere}
+.cloud-game-settings-feedback:empty{display:none}.cloud-game-settings-feedback[data-state=error]{color:#ffb8ba}
+.cloud-game-day-presets{display:flex;flex-wrap:wrap;gap:8px}.cloud-game-day-presets .btn{font-size:13px;padding:8px 12px}
+.cloud-game-people>.cloud-game-settings-all{grid-column:1/-1;width:100%}
+@media(max-width:480px){.cloud-game-settings-header{padding:16px}.cloud-game-settings-header h3{font-size:18px}.cloud-game-settings-body{padding:16px}.cloud-game-settings-footer{padding:12px 16px max(12px,env(safe-area-inset-bottom))}.cloud-game-settings-footer .btn{font-size:14px}.cloud-game-people{grid-template-columns:1fr}}

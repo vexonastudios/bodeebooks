@@ -130,7 +130,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "game-room": path = "/games/room"; method = "POST"; body = {}; break;
     case "game-tabletop": path = "/games/tabletop"; method = "POST"; body = { operation: input.operation, role: input.role, id: input.id, roomId: input.roomId, game: input.game, move: input.move }; break;
     case "connection-status": path = "/connections"; method = "GET"; body = undefined; break;
-    case "game-settings": path = "/games/settings"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, settings: input.settings }; break;
+    case "game-settings": path = "/games/settings"; method = "POST"; body = { studentId: input.studentId, revision: input.revision, settings: input.settings, expectedSettings: input.expectedSettings }; break;
     case "game-add-time": path = "/games/add-time"; method = "POST"; body = { studentId: input.studentId, minutes: input.minutes, requestId: input.requestId }; break;
     case "game-action": path = "/games/action"; method = "POST"; body = { id: input.id, action: input.gameAction, matchId: input.matchId, revision: input.revision }; break;
     case "upload-file": path = "/files/upload"; method = "POST"; body = { id: input.id, studentId: input.studentId, name: input.name, mime: input.mime, purpose: input.purpose, data: input.data }; break;

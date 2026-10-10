@@ -226,13 +226,26 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     if (!fresh || pending || busy || loading) return;
     return send({ id: crypto.randomUUID(), action, matchId: match?.id || crypto.randomUUID(), ...(match ? { revision: match.revision } : {}), ...extra });
   }
-  function openSettings(child) {
+  function openSettings(children) {
+    const targets = structuredClone(Array.isArray(children) ? children : [children]);
+    if (!targets.length) return;
+    const group = Array.isArray(children), child = targets[0], date = room.date;
+    const remaining = new Map(targets.map(target => [target.id,target]));
+    let draft = null, saving = false;
     settingsOpen = true; formArea.replaceChildren();
     const opener = document.activeElement;
-    const dialog = node('dialog', '', 'cloud-game-dialog'); dialog.setAttribute('aria-label', `${child.name} — Family Games`);
+    const dialog = node('dialog', '', 'cloud-game-dialog cloud-game-editor');
+    const title = group ? 'Family Games — all children' : child.name + ' — Family Games';
+    dialog.setAttribute('aria-label', title);
     const form = node('form', '', 'cloud-game-settings');
-    form.append(heading('h3', `${child.name} — Family Games`, 'sliders-horizontal'));
-    const fields = node('div', '', 'cloud-game-settings-grid'); form.append(fields);
+    const top = node('header', '', 'cloud-game-settings-header');
+    const close = button('Close', () => dialog.close(), false, 'x'); close.setAttribute('aria-label','Close game settings');
+    const titleHeading = heading('h3', title, 'sliders-horizontal'); titleHeading.tabIndex = -1; titleHeading.autofocus = true;
+    top.append(titleHeading,close);
+    const body = node('div', '', 'cloud-game-settings-body');
+    if (group) body.append(node('p', targets.length + ' children: ' + targets.map(c => c.name).join(', '), 'cloud-game-settings-targets'),
+      node('p', 'Starts with ' + child.name + '’s settings. Saving applies every choice below to all ' + targets.length + ' children. You can still edit each child separately.', 'cloud-note'));
+    const fields = node('div', '', 'cloud-game-settings-grid'); body.append(fields);
     const field = (label, name, type, value) => {
       const wrap = node('label', label, type === 'checkbox' ? 'cloud-game-check' : 'cloud-game-field'), input = document.createElement('input'); input.name = name; input.type = type;
       if (type === 'checkbox') input.checked = value; else input.value = value;
@@ -241,27 +254,59 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     field('Enable family games', 'enabled', 'checkbox', child.settings.enabled);
     const minutes = field('Daily minutes (0–240)', 'dailyMinutes', 'number', child.settings.dailyMinutes); minutes.min = '0'; minutes.max = '240'; minutes.required = true;
     field('Finish required schoolwork first', 'requireSchool', 'checkbox', child.settings.requireSchool);
-    field('Bypass schoolwork today only', 'unlock', 'checkbox', child.settings.unlockDate === room.date);
-    field('Opens', 'start', 'time', child.settings.start).required = true;
-    field('Closes (blank means midnight)', 'end', 'time', child.settings.end === '24:00' ? '' : child.settings.end);
+    field('Bypass schoolwork today only', 'unlock', 'checkbox', child.settings.unlockDate === date);
+    const opens = field('Opens', 'start', 'time', child.settings.start); opens.required = true;
+    const ends = field('Closes (blank means midnight)', 'end', 'time', child.settings.end === '24:00' ? '' : child.settings.end);
     const days = node('fieldset'); days.append(node('legend','Allowed days'));
-    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((day,index) => { const label = node('label', day), check = document.createElement('input'); check.type = 'checkbox'; check.name = 'day'; check.value = index; check.checked = child.settings.days.includes(index); label.append(check); days.append(label); });
-    form.append(days, node('p', `Hours use ${room.timeZone}. Required schoolwork follows this child’s school plan. Daily time and allowed hours still apply when you bypass schoolwork.`, 'cloud-note'));
-    const save = button('Save settings', () => {}, false, 'save'); save.classList.add('btn-primary'); save.type = 'submit';
-    const cancel = button('Cancel', () => dialog.close(), false, 'x');
-    const actions = node('div', '', 'cloud-game-actions'); actions.append(cancel, save);
-    const message = node('p'); message.setAttribute('role','status'); form.append(message, actions);
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((day,index) => { const label = node('label', day), check = document.createElement('input'); check.type = 'checkbox'; check.name = 'day'; check.value = index; check.checked = child.settings.days.includes(index); label.prepend(check); days.append(label); });
+    const dayPresets = node('div', '', 'cloud-game-day-presets');
+    for (const [label,values] of [['Every day',[0,1,2,3,4,5,6]],['Weekdays',[1,2,3,4,5]],['Weekends',[0,6]]]) dayPresets.append(button(label, () => {
+      days.querySelectorAll('input').forEach(input => { input.checked = values.includes(Number(input.value)); });
+    }));
+    body.append(days,dayPresets,node('p', 'Hours use ' + room.timeZone + '. These choices also update Daily Plan. A schoolwork bypass lasts today only; time limits, allowed hours and chores still apply.', 'cloud-note'));
+    const saveLabel = group ? 'Save for all ' + targets.length + ' children' : 'Save settings';
+    const save = button(saveLabel, () => {}, false, 'save'); save.classList.add('btn-primary'); save.type = 'submit';
+    const cancel = button('Cancel', () => dialog.close());
+    const review = button('Review latest settings', async () => { dialog.close(); await refresh(); if (fresh) openSettings(group ? room.children : room.children.find(c => c.id === child.id) || []); }); review.hidden = true;
+    const actions = node('div', '', 'cloud-game-actions'); actions.append(cancel,review,save);
+    const message = node('p', '', 'cloud-game-settings-feedback'); message.setAttribute('role','status'); message.setAttribute('aria-live','polite');
+    const footer = node('footer', '', 'cloud-game-settings-footer'); footer.append(message,actions);
+    form.append(top,body,footer);
     form.addEventListener('submit', async event => {
-      event.preventDefault(); save.disabled = true; cancel.disabled = true;
-      const values = new FormData(form);
-      const settings = { enabled: values.has('enabled'), requireSchool: values.has('requireSchool'), dailyMinutes: Number(values.get('dailyMinutes')), start: values.get('start'), end: values.get('end') || '24:00', days: values.getAll('day').map(Number), unlockDate: values.has('unlock') ? room.date : null };
-      try { await request('settings', { studentId: child.id, revision: child.revision, settings }); dialog.close(); await refresh(); }
-      catch (error) { message.textContent = error.message; }
-      finally { save.disabled = false; cancel.disabled = false; }
+      event.preventDefault(); if (saving) return;
+      if (!draft) {
+        const values = new FormData(form);
+        draft = { enabled:values.has('enabled'), requireSchool:values.has('requireSchool'), dailyMinutes:Number(values.get('dailyMinutes')), start:values.get('start'), end:values.get('end') || '24:00', days:values.getAll('day').map(Number), unlockDate:values.has('unlock') ? date : null };
+        if (!draft.days.length || draft.start >= draft.end) {
+          message.textContent = !draft.days.length ? 'Choose at least one allowed day.' : 'Choose a closing time after the opening time, or leave it blank for midnight.';
+          message.dataset.state = 'error'; (!draft.days.length ? days.querySelector('input') : ends).focus(); draft = null; return;
+        }
+      }
+      saving = true; save.disabled = cancel.disabled = close.disabled = true;
+      body.querySelectorAll('input,button').forEach(control => { control.disabled = true; });
+      message.dataset.state = ''; const errors = []; let conflict = false;
+      for (const target of remaining.values()) {
+        message.textContent = 'Saving ' + target.name + '…';
+        try {
+          const receipt = await request('settings', {studentId:target.id,revision:target.revision,expectedSettings:target.settings,settings:draft});
+          if (receipt?.saved !== true) throw new Error('The save was not confirmed. Please retry.');
+          remaining.delete(target.id);
+        } catch (error) { errors.push(target.name + ': ' + gameMessage(error)); conflict ||= error.status === 409; }
+      }
+      saving = false; cancel.disabled = close.disabled = false;
+      if (!remaining.size) {
+        dialog.close(); await refresh();
+        status.textContent = group ? 'Settings saved for all ' + targets.length + ' children.' : 'Settings saved for ' + child.name + '.';
+      } else {
+        message.dataset.state = 'error';
+        message.textContent = (group ? (targets.length - remaining.size) + ' of ' + targets.length + ' saved. ' : '') + errors.join(' ') + (conflict ? ' Review the latest settings before trying again.' : ' Retry keeps these choices and only saves children still waiting.');
+        save.textContent = group ? 'Retry remaining (' + remaining.size + ')' : 'Retry save'; save.disabled = conflict;
+        cancel.textContent = 'Close'; review.hidden = !conflict;
+      }
     });
     dialog.append(form); formArea.append(dialog); icons(); dialog.showModal();
-    dialog.addEventListener('cancel', event => { if (save.disabled) event.preventDefault(); });
-    dialog.addEventListener('close', () => { settingsOpen = false; formArea.replaceChildren(); opener?.focus({ preventScroll: true }); });
+    dialog.addEventListener('cancel', event => { if (saving) event.preventDefault(); });
+    dialog.addEventListener('close', () => { dialog.remove(); settingsOpen = !!formArea.querySelector('dialog[open]'); if (!settingsOpen && opener?.isConnected) opener.focus({preventScroll:true}); });
   }
   function openExtraTime(child) {
     settingsOpen = true; formArea.replaceChildren();
@@ -299,6 +344,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     if (!room) { content.replaceChildren(); return; }
     const people = node('aside', '', 'cloud-game-people'); people.append(heading('h3', parent ? 'Family game access' : 'Your family', 'users-round'));
     people.append(node('p', parent ? 'Choose when each child can play.' : tabletop ? 'Family Games access and daily time.' : 'Invite a sibling to play Checkers.', 'cloud-note'));
+    if (parent && room.children.length) { const all = button('Settings for all children', () => openSettings(room.children), !fresh || busy, 'users-round'); all.classList.add('btn-primary','cloud-game-settings-all'); people.append(all); }
     for (const child of room.children) {
       const row = node('article', '', 'cloud-game-person');
       const identity = node('div', '', 'cloud-game-person-heading');
