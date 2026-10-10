@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.304": {
+    "title": "Find Bible topics in everyday words",
+    "sections": [
+      {
+        "heading": "Version 1.2.304",
+        "headline": "Bible Topics understands more familiar words",
+        "summary": "Children can find topics using everyday words and phrases across the full Bible topic index.",
+        "highlights": [
+          "Sad, unhappy and feeling sad now find Sorrow; getting left out finds Rejection.",
+          "Expanded vocabulary covers all 5,684 topic headings, including familiar alternatives for older terms.",
+          "Exact topic names still rank first, and the improved search works offline."
+        ]
+      }
+    ]
+  },
   "1.2.303": {
     "title": "Your Bible, your colors",
     "sections": [
