@@ -56,6 +56,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
   }));
   section.append(head, help, family, controls, catalog, layout); document.querySelector('.main-content').append(section);
   const shortcut = action('Daily plan', 'list-checks', () => navigate('daily-plan'));
+  shortcut.classList.add('cloud-daily-plan-shortcut');
   const overviewActions = document.querySelector('#overview-actions');
   (overviewActions || document.querySelector('#tab-overview .tab-header'))?.append(shortcut);
   let active = false, loadedChild = null, captured = null, details = {}, cards = [], generation = 0, busy = false;
@@ -138,12 +139,13 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
-    const summary = isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'All school websites assigned to each child, such as Abeka, BJU and a separate math site.' : card.portal ? 'This website has its own required days and completion.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
+    const summary = card.module === 'drivers-education' && !isBlocked ? 'Pass the next course day · '+card.goal+' minute practice goal' : isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'All school websites assigned to each child, such as Abeka, BJU and a separate math site.' : card.portal ? 'This website has its own required days and completion.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (card.preset === 'handwriting') el.append(make('p', 'daily-plan-card-summary', isBlocked ? 'Letters handwriting practice. Move to allow.' : card.placement === 'school' ? `${card.goal} minutes of handwriting practice` : 'Learn to form letters with guided handwriting practice. Optional unless you move it to School.'));
     if (card.preset === 'numerals') el.append(make('p', 'daily-plan-card-summary', isBlocked ? 'Roman numeral practice. Move to allow.' : card.placement === 'school' ? `${card.goal} minutes of Roman numeral practice` : 'Learn Roman numerals with guided practice. Optional unless you move it to School.'));
     if (summary !== 'Uses your activity settings' && !['handwriting','numerals'].includes(card.preset)) el.append(make('p', 'daily-plan-card-summary', summary));
     if (card.placement === 'school') el.append(make('p', 'daily-plan-required-days', requiredDaysText(card)));
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
+    if (card.module === 'drivers-education') {el.append(make('p','cloud-note','Texas Road School · Windows. Twenty self-paced course days. Driving and questions must pass; practice minutes alone do not complete a day.'));el.append(action('View course progress','route',()=>void showDriverProgress()));}
     if (!isBlocked && card.module === 'long-division') el.append(make('p', 'cloud-note', 'Assign this to School and set Required minutes for daily practice. Long Division works without AI question allowance.'));
     if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
     else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
@@ -151,7 +153,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     if (isBlocked && (card.disabled || card.globallyDisabled)) el.append(make('p', 'daily-plan-off', 'Move to an allowed group to enable it for this child.'));
     const select = make('select', 'admin-select'); select.setAttribute('aria-label', `Move ${card.title} to`);
     const prompt = make('option', '', 'Move to…'); prompt.value = ''; prompt.disabled = true; select.append(prompt);
-    for (const [id, name] of PLAN_GROUPS) { const option = make('option', '', name); option.value = id; option.disabled = id === card.placement; select.append(option); } select.value = ''; select.onchange = () => move(card, select.value, true); select.disabled = busy;
+    for (const [id, name] of PLAN_GROUPS) { const option = make('option', '', name); option.value = id; option.disabled = id === card.placement || card.module === 'drivers-education' && id === 'after_school'; select.append(option); } select.value = ''; select.onchange = () => move(card, select.value, true); select.disabled = busy;
     const moveField = field('', select); moveField.classList.add('daily-plan-move'); el.append(moveField);
     if (card.portal) {
       if (card.key === 'school') el.append(make('p', 'daily-plan-school-help', 'This plan sets school requirements and timing. Choose each child’s website in Students → Your children’s schools.'));
@@ -162,10 +164,10 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     settings.open = openOptions.has(card.key);
     settings.ontoggle = () => { if (settings.isConnected) { if (settings.open) openOptions.add(card.key); else openOptions.delete(card.key); } };
     if (card.placement === 'school' && !card.portal && !card.assignedWork) {
-      const goal = make('input', 'admin-input'); goal.type = 'number'; goal.min = '1'; goal.max = '480'; goal.value = card.goal; goal.onchange = () => { card.goal = Number(goal.value); changed(card); }; settings.append(field('Required minutes', goal));
+      const goal = make('input', 'admin-input'); goal.type = 'number'; goal.min = '1'; goal.max = '480'; goal.value = card.goal; goal.onchange = () => { card.goal = Number(goal.value); changed(card); }; settings.append(field(card.module === 'drivers-education'?'Practice goal (minutes)':'Required minutes', goal));
     }
-    if (card.limitMinutes !== null) {
-      const limit = make('input', 'admin-input'); limit.type = 'number'; limit.min = '1'; limit.max = '480'; limit.value = card.limitMinutes; limit.onchange = () => { card.limitMinutes = Number(limit.value); changed(card); }; settings.append(field('Daily media minutes', limit));
+    if (card.limitMinutes !== null || card.module === 'drivers-education') {
+      const limit = make('input', 'admin-input'); limit.type = 'number'; limit.min = '1'; limit.max = '480'; limit.value = card.limitMinutes ?? 60; limit.onchange = () => { card.limitMinutes = Number(limit.value); changed(card); }; settings.append(field(card.module === 'drivers-education'?'Daily session limit (minutes)':'Daily media minutes', limit));
     }
     const days = make('fieldset', 'daily-plan-days'); days.append(make('legend', '', card.placement === 'school' ? 'Required work days' : 'Days'));
     for (const [d, name] of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].entries()) { const input = make('input'); input.type = 'checkbox'; input.checked = card.days.includes(d); input.onchange = () => { card.days = input.checked ? [...card.days, d].sort() : card.days.filter(n => n !== d); const summary = el.querySelector('.daily-plan-required-days'); if (summary) summary.textContent = requiredDaysText(card); changed(card); }; days.append(field(name, input)); }
@@ -190,6 +192,16 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
       list.scrollTop = scrollTop;
     }
     updateControls(); window.lucide?.createIcons();
+  }
+  async function showDriverProgress() {
+    const dialog=make('dialog','cloud-modal daily-plan-apply-dialog'),heading=make('h2','','Driver’s Education'),body=make('div');
+    dialog.append(heading,body,action('Close','x',()=>dialog.close()));document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();body.textContent='Loading course progress…';
+    try {
+      const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'drivers-education-progress'})});
+      const data=await response.json();if(!response.ok)throw Error(data.error||'Could not load course progress.');
+      body.replaceChildren();const students=getSnapshot().students.filter(s=>loadedChild==='family'||s.id===loadedChild);
+      for(const student of students){const progress=(data.children||[]).find(p=>p.studentId===student.id),item=make('article','daily-plan-card');item.append(make('h3','',student.name),make('p','',progress?progress.completedDays+' of 20 course days passed · Day '+progress.currentDay:'Not started'),make('p','',progress?.nextAction||'Assign this Windows learning module in Daily plan.'));if(progress)item.append(make('p','','Chapters passed: '+progress.chapter+' of '+progress.chapters));for(const drive of progress?.drivingResults||[])item.append(make('p','','Day '+progress.resultDay+' · '+drive.chapter+': '+drive.score+'% · '+(drive.passed?'Passed':'Retry needed')));if(progress?.questionnaireScore!=null)item.append(make('p','','Last questionnaire: '+progress.questionnaireScore+'%'));if(progress?.retryDriving||progress?.retryQuestions)item.append(make('p','','Review and retry needed.'));body.append(item);}
+    }catch(error){body.textContent=error.message;}
   }
   async function load() {
     const snap = getSnapshot(); if (!snap || !child.value || changes.size) return;

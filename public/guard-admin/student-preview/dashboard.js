@@ -527,9 +527,11 @@ function memoryStorage() {
 "renderer/js/cloud-student.js":function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const cloud_drivers_education_js_1 = require("renderer/js/cloud-drivers-education.js");
 const cloud_student_dashboard_js_1 = require("renderer/js/cloud-student-dashboard.js");
 const cloud_student_daily_js_1 = require("renderer/js/cloud-student-daily.js");
 const cloud_student_reading_js_1 = require("renderer/js/cloud-student-reading.js");
+const cloud_bible_js_1 = require("renderer/js/cloud-bible.js");
 const cloud_learning_challenges_js_1 = require("renderer/js/cloud-learning-challenges.js");
 const cloud_student_store_js_1 = require("renderer/js/cloud-student-store.js");
 const cloud_school_break_js_1 = require("renderer/js/cloud-school-break.js");
@@ -548,12 +550,14 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
     document.querySelector('.header-right')?.append(el('parent-exit'));
     (0, cloud_student_daily_js_1.mountCloudDailyQuestions)({ api, preview: api.preview === true });
     (0, cloud_student_reading_js_1.mountCloudReading)({ api });
+    (0, cloud_bible_js_1.mountCloudBible)({ api });
     (0, cloud_student_store_js_1.mountCloudStore)({ api });
     const schoolBreak = (0, cloud_school_break_js_1.mountCloudSchoolBreak)({ api, onError: error => { el('error').textContent = error.message; } });
     const planner = (0, cloud_student_planner_js_1.mountCloudStudentPlanner)({ api });
     (0, cloud_student_chores_js_1.mountCloudStudentChores)({ api });
     (0, cloud_student_sleep_js_1.mountCloudStudentSleep)({ api });
     const whiteNoise = (0, cloud_white_noise_js_1.mountWhiteNoise)({ api });
+    const driversEducation = (0, cloud_drivers_education_js_1.mountDriversEducation)(api);
     el('toolbar-volume').title = 'Lesson volume. For Windows speaker or headset volume, open Devices & Sound.';
     el('volume-slider').setAttribute('aria-label', 'Lesson volume');
     const appsButton = document.createElement('button');
@@ -624,7 +628,7 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
     // Group once, preserving the existing buttons, handlers and keyboard order.
     const header = document.querySelector('.header-right');
     for (const [name, className, buttons] of [
-        ['School shortcuts', 'cloud-header-school', [el('dash-planner-btn'), el('dash-message-btn'), el('dash-grades-btn'), el('store-btn'), appsButton]],
+        ['School shortcuts', 'cloud-header-school', [el('dash-bible-btn'), el('dash-planner-btn'), el('dash-message-btn'), el('dash-grades-btn'), el('store-btn'), appsButton]],
         ['Computer controls', 'cloud-header-device', [el('completion-badge'), el('dash-sleep-btn'), el('dash-update-btn'), el('parent-exit'), header?.querySelector('.local-device-button')]]
     ]) {
         const group = document.createElement('div');
@@ -700,6 +704,7 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
         'app://videos': ['student-learning-panel', 'learning-videos-toggle'],
         'app://messages': ['student-messages-panel', 'message-refresh'],
         'app://reading': ['student-reading-panel', 'reading-refresh'],
+        'app://bible': ['student-bible-panel', null],
         'app://papers': ['student-papers-panel', 'paper-refresh'],
         'app://games': ['student-games-panel', 'games-toggle'],
         'app://learning-videos': ['student-learning-panel', 'learning-videos-toggle']
@@ -715,6 +720,10 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
             const assignedId = latest?.school?.subjects?.some(s => s.id === subjectId && s.kind === 'activity') ? subjectId : undefined;
             if (['app://music', 'app://videos', 'app://audiobooks', 'app://learning-videos'].includes(url)) {
                 await api.media(url.slice(6), assignedId);
+                return;
+            }
+            if (url === 'app://drivers-education') {
+                await driversEducation.open();
                 return;
             }
             if (url === 'app://typing') {
@@ -740,10 +749,12 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
                     await api.activityPanel(url.slice(6), assignedId);
                 if (panel === 'student-learning-panel')
                     window.dispatchEvent(new CustomEvent('cloud-media-library', { detail: url.slice(6) }));
-                el(trigger).click();
+                if (trigger)
+                    el(trigger).click();
             }
         }
     });
+    el('dash-bible-btn').addEventListener('click', () => leaveSchool('student-bible-panel'));
     (0, cloud_learning_challenges_js_1.mountLearningChallenges)({ api, open: () => leaveSchool('student-challenges-panel') });
     for (const button of document.querySelectorAll('[data-student-home]'))
         button.addEventListener('click', () => leaveSchool('dashboard-screen'));
@@ -836,6 +847,7 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
             return;
         updateChoiceBusy = true;
         updateRecover.disabled = true;
+        el('error').textContent = '';
         try {
             const updates = await api.recoverUpdate();
             if (latest) {
@@ -844,8 +856,8 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
                 renderUpdateFeedback(latest);
             }
         }
-        catch (error) {
-            el('error').textContent = error.message;
+        catch (_) {
+            el('error').textContent = 'The update request could not be saved. Reconnect this computer, then open Updates and try again.';
         }
         finally {
             updateChoiceBusy = false;
@@ -878,8 +890,8 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
         const activeTransfer = ['downloading', 'staging', 'waiting-for-idle', 'preparing-restart', 'restarting'].includes(update?.state);
         // Show real transfers automatically on the dashboard, but keep routine
         // background checks quiet. Existing IPC supplies progress; there is no poll.
-        const key = `${update?.state}:${update?.version || ''}:${update?.reason || ''}:${update?.restartScheduled ? 'scheduled' : 'idle'}`;
-        if ((activeTransfer || ['waiting-for-release', 'repair-required'].includes(update?.state)) && key !== dismissedTransfer)
+        const key = `${update?.state}:${update?.version || ''}:${update?.reason || ''}:${update?.restartScheduled ? 'scheduled' : 'idle'}:${update?.recoveryQueued ? 'recovery-queued' : ''}`;
+        if ((activeTransfer || update?.recoveryQueued || ['waiting-for-release', 'repair-required'].includes(update?.state)) && key !== dismissedTransfer)
             showUpdateFeedback = true;
         if (!showUpdateFeedback || (active !== 'dashboard-screen' || value.applicationReady === false) && !['preparing-restart', 'restarting'].includes(update?.state)) {
             updateFeedback.hidden = true;
@@ -917,7 +929,9 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
             'validation-isolated': 'Activities refreshed. This isolated test does not download updates.',
             idle: 'Activities refreshed. The update check has not started yet.'
         };
-        const message = messages[update?.state];
+        const message = update?.recoveryQueued
+            ? 'Recovery queued. BodeeGuard will retry automatically after the current check and its waiting period. You can keep working.'
+            : messages[update?.state];
         if (!message)
             return;
         updateLabel.textContent = message;
@@ -926,8 +940,8 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
         updateActions.hidden = update?.state !== 'waiting-for-idle' && !canRecover;
         restartNow.hidden = restartLater.hidden = update?.state !== 'waiting-for-idle';
         updateRecover.hidden = !canRecover;
-        updateRecover.disabled = updateChoiceBusy;
-        updateRecover.textContent = update?.retryAvailable ? 'Recover update' : 'Get latest update';
+        updateRecover.disabled = updateChoiceBusy || update?.recoveryQueued === true;
+        updateRecover.textContent = update?.recoveryQueued ? 'Recovery queued' : update?.retryAvailable ? 'Recover update' : 'Get latest update';
         restartNow.disabled = updateChoiceBusy || update?.restartAvailable !== true;
         restartLater.disabled = updateDismiss.disabled = updateChoiceBusy;
         updateDismiss.hidden = ['preparing-restart', 'restarting'].includes(update?.state);
@@ -1154,6 +1168,68 @@ const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-renderin
 })();
 
 },
+"renderer/js/cloud-drivers-education.js":function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mountDriversEducation = mountDriversEducation;
+const el = (tag, text = '', cls = '') => { const n = document.createElement(tag); n.textContent = text; n.className = cls; return n; };
+function mountDriversEducation(api) {
+    const dialog = el('dialog', '', 'cloud-drivers-dialog');
+    dialog.setAttribute('aria-label', 'Driver’s Education');
+    const heading = el('h2', 'Driver’s Education'), name = el('p', 'Texas Road School', 'cloud-drivers-eyebrow'), message = el('p'), progress = el('p'), detail = el('p', 'Practice at your own pace. Each course day finishes when you pass its driving chapters and questions.'), actions = el('div', '', 'cloud-drivers-actions');
+    message.setAttribute('role', 'status');
+    const buttons = {};
+    for (const [action, label] of [['start', 'Start'], ['install', 'Download'], ['repair', 'Repair'], ['refresh', 'Refresh'], ['stop', 'Return to BodeeGuard']]) {
+        const button = el('button', label);
+        button.type = 'button';
+        button.onclick = () => void run(action);
+        buttons[action] = button;
+        actions.append(button);
+    }
+    const close = el('button', 'Close');
+    close.type = 'button';
+    close.onclick = () => dialog.close();
+    actions.append(close);
+    dialog.append(name, heading, progress, detail, message, actions);
+    document.body.append(dialog);
+    function draw(state) {
+        message.textContent = state.message || '';
+        const s = state.summary;
+        progress.textContent = s ? s.completedDays + ' of ' + s.totalDays + ' days passed · ' + s.nextAction + ' · Chapters passed: ' + s.chapter + '/' + s.chapters + (s.questionnaireScore == null ? '' : ' · Questions: ' + s.questionnaireScore + '%') : '';
+        buttons.start.textContent = s?.completedDays || s?.phase && s.phase !== 'brief' ? 'Resume' : 'Start';
+        buttons.install.textContent = state.busy ? 'Installing…' : state.installed ? (state.releaseVersion && state.releaseVersion !== state.version ? 'Update' : 'Check for updates') : 'Download';
+        for (const [action, b] of Object.entries(buttons))
+            b.disabled = state.busy || action !== 'refresh' && (!state.supported || action !== 'stop' && (state.playing || state.available === false));
+        buttons.refresh.hidden = !state.supported;
+        buttons.stop.hidden = !state.playing;
+        buttons.install.hidden = !state.supported;
+        buttons.repair.hidden = !state.supported || !state.installed;
+        buttons.start.hidden = !state.supported || !state.installed;
+        if (!state.supported)
+            message.textContent = 'Texas Road School runs in the BodeeGuard Windows child app. Open this assigned activity on your Windows computer.';
+    }
+    async function run(action) { for (const b of Object.values(buttons))
+        b.disabled = true; try {
+        draw(await api.driversEducation(action));
+    }
+    catch (error) {
+        try {
+            draw(await api.driversEducation('status'));
+        }
+        catch {
+            draw({ supported: true, available: false });
+        }
+        message.textContent = error.message;
+    } }
+    api.onDriversEducation?.(state => { if (dialog.open)
+        draw(state); });
+    return { async open() { dialog.showModal(); if (!api.driversEducation || api.preview) {
+            draw({ supported: false });
+            return;
+        } draw(await api.driversEducation('status')); await run('refresh'); } };
+}
+
+},
 "renderer/js/cloud-student-dashboard.js":function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1265,6 +1341,8 @@ function cloudActivityAccess(school, subject, activityAccess) {
         return { allowed: true };
     if (school.locked)
         return { allowed: false, reason: 'Your parent has paused this computer.' };
+    if (subject.url === 'app://bible')
+        return { allowed: true };
     if (school.accessRecovery)
         return { allowed: false, reason: school.accessRecovery.message };
     if (subject.url === 'app://math-coach') {
@@ -1302,6 +1380,8 @@ function visibleCloudSubjects(subjects, school, getAccess, activityAccess) {
     return subjects.filter(subject => {
         if (subject.url === 'app://science-spelling')
             return false;
+        if (subject.url === 'app://bible')
+            return true;
         const module = activityModule(subject.url);
         if (module === 'math-coach' && activityAccess?.[module]?.enabled !== true)
             return false;
@@ -1340,6 +1420,7 @@ function createCloudStudentDesk({ api, openActivity, openSchool, storage }) {
     let renderKey = null, headerKey = null;
     window.showToast = message => { el('error').textContent = message; };
     const activities = [
+        { id: '__bible__', name: 'Bible', icon: 'book-open', url: 'app://bible', color: '#83bd91', planPlacement: 'anytime', description: 'Read, listen, and keep your place in God’s Word. Always available.' },
         { id: '__audiobooks__', name: 'Audiobooks', icon: 'headphones', url: 'app://audiobooks', color: '#fb923c', description: 'Listen to your approved books.' },
         { id: '__music__', name: 'Music', icon: 'music', url: 'app://music', color: '#c084fc', description: 'Listen to your family’s approved music.' },
         { id: '__videos__', name: 'Videos', icon: 'video', url: 'app://videos', color: '#fbbf24', description: 'Watch videos your parent has approved.' },
@@ -1623,7 +1704,7 @@ function createCloudStudentDesk({ api, openActivity, openSchool, storage }) {
             if (cardKey !== nextKey) {
                 cardKey = nextKey;
                 const assignedModules = new Set(model.subjects.filter(subject => subject.url.startsWith('app://')).map(subject => activityModule(subject.url)));
-                const extras = activities.filter(subject => subject.url !== 'app://long-division' && value.school?.features?.[activityModule(subject.url)] !== false && (!value.school?.managedSubjects || !assignedModules.has(activityModule(subject.url)) &&
+                const extras = activities.filter(subject => subject.url === 'app://bible' || subject.url !== 'app://long-division' && value.school?.features?.[activityModule(subject.url)] !== false && (!value.school?.managedSubjects || !assignedModules.has(activityModule(subject.url)) &&
                     value.school.moduleAccess?.[activityModule(subject.url)]?.code !== 'unassigned'));
                 const mediaKey = { 'app://music': 'music', 'app://videos': 'video', 'app://audiobooks': 'audiobook', 'app://games': 'family_game' };
                 const subjects = [...model.subjects, ...extras].map(subject => {
@@ -3463,6 +3544,1243 @@ function mountCloudReading({ api }) {
         closeModals(); });
     reset();
     controls();
+}
+
+},
+"renderer/js/cloud-bible.js":function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mountCloudBible = mountCloudBible;
+/* global document, window, Blob, URL */
+const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-rendering.js");
+const cloud_bible_extras_js_1 = require("renderer/js/cloud-bible-extras.js");
+const cloud_bible_memory_js_1 = require("renderer/js/cloud-bible-memory.js");
+const cloud_bible_topics_js_1 = require("renderer/js/cloud-bible-topics.js");
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function mountCloudBible({ api }) {
+    const root = document.getElementById('student-bible-panel');
+    if (!root)
+        return;
+    root.innerHTML = '<header class="bible-heading"><button type="button" data-student-home class="bible-back"><i data-lucide="arrow-left"></i> Dashboard</button><div><p class="bible-eyebrow">A little time in the Word</p><h1>My Bible</h1><p>Berean Standard Bible</p></div><div class="bible-heading-options"><span class="bible-available"><i data-lucide="sun"></i> Always available</span><div class="bible-appearance" role="group" aria-label="Bible colors"><button id="bible-theme-colors" type="button" aria-pressed="true" disabled><i data-lucide="palette"></i> Theme colors</button><button id="bible-plain-white" type="button" aria-pressed="false" disabled><i data-lucide="sun"></i> Plain white</button></div><p id="bible-appearance-status" class="bible-small" role="status" hidden></p></div></header>' +
+        '<nav class="bible-tabs" aria-label="Bible sections"><button type="button" data-bible-tab="read" aria-current="page"><i data-lucide="book-open"></i> Read</button><button type="button" data-bible-tab="topics"><i data-lucide="compass"></i> Topics</button><button type="button" data-bible-tab="plan"><i data-lucide="list-checks"></i> Reading plan</button><button type="button" data-bible-tab="memory"><i data-lucide="brain"></i> Memory</button><button type="button" data-bible-tab="saved"><i data-lucide="bookmark"></i> My markings</button></nav>' +
+        '<div class="bible-family-status"><button id="bible-family-refresh" type="button">Refresh assignments &amp; backup</button><span id="bible-family-summary" role="status"></span></div><p id="bible-status" role="status"></p><button id="bible-retry" type="button" hidden>Try again</button>' +
+        '<div id="bible-content" hidden><section data-bible-view="read" class="bible-reader"><div class="bible-toolbar"><label>Book<select id="bible-book"></select></label><label>Chapter<select id="bible-chapter"></select></label><div class="bible-text-size" role="group" aria-label="Text size"><button type="button" id="bible-smaller" aria-label="Smaller text">A−</button><button type="button" id="bible-larger" aria-label="Larger text">A+</button></div></div>' +
+        '<div class="bible-page"><p id="bible-plan-context" class="bible-eyebrow"></p><h2 id="bible-chapter-title" tabindex="-1"></h2><p class="bible-reading-hint">Select a verse to highlight, underline or add a note.</p><article id="bible-verses" aria-label="Bible chapter"></article><div class="bible-chapter-nav"><button type="button" id="bible-prev">← Previous chapter</button><button type="button" id="bible-next">Next chapter →</button></div><button type="button" id="bible-plan-done" class="bible-primary" hidden>Mark read &amp; continue</button></div>' +
+        '<aside class="bible-audio" aria-label="Chapter audio"><div><i data-lucide="headphones"></i><strong id="bible-audio-title">Listen to this chapter</strong></div><p id="bible-audio-hint">Chapter audio is coming soon.</p><button type="button" id="bible-audio-load" hidden>Load chapter audio</button><audio id="bible-audio-player" controls preload="none" hidden></audio><label id="bible-speed-label" hidden>Speed<select id="bible-audio-speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label></aside></section>' +
+        '<section data-bible-view="plan" hidden><label class="bible-plan-picker">Choose your reading plan<select id="bible-plan-select"></select></label><div class="bible-plan-intro"><div><p class="bible-eyebrow">Professor Grant Horner’s system</p><h2>Ten lists. One chapter from each.</h2><p>Each list has its own bookmark. Finish the ten readings, then begin the next reading day. Missed a day? Your place will be waiting.</p></div><div class="bible-plan-progress"><strong id="bible-day"></strong><span id="bible-progress-label"></span><progress id="bible-progress" max="10" value="0"></progress></div></div><div id="bible-plan-list"></div><button type="button" id="bible-next-day" class="bible-primary" hidden>Start the next reading day</button><p class="bible-small">At the end of each list, its chapters begin again. Reading progress is your own checklist.</p></section>' +
+        '<section data-bible-view="topics" hidden></section><section data-bible-view="memory" hidden></section><section data-bible-view="saved" hidden><div class="bible-saved-heading"><div><h2>Keep what speaks to you.</h2><p>Your highlights, bookmarks and notes.</p></div><label>Find a marking<input id="bible-saved-search" type="search" placeholder="Book or note…" maxlength="100"></label></div><div id="bible-saved-list"></div></section></div>' +
+        '<footer class="bible-footer">BSB · Public-domain Bible text · Your Bible saves on this computer. Parents can enable backup and sync. Personal notes stay out of the parent progress view.</footer>' +
+        '<dialog id="bible-note-dialog" aria-labelledby="bible-note-title"><form id="bible-note-form"><header><div><p class="bible-eyebrow">Make it yours</p><h2 id="bible-note-title"></h2></div><button type="button" id="bible-note-cancel" aria-label="Close verse markings">×</button></header><p id="bible-note-verse"></p><fieldset><legend>Highlight</legend><div class="bible-swatches"><label><input type="radio" name="bible-color" value="" checked> None</label>' +
+        ['gold', 'green', 'blue', 'rose'].map(color => '<label class="bible-swatch-' + color + '"><input type="radio" name="bible-color" value="' + color + '"> ' + color[0].toUpperCase() + color.slice(1) + '</label>').join('') +
+        '</div></fieldset><div class="bible-mark-options"><label><input type="checkbox" id="bible-underline"> Underline</label><label><input type="checkbox" id="bible-bookmark"> Bookmark</label></div><label class="bible-note-label">My note<textarea id="bible-note-text" maxlength="2000" rows="4" placeholder="What stood out to you?"></textarea></label><button type="button" id="bible-note-memory">+ Add verse to Scripture memory</button><p id="bible-note-memory-status" role="status"></p><div id="bible-note-discard" hidden><p>You have unsaved markings.</p><button type="button" id="bible-note-keep">Keep editing</button><button type="button" id="bible-note-discard-confirm">Discard changes</button></div><p id="bible-note-error" role="status"></p><button type="submit" class="bible-primary">Save markings</button></form></dialog>';
+    const shortcut = document.createElement('button');
+    shortcut.id = 'dash-bible-btn';
+    shortcut.type = 'button';
+    shortcut.className = 'header-btn';
+    shortcut.title = 'Bible — always available';
+    shortcut.setAttribute('aria-label', 'Open Bible');
+    shortcut.innerHTML = '<i data-lucide="book-open"></i><span>Bible</span>';
+    document.querySelector('.header-right')?.append(shortcut);
+    const el = name => document.getElementById('bible-' + name);
+    let student = null, generation = 0, state = null, chapter = null, chapterSequence = 0, selectedVerse = null, activeList = null, currentTab = 'read';
+    let queue = Promise.resolve(), audioUrl = null, audioRef = null, audioReady = false, audioRequest = 0, lastAudioSave = 0, loading = false, retry = () => load(), originalNote = null, originalSavedNote = null;
+    const extras = (0, cloud_bible_extras_js_1.mountBibleExtras)({ root, getState: () => state, navigate, request: async (kind, input) => { const token = generation; const result = await api.bible(kind, { ...input, studentId: student }); if (token !== generation)
+            throw Error('The child using this computer changed.'); return result; } });
+    const planKind = kind => (state?.planId && state.planId !== 'horner' ? 'simple-' : '') + 'plan-' + kind;
+    const memory = (0, cloud_bible_memory_js_1.mountBibleMemory)({ root, getState: () => state, mutate: mutation, navigate, showTab, message,
+        requestChapter: async (book, number) => {
+            const token = generation, result = await api.bible('chapter', { studentId: student, book, chapter: number });
+            if (token !== generation)
+                throw Error('The child using this computer changed.');
+            return result;
+        } });
+    const topics = (0, cloud_bible_topics_js_1.mountBibleTopics)({ root, getState: () => state, navigate, mutate: mutation, request: async (kind, input) => { const token = generation; const result = await api.bible(kind, { ...input, studentId: student }); if (token !== generation)
+            throw Error('The child using this computer changed.'); return result; } });
+    // Cosmetic, per-child preference: keep it on this computer, separate from Bible work.
+    const appearanceChoices = new Map();
+    const appearanceKey = () => 'bodeeguard:bible-appearance:v1:' + student;
+    function applyAppearance(value) {
+        root.dataset.bibleAppearance = value === 'plain' ? 'plain' : 'theme';
+        el('theme-colors').setAttribute('aria-pressed', String(value !== 'plain'));
+        el('plain-white').setAttribute('aria-pressed', String(value === 'plain'));
+        el('theme-colors').disabled = el('plain-white').disabled = !student;
+    }
+    function appearanceNotice(text = '') {
+        el('appearance-status').textContent = text;
+        el('appearance-status').hidden = !text;
+    }
+    function restoreAppearance() {
+        appearanceNotice();
+        let value = appearanceChoices.get(student) || 'theme';
+        if (student && !appearanceChoices.has(student)) {
+            try {
+                value = window.localStorage.getItem(appearanceKey()) === 'plain' ? 'plain' : 'theme';
+            }
+            catch {
+                appearanceNotice('Your saved Bible colors could not be loaded. You can choose them again.');
+            }
+        }
+        applyAppearance(value);
+    }
+    function chooseAppearance(value) {
+        if (!student)
+            return;
+        appearanceChoices.set(student, value);
+        applyAppearance(value);
+        appearanceNotice();
+        try {
+            window.localStorage.setItem(appearanceKey(), value);
+        }
+        catch {
+            appearanceNotice('These colors are on for now, but could not be remembered. Choose them again next time.');
+        }
+    }
+    el('theme-colors').onclick = () => chooseAppearance('theme');
+    el('plain-white').onclick = () => chooseAppearance('plain');
+    restoreAppearance();
+    function message(text = '', error = false) { el('status').textContent = text; el('status').classList.toggle('bible-error', error); }
+    function displayRef(ref) { return (state?.catalog.find(b => b.id === ref.book)?.name || ref.book) + ' ' + ref.chapter + (ref.verse ? ':' + ref.verse : ''); }
+    const key = ref => [ref.book, ref.chapter, ref.verse].filter(x => x !== undefined).join(':');
+    function mutation(kind, input = {}) {
+        const who = student, token = generation;
+        const task = queue.then(async () => {
+            if (!state || student !== who || token !== generation)
+                return false;
+            if (kind === 'annotation' && input.expectedNote !== JSON.stringify(state.annotations[key(input)] || null))
+                throw Error('This verse changed on another computer. Your draft is still here; copy it before reopening the verse.');
+            const result = await api.bible(kind, { ...input, studentId: who, revision: state.revision });
+            if (student !== who || token !== generation)
+                return false;
+            state = result;
+            return true;
+        });
+        queue = task.catch(() => { });
+        return task;
+    }
+    function showTab(name) {
+        if (currentTab !== name) {
+            root.scrollTop = 0;
+            message();
+        }
+        root.classList.toggle('bible-topics-active', name === 'topics');
+        currentTab = name;
+        root.classList.remove('bible-memory-practicing');
+        for (const view of root.querySelectorAll('[data-bible-view]'))
+            view.hidden = view.dataset.bibleView !== name;
+        for (const button of root.querySelectorAll('[data-bible-tab]')) {
+            if (button.dataset.bibleTab === name)
+                button.setAttribute('aria-current', 'page');
+            else
+                button.removeAttribute('aria-current');
+        }
+        if (name !== 'read') {
+            audioRequest++;
+            el('audio-load').disabled = false;
+            saveAudioPosition();
+            el('audio-player').pause();
+        }
+        if (name === 'topics')
+            topics.open();
+        else
+            topics.pause();
+        if (name === 'memory')
+            memory.render();
+        if (name === 'plan')
+            renderPlan();
+        if (name === 'saved')
+            renderSaved();
+    }
+    function stopAudio() {
+        audioRequest++;
+        audioRef = null;
+        audioReady = false;
+        el('audio-player').pause();
+        el('audio-player').removeAttribute('src');
+        el('audio-player').load();
+        el('audio-player').hidden = el('speed-label').hidden = true;
+        if (audioUrl)
+            URL.revokeObjectURL(audioUrl);
+        audioUrl = null;
+        lastAudioSave = 0;
+    }
+    function saveAudioPosition() {
+        if (!audioRef || !audioReady || !audioUrl || !Number.isFinite(el('audio-player').currentTime))
+            return Promise.resolve(false);
+        return mutation('audio-position', { ...audioRef, seconds: Math.min(14400, el('audio-player').currentTime) }).catch(error => { message('Audio position could not be saved: ' + error.message, true); return false; });
+    }
+    function updateChapters(book, number) {
+        el('chapter').replaceChildren();
+        const count = state.catalog.find(row => row.id === book)?.chapters || 1;
+        for (let i = 1; i <= count; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            el('chapter').append(option);
+        }
+        el('chapter').value = number;
+    }
+    function renderChapter(focusVerse) {
+        if (!chapter || !state)
+            return;
+        el('book').value = chapter.book;
+        updateChapters(chapter.book, chapter.chapter);
+        el('chapter-title').textContent = displayRef(chapter);
+        el('audio-title').textContent = 'Listen to ' + displayRef(chapter);
+        el('audio-load').hidden = !chapter.audioAvailable || Boolean(audioUrl);
+        el('audio-hint').textContent = chapter.audioAvailable ? 'Load the recording, then press play. Your place is remembered.' : 'Chapter audio is coming soon.';
+        el('verses').replaceChildren();
+        el('verses').style.fontSize = state.fontSize + 'px';
+        el('smaller').disabled = state.fontSize <= 17;
+        el('larger').disabled = state.fontSize >= 29;
+        for (const verse of chapter.verses) {
+            if (!verse.text.trim())
+                continue; // Keep the publisher’s verse-number gaps without blank verse buttons.
+            const ref = { book: chapter.book, chapter: chapter.chapter, verse: verse.verse }, note = state.annotations[key(ref)];
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'bible-verse';
+            button.id = 'bible-v-' + verse.verse;
+            button.dataset.color = note?.color || '';
+            button.classList.toggle('bible-underlined', !!note?.underline);
+            button.setAttribute('aria-label', displayRef(ref) + ': ' + verse.text + (note?.bookmark ? '. Bookmarked' : '') + (note?.note ? '. Has note' : ''));
+            const number = document.createElement('sup');
+            number.textContent = verse.verse;
+            const text = document.createElement('span');
+            text.textContent = verse.text;
+            const mark = document.createElement('span');
+            mark.className = 'bible-verse-mark';
+            mark.setAttribute('aria-hidden', 'true');
+            mark.textContent = note?.note ? '✎' : note?.bookmark ? '◆' : '';
+            button.append(number, text, mark);
+            button.addEventListener('click', () => editVerse(ref, verse.text));
+            el('verses').append(button);
+        }
+        const first = state.catalog[0], last = state.catalog.at(-1);
+        el('prev').disabled = chapter.book === first.id && chapter.chapter === 1;
+        el('next').disabled = chapter.book === last.id && chapter.chapter === last.chapters;
+        const reading = state.readings.find(row => row.id === activeList && row.book === chapter.book && row.chapter === chapter.chapter);
+        el('plan-context').textContent = reading ? 'Reading day ' + state.plan.day + ' · ' + reading.name : 'Read at your own pace';
+        el('plan-done').hidden = !reading || reading.completed;
+        if (focusVerse) {
+            document.getElementById('bible-v-' + focusVerse)?.scrollIntoView({ block: 'center' });
+            document.getElementById('bible-v-' + focusVerse)?.focus({ preventScroll: true });
+        }
+    }
+    async function navigate(book, number, focusVerse, listId = null) {
+        if (!state)
+            return;
+        const token = generation, sequence = ++chapterSequence;
+        retry = () => navigate(book, number, focusVerse, listId);
+        el('retry').hidden = true;
+        await saveAudioPosition();
+        stopAudio();
+        try {
+            const result = await api.bible('chapter', { studentId: student, book, chapter: number });
+            if (token !== generation || sequence !== chapterSequence)
+                return;
+            if (!await mutation('location', { book, chapter: number }))
+                return;
+            if (token !== generation || sequence !== chapterSequence)
+                return;
+            chapter = result;
+            activeList = listId;
+            showTab('read');
+            renderChapter(focusVerse);
+            message();
+            if (!focusVerse)
+                root.scrollTop = 0;
+        }
+        catch (error) {
+            if (token === generation && sequence === chapterSequence) {
+                message(error.message, true);
+                el('retry').hidden = false;
+                if (chapter)
+                    renderChapter();
+            }
+        }
+    }
+    async function load() {
+        if (!student || loading)
+            return;
+        const token = generation;
+        loading = true;
+        retry = () => load();
+        el('retry').hidden = true;
+        message('Opening your Bible…');
+        try {
+            await queue;
+            const result = await api.bible('load', { studentId: student });
+            if (token !== generation)
+                return;
+            state = result;
+            el('book').replaceChildren();
+            for (const book of state.catalog) {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = book.name;
+                el('book').append(option);
+            }
+            el('content').hidden = false;
+            await navigate(state.location.book, state.location.chapter);
+            familyStatus();
+            if (state.family)
+                void refreshFamily();
+        }
+        catch (error) {
+            if (token === generation) {
+                message(error.message, true);
+                el('retry').hidden = false;
+            }
+        }
+        finally {
+            if (token === generation)
+                loading = false;
+        }
+    }
+    function familyStatus() { const family = state?.family; el('family-refresh').hidden = !family; el('family-summary').textContent = !family ? '' : family.error || (family.enabled ? (family.lastSyncedAt ? 'Backed up ' + new Date(family.lastSyncedAt).toLocaleString() : 'Backup is on · waiting to sync') : 'Saved on this computer · cloud backup is off'); }
+    async function refreshFamily() {
+        const token = generation, sequence = chapterSequence;
+        el('family-refresh').disabled = true;
+        try {
+            await mutation('refresh');
+            if (token !== generation)
+                return;
+            familyStatus();
+            if (currentTab === 'memory')
+                memory.render();
+            if (currentTab === 'plan')
+                renderPlan();
+            if (currentTab === 'saved')
+                renderSaved();
+            if (currentTab === 'read' && !el('note-dialog').open && sequence === chapterSequence) {
+                if (chapter && (chapter.book !== state.location.book || chapter.chapter !== state.location.chapter))
+                    await navigate(state.location.book, state.location.chapter);
+                else
+                    renderChapter();
+            }
+        }
+        catch (error) {
+            if (token === generation)
+                message(error.message, true);
+        }
+        finally {
+            if (token === generation)
+                el('family-refresh').disabled = false;
+        }
+    }
+    el('family-refresh').onclick = refreshFamily;
+    function renderPlan() {
+        if (!state)
+            return;
+        const selector = el('plan-select');
+        selector.replaceChildren();
+        for (const p of state.planOptions || []) {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.name;
+            selector.append(option);
+        }
+        selector.value = state.planId || 'horner';
+        const info = root.querySelector('.bible-plan-intro > div'), isHorner = (state.planId || 'horner') === 'horner';
+        info.querySelector('.bible-eyebrow').textContent = isHorner ? 'Professor Grant Horner’s system' : 'A little each day';
+        info.querySelector('h2').textContent = isHorner ? 'Ten lists. One chapter from each.' : state.planOptions.find(p => p.id === state.planId).name;
+        info.querySelector('p:last-child').textContent = isHorner ? 'Finish ten readings, then begin the next reading day. Your place will be waiting.' : 'Read one chapter, mark it read, then continue when you’re ready. Switching plans keeps your place in each one.';
+        const total = state.planTotal || 10;
+        el('progress').max = total;
+        el('day').textContent = 'Reading day ' + state.plan.day;
+        el('progress-label').textContent = state.plan.completed.length + ' of ' + total + ' read';
+        el('progress').value = state.plan.completed.length;
+        el('plan-list').replaceChildren();
+        for (const reading of state.readings) {
+            const row = document.createElement('article');
+            row.className = 'bible-plan-row';
+            row.classList.toggle('is-read', reading.completed);
+            row.innerHTML = '<span class="bible-list-number">' + reading.id + '</span><div><span class="bible-small">' + esc(reading.name) + '</span><h3>' + esc(displayRef(reading)) + '</h3></div>';
+            const read = document.createElement('button');
+            read.type = 'button';
+            read.textContent = 'Read →';
+            read.setAttribute('aria-label', 'Read ' + displayRef(reading));
+            read.onclick = () => navigate(reading.book, reading.chapter, undefined, reading.id);
+            const label = document.createElement('label');
+            label.className = 'bible-read-check';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = reading.completed;
+            checkbox.setAttribute('aria-label', 'Mark ' + displayRef(reading) + ' as read');
+            checkbox.onchange = async () => { checkbox.disabled = true; try {
+                await mutation(planKind('check'), { day: state.plan.day, listId: reading.id, completed: checkbox.checked });
+                renderPlan();
+            }
+            catch (error) {
+                checkbox.checked = reading.completed;
+                message(error.message, true);
+            }
+            finally {
+                checkbox.disabled = false;
+            } };
+            label.append(checkbox, document.createTextNode('Read'));
+            row.append(read, label);
+            el('plan-list').append(row);
+        }
+        el('next-day').hidden = state.plan.completed.length !== total;
+    }
+    function renderSaved() {
+        if (!state)
+            return;
+        const search = el('saved-search').value.toLowerCase();
+        const notes = Object.entries(state.annotations).map(([id, note]) => { const [book, chapter, verse] = id.split(':'); return { ref: { book, chapter: Number(chapter), verse: Number(verse) }, note }; })
+            .sort((a, b) => b.note.updatedAt - a.note.updatedAt).filter(row => (displayRef(row.ref) + ' ' + row.note.note).toLowerCase().includes(search));
+        el('saved-list').replaceChildren();
+        if (!notes.length) {
+            const p = document.createElement('p');
+            p.className = 'bible-empty';
+            p.textContent = search ? 'No markings match that search.' : 'Your Bible, your discoveries. Select any verse to save a highlight, bookmark or thought.';
+            el('saved-list').append(p);
+        }
+        for (const { ref, note } of notes.slice(0, 100)) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'bible-saved-card';
+            button.dataset.color = note.color || '';
+            const title = document.createElement('strong');
+            title.textContent = displayRef(ref);
+            const tags = document.createElement('span');
+            tags.className = 'bible-small';
+            tags.textContent = [note.color ? 'Highlight' : null, note.underline ? 'Underlined' : null, note.bookmark ? 'Bookmarked' : null].filter(Boolean).join(' · ');
+            const text = document.createElement('p');
+            text.textContent = note.note || 'Open this verse →';
+            button.append(title, tags, text);
+            button.onclick = () => navigate(ref.book, ref.chapter, ref.verse);
+            el('saved-list').append(button);
+        }
+        for (const [id, row] of Object.entries(state.syncConflicts || {})) {
+            const card = document.createElement('article');
+            card.className = 'bible-saved-card bible-note-version';
+            const title = document.createElement('strong');
+            title.textContent = 'Another saved version · ' + displayRef((() => { const [b, c, v] = row.ref.split(':'); return { book: b, chapter: Number(c), verse: Number(v) }; })());
+            const p = document.createElement('p');
+            p.textContent = row.note.note || 'Highlight / bookmark saved on another computer';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = 'Dismiss this version';
+            button.onclick = async () => { if (button.dataset.confirmed !== 'true') {
+                button.dataset.confirmed = 'true';
+                button.textContent = 'Confirm discard of this version';
+                return;
+            } try {
+                await mutation('conflict-dismiss', { id });
+                renderSaved();
+            }
+            catch (error) {
+                message(error.message, true);
+            } };
+            card.append(title, p, button);
+            el('saved-list').append(card);
+        }
+        if (notes.length > 100) {
+            const p = document.createElement('p');
+            p.textContent = 'Showing the 100 most recent. Use search to find older markings.';
+            el('saved-list').append(p);
+        }
+    }
+    function editVerse(ref, text) {
+        selectedVerse = ref;
+        originalSavedNote = JSON.stringify(state.annotations[key(ref)] || null);
+        const note = state.annotations[key(ref)] || { color: null, underline: false, bookmark: false, note: '' };
+        el('note-title').textContent = displayRef(ref);
+        el('note-verse').textContent = text;
+        el('note-text').value = note.note;
+        for (const radio of root.querySelectorAll('[name="bible-color"]'))
+            radio.checked = radio.value === (note.color || '');
+        el('underline').checked = note.underline;
+        el('bookmark').checked = note.bookmark;
+        el('note-error').textContent = '';
+        originalNote = noteValues();
+        el('note-discard').hidden = true;
+        el('note-memory-status').textContent = '';
+        el('note-dialog').showModal();
+        el('note-cancel').focus();
+    }
+    function noteValues() { return JSON.stringify({ color: root.querySelector('[name="bible-color"]:checked')?.value, underline: el('underline').checked, bookmark: el('bookmark').checked, note: el('note-text').value }); }
+    function closeNote() { if (originalNote !== noteValues()) {
+        el('note-discard').hidden = false;
+        el('note-keep').focus();
+    }
+    else
+        el('note-dialog').close(); }
+    el('note-dialog').addEventListener('cancel', event => { event.preventDefault(); closeNote(); });
+    el('note-keep').onclick = () => { el('note-discard').hidden = true; el('note-text').focus(); };
+    el('note-discard-confirm').onclick = () => el('note-dialog').close();
+    el('note-memory').onclick = async () => { const token = generation; el('note-memory').disabled = true; const ok = await memory.addVerse(selectedVerse); if (token === generation)
+        el('note-memory-status').textContent = ok ? 'Added to Scripture memory.' : el('status').textContent; el('note-memory').disabled = false; };
+    el('note-form').onsubmit = async (event) => {
+        event.preventDefault();
+        const token = generation, submit = event.submitter || el('note-form').querySelector('[type=submit]');
+        submit.disabled = true;
+        try {
+            const ok = await mutation('annotation', { ...selectedVerse, expectedNote: originalSavedNote, color: root.querySelector('[name="bible-color"]:checked').value || null, underline: el('underline').checked, bookmark: el('bookmark').checked, note: el('note-text').value });
+            if (ok && token === generation) {
+                el('note-dialog').close();
+                renderChapter();
+                message('Markings saved.');
+            }
+        }
+        catch (error) {
+            if (token === generation)
+                el('note-error').textContent = error.message;
+        }
+        finally {
+            submit.disabled = false;
+        }
+    };
+    el('note-cancel').onclick = closeNote;
+    for (const button of root.querySelectorAll('[data-bible-tab]'))
+        button.onclick = () => showTab(button.dataset.bibleTab);
+    el('retry').onclick = () => retry();
+    el('book').onchange = () => navigate(el('book').value, 1);
+    el('chapter').onchange = () => navigate(el('book').value, Number(el('chapter').value));
+    function adjacent(direction) {
+        if (!chapter)
+            return;
+        const index = state.catalog.findIndex(b => b.id === chapter.book), book = state.catalog[index];
+        let number = chapter.chapter + direction;
+        if (number < 1) {
+            const previous = state.catalog[index - 1];
+            if (previous)
+                void navigate(previous.id, previous.chapters);
+        }
+        else if (number > book.chapters) {
+            if (state.catalog[index + 1])
+                void navigate(state.catalog[index + 1].id, 1);
+        }
+        else
+            void navigate(book.id, number);
+    }
+    el('prev').onclick = () => adjacent(-1);
+    el('next').onclick = () => adjacent(1);
+    for (const [name, delta] of [['smaller', -2], ['larger', 2]])
+        el(name).onclick = async () => { try {
+            if (await mutation('font', { fontSize: Math.max(17, Math.min(29, state.fontSize + delta)) }))
+                renderChapter();
+        }
+        catch (error) {
+            message(error.message, true);
+        } };
+    el('saved-search').oninput = renderSaved;
+    el('plan-select').onchange = async () => { try {
+        if (await mutation('plan-select', { planId: el('plan-select').value })) {
+            activeList = null;
+            renderPlan();
+        }
+    }
+    catch (error) {
+        message(error.message, true);
+        renderPlan();
+    } };
+    el('next-day').onclick = async () => { try {
+        if (await mutation(planKind('next'), { day: state.plan.day })) {
+            activeList = null;
+            renderPlan();
+            message('Your next reading day is ready.');
+        }
+    }
+    catch (error) {
+        message(error.message, true);
+    } };
+    el('plan-done').onclick = async () => {
+        const list = state.readings.find(r => r.id === activeList);
+        if (!list)
+            return;
+        try {
+            if (!await mutation(planKind('check'), { day: state.plan.day, listId: list.id, completed: true }))
+                return;
+            const next = state.readings.find(r => !r.completed);
+            if (next)
+                await navigate(next.book, next.chapter, undefined, next.id);
+            else
+                showTab('plan');
+        }
+        catch (error) {
+            message(error.message, true);
+        }
+    };
+    el('audio-load').onclick = async () => {
+        if (!chapter)
+            return;
+        const token = generation, sequence = chapterSequence, request = ++audioRequest, ref = { book: chapter.book, chapter: chapter.chapter };
+        el('audio-load').disabled = true;
+        el('audio-hint').textContent = 'Loading chapter audio…';
+        try {
+            const result = await api.bible('audio', { studentId: student, ...ref });
+            if (token !== generation || sequence !== chapterSequence || request !== audioRequest || root.hidden || currentTab !== 'read')
+                return;
+            audioRef = ref;
+            audioReady = false;
+            audioUrl = URL.createObjectURL(new Blob([result.bytes], { type: result.mimeType }));
+            const player = el('audio-player');
+            player.src = audioUrl;
+            player.hidden = false;
+            el('speed-label').hidden = false;
+            el('audio-load').hidden = true;
+            player.onloadedmetadata = () => { if (audioRef !== ref || token !== generation)
+                return; player.currentTime = Math.min(state.audioPositions[key(ref)] || 0, Number.isFinite(player.duration) ? Math.max(0, player.duration - 1) : 0); player.playbackRate = Number(el('audio-speed').value); audioReady = true; };
+            el('audio-hint').textContent = 'Press play when you’re ready.';
+        }
+        catch (error) {
+            if (token === generation && sequence === chapterSequence)
+                el('audio-hint').textContent = error.message;
+        }
+        finally {
+            if (request === audioRequest)
+                el('audio-load').disabled = false;
+        }
+    };
+    el('audio-speed').onchange = () => { el('audio-player').playbackRate = Number(el('audio-speed').value); };
+    el('audio-player').onpause = () => saveAudioPosition();
+    el('audio-player').ontimeupdate = () => { const seconds = el('audio-player').currentTime; if (Math.abs(seconds - lastAudioSave) >= 10) {
+        lastAudioSave = seconds;
+        void saveAudioPosition();
+    } };
+    el('audio-player').onerror = () => { if (audioUrl)
+        el('audio-hint').textContent = 'This recording could not play. Try opening the chapter again.'; };
+    window.addEventListener('cloud-student-status', event => {
+        const next = event.detail?.school?.student?.id || null;
+        if (student !== next) {
+            generation++;
+            chapterSequence++;
+            student = next;
+            restoreAppearance();
+            state = null;
+            chapter = null;
+            memory.reset();
+            extras.reset();
+            topics.reset();
+            selectedVerse = null;
+            activeList = null;
+            loading = false;
+            stopAudio();
+            el('note-dialog').close();
+            el('note-text').value = '';
+            el('saved-search').value = '';
+            el('content').hidden = true;
+            el('verses').replaceChildren();
+            el('saved-list').replaceChildren();
+            message();
+            if (!root.hidden)
+                void load();
+        }
+        if (event.detail?.school?.locked) {
+            stopAudio();
+            el('note-dialog').close();
+        }
+    });
+    window.addEventListener('cloud-student-surface', event => {
+        if (event.detail === 'student-bible-panel') {
+            if (!state)
+                void load();
+            else {
+                showTab(currentTab);
+                message();
+                if (state.family)
+                    void refreshFamily();
+            }
+        }
+        else {
+            audioRequest++;
+            void saveAudioPosition();
+            el('audio-player').pause();
+            el('note-dialog').close();
+        }
+    });
+    (0, cloud_student_rendering_js_1.renderPendingIcons)();
+}
+
+},
+"renderer/js/cloud-bible-extras.js":function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mountBibleExtras = mountBibleExtras;
+/* global document */
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function mountBibleExtras({ root, getState, request, navigate }) {
+    const search = document.createElement('details');
+    search.className = 'bible-search';
+    search.innerHTML = '<summary>Search the whole Bible</summary><form><label>Reference or phrase<input type="search" maxlength="120" required placeholder="John 3:16 or the Lord is my shepherd"></label><button type="submit">Search</button></form><p role="status"></p><div class="bible-search-results"></div><button type="button" data-more hidden>More results</button>';
+    root.querySelector('.bible-toolbar').before(search);
+    const input = search.querySelector('input'), status = search.querySelector('[role=status]'), results = search.querySelector('.bible-search-results'), more = search.querySelector('[data-more]');
+    let epoch = 0, query = '', offset = 0;
+    async function find(append = false) {
+        const token = ++epoch;
+        more.disabled = true;
+        status.textContent = 'Searching…';
+        if (!append) {
+            query = input.value.trim();
+            offset = 0;
+            results.replaceChildren();
+        }
+        try {
+            const value = await request('search', { query, offset });
+            if (token !== epoch)
+                return;
+            status.textContent = value.total + ' ' + (value.total === 1 ? 'verse' : 'verses') + ' found';
+            for (const row of value.results) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.innerHTML = '<strong>' + esc(row.bookName + ' ' + row.chapter + ':' + row.verse) + '</strong><span>' + esc(row.text) + '</span>';
+                button.onclick = () => navigate(row.book, row.chapter, row.verse);
+                results.append(button);
+            }
+            offset += value.results.length;
+            more.hidden = !value.hasMore;
+        }
+        catch (error) {
+            if (token === epoch) {
+                status.textContent = error.message;
+                more.hidden = true;
+            }
+        }
+        finally {
+            if (token === epoch)
+                more.disabled = false;
+        }
+    }
+    search.querySelector('form').onsubmit = event => { event.preventDefault(); void find(); };
+    more.onclick = () => find(true);
+    const audio = root.querySelector('#bible-audio-player'), controls = document.createElement('div');
+    controls.className = 'bible-audio-repeat';
+    controls.hidden = true;
+    controls.innerHTML = '<label>Repeat<select><option value="off">Off</option><option value="chapter">This chapter</option><option value="segment">Selected section</option></select></label><div data-segment hidden><button type="button" data-start>Set start here</button><button type="button" data-end>Set end here</button><button type="button" data-clear>Clear section</button><p role="status">Play the recording, then mark the beginning and end of a section.</p></div>';
+    audio.after(controls);
+    let start = null, end = null;
+    const select = controls.querySelector('select'), segment = controls.querySelector('[data-segment]'), hint = controls.querySelector('p');
+    const time = n => Math.floor(n / 60) + ':' + String(Math.floor(n % 60)).padStart(2, '0');
+    function label() { hint.textContent = start === null ? 'Play the recording, then mark the beginning of a section.' : end === null ? 'Starts at ' + time(start) + '. Move ahead and set the end.' : 'Repeating ' + time(start) + ' – ' + time(end) + '.'; }
+    function clear() { start = end = null; label(); }
+    select.onchange = () => { audio.loop = select.value === 'chapter'; segment.hidden = select.value !== 'segment'; };
+    controls.querySelector('[data-start]').onclick = () => { start = audio.currentTime; end = null; label(); };
+    controls.querySelector('[data-end]').onclick = () => { if (start === null || audio.currentTime <= start + 1) {
+        hint.textContent = 'Choose an end at least one second after the start.';
+        return;
+    } end = audio.currentTime; label(); };
+    controls.querySelector('[data-clear]').onclick = clear;
+    function repeat() { if (select.value === 'segment' && start !== null && end !== null && audio.currentTime >= end) {
+        audio.currentTime = start;
+        if (audio.ended)
+            void audio.play().catch(() => { hint.textContent = 'Press play to continue repeating.'; });
+    } }
+    audio.addEventListener('timeupdate', repeat);
+    audio.addEventListener('ended', repeat);
+    audio.addEventListener('loadedmetadata', () => { controls.hidden = !Number.isFinite(audio.duration) || audio.duration <= 0; });
+    audio.addEventListener('emptied', () => { controls.hidden = true; select.value = 'off'; audio.loop = false; segment.hidden = true; clear(); });
+    return { reset() { epoch++; query = ''; offset = 0; input.value = ''; status.textContent = ''; results.replaceChildren(); more.hidden = true; search.open = false; clear(); }, student: () => getState()?.studentId };
+}
+
+},
+"renderer/js/cloud-bible-memory.js":function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mountBibleMemory = mountBibleMemory;
+/* global document */
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function mountBibleMemory({ root, getState, mutate, requestChapter, navigate, showTab, message }) {
+    const section = root.querySelector('[data-bible-view="memory"]');
+    section.innerHTML = `
+    <div class="bible-memory-heading"><div><p class="bible-eyebrow">Keep the Word with you</p><h2>Scripture memory</h2><p>Choose a passage. Learn a little, then try it from memory.</p></div><button type="button" id="bible-memory-add-open" class="bible-primary">+ Add verses</button></div>
+    <div id="bible-memory-summary" class="bible-memory-summary"></div>
+    <details class="bible-memory-collections"><summary>Organize collections</summary><form id="bible-memory-collection-form"><label>Collection<select id="bible-memory-collection-edit"></select></label><label>Name<input id="bible-memory-collection-name" maxlength="40" placeholder="e.g. Comfort and courage" required></label><button type="submit">Save collection</button></form></details>
+    <form id="bible-memory-add-form" class="bible-memory-add" hidden><h3>Add a verse or short passage</h3><div class="bible-memory-pickers"><label>Book<select id="bible-memory-book"></select></label><label>Chapter<select id="bible-memory-chapter"></select></label><label>First verse<select id="bible-memory-start"></select></label><label>Last verse<select id="bible-memory-end"></select></label><label>Collection<select id="bible-memory-add-collection"></select></label></div><p id="bible-memory-add-preview"></p><p class="bible-small">Choose up to ten verses in the same chapter.</p><div class="bible-memory-actions"><button type="submit" class="bible-primary">Add to my memory verses</button><button type="button" id="bible-memory-add-cancel">Cancel</button></div></form>
+    <div id="bible-memory-library"><div class="bible-memory-filters"><label>Show<select id="bible-memory-filter"><option value="all">All active verses</option><option value="due">Ready to review</option><option value="learning">Learning</option><option value="remembered">Remembered</option><option value="archived">Archived</option></select></label><label>Collection<select id="bible-memory-collection-filter"></select></label><label>Find a passage<input id="bible-memory-search" type="search" placeholder="Reference or words…" maxlength="100"></label></div><div id="bible-memory-list"></div><div id="bible-memory-starters" hidden><h3>A place to begin</h3><p>Add one of these, or choose any passage above.</p><div class="bible-memory-starters"></div></div><p class="bible-small bible-memory-guidance">Remembered means three successful checks from memory on different days. Hints and same-day practice help you learn, without advancing that count. Review reminders use this computer’s date.</p></div>
+    <section id="bible-memory-practice" hidden aria-label="Memory practice"><button type="button" id="bible-memory-back">← My memory verses</button><div class="bible-memory-practice-heading"><p class="bible-eyebrow" id="bible-memory-practice-collection"></p><h2 id="bible-memory-practice-title"></h2><p id="bible-memory-practice-progress"></p></div><div class="bible-memory-modes" role="group" aria-label="Practice steps"><button type="button" data-memory-mode="read" aria-pressed="true">1. Read it</button><button type="button" data-memory-mode="hide" aria-pressed="false">2. Hide words</button><button type="button" data-memory-mode="letters" aria-pressed="false">3. First letters</button><button type="button" data-memory-mode="type" aria-pressed="false">4. From memory</button></div><p id="bible-memory-prompt" class="bible-memory-prompt"></p><div id="bible-memory-hide-controls" hidden><button type="button" id="bible-memory-hide-more">Hide more words</button><button type="button" id="bible-memory-hide-reset">Show all words</button><span id="bible-memory-hide-count" role="status"></span></div><p id="bible-memory-instruction"></p><form id="bible-memory-answer-form" hidden><label>Type the passage from memory<textarea id="bible-memory-answer" rows="5" maxlength="6000" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Start with the first words you remember…" required></textarea></label><div class="bible-memory-actions"><button type="submit" class="bible-primary" id="bible-memory-check">Check my words</button><button type="button" id="bible-memory-hint">Show first letters</button><button type="button" id="bible-memory-reveal">Show passage</button></div><p class="bible-small">Capital letters, punctuation and extra spaces do not count against you.</p></form><div id="bible-memory-feedback" hidden role="status"></div><div class="bible-memory-actions"><button type="button" id="bible-memory-retry" hidden>Try again from memory</button><button type="button" id="bible-memory-next" hidden>Practice next verse →</button><button type="button" id="bible-memory-read-context">Read in the Bible</button></div></section>`;
+    const el = name => document.getElementById('bible-memory-' + name);
+    let epoch = 0, busy = false, selectedId = null, mode = 'read', assisted = false, reviewed = false, addChapter = null, chapterRequest = 0, hideStep = 0;
+    const library = () => {
+        const value = getState()?.memoryLibrary;
+        return value && { ...value, items: value.items.map(item => ({ ...item, due: !item.archived && item.nextReviewAt <= Date.now() })) };
+    };
+    const selected = () => library()?.items.find(item => item.id === selectedId);
+    function options(select, values, preferred) {
+        const old = preferred ?? select.value;
+        select.replaceChildren();
+        for (const [value, label] of values) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            select.append(option);
+        }
+        if ([...select.options].some(option => option.value === old))
+            select.value = old;
+    }
+    function fields() {
+        const state = getState();
+        if (!state)
+            return;
+        const choices = library().collections.map(name => [name, name]);
+        options(el('collection-filter'), [['', 'All collections'], ...choices]);
+        options(el('collection-edit'), [['', 'New collection'], ...choices.filter(([name]) => name !== 'My verses')]);
+        options(el('add-collection'), choices);
+        if (!el('book').options.length)
+            options(el('book'), state.catalog.map(book => [book.id, book.name]), state.location.book);
+    }
+    async function action(kind, input, after) {
+        if (busy || !getState())
+            return false;
+        const token = epoch;
+        busy = true;
+        section.setAttribute('aria-busy', 'true');
+        try {
+            if (!await mutate(kind, input) || token !== epoch)
+                return false;
+            fields();
+            render();
+            message();
+            after?.();
+            return true;
+        }
+        catch (error) {
+            if (token === epoch) {
+                message(error.message, true);
+                if (kind === 'memory-check') {
+                    el('feedback').hidden = false;
+                    el('feedback').textContent = 'Your attempt was not saved. ' + error.message;
+                }
+            }
+            return false;
+        }
+        finally {
+            if (token === epoch) {
+                busy = false;
+                section.removeAttribute('aria-busy');
+            }
+        }
+    }
+    function render() {
+        if (!library())
+            return;
+        root.classList.toggle('bible-memory-practicing', !section.hidden && !el('practice').hidden);
+        fields();
+        const items = library().items, active = items.filter(item => !item.archived);
+        el('summary').innerHTML = `<span><strong>${active.filter(item => item.due).length}</strong> ready to review</span><span><strong>${active.filter(item => !item.remembered).length}</strong> learning</span><span><strong>${active.filter(item => item.remembered).length}</strong> remembered</span>`;
+        const filter = el('filter').value, collection = el('collection-filter').value, search = el('search').value.toLowerCase();
+        const shown = items.filter(item => (filter === 'archived' ? item.archived : !item.archived) && (!collection || item.collection === collection) &&
+            (filter !== 'due' || item.due) && (filter !== 'learning' || !item.remembered) && (filter !== 'remembered' || item.remembered) &&
+            `${item.label} ${item.text}`.toLowerCase().includes(search)).sort((a, b) => a.nextReviewAt - b.nextReviewAt || a.label.localeCompare(b.label));
+        el('list').replaceChildren();
+        if (!shown.length) {
+            const empty = document.createElement('p');
+            empty.className = 'bible-empty';
+            empty.textContent = items.length ? 'No passages in this view. Try another collection or filter.' : 'Your memory library is ready. Add a verse you want to carry with you.';
+            el('list').append(empty);
+        }
+        for (const item of shown) {
+            const card = document.createElement('article');
+            card.className = 'bible-memory-card';
+            const status = item.archived ? 'Archived' : item.remembered ? 'Remembered' : 'Learning';
+            card.innerHTML = `<div class="bible-memory-card-heading"><span class="bible-eyebrow">${esc(item.collection)}</span><span class="bible-memory-badge">${status}</span></div><h3>${esc(item.label)}</h3><p class="bible-memory-excerpt">${esc(item.text)}</p><p class="bible-small">${Math.min(3, item.level)} of 3 memory steps · ${item.due ? 'Ready to review' : 'Review ' + new Date(item.nextReviewAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>`;
+            const controls = document.createElement('div');
+            controls.className = 'bible-memory-actions';
+            const practice = document.createElement('button');
+            practice.type = 'button';
+            practice.className = 'bible-primary';
+            practice.textContent = 'Practice';
+            practice.disabled = item.archived;
+            practice.onclick = () => start(item.id);
+            controls.append(practice);
+            const archive = document.createElement('button');
+            archive.type = 'button';
+            archive.textContent = item.archived ? 'Restore' : 'Archive';
+            archive.onclick = () => action('memory-archive', { id: item.id, archived: !item.archived }, () => message(item.archived ? 'Passage restored.' : 'Passage archived. You can restore it from Archived.'));
+            controls.append(archive);
+            const label = document.createElement('label');
+            label.className = 'bible-memory-move';
+            label.textContent = 'Collection';
+            const select = document.createElement('select');
+            options(select, library().collections.map(name => [name, name]), item.collection);
+            select.setAttribute('aria-label', 'Collection for ' + item.label);
+            select.onchange = async () => { if (!await action('memory-move', { id: item.id, collection: select.value }))
+                select.value = item.collection; };
+            label.append(select);
+            card.append(controls, label);
+            el('list').append(card);
+        }
+        el('starters').hidden = items.length > 0;
+    }
+    function start(id) {
+        if (busy)
+            return;
+        selectedId = id;
+        if (!selected())
+            return;
+        message();
+        root.classList.add('bible-memory-practicing');
+        el('library').hidden = true;
+        el('practice').hidden = false;
+        el('add-form').hidden = true;
+        el('practice-title').textContent = selected().label;
+        el('practice-collection').textContent = selected().collection;
+        el('practice-progress').textContent = `${Math.min(3, selected().level)} of 3 memory steps`;
+        changeMode('read');
+        root.scrollTop = 0;
+    }
+    function letters(text) { return text.replace(/[\p{L}\p{N}]+(?:['’‘][\p{L}\p{N}]+)*/gu, word => word[0] + '_'.repeat(Math.min(9, [...word].length - 1))); }
+    function changeMode(next) {
+        if (busy || !selected())
+            return;
+        mode = next;
+        hideStep = 0;
+        el('hide-controls').hidden = next !== 'hide';
+        assisted = next !== 'type';
+        reviewed = false;
+        el('answer').value = '';
+        el('feedback').hidden = true;
+        el('feedback').replaceChildren();
+        el('retry').hidden = el('next').hidden = true;
+        el('check').disabled = false;
+        el('answer').disabled = false;
+        el('hint').hidden = el('reveal').hidden = false;
+        for (const button of section.querySelectorAll('[data-memory-mode]'))
+            button.setAttribute('aria-pressed', String(button.dataset.memoryMode === mode));
+        el('answer-form').hidden = mode !== 'type';
+        el('prompt').hidden = mode === 'type';
+        el('prompt').textContent = mode === 'letters' ? letters(selected().text) : selected().text;
+        el('instruction').textContent = mode === 'read' ? 'Read slowly. Say it aloud, one phrase at a time.' : mode === 'letters' ? 'Use the first letters to say the passage aloud. Then try it without hints.' : 'The passage is hidden. Type what you remember; you can ask for a hint.';
+        if (mode === 'hide') {
+            el('instruction').textContent = 'Say the passage aloud, then hide a few more words. This is guided practice.';
+            renderHidden();
+        }
+        if (mode === 'type')
+            el('answer').focus({ preventScroll: true });
+    }
+    function renderHidden() {
+        if (!selected())
+            return;
+        let index = 0, hidden = 0;
+        const text = selected().text.replace(/[\p{L}\p{N}]+(?:['’‘][\p{L}\p{N}]+)*/gu, word => { const conceal = (index++ * 7 % 10) < hideStep; if (conceal) {
+            hidden++;
+            return '▁'.repeat(Math.min(9, [...word].length));
+        } return word; });
+        el('prompt').textContent = text;
+        el('hide-count').textContent = hidden + ' of ' + index + ' words hidden';
+        el('hide-more').disabled = hideStep >= 10;
+    }
+    el('hide-more').onclick = () => { if (!busy) {
+        hideStep = Math.min(10, hideStep + 2);
+        renderHidden();
+    } };
+    el('hide-reset').onclick = () => { hideStep = 0; renderHidden(); };
+    function showFeedback(result) {
+        const box = el('feedback');
+        box.replaceChildren();
+        box.hidden = false;
+        const title = document.createElement('h3');
+        title.textContent = result.correct ? (assisted ? 'You got the words with help.' : 'You remembered every word!') : `${result.score}% of the words in place`;
+        const detail = document.createElement('p');
+        detail.textContent = result.correct ? (assisted ? 'Try again with the passage hidden when you feel ready.' : 'Come back on another day to build your memory steps.') : `Underlined words need another look.${result.extra ? ' Your answer also has ' + result.extra + ' extra or different word' + (result.extra === 1 ? '' : 's') + '.' : ''}`;
+        const verse = document.createElement('p');
+        verse.className = 'bible-memory-comparison';
+        const matched = new Set(result.matched);
+        let index = 0, offset = 0;
+        for (const word of selected().text.matchAll(/[\p{L}\p{N}]+(?:['’‘][\p{L}\p{N}]+)*/gu)) {
+            verse.append(document.createTextNode(selected().text.slice(offset, word.index)));
+            const span = document.createElement('span');
+            span.textContent = word[0];
+            span.className = matched.has(index++) ? 'memory-word-correct' : 'memory-word-missed';
+            verse.append(span);
+            offset = word.index + word[0].length;
+        }
+        verse.append(document.createTextNode(selected().text.slice(offset)));
+        box.append(title, detail, verse);
+        el('practice-progress').textContent = `${Math.min(3, selected().level)} of 3 memory steps`;
+        el('instruction').textContent = 'Review your words below. Try again whenever you are ready.';
+        el('retry').hidden = false;
+        el('next').hidden = library().items.filter(item => !item.archived && item.id !== selectedId).length === 0;
+        el('prompt').hidden = true;
+        el('check').disabled = true;
+        el('answer').disabled = true;
+        el('hint').hidden = el('reveal').hidden = true;
+        reviewed = true;
+    }
+    function previewPassage() {
+        if (!addChapter)
+            return;
+        const first = Number(el('start').value), last = Number(el('end').value);
+        el('add-preview').textContent = addChapter.verses.filter(verse => verse.verse >= first && verse.verse <= last).map(verse => verse.text).join(' ');
+    }
+    async function loadAddChapter(resetChapter = false) {
+        if (!getState())
+            return;
+        const token = epoch, sequence = ++chapterRequest;
+        const book = getState().catalog.find(book => book.id === el('book').value);
+        options(el('chapter'), Array.from({ length: book.chapters }, (_, i) => [String(i + 1), String(i + 1)]), resetChapter ? '1' : undefined);
+        addChapter = null;
+        el('add-preview').textContent = 'Loading verses…';
+        try {
+            const value = await requestChapter(book.id, Number(el('chapter').value));
+            if (token !== epoch || sequence !== chapterRequest)
+                return;
+            addChapter = value;
+            const choices = value.verses.filter(verse => verse.text.trim()).map(verse => [String(verse.verse), String(verse.verse)]);
+            options(el('start'), choices, choices[0][0]);
+            options(el('end'), choices, choices[0][0]);
+            previewPassage();
+        }
+        catch (error) {
+            if (token === epoch) {
+                el('add-preview').textContent = 'Choose the chapter again to retry.';
+                message(error.message, true);
+            }
+        }
+    }
+    el('add-open').onclick = () => { root.classList.remove('bible-memory-practicing'); fields(); el('practice').hidden = true; el('library').hidden = false; el('add-form').hidden = false; void loadAddChapter(); };
+    el('add-cancel').onclick = () => { el('add-form').hidden = true; };
+    el('book').onchange = () => loadAddChapter(true);
+    el('chapter').onchange = () => loadAddChapter();
+    el('start').onchange = () => { if (Number(el('end').value) < Number(el('start').value))
+        el('end').value = el('start').value; previewPassage(); };
+    el('end').onchange = previewPassage;
+    el('add-form').onsubmit = event => { event.preventDefault(); if (!addChapter)
+        return; void action('memory-add', { book: addChapter.book, chapter: addChapter.chapter, start: Number(el('start').value), end: Number(el('end').value), collection: el('add-collection').value }, () => { el('add-form').hidden = true; el('filter').value = 'all'; el('collection-filter').value = ''; el('search').value = ''; render(); message('Passage added to your memory verses.'); }); };
+    el('collection-edit').onchange = () => { el('collection-name').value = el('collection-edit').value; };
+    el('collection-form').onsubmit = event => { event.preventDefault(); void action('memory-collection', { name: el('collection-name').value, ...(el('collection-edit').value ? { previous: el('collection-edit').value } : {}) }, () => { el('collection-name').value = ''; el('collection-edit').value = ''; message('Collection saved.'); }); };
+    for (const name of ['filter', 'collection-filter', 'search'])
+        el(name).addEventListener(name === 'search' ? 'input' : 'change', render);
+    for (const button of section.querySelectorAll('[data-memory-mode]'))
+        button.onclick = () => changeMode(button.dataset.memoryMode);
+    el('hint').onclick = () => { if (reviewed)
+        return; assisted = true; el('prompt').hidden = false; el('prompt').textContent = letters(selected().text); el('instruction').textContent = 'First-letter hint shown. This attempt is guided practice.'; };
+    el('reveal').onclick = () => { if (reviewed)
+        return; assisted = true; el('prompt').hidden = false; el('prompt').textContent = selected().text; el('instruction').textContent = 'Passage revealed. This attempt is guided practice.'; };
+    el('answer-form').onsubmit = async (event) => { event.preventDefault(); if (reviewed || busy || !selected())
+        return; el('check').disabled = true; const id = selectedId; const ok = await action('memory-check', { id, answer: el('answer').value, assisted }, () => { if (selectedId === id)
+        showFeedback(getState().memoryFeedback); }); if (!ok)
+        el('check').disabled = false; };
+    el('retry').onclick = () => changeMode('type');
+    el('next').onclick = () => { const next = library().items.filter(item => !item.archived && item.id !== selectedId).sort((a, b) => Number(b.due) - Number(a.due) || a.nextReviewAt - b.nextReviewAt)[0]; if (next)
+        start(next.id); };
+    el('back').onclick = () => { el('practice').hidden = true; el('library').hidden = false; render(); };
+    el('read-context').onclick = () => { const item = selected(); if (item)
+        navigate(item.book, item.chapter, item.start); };
+    const starters = [['john', 3, 16, 16, 'John 3:16'], ['psalm', 119, 11, 11, 'Psalm 119:11'], ['proverbs', 3, 5, 6, 'Proverbs 3:5–6'], ['joshua', 1, 9, 9, 'Joshua 1:9']];
+    for (const [book, chapter, start, end, label] of starters) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = '+ ' + label;
+        button.onclick = () => action('memory-add', { book, chapter, start, end }, () => message(label + ' added.'));
+        section.querySelector('.bible-memory-starters').append(button);
+    }
+    return {
+        render,
+        addVerse: ref => action('memory-add', { book: ref.book, chapter: ref.chapter, start: ref.verse, end: ref.verse }, () => message('Verse added. Open Scripture memory to practice.')),
+        open() { showTab('memory'); },
+        reset() { root.classList.remove('bible-memory-practicing'); epoch++; chapterRequest++; busy = false; selectedId = null; addChapter = null; el('answer').value = ''; el('feedback').replaceChildren(); el('prompt').textContent = ''; el('practice-title').textContent = ''; el('practice-collection').textContent = ''; el('practice-progress').textContent = ''; el('add-preview').textContent = ''; el('summary').replaceChildren(); el('list').replaceChildren(); el('book').replaceChildren(); el('collection-name').value = ''; el('search').value = ''; el('filter').value = 'all'; el('collection-filter').replaceChildren(); el('collection-edit').replaceChildren(); el('add-collection').replaceChildren(); el('practice').hidden = true; el('library').hidden = false; el('add-form').hidden = true; section.removeAttribute('aria-busy'); }
+    };
+}
+
+},
+"renderer/js/cloud-bible-topics.js":function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mountBibleTopics = mountBibleTopics;
+/* global document, setTimeout, clearTimeout */
+const cloud_student_rendering_js_1 = require("renderer/js/cloud-student-rendering.js");
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function mountBibleTopics({ root, getState, request, mutate, navigate }) {
+    const host = root.querySelector('[data-bible-view="topics"]');
+    host.innerHTML = '<p id="bible-topics-status" role="status" aria-live="polite"></p><button id="bible-topics-retry" type="button" hidden>Try again</button><div id="bible-topics-library"><header class="bible-topics-hero"><div><p class="bible-eyebrow">Explore by topic</p><h2>What’s on your mind?</h2><p>Find Scripture for everyday life, then read the whole passage.</p></div><span class="bible-topics-emblem" aria-hidden="true"><i data-lucide="book-open"></i></span></header>' +
+        '<form id="bible-topics-form" role="search"><label for="bible-topics-search">Search Bible topics</label><div class="bible-topics-search-row"><i data-lucide="search" aria-hidden="true"></i><input id="bible-topics-search" type="search" maxlength="100" placeholder="Try sad, worried, or getting left out…" autocomplete="off"><button class="bible-primary" type="submit">Search</button></div></form>' +
+        '<div id="bible-topics-featured"><div class="bible-topics-section-heading"><h3>A place to start</h3><span>Big questions. Everyday moments.</span></div><div class="bible-topic-grid" id="bible-topics-cards"></div></div>' +
+        '<div class="bible-topics-browse"><div class="bible-topics-section-heading"><h3>Browse the index</h3><span id="bible-topics-count"></span></div><div id="bible-topics-alphabet" aria-label="Browse topics by first letter"></div></div>' +
+        '<div id="bible-topics-results-wrap" hidden><h3 id="bible-topics-results-heading" tabindex="-1"></h3><div id="bible-topics-results" class="bible-topic-results"></div><button type="button" id="bible-topics-more">More topics</button></div></div>' +
+        '<div id="bible-topics-detail" hidden></div>' +
+        '<details class="bible-topics-sources"><summary>About this topic index</summary><p>Topic links come from Nave’s Topical Bible and Torrey’s New Topical Textbook, public-domain indexes distributed by CrossWire. Starting passages and everyday search words are selected for BodeeGuard.</p><p>The verse text is the Berean Standard Bible. Topic headings are study aids, not part of Scripture. Some headings use older language; always read a passage in context. The full index works offline.</p></details>';
+    const el = id => root.querySelector('#bible-topics-' + id);
+    let epoch = 0, sequence = 0, timer = null, loaded = false, pendingLoad = false, query = '', letter = '', next = null, current = null, detailNext = null, busy = false, retry = () => load();
+    const status = (text = '', error = false) => { el('status').textContent = text; el('status').classList.toggle('bible-error', error); };
+    const icons = () => (0, cloud_student_rendering_js_1.renderPendingIcons)();
+    function showLibrary() { sequence++; current = null; el('library').hidden = false; el('detail').hidden = true; el('retry').hidden = true; status(); }
+    function alphabet() {
+        el('alphabet').innerHTML = ['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(value => '<button type="button" data-topic-letter="' + (value === 'All' ? '' : value) + '" aria-pressed="' + (value === letter || value === 'All' && !letter) + '">' + value + '</button>').join('');
+    }
+    function topicButton(row, featured = false) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.topicId = row.id;
+        button.className = featured ? 'bible-topic-tile' : 'bible-topic-result';
+        button.innerHTML = featured ? '<span class="bible-topic-icon"><i data-lucide="' + esc(row.icon) + '"></i></span><span><strong>' + esc(row.label) + '</strong><small>' + esc(row.hint) + '</small></span><span aria-hidden="true">↗</span>' : '<span>' + esc(row.title) + '</span><span aria-hidden="true">→</span>';
+        button.onclick = () => void open(row.id);
+        return button;
+    }
+    async function load(offset = 0, showResults = Boolean(query || letter)) {
+        const token = epoch, seq = ++sequence;
+        pendingLoad = true;
+        clearTimeout(timer);
+        retry = () => load(offset, showResults);
+        el('retry').hidden = true;
+        el('more').disabled = true;
+        status('Finding topics…');
+        try {
+            const result = await request('topics', { query, letter, offset });
+            if (token !== epoch || seq !== sequence)
+                return;
+            loaded = true;
+            next = result.next;
+            el('count').textContent = result.topicCount.toLocaleString() + ' topics · available offline';
+            if (!el('cards').children.length)
+                el('cards').replaceChildren(...result.featured.map(row => topicButton(row, true)));
+            el('featured').hidden = Boolean(query || letter);
+            el('results-wrap').hidden = !showResults;
+            el('results-heading').textContent = result.total ? result.total.toLocaleString() + ' ' + (result.total === 1 ? 'topic' : 'topics') + (query ? ' for “' + query + '”' : letter ? ' beginning with ' + letter : ' in the index') : 'No topics found';
+            if (!offset)
+                el('results').replaceChildren();
+            el('results').append(...result.results.map(row => topicButton(row)));
+            if (!result.total) {
+                const p = document.createElement('p');
+                p.className = 'bible-empty';
+                p.textContent = 'Try a simpler word, like “sad”, “worried”, or “friends”, or choose a letter above.';
+                el('results').append(p);
+            }
+            el('more').hidden = next === null;
+            status();
+            alphabet();
+            icons();
+        }
+        catch (error) {
+            if (token === epoch && seq === sequence) {
+                status('Topics could not load. ' + error.message, true);
+                el('retry').hidden = false;
+            }
+        }
+        finally {
+            if (token === epoch && seq === sequence) {
+                pendingLoad = false;
+                el('more').disabled = false;
+            }
+        }
+    }
+    function passageCard(p, starter = false) {
+        const card = document.createElement('article');
+        card.className = 'bible-topic-passage' + (starter ? ' bible-topic-starter' : '');
+        const verse = p.verses[0], ref = { book: p.book, chapter: p.chapter, verse: verse.verse };
+        card.innerHTML = (starter ? '<p class="bible-eyebrow">Start here · Selected for BodeeGuard</p>' : '') + '<div class="bible-topic-passage-heading"><h3>' + esc(p.label) + '</h3><span>BSB</span></div><blockquote>' + p.verses.map(row => '<p><sup>' + row.verse + '</sup> ' + esc(row.text) + '</p>').join('') + '</blockquote>' + (p.more ? '<p class="bible-small">The passage continues. Open the chapter to read it all.</p>' : '') + '<div class="bible-topic-passage-actions"><button type="button" class="bible-primary" data-topic-read>Read in context <i data-lucide="arrow-up-right"></i></button><button type="button" data-topic-bookmark><i data-lucide="bookmark"></i> Bookmark' + (p.start !== p.end ? ' v. ' + verse.verse : '') + '</button><button type="button" data-topic-memory><i data-lucide="brain"></i> Memorize' + (p.start !== p.end ? ' v. ' + verse.verse : '') + '</button></div><p class="bible-topic-action-status" role="status"></p>';
+        card.querySelector('[data-topic-read]').onclick = () => navigate(p.book, p.chapter, verse.verse);
+        for (const action of ['bookmark', 'memory'])
+            card.querySelector('[data-topic-' + action + ']').onclick = () => void saveVerse(action, ref, card);
+        updateButtons(card, ref);
+        return card;
+    }
+    function updateButtons(card, ref) {
+        const state = getState(), saved = state?.annotations[ref.book + ':' + ref.chapter + ':' + ref.verse]?.bookmark;
+        const memorized = state?.memory?.items?.[ref.book + ':' + ref.chapter + ':' + ref.verse + '-' + ref.verse];
+        if (saved) {
+            const b = card.querySelector('[data-topic-bookmark]');
+            b.textContent = 'Bookmarked';
+            b.disabled = true;
+            b.dataset.saved = 'true';
+        }
+        if (memorized) {
+            const b = card.querySelector('[data-topic-memory]');
+            b.textContent = 'In memory library';
+            b.disabled = true;
+            b.dataset.saved = 'true';
+        }
+    }
+    async function saveVerse(action, ref, card) {
+        if (busy || !getState())
+            return;
+        busy = true;
+        const token = epoch, id = current;
+        const output = card.querySelector('.bible-topic-action-status');
+        output.textContent = 'Saving…';
+        host.querySelectorAll('[data-topic-bookmark],[data-topic-memory]').forEach(b => { b.disabled = true; });
+        try {
+            const state = getState(), note = state.annotations[ref.book + ':' + ref.chapter + ':' + ref.verse] || null;
+            const saved = await mutate(action === 'bookmark' ? 'annotation' : 'memory-add', action === 'bookmark' ? { ...ref, color: note?.color || null, underline: !!note?.underline, note: note?.note || '', bookmark: true, expectedNote: JSON.stringify(note) } : { book: ref.book, chapter: ref.chapter, start: ref.verse, end: ref.verse });
+            if (token !== epoch || id !== current || !saved)
+                return;
+            output.textContent = action === 'bookmark' ? 'Saved to My markings.' : 'Added to Scripture Memory · My verses.';
+            updateButtons(card, ref);
+        }
+        catch (error) {
+            if (token === epoch && id === current)
+                output.textContent = 'Could not save. ' + error.message;
+        }
+        finally {
+            if (token === epoch) {
+                busy = false;
+                host.querySelectorAll('[data-topic-bookmark],[data-topic-memory]').forEach(b => { b.disabled = b.dataset.saved === 'true'; });
+            }
+        }
+    }
+    async function open(id, offset = 0) {
+        clearTimeout(timer);
+        const token = epoch, seq = ++sequence;
+        retry = () => open(id, offset);
+        el('retry').hidden = true;
+        status('Opening topic…');
+        const more = el('detail').querySelector('[data-topic-more-passages]');
+        if (more)
+            more.disabled = true;
+        try {
+            const result = await request('topic', { id, offset });
+            if (token !== epoch || seq !== sequence)
+                return;
+            const same = current === id;
+            current = id;
+            detailNext = result.next;
+            el('library').hidden = true;
+            el('detail').hidden = false;
+            if (!offset || !same) {
+                el('detail').innerHTML = '<button type="button" class="bible-topic-back"><i data-lucide="arrow-left"></i> All topics</button><header class="bible-topic-detail-heading"><p class="bible-eyebrow">Explore the Bible</p><h2 tabindex="-1">' + esc(result.title) + '</h2><p>' + result.total.toLocaleString() + ' indexed passages' + (result.indexTitle !== result.title ? ' · Index heading: ' + esc(result.indexTitle) : '') + (result.aliasOf ? ' · See ' + esc(result.aliasOf) : '') + '</p></header><div id="bible-topics-starting"></div><div class="bible-topics-section-heading"><h3>From the topic index</h3></div><p class="bible-small">' + esc(result.sources.join(' · ')) + '</p><div id="bible-topics-passages"></div><button type="button" data-topic-more-passages>More passages</button><aside class="bible-topic-related"><h3>Related topics</h3><div></div></aside>';
+                el('detail').querySelector('.bible-topic-back').onclick = () => { showLibrary(); el('search').focus({ preventScroll: true }); root.scrollTop = 0; };
+                if (result.starter)
+                    el('starting').append(passageCard(result.starter, true));
+                const related = el('detail').querySelector('.bible-topic-related');
+                related.hidden = !result.related.length;
+                related.querySelector('div').replaceChildren(...result.related.map(row => topicButton(row)));
+                root.scrollTop = 0;
+                el('detail').querySelector('h2').focus({ preventScroll: true });
+            }
+            const cards = result.passages.filter(p => !(result.starter && p.book === result.starter.book && p.chapter === result.starter.chapter && p.start === result.starter.start && p.end === result.starter.end));
+            el('passages').append(...cards.map(p => passageCard(p)));
+            if (!result.total) {
+                const p = document.createElement('p');
+                p.textContent = 'This heading points to related topics. Choose one below to explore its passages.';
+                el('passages').append(p);
+            }
+            const button = el('detail').querySelector('[data-topic-more-passages]');
+            button.hidden = detailNext === null;
+            button.disabled = false;
+            button.onclick = () => void open(id, detailNext);
+            status();
+            icons();
+        }
+        catch (error) {
+            if (token === epoch && seq === sequence) {
+                status('This topic could not load. ' + error.message, true);
+                el('retry').hidden = false;
+                if (more)
+                    more.disabled = false;
+            }
+        }
+    }
+    el('form').onsubmit = event => { event.preventDefault(); query = el('search').value.trim(); letter = ''; showLibrary(); void load(0, Boolean(query)); };
+    el('search').oninput = () => { clearTimeout(timer); sequence++; timer = setTimeout(() => { query = el('search').value.trim(); letter = ''; showLibrary(); void load(0, Boolean(query)); }, 250); };
+    el('alphabet').onclick = event => { const button = event.target.closest('[data-topic-letter]'); if (!button)
+        return; letter = button.dataset.topicLetter; query = ''; el('search').value = ''; showLibrary(); void load(0, true); };
+    el('more').onclick = () => { if (next !== null)
+        void load(next, true); };
+    el('retry').onclick = () => void retry();
+    alphabet();
+    return { open() { if (current)
+            void open(current);
+        else if (!loaded)
+            void load(); }, pause() { sequence++; clearTimeout(timer); if (pendingLoad) {
+            loaded = false;
+            pendingLoad = false;
+        } const value = el('search').value.trim(); if (value !== query) {
+            query = value;
+            letter = '';
+            loaded = false;
+        } status(); }, reset() { epoch++; sequence++; clearTimeout(timer); loaded = false; pendingLoad = false; busy = false; query = ''; letter = ''; next = null; current = null; detailNext = null; el('search').value = ''; el('cards').replaceChildren(); el('results').replaceChildren(); el('detail').replaceChildren(); el('featured').hidden = false; el('results-wrap').hidden = true; showLibrary(); alphabet(); } };
 }
 
 },

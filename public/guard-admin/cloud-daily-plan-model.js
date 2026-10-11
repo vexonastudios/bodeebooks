@@ -15,12 +15,13 @@ const handwriting = () => ({ key:'preset:handwriting', preset:'handwriting', tit
 const isNumerals = value => { try { const url = new URL(value); return url.origin === 'https://numerals.bodeebooks.com' && !url.username && !url.password; } catch { return false; } };
 const numerals = () => ({ key:'preset:numerals', preset:'numerals', title:'Numerals · Roman Numerals', icon:'hash', color:'#f59e0b',
   url:'https://numerals.bodeebooks.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
-const names = { games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'long-division': 'Long Division', 'learning-videos': 'Learning Videos', poems: 'Poems' };
-const icons = { music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', 'long-division': 'divide', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
+const names = { 'drivers-education':'Driver’s Education', games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'long-division': 'Long Division', 'learning-videos': 'Learning Videos', poems: 'Poems' };
+const icons = { 'drivers-education':'car-front', music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', 'long-division': 'divide', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
 icons.games = 'gamepad-2';
 const mediaKinds = { music: 'music', videos: 'video', audiobooks: 'audiobook', games:'family_game' };
 const defaultDays = placement => placement === 'school' ? [1,2,3,4,5] : [0,1,2,3,4,5,6];
 export function movePlanCard(card, placement) {
+  if (card.module === 'drivers-education' && placement === 'after_school') return;
   if (card.placement === placement) return;
   const previous = card.placement === 'blocked' ? card.previousPlacement || 'anytime' : card.placement;
   // Required work days and allowed activity days have different meanings.
@@ -72,8 +73,8 @@ export function dailyPlanCards(snapshot, details, studentId) {
     const stats = details.media?.[mediaKinds[module]], requiredNow = details.requirements?.find(r => r.module === module)?.required === true;
     const placement = stats?.requireCompletion ? 'after_school' : requiredNow ? 'school' : 'anytime';
     cards.push({ key: `module:${module}`, module, title: names[module] || module.charAt(0).toUpperCase() + module.slice(1), icon: icons[module] || 'sparkles', url: activity.url,
-      goal: module === 'typing' ? 15 : 0, placement, days: stats?.days || defaultDays(placement),
-      start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? null,
+      goal: module === 'typing' || module === 'drivers-education' ? 15 : 0, placement:module === 'drivers-education'?'blocked':placement, ...(module==='drivers-education'?{previousPlacement:'school',alwaysOpen:false}:{}), days: stats?.days || defaultDays(placement),
+      start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? (module==='drivers-education'?60:null),
       disabled: details.features?.[module] === false || stats?.enabled === false, assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow });
   }
   if (!snapshot.rules.subjects.some(isQuizlet)) cards.push(quizlet());

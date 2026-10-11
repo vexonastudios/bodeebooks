@@ -31,3 +31,9 @@ test('preview requires same-origin parent authentication and forwards only the s
  assert.equal((await bridge.post(request('bridge',{action:'student-preview',studentId},'https://untrusted.test'))).status,403);
  assert.equal((await bridge.post(request('bridge',{action:'student-preview',studentId:'../../other'}))).status,400);assert.equal(bridge.calls.length,1);
 });
+test('Driver’s Education progress is a parent-authenticated family-scoped read',async()=>{
+ const bridge=route('app/guard/dashboard/bridge/route.ts');
+ const result=await bridge.post(request('bridge',{action:'drivers-education-progress',householdId:'foreign',studentId:'other',deviceCredential:'ignored'}));
+ assert.equal(result.status,200);assert.deepEqual(bridge.calls,[['/drivers-education',{method:'POST',body:'{}'}]]);
+ const signedOut=route('app/guard/dashboard/bridge/route.ts',false);assert.equal((await signedOut.post(request('bridge',{action:'drivers-education-progress'}))).status,401);assert.deepEqual(signedOut.calls,[]);
+});

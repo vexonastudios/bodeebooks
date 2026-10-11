@@ -54,7 +54,13 @@
 .cloud-student .cloud-update-feedback progress::-webkit-progress-value{background:linear-gradient(90deg,#0ea5e9,#34d399);border-radius:8px}
 .cloud-student .cloud-update-bytes{color:var(--text-secondary);font-size:11px}
 .cloud-update-parent-controls{position:fixed;top:16px;right:24px;z-index:1200;padding:8px;border:1px solid var(--border-glass);border-radius:14px;background:var(--bg-secondary,#131b30)}
-.cloud-student .cloud-student-status #error:not(:empty),.cloud-student .cloud-student-status #update-status:not(:empty){position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1000;max-width:min(680px,90vw);padding:12px 18px;border-radius:12px;background:var(--bg-secondary);border:1px solid var(--border-glass);color:var(--text-primary)}
+.cloud-student .cloud-student-status #update-status:not(:empty){position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1000;max-width:min(680px,90vw);padding:12px 18px;border-radius:12px;background:var(--bg-secondary);border:1px solid var(--border-glass);color:var(--text-primary)}
+.cloud-student .cloud-feedback-notice{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:12px;width:max-content;max-width:min(680px,calc(100vw - 32px));box-sizing:border-box;padding:12px;border-radius:12px;background:var(--bg-secondary);border:1px solid var(--border-glass);box-shadow:0 8px 24px #0002;color:var(--text-primary)}
+.cloud-student .cloud-feedback-notice:has(#error:empty){display:none}
+.cloud-student:has(.white-noise-dock:not([hidden])) .cloud-feedback-notice{bottom:calc(max(18px,env(safe-area-inset-bottom)) + 76px)}
+.cloud-student .cloud-student-status .cloud-feedback-notice #error{flex:1;min-width:0;margin:0;color:var(--text-primary);overflow-wrap:anywhere}
+.cloud-student .cloud-feedback-notice #dismiss-notice{flex:0 0 44px;width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid var(--border-glass);border-radius:8px;background:var(--bg-card-hover,var(--bg-glass));color:var(--text-primary);font:24px/1 system-ui,sans-serif;cursor:pointer}
+.cloud-student .cloud-feedback-notice #dismiss-notice:hover{background:var(--bg-glass)}
 .cloud-activity-study{flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 24px;background:var(--bg-secondary);border-bottom:1px solid var(--border-glass);color:var(--text-primary);font:14px/1.5 system-ui,sans-serif}.cloud-activity-study p{margin:0}.cloud-activity-study button{flex:none;font:inherit;font-weight:700;padding:10px 16px;border:1px solid var(--border-glass);border-radius:10px;background:var(--bg-glass);color:var(--text-primary);cursor:pointer}.cloud-activity-study button:disabled{opacity:.5;cursor:wait}
 /* The inherited #dashboard-screen rule forces display:flex!important. Match
    its ID specificity so an invisible dashboard cannot intercept setup input. */
@@ -392,3 +398,5 @@
 .cloud-school-close button:focus-visible{outline:3px solid var(--accent-primary);outline-offset:3px}
 
 #school-view webview[hidden]{display:none}
+
+.cloud-drivers-dialog{box-sizing:border-box;width:min(620px,calc(100vw - 36px));max-height:calc(100dvh - 48px);overflow:auto;padding:clamp(24px,4vw,40px);border:1px solid var(--border-glass,#526276);border-radius:24px;background:var(--bg-card,#142438);color:var(--text-primary,#f8fafc);box-shadow:0 24px 80px #0006}.cloud-drivers-dialog::backdrop{background:#070d19bd}.cloud-drivers-dialog h2{font-size:28px;margin:6px 0 20px}.cloud-drivers-dialog p{line-height:1.6}.cloud-drivers-eyebrow{font-weight:700;letter-spacing:.05em}.cloud-drivers-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.cloud-drivers-actions button{min-height:46px;padding:12px 20px;border-radius:12px;font:inherit;font-weight:700;cursor:pointer;background:#e2e8f0;color:#142438;border:0}.cloud-drivers-actions button:first-child{background:#65d9bb;color:#08372f}.cloud-drivers-actions button:disabled{opacity:.55;cursor:default}
