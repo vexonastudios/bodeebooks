@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.309": {
+  "title": "Clearer Bluetooth headset connections",
+  "sections": [
+    {
+      "heading": "Version 1.2.309",
+      "headline": "More reliable headset reconnect controls",
+      "summary": "Devices & Sound requests an audio reconnect and checks whether the selected headset is ready to play sound.",
+      "highlights": [
+        "Bluetooth connection and audio readiness are shown separately.",
+        "Children can retry Connect when Bluetooth is linked but sound is not ready.",
+        "Readable device cards follow the child theme, with a Sound controls shortcut."
+      ]
+    }
+  ]
+},
+
   "1.2.305": {
   "title": "Less background activity, responsive family controls",
   "sections": [
