@@ -260,7 +260,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
           const state=abekaCourseStatus(course),label=abekaCourseLabel(course)+(state==='upcoming'?' · Upcoming':'');
           const chip=node('span',`cloud-abeka-course ${state}`,`${state==='complete'?'✓':state==='refresh-needed'?'?':state==='upcoming'?'›':'○'} ${label}`);
           chip.setAttribute('aria-label',`${label}: ${state==='complete'?'complete':state==='refresh-needed'?'waiting for lesson refresh':state==='upcoming'?'upcoming, not required today':'incomplete'}`);
-          if(state==='upcoming')chip.title=`Activities comes after Lesson ${course.schoolLesson}, which most completed classes report today. It does not block today's school completion.`;
+          if(state==='upcoming')chip.title=`${course.courseName} comes after Lesson ${course.schoolLesson}, which most completed classes report today. It does not block today's school completion.`;
           lessons.append(chip);
         }
         card.append(lessons);
