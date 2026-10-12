@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.311": {
+  "title": "Resume driving lessons and add learning videos together",
+  "sections": [
+    {
+      "heading": "Version 1.2.311",
+      "headline": "Resume unfinished driving lessons and add a list of videos",
+      "summary": "Fixes a progress-timing rejection that could block Driver’s Education from reopening and adds bulk Learning Videos approval.",
+      "highlights": [
+        "Driver’s Education accepts legitimate rounded practice reports without losing the unfinished lesson or granting false completion.",
+        "The centered lesson dialog shows course progress, a clear Resume lesson action and reachable Close controls.",
+        "Paste up to 50 YouTube links in Learning Videos, review them together and approve in one step.",
+        "Duplicate videos are skipped; unsuccessful links stay available to correct or retry."
+      ]
+    }
+  ]
+},
+
   "1.2.310": {
   "title": "School recovery and clearer app downloads",
   "sections": [
