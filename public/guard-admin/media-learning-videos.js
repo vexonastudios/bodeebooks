@@ -6,14 +6,147 @@ let pendingVideo = null;
 function escapeHtml(value) {
   const node = document.createElement('div');
   node.textContent = String(value ?? '');
-  return node.innerHTML;
+  return node.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
+
+const MAX_VIDEO_LINKS = 50;
+let batch = null;
+let busy = false;
 
 function extractYouTubeId(value) {
   const input = String(value || '').trim();
-  const match = input.match(/(?:youtube\.com\/(?:watch\?[^#]*v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
-  if (match) return match[1];
-  return /^[A-Za-z0-9_-]{11}$/.test(input) ? input : '';
+  if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+  try {
+    const url = new URL(/^https?:\/\//i.test(input) ? input : 'https://' + input);
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.port) return '';
+    const host = url.hostname.toLowerCase();
+    let id = '';
+    if (host === 'youtu.be') id = url.pathname.slice(1);
+    else if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(host)) {
+      id = url.pathname === '/watch' ? url.searchParams.get('v') : url.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)\/?$/)?.[1];
+    }
+    return /^[A-Za-z0-9_-]{11}$/.test(id || '') ? id : '';
+  } catch { return ''; }
+}
+
+export function parseLearningVideoLinks(value) {
+  // A Markdown link's label and destination refer to one entry, not two videos.
+  const text = String(value || '').replace(/\[[^\]\r\n]*\]\(([^\s)]+)\)/g, '$1');
+  if (text.length > 20000) throw new Error('Paste up to 50 video links at a time.');
+  const tokens = text.split(/[\s,;]+/).filter(token => token && !/^(?:[-*•]|\d+[.)])$/.test(token))
+    .map(token => token.replace(/^[<"']+|[>"'.)]+$/g, ''));
+  const ids = [], invalid = [], seen = new Set();
+  let duplicates = 0;
+  for (const token of tokens) {
+    const id = extractYouTubeId(token);
+    if (!id) invalid.push(token);
+    else if (seen.has(id)) duplicates++;
+    else { seen.add(id); ids.push(id); }
+  }
+  if (ids.length > MAX_VIDEO_LINKS) throw new Error('Paste up to 50 different videos at a time. Nothing has been added.');
+  return { ids, invalid, duplicates };
+}
+
+function setBusy(value) {
+  busy = value;
+  document.getElementById('learning-video-url').disabled = value;
+  document.querySelectorAll('.learning-video-add-row button, #learning-video-batch button, #learning-video-save, #learning-video-preview-cancel')
+    .forEach(button => { button.disabled = value; });
+}
+
+async function videoMetadata(youtubeId) {
+  let metadata = null;
+  try {
+    const response = await fetch('https://www.youtube.com/oembed?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + youtubeId) + '&format=json', { signal: AbortSignal.timeout(6000) });
+    if (response.ok) metadata = await response.json();
+  } catch (error) {
+    logger.info('learning-videos', 'Public YouTube metadata was unavailable; offering direct-link approval', error);
+  }
+  return {
+    youtube_id: youtubeId,
+    title: metadata?.title || 'Unlisted learning video',
+    channel: metadata?.author_name || '',
+    thumbnail_url: metadata?.thumbnail_url || 'https://img.youtube.com/vi/' + youtubeId + '/mqdefault.jpg',
+    direct_parent_link: true,
+    metadataHidden: !metadata
+  };
+}
+
+function renderBatch() {
+  const panel = document.getElementById('learning-video-batch');
+  if (!batch) { panel.hidden = true; return; }
+  panel.hidden = false;
+  const added = batch.entries.filter(item => item.state === 'added').length;
+  const pending = batch.entries.filter(item => item.state !== 'added');
+  const failed = pending.length;
+  const summary = batch.saving ? 'Adding videos… ' + added + ' of ' + batch.entries.length + ' added.'
+    : batch.finished ? added + ' added · ' + batch.skipped + ' skipped · ' + (failed + batch.invalid.length) + ' need attention'
+    : pending.length + ' videos ready · ' + batch.skipped + ' duplicates skipped' + (batch.invalid.length ? ' · ' + batch.invalid.length + ' invalid entries' : '');
+  panel.innerHTML = '<h4 id="learning-video-batch-heading">' + (batch.finished ? 'Import results' : 'Add these learning videos') + '</h4>' +
+    '<p class="learning-video-batch-summary" role="status" aria-live="polite">' + escapeHtml(summary) + '</p>' +
+    '<p class="settings-hint">Approved videos will be available to every child. You can edit titles below. Videos with hidden details still need a playable exact link.</p>' +
+    '<ol class="learning-video-batch-list">' + batch.entries.map((item, index) =>
+      '<li data-state="' + item.state + '"><div><label for="learning-video-batch-title-' + index + '">' + escapeHtml(item.youtube_id) + '</label>' +
+      '<input class="admin-input" id="learning-video-batch-title-' + index + '" data-index="' + index + '" maxlength="180" value="' + escapeHtml(item.title) + '"' + (item.state === 'added' || batch.saving ? ' disabled' : '') + '>' +
+      (item.metadataHidden && item.state !== 'added' ? '<span class="settings-hint">Public title unavailable; confirm or edit the title before approval.</span>' : '') +
+      '</div><span class="learning-video-item-status">' + escapeHtml(item.error || (item.state === 'added' ? 'Added' : item.state === 'saving' ? 'Adding…' : 'Ready')) + '</span></li>').join('') + '</ol>' +
+    (batch.invalid.length ? '<div class="learning-video-invalid"><strong>These entries were not recognized</strong><ul>' + batch.invalid.map(value => '<li>' + escapeHtml(value) + '</li>').join('') + '</ul><p>They will stay in the box so you can correct them.</p></div>' : '') +
+    '<div class="learning-video-batch-actions"><button id="learning-video-batch-close" class="btn btn-secondary" type="button">' + (batch.saving ? 'Stop after this video' : batch.finished ? 'Done' : 'Cancel') + '</button>' +
+    (pending.length ? '<button id="learning-video-batch-save" class="btn btn-primary" type="button">' + (batch.saving ? 'Adding…' : batch.finished ? 'Retry / add ' + pending.length + ' remaining videos' : 'Approve & add ' + pending.length + ' videos') + '</button>' : '') + '</div>';
+  panel.querySelectorAll('input[data-index]').forEach(input => input.addEventListener('input', () => { batch.entries[Number(input.dataset.index)].title = input.value; }));
+  document.getElementById('learning-video-batch-close').addEventListener('click', () => { if (batch.saving) { batch.stopRequested = true; document.getElementById('learning-video-batch-close').textContent = 'Finishing current video…'; } else if (!busy) { batch = null; renderBatch(); } });
+  document.getElementById('learning-video-batch-save')?.addEventListener('click', saveBatch);
+  if (busy) panel.querySelectorAll('button').forEach(button => { button.disabled = button.id !== 'learning-video-batch-close' || !batch.saving; });
+}
+
+async function prepareBatch(parsed) {
+  closePreview();
+  const existing = new Set((await request('/videos')).filter(video => Number(video.active) === 1).map(video => video.youtube_id));
+  const ids = parsed.ids.filter(id => !existing.has(id));
+  const entries = new Array(ids.length);
+  let next = 0;
+  // Limit metadata requests; imports use the existing parent-only verification route.
+  await Promise.all(Array.from({ length: Math.min(3, ids.length) }, async () => {
+    while (next < ids.length) {
+      const index = next++;
+      entries[index] = { ...await videoMetadata(ids[index]), state: 'ready' };
+    }
+  }));
+  batch = { entries, skipped: parsed.duplicates + parsed.ids.length - ids.length, invalid: parsed.invalid, finished: false, saving: false };
+  renderBatch();
+}
+
+async function saveBatch() {
+  if (busy || !batch) return;
+  if (batch.entries.some(item => item.state !== 'added' && !item.title.trim())) return window.showToast?.('Give each video a title before adding it.', true);
+  setBusy(true);
+  batch.saving = true; batch.stopRequested = false;
+  try {
+    for (const item of batch.entries) {
+      if (batch.stopRequested) break;
+      if (item.state === 'added') continue;
+      item.state = 'saving'; item.error = '';
+      renderBatch();
+      try {
+        await request('/videos', { method: 'POST', signal: AbortSignal.timeout(45000), body: JSON.stringify({
+          youtube_id: item.youtube_id, title: item.title.trim(), channel: item.channel,
+          thumbnail_url: item.thumbnail_url, direct_parent_link: true, category: 'General'
+        }) });
+        item.state = 'added';
+      } catch (error) {
+        item.state = 'failed';
+        item.error = error.name === 'TimeoutError' || error.name === 'AbortError'
+          ? 'No confirmation received. Retry to check and add this video safely.' : error.message;
+      }
+    }
+    batch.finished = true;
+    document.getElementById('learning-video-url').value = [...batch.entries.filter(item => item.state !== 'added').map(item => 'https://youtu.be/' + item.youtube_id), ...batch.invalid].join('\n');
+    await loadLearningVideosTab();
+  } finally {
+    batch.saving = false;
+    setBusy(false);
+    renderBatch();
+  }
 }
 
 function formatBytes(value) {
@@ -73,7 +206,7 @@ function uploadMp4() {
   xhr.onload = async () => {
     button.disabled = false;
     let payload = {};
-    try { payload = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
+    try { payload = JSON.parse(xhr.responseText || '{}'); } catch {}
     if (xhr.status < 200 || xhr.status >= 300) {
       if (progress) progress.style.width = '0%';
       setMp4Status(payload.error || 'BodeeGuard could not save that MP4.', true);
@@ -109,26 +242,21 @@ function closePreview() {
 async function lookupVideo() {
   const input = document.getElementById('learning-video-url');
   const button = document.getElementById('learning-video-lookup-btn');
-  const youtubeId = extractYouTubeId(input?.value);
-  if (!youtubeId) return window.showToast?.('Paste a valid YouTube URL or 11-character video ID.', true);
-  button.disabled = true;
-  button.textContent = 'Checking…';
+  if (busy) return;
+  let parsed;
+  try { parsed = parseLearningVideoLinks(input?.value); }
+  catch (error) { return window.showToast?.(error.message, true); }
+  if (!parsed.ids.length && !parsed.invalid.length) return window.showToast?.('Paste YouTube links or video IDs, one per line.', true);
+  batch = null; renderBatch(); closePreview();
+  setBusy(true);
+  button.textContent = 'Checking links…';
   try {
-    let metadata = null;
-    try {
-      const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${youtubeId}`)}&format=json`);
-      if (response.ok) metadata = await response.json();
-    } catch (error) {
-      logger.info('learning-videos', 'Public YouTube metadata was unavailable; offering direct-link approval', error);
+    if (parsed.ids.length !== 1 || parsed.invalid.length || parsed.duplicates) {
+      await prepareBatch(parsed);
+      return;
     }
-    const metadataHidden = !metadata;
-    pendingVideo = {
-      youtube_id: youtubeId,
-      title: metadata?.title || 'Unlisted learning video',
-      channel: metadata?.author_name || '',
-      thumbnail_url: metadata?.thumbnail_url || `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`,
-      direct_parent_link: true
-    };
+    pendingVideo = await videoMetadata(parsed.ids[0]);
+    const metadataHidden = pendingVideo.metadataHidden;
     document.getElementById('learning-video-preview-thumb').src = pendingVideo.thumbnail_url;
     document.getElementById('learning-video-title').value = pendingVideo.title;
     document.getElementById('learning-video-channel').value = pendingVideo.channel;
@@ -140,16 +268,15 @@ async function lookupVideo() {
   } catch (error) {
     window.showToast?.(error.message, true);
   } finally {
-    button.disabled = false;
-    button.innerHTML = '<i data-lucide="plus"></i> Add URL / ID';
+    setBusy(false);
+    button.innerHTML = '<i data-lucide="plus"></i> Review links';
     window.refreshIcons?.();
   }
 }
 
 async function saveVideo() {
-  if (!pendingVideo) return;
-  const button = document.getElementById('learning-video-save');
-  button.disabled = true;
+  if (!pendingVideo || busy) return;
+  setBusy(true);
   try {
     await request('/videos', {
       method: 'POST',
@@ -167,7 +294,7 @@ async function saveVideo() {
   } catch (error) {
     window.showToast?.(error.message, true);
   } finally {
-    button.disabled = false;
+    setBusy(false);
   }
 }
 
@@ -222,9 +349,29 @@ export async function loadLearningVideosTab() {
 }
 
 export function setupLearningVideosTab() {
+  const original = document.getElementById('learning-video-url');
+  if (!original || original.dataset.bulkReady) return;
+  // Shared setup upgrades both the hosted panel and the original single-link markup.
+  const input = document.createElement('textarea');
+  input.id = original.id; input.className = original.className; input.value = original.value;
+  input.rows = 3; input.maxLength = 20000; input.dataset.bulkReady = 'true';
+  input.placeholder = 'Paste YouTube links or video IDs, one per line';
+  input.setAttribute('aria-label', 'YouTube links or video IDs');
+  input.setAttribute('aria-describedby', 'learning-video-links-hint');
+  original.replaceWith(input);
+  const row = input.closest('.learning-video-add-row');
+  const hint = document.createElement('p');
+  hint.id = 'learning-video-links-hint'; hint.className = 'settings-hint';
+  hint.textContent = 'Add up to 50 videos at once. Paste a list, review it, then approve all together. Ctrl+Enter (or ⌘+Enter) reviews your links.';
+  row.after(hint);
+  const panel = document.createElement('div');
+  panel.id = 'learning-video-batch'; panel.className = 'learning-video-batch'; panel.hidden = true;
+  panel.setAttribute('aria-labelledby', 'learning-video-batch-heading'); hint.after(panel);
+  document.getElementById('learning-video-lookup-btn').innerHTML = '<i data-lucide="plus"></i> Review links';
+  input.addEventListener('input', () => { if (!busy) { closePreview(); batch = null; renderBatch(); } });
   document.getElementById('learning-video-lookup-btn')?.addEventListener('click', lookupVideo);
   document.getElementById('learning-video-url')?.addEventListener('keydown', event => {
-    if (event.key === 'Enter') { event.preventDefault(); lookupVideo(); }
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); lookupVideo(); }
   });
   document.getElementById('learning-video-preview-cancel')?.addEventListener('click', closePreview);
   document.getElementById('learning-video-save')?.addEventListener('click', saveVideo);

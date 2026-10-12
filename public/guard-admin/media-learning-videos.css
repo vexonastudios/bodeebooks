@@ -102,3 +102,34 @@
     flex-direction: column;
   }
 }
+
+/* Bulk YouTube approval stays readable beside the existing library. */
+.learning-video-add-row textarea.admin-input {
+  box-sizing: border-box; width: 100%; min-height: 100px; resize: vertical; line-height: 1.5; padding: 12px 14px;
+}
+.learning-video-add-row .btn { align-self: start; min-height: 44px; }
+.learning-video-batch {
+  margin-top: 18px; padding: 20px; border: 1px solid var(--border-color, rgba(255,255,255,.15));
+  border-radius: 14px; background: var(--bg-card, rgba(255,255,255,.025));
+}
+.learning-video-batch[hidden] { display: none; }
+.learning-video-batch h4 { margin: 0 0 8px; font-size: 18px; }
+.learning-video-batch-summary { font-weight: 700; margin: 8px 0; }
+.learning-video-batch-list { list-style: none; padding: 0; margin: 16px 0; max-height: 440px; overflow-y: auto; }
+.learning-video-batch-list li {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(70px, 30%); gap: 16px;
+  align-items: center; padding: 12px 0; border-top: 1px solid rgba(128,128,128,.2);
+}
+.learning-video-batch-list label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
+.learning-video-batch-list .admin-input { box-sizing: border-box; width: 100%; min-width: 0; }
+.learning-video-item-status { font-size: 13px; overflow-wrap: anywhere; }
+.learning-video-batch-list [data-state="added"] .learning-video-item-status { color: #34d399; font-weight: 700; }
+.learning-video-batch-list [data-state="failed"] .learning-video-item-status,
+.learning-video-invalid { color: #fca5a5; }
+.learning-video-invalid { overflow-wrap: anywhere; padding: 12px; border: 1px solid rgba(248,113,113,.3); border-radius: 8px; }
+.learning-video-batch-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+@media (max-width: 640px) {
+  .learning-video-batch { padding: 14px; }
+  .learning-video-batch-list li { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .learning-video-batch-actions .btn { flex: 1 1 180px; min-height: 44px; }
+}
