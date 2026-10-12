@@ -9,6 +9,24 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.310": {
+  "title": "School recovery and clearer app downloads",
+  "sections": [
+    {
+      "heading": "Version 1.2.310",
+      "headline": "Keep school moving and see installation progress",
+      "summary": "Improves school reconnection, Driver’s Education downloads, printer discovery and coloring-page review.",
+      "highlights": [
+        "School access and retry no longer wait behind unrelated background uploads or update checks.",
+        "Driver’s Education shows real download progress, cancellation and clear retry messages.",
+        "Devices & Sound can find a printer by address when automatic discovery misses it.",
+        "Future occasional Abeka Art lessons stay separate from today’s required work.",
+        "Coloring review distinguishes ideas awaiting rendering from finished images."
+      ]
+    }
+  ]
+},
+
   "1.2.309": {
   "title": "Clearer Bluetooth headset connections",
   "sections": [
