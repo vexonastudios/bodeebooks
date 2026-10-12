@@ -13,10 +13,10 @@ const row=(feature,values={})=>({...empty,feature,...values});
 function load(features,sort='dbResultBytes'){
   const data={from:'2026-10-03T16:00:00Z',asOf:'2026-10-10T15:00:00Z',firstTracked:'2026-10-03T16:00:00Z',warnings:[],totals:{...empty,requests:100000,serverErrors:73},features,families:[],daily:[]};
   let index=0;const states=[7,'',[],data,false,'',sort,0];
-  const module=new Module(filename);module.filename=filename;
-  module.require=name=>name==='react'?{...React,useState:()=>[states[index++],()=>{}],useEffect:()=>{}}:name.endsWith('.module.css')?{__esModule:true,default:new Proxy({},{get:(_,key)=>key})}:localRequire(name);
-  module._compile(source,filename);
-  return {warnings:module.exports.usageWarnings(features),render:()=>renderToStaticMarkup(React.createElement(module.exports.default))};
+  const compiled=new Module(filename);compiled.filename=filename;
+  compiled.require=name=>name==='./UsageInsights'?{__esModule:true,default:()=>null,UsageTrends:()=>null}:name==='react'?{...React,useState:()=>[states[index++],()=>{}],useEffect:()=>{}}:name.endsWith('.module.css')?{__esModule:true,default:new Proxy({},{get:(_,key)=>key})}:localRequire(name);
+  compiled._compile(source,filename);
+  return {warnings:compiled.exports.usageWarnings(features),render:()=>renderToStaticMarkup(React.createElement(compiled.exports.default))};
 }
 test('a concentrated feature failure is visible even when the aggregate rate is low',()=>{
   const f=load([row('sync',{requests:99000}),row('audiobooks',{requests:686,serverErrors:73})]);

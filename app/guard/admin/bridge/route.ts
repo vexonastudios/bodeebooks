@@ -13,6 +13,7 @@ export async function POST(request:Request){
     if(input.action==="operations")result=await operatorApi('/operations');
     else if(input.action==="operation-state")result=await operatorApi('/operations',{id:input.id,state:input.state,lastSeen:input.lastSeen});
     else if(input.action==="overview")result=await operatorApi();
+    else if(input.action==="usage-limits")result=await operatorApi("/usage/limits",{limits:input.limits,revision:input.revision});
     else if(input.action==="usage")result=await operatorApi(`/usage?days=${encodeURIComponent(String(input.days||7))}&family=${encodeURIComponent(String(input.family||"").slice(0,40))}`);
     else if(input.action==="bug-reports")result=await operatorApi('/bug-reports?'+new URLSearchParams({status:String(input.status||'open'),search:String(input.search||'').slice(0,120),offset:String(input.offset||0)}));
     else if(input.action==="bug-report-detail")result=await operatorApi('/bug-reports/detail?'+new URLSearchParams({id:String(input.id||''),householdId:String(input.householdId||'')}));
