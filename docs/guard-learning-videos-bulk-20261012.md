@@ -17,6 +17,6 @@ has the existing external dependency-junction limitation documented in prior
 receipts. Final local source refinements passed static, unit and UI checks again.
 All tests used synthetic data, without adding videos to a live household.
 
-This is a local source commit only; not pushed or deployed. Include the two
-assets in the next authorized parent website deployment. Shared-source details,
+Published with Family Beta 1.2.311; see docs/guard-release-1.2.311.md. The live
+assets match the verified source on both public aliases. Shared-source details,
 exact hashes and commands are in BodeeGuard docs/learning-videos-bulk-20261012.md.
