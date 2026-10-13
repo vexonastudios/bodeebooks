@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.314": {
+    "title": "Clear driving course steps and reliable lesson launch",
+    "sections": [
+      {
+        "heading": "Version 1.2.314",
+        "headline": "See what remains before the next driving day",
+        "summary": "Driver’s Education shows each child’s driving, question and review progress, and fixes a protected-launch failure that could stop the game opening.",
+        "highlights": [
+          "The child sees exactly which steps remain in the current Day and a clear Start Day 2 action as soon as Day 1 is finished.",
+          "Course Days are lesson sets; children may complete several on the same calendar date.",
+          "Protected game launches wait for verification and give a useful retry or repair message instead of leaving the child stuck at an unexplained timeout."
+        ]
+      }
+    ]
+  },
   "1.2.313": {
     "title": "Private Texas Road School update",
     "sections": [
