@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.313": {
+    "title": "Private Texas Road School update",
+    "sections": [
+      {
+        "heading": "Version 1.2.313",
+        "headline": "Update Driver’s Education without losing lessons",
+        "summary": "BodeeGuard can offer the verified private Texas Road School 0.54 build to the assigned family while preserving earlier course progress.",
+        "highlights": [
+          "The assigned child receives the private game update through BodeeGuard’s signed, family-only download when starting the module.",
+          "Completed days, saved answers and an already-started Day 6 keep their accepted plan; a new Day 6 includes school-bus practice.",
+          "Older BodeeGuard clients keep their previous course release until the child app itself updates."
+        ]
+      }
+    ]
+  },
   "1.2.312": {
   "title": "School reconnection and reliable update recovery",
   "sections": [
