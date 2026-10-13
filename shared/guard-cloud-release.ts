@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.312": {
+  "title": "School reconnection and reliable update recovery",
+  "sections": [
+    {
+      "heading": "Version 1.2.312",
+      "headline": "Recover school access without logging out",
+      "summary": "Repairs several startup, reconnection and update-wait failures that could leave children unable to open school.",
+      "highlights": [
+        "School reconnects independently of background uploads and update preparation, with a clearer Reconnect and open school button.",
+        "Temporary protection-service and local-control failures can recover in place; retries continue after an interrupted startup.",
+        "Invisible or failed message windows no longer falsely block restarting for an update; real unfinished replies remain protected.",
+        "Parent help stays reachable, and signed remote exit retries temporary connection failures without overriding parent locks or losing saved work."
+      ]
+    }
+  ]
+},
+
   "1.2.311": {
   "title": "Resume driving lessons and add learning videos together",
   "sections": [
