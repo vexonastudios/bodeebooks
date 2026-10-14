@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.315": {
+  "title": "Reliable driving installation and audio during learning videos",
+  "sections": [
+    {
+      "heading": "Version 1.2.315",
+      "headline": "Recover driving installations and keep learning moving",
+      "summary": "Driver’s Education retains verified downloads for installation retries, and pinned Music or Audiobooks can continue during Learning Videos.",
+      "highlights": [
+        "Failed driving installations keep a visible explanation and a Retry installation button, including after Refresh. Saved course progress is preserved.",
+        "Windows file-lock retries and background backup copying reduce interrupted installations and repeated downloads.",
+        "Pinned Music or Audiobooks can play beside Learning Videos with separate controls and the existing parent time limits.",
+        "The protection helper stays responsive when a lesson window is busy; diagnostic categories help identify connection and storage failures."
+      ]
+    }
+  ]
+},
   "1.2.314": {
     "title": "Clear driving course steps and reliable lesson launch",
     "sections": [
