@@ -18,7 +18,7 @@ const action = (label, symbol, fn, cls = 'btn btn-secondary') => {
   return el;
 };
 export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, chooseSchool, endpoint = '/guard/dashboard/bridge/' }) {
-  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20260923-parent-setup'; document.head.append(stylesheet);
+  const stylesheet = make('link'); stylesheet.rel = 'stylesheet'; stylesheet.href = '/guard-admin/cloud-daily-plan.css?v=20261014-driving-limits'; document.head.append(stylesheet);
   const nav = action('Daily plan', 'list-checks', () => navigate('daily-plan'), 'nav-item'); nav.dataset.tab = 'daily-plan';
   document.querySelector('.sidebar-nav .nav-item[data-tab="overview"]')?.after(nav);
   const section = make('section', 'tab-content'); section.id = 'tab-daily-plan'; section.setAttribute('aria-label', 'Daily plan');
@@ -139,7 +139,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     el.addEventListener('dragstart', e => { if (e.target.closest('input,select,button,summary')) { e.preventDefault(); return; } e.dataTransfer.setData('text/plain', card.key); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); });
     el.addEventListener('dragend', clearDrag);
     const heading = make('div', 'daily-plan-card-title'); heading.append(icon(card.icon), make('strong', '', card.title), icon('grip-vertical')); el.append(heading);
-    const summary = card.module === 'drivers-education' && !isBlocked ? 'Pass the next course day · '+card.goal+' minute practice goal' : isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'All school websites assigned to each child, such as Abeka, BJU and a separate math site.' : card.portal ? 'This website has its own required days and completion.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
+    const summary = card.module === 'drivers-education' && !isBlocked ? (card.limitMinutes??240)+' minute daily limit · '+card.goal+' minute practice goal' : isBlocked ? card.preset === 'quizlet' ? 'Optional flashcards and study sets. Move to allow.' : 'Hidden from the child; saved work is kept.' : card.key === 'school' ? 'All school websites assigned to each child, such as Abeka, BJU and a separate math site.' : card.portal ? 'This website has its own required days and completion.' : card.assignedWork ? 'Finish assigned work · only when required' : card.placement === 'school' ? `${card.goal} minutes of schoolwork` : card.limitMinutes ? `${card.limitMinutes} minutes per day` : 'Uses your activity settings';
     if (card.preset === 'handwriting') el.append(make('p', 'daily-plan-card-summary', isBlocked ? 'Letters handwriting practice. Move to allow.' : card.placement === 'school' ? `${card.goal} minutes of handwriting practice` : 'Learn to form letters with guided handwriting practice. Optional unless you move it to School.'));
     if (card.preset === 'numerals') el.append(make('p', 'daily-plan-card-summary', isBlocked ? 'Roman numeral practice. Move to allow.' : card.placement === 'school' ? `${card.goal} minutes of Roman numeral practice` : 'Learn Roman numerals with guided practice. Optional unless you move it to School.'));
     if (summary !== 'Uses your activity settings' && !['handwriting','numerals'].includes(card.preset)) el.append(make('p', 'daily-plan-card-summary', summary));
@@ -147,7 +147,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     if (!isBlocked && card.module === 'math-coach') el.append(make('p', 'cloud-note', 'AI permission and question allowance still apply in Math Coach settings.'));
     if (card.module === 'drivers-education') {el.append(make('p','cloud-note','Texas Road School · Windows. Twenty self-paced course days. Driving and questions must pass; practice minutes alone do not complete a day.'));el.append(action('View course progress','route',()=>void showDriverProgress()));}
     if (!isBlocked && card.module === 'long-division') el.append(make('p', 'cloud-note', 'Assign this to School and set Required minutes for daily practice. Long Division works without AI question allowance.'));
-    if (alwaysOpen) el.append(make('p', 'daily-plan-hours', 'Always open · no time cutoff'));
+    if (alwaysOpen) el.append(make('p', 'daily-plan-hours', card.module==='drivers-education'?'No opening-hours restriction · daily limit still applies':'Always open · no time cutoff'));
     else if (!isBlocked && card.start) el.append(make('p', 'daily-plan-hours', `${card.days.length === 7 ? 'Every day' : card.days.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')} · ${card.start}–${card.end}`));
     if (isBlocked && card.notAssigned) el.append(make('p', 'daily-plan-off', 'Not assigned to this child. Move to an allowed group, or apply the family default.'));
     if (isBlocked && (card.disabled || card.globallyDisabled)) el.append(make('p', 'daily-plan-off', 'Move to an allowed group to enable it for this child.'));
@@ -160,13 +160,24 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
       el.append(action(card.key === 'school' ? 'Set websites for each child' : 'Manage school websites', 'school', openSchoolSetup, 'btn btn-secondary daily-plan-school-link'));
     }
     if (isBlocked) return el;
+    if(card.module==='drivers-education'){
+      const box=make('div','daily-plan-driver-limit'),limit=make('input','admin-input');
+      limit.type='number';limit.min='1';limit.max='480';limit.inputMode='numeric';limit.value=card.limitMinutes??240;
+      limit.setAttribute('aria-label','Driver’s Education daily time limit in minutes');
+      const choose=value=>{card.limitMinutes=Number(value);limit.value=value;changed(card);el.querySelector('.daily-plan-card-summary').textContent=card.limitMinutes+' minute daily limit · '+card.goal+' minute practice goal';};
+      limit.onchange=()=>choose(limit.value);box.append(field('Daily time limit (minutes)',limit));
+      const presets=make('div','daily-plan-limit-presets');
+      for(const minutes of [15,30,60])presets.append(action(minutes+' min','clock',()=>choose(minutes)));
+      box.append(presets,make('p','cloud-note','Maximum total time each day, across visits. Driving, questions and menus count; downloads do not. Resets at midnight in your family time zone.'));
+      el.append(box);
+    }
     const settings = make('details', 'daily-plan-card-settings'), toggle = make('summary'); toggle.append(icon('sliders-horizontal'), document.createTextNode('Times & options')); settings.append(toggle);
     settings.open = openOptions.has(card.key);
     settings.ontoggle = () => { if (settings.isConnected) { if (settings.open) openOptions.add(card.key); else openOptions.delete(card.key); } };
     if (card.placement === 'school' && !card.portal && !card.assignedWork) {
-      const goal = make('input', 'admin-input'); goal.type = 'number'; goal.min = '1'; goal.max = '480'; goal.value = card.goal; goal.onchange = () => { card.goal = Number(goal.value); changed(card); }; settings.append(field(card.module === 'drivers-education'?'Practice goal (minutes)':'Required minutes', goal));
+      const goal = make('input', 'admin-input'); goal.type = 'number'; goal.min = '1'; goal.max = '480'; goal.value = card.goal; goal.onchange = () => { card.goal = Number(goal.value); changed(card); }; settings.append(field(card.module === 'drivers-education'?'Practice goal (minutes)':'Required minutes', goal));if(card.module==='drivers-education')settings.append(make('p','cloud-note','The practice goal is separate from the maximum daily time. Passing a course day still requires its driving and questions.'));
     }
-    if (card.limitMinutes !== null || card.module === 'drivers-education') {
+    if (card.limitMinutes !== null && card.module !== 'drivers-education') {
       const limit = make('input', 'admin-input'); limit.type = 'number'; limit.min = '1'; limit.max = '480'; limit.value = card.limitMinutes ?? 60; limit.onchange = () => { card.limitMinutes = Number(limit.value); changed(card); }; settings.append(field(card.module === 'drivers-education'?'Daily session limit (minutes)':'Daily media minutes', limit));
     }
     const days = make('fieldset', 'daily-plan-days'); days.append(make('legend', '', card.placement === 'school' ? 'Required work days' : 'Days'));
@@ -177,7 +188,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
     if (!alwaysOpen) settings.append(hours);
     if (!alwaysOpen && card.placement !== 'scheduled') settings.append(action('No time window', 'clock', () => { card.start = card.end = null; changed(card); render(); }));
     settings.append(make('p', 'cloud-note', alwaysOpen ? 'School remains available on days off. These days only decide when work is required; after-school activities do not wait for optional work.' : card.placement === 'school' ? 'School calendar hours also apply.' : card.placement === 'after_school' ? 'Waits for required work on school days. On days off, only your activity hours and daily limits apply.' : 'These hours work independently of the school calendar.'));
-    if (card.module) settings.append(action('Activity settings', 'settings', () => { if (!changes.size || confirm('Keep this draft and open activity settings? Return to Daily plan to save it.')) navigate(card.module === 'games' ? 'family-games' : card.module === 'art-studio' || card.module === 'typing' ? 'students' : card.module); }));
+    if (card.module && card.module !== 'drivers-education') settings.append(action('Activity settings', 'settings', () => { if (!changes.size || confirm('Keep this draft and open activity settings? Return to Daily plan to save it.')) navigate(card.module === 'games' ? 'family-games' : card.module === 'art-studio' || card.module === 'typing' ? 'students' : card.module); }));
     el.append(settings); el.querySelectorAll('input,button').forEach(n => { n.disabled = busy; }); return el;
   }
   function render() {

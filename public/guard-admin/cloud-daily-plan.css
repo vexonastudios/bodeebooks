@@ -131,3 +131,8 @@
 .daily-plan-preview-card p { margin:7px 0 0; color:#c8c0dc; font-size:13px; }
 .daily-plan-preview summary { cursor:pointer; }
 @media(max-width:480px) { .daily-plan-preview-grid { grid-template-columns:1fr; } }
+
+.daily-plan-driver-limit { margin:12px 0; padding:12px; border:1px solid #3d6477; border-radius:12px; background:rgba(56,189,248,.07); }
+.daily-plan-driver-limit .daily-plan-field { margin-top:0; font-weight:700; }
+.daily-plan-limit-presets { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.daily-plan-limit-presets .btn { display:flex; flex:1 0 76px; min-height:44px; padding:10px 8px; gap:6px; justify-content:center; white-space:nowrap; }

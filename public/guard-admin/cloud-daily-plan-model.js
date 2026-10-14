@@ -63,7 +63,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
       placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false, notAssigned:!assignment,
       days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
       start: plan ? plan.start : subject.scheduleStart || stats?.startTime || null, end: plan ? plan.end : subject.scheduleEnd || stats?.endTime || null,
-      limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? null, disabled: plan?.enabled !== true && (details.features?.[module] === false || stats?.enabled === false),
+      limitMinutes: plan?.limitMinutes ?? stats?.limitMinutes ?? (module==='drivers-education'?(assignment?240:15):null), disabled: plan?.enabled !== true && (details.features?.[module] === false || stats?.enabled === false),
       assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow: details.requirements?.find(r => r.module === module)?.required === true });
   }
   for (const activity of activities) {
@@ -74,7 +74,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     const placement = stats?.requireCompletion ? 'after_school' : requiredNow ? 'school' : 'anytime';
     cards.push({ key: `module:${module}`, module, title: names[module] || module.charAt(0).toUpperCase() + module.slice(1), icon: icons[module] || 'sparkles', url: activity.url,
       goal: module === 'typing' || module === 'drivers-education' ? 15 : 0, placement:module === 'drivers-education'?'blocked':placement, ...(module==='drivers-education'?{previousPlacement:'school',alwaysOpen:false}:{}), days: stats?.days || defaultDays(placement),
-      start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? (module==='drivers-education'?60:null),
+      start: stats?.startTime || null, end: stats?.endTime || null, limitMinutes: stats?.limitMinutes ?? (module==='drivers-education'?15:null),
       disabled: details.features?.[module] === false || stats?.enabled === false, assignedWork: ['spelling','vocabulary','poems'].includes(module), requiredNow });
   }
   if (!snapshot.rules.subjects.some(isQuizlet)) cards.push(quizlet());
@@ -132,8 +132,8 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     let assignment = subject.assignments.find(a => a.studentId === studentId);
     if (!assignment) { assignment = { studentId, dailyGoalMinutes: 0 }; subject.assignments.push(assignment); }
     if (!Number.isInteger(card.goal) || card.goal < 0 || card.goal > 480) throw Error('Choose a school goal from 0 to 480 minutes.');
-    if (card.limitMinutes !== null && (!Number.isInteger(card.limitMinutes) || card.limitMinutes < 1 || card.limitMinutes > 480)) throw Error('Choose daily media minutes from 1 to 480.');
-    if (card.placement === 'school' && card.limitMinutes !== null && card.goal > card.limitMinutes) throw Error(`The ${card.title} school goal cannot exceed its daily media limit.`);
+    if (card.limitMinutes !== null && (!Number.isInteger(card.limitMinutes) || card.limitMinutes < 1 || card.limitMinutes > 480)) throw Error('Choose a daily time limit from 1 to 480 minutes.');
+    if (card.placement === 'school' && card.limitMinutes !== null && card.goal > card.limitMinutes) throw Error(`The ${card.title} practice goal cannot exceed its daily time limit.`);
     if (card.placement === 'school' && !card.portal && !card.assignedWork && (card.module || ['handwriting','numerals'].includes(card.preset)) && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
     if (!card.days.length) throw Error(`Choose at least one day for ${card.title}.`);
     if ((!!card.start !== !!card.end) || card.start && card.start >= card.end || card.placement === 'scheduled' && !card.start) throw Error(`Choose valid hours for ${card.title}.`);

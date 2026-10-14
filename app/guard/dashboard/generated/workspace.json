@@ -2,9 +2,9 @@
   "source": "vexonastudios/bodee-guard",
   "hashes": {
     "renderer/js/admin/cloud-spelling-photos.js": "65e9cddd034f4bbee37590fa600197b0734ba13f24a46a9132775adf909c0737",
-    "renderer/js/admin/cloud-daily-plan.js": "dcf980b1a09cf011f1a712d2f21a723245685797be252b83d7721939089d0cd0",
-    "renderer/js/admin/cloud-daily-plan-model.js": "100d38a687e60bc442ac344fa1f766570d06d41a412af366971228bbb78083b8",
-    "renderer/css/admin/cloud-daily-plan.css": "cc967b6bbe078743d7a9728ef78d1aaa3d038331ee72fd4fa1ca0b27750b6a3d",
+    "renderer/js/admin/cloud-daily-plan.js": "2fdffc4937a10784411c39747530d4b1c9d0b2ca2c3d2cc0594bc87668a126ac",
+    "renderer/js/admin/cloud-daily-plan-model.js": "0a68ecc8c78892170139c13cb1d8a1790b0c1ee13380e3e472d4c37d4bc50926",
+    "renderer/css/admin/cloud-daily-plan.css": "114803d0c9caa74b503c4160ccf94c2bb10354a523b40823d123002329c46b1d",
     "renderer/css/admin/base.css": "ad2247c6ad708673da6ce44538ef289b89a9c3c199b049eb2d27bb0f83c77366",
     "renderer/css/admin/assistant.css": "8b4c3fc2e56026fc9192a678f0102285342e1fc1b1e82547883d8768b3b1ce1f",
     "renderer/css/admin/cloud-assistant.css": "f4272fded3efbdb5a20c212ef287caab9354333d96d7bb356c7aad3c1e36750f",
