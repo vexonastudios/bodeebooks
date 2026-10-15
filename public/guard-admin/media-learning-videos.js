@@ -12,6 +12,10 @@ function escapeHtml(value) {
 const MAX_VIDEO_LINKS = 50;
 let batch = null;
 let busy = false;
+let libraryVideos = [];
+const selectedVideos = new Set();
+let libraryBusy = false;
+const defaultCategories = ['Educational', 'Crochet', 'Drawing'];
 
 function extractYouTubeId(value) {
   const input = String(value || '').trim();
@@ -50,8 +54,10 @@ export function parseLearningVideoLinks(value) {
 function setBusy(value) {
   busy = value;
   document.getElementById('learning-video-url').disabled = value;
+  document.getElementById('learning-video-add-category').disabled = value;
   document.querySelectorAll('.learning-video-add-row button, #learning-video-batch button, #learning-video-save, #learning-video-preview-cancel')
     .forEach(button => { button.disabled = value; });
+  updateSelection();
 }
 
 async function videoMetadata(youtubeId) {
@@ -85,6 +91,7 @@ function renderBatch() {
   panel.innerHTML = '<h4 id="learning-video-batch-heading">' + (batch.finished ? 'Import results' : 'Add these learning videos') + '</h4>' +
     '<p class="learning-video-batch-summary" role="status" aria-live="polite">' + escapeHtml(summary) + '</p>' +
     '<p class="settings-hint">Approved videos will be available to every child. You can edit titles below. Videos with hidden details still need a playable exact link.</p>' +
+    '<label class="learning-video-category-field">Category for these videos<input class="admin-input" id="learning-video-batch-category" list="learning-video-categories" maxlength="80" value="' + escapeHtml(batch.category) + '"' + (batch.saving ? ' disabled' : '') + '></label>' +
     '<ol class="learning-video-batch-list">' + batch.entries.map((item, index) =>
       '<li data-state="' + item.state + '"><div><label for="learning-video-batch-title-' + index + '">' + escapeHtml(item.youtube_id) + '</label>' +
       '<input class="admin-input" id="learning-video-batch-title-' + index + '" data-index="' + index + '" maxlength="180" value="' + escapeHtml(item.title) + '"' + (item.state === 'added' || batch.saving ? ' disabled' : '') + '>' +
@@ -93,6 +100,7 @@ function renderBatch() {
     (batch.invalid.length ? '<div class="learning-video-invalid"><strong>These entries were not recognized</strong><ul>' + batch.invalid.map(value => '<li>' + escapeHtml(value) + '</li>').join('') + '</ul><p>They will stay in the box so you can correct them.</p></div>' : '') +
     '<div class="learning-video-batch-actions"><button id="learning-video-batch-close" class="btn btn-secondary" type="button">' + (batch.saving ? 'Stop after this video' : batch.finished ? 'Done' : 'Cancel') + '</button>' +
     (pending.length ? '<button id="learning-video-batch-save" class="btn btn-primary" type="button">' + (batch.saving ? 'Adding…' : batch.finished ? 'Retry / add ' + pending.length + ' remaining videos' : 'Approve & add ' + pending.length + ' videos') + '</button>' : '') + '</div>';
+  document.getElementById('learning-video-batch-category').addEventListener('input', event => { batch.category = event.target.value; });
   panel.querySelectorAll('input[data-index]').forEach(input => input.addEventListener('input', () => { batch.entries[Number(input.dataset.index)].title = input.value; }));
   document.getElementById('learning-video-batch-close').addEventListener('click', () => { if (batch.saving) { batch.stopRequested = true; document.getElementById('learning-video-batch-close').textContent = 'Finishing current video…'; } else if (!busy) { batch = null; renderBatch(); } });
   document.getElementById('learning-video-batch-save')?.addEventListener('click', saveBatch);
@@ -112,13 +120,14 @@ async function prepareBatch(parsed) {
       entries[index] = { ...await videoMetadata(ids[index]), state: 'ready' };
     }
   }));
-  batch = { entries, skipped: parsed.duplicates + parsed.ids.length - ids.length, invalid: parsed.invalid, finished: false, saving: false };
+  batch = { category: categoryValue('learning-video-add-category'), entries, skipped: parsed.duplicates + parsed.ids.length - ids.length, invalid: parsed.invalid, finished: false, saving: false };
   renderBatch();
 }
 
 async function saveBatch() {
   if (busy || !batch) return;
   if (batch.entries.some(item => item.state !== 'added' && !item.title.trim())) return window.showToast?.('Give each video a title before adding it.', true);
+  batch.category = normalizeCategory(batch.category);
   setBusy(true);
   batch.saving = true; batch.stopRequested = false;
   try {
@@ -130,7 +139,7 @@ async function saveBatch() {
       try {
         await request('/videos', { method: 'POST', signal: AbortSignal.timeout(45000), body: JSON.stringify({
           youtube_id: item.youtube_id, title: item.title.trim(), channel: item.channel,
-          thumbnail_url: item.thumbnail_url, direct_parent_link: true, category: 'General'
+          thumbnail_url: item.thumbnail_url, direct_parent_link: true, category: batch.category
         }) });
         item.state = 'added';
       } catch (error) {
@@ -260,7 +269,7 @@ async function lookupVideo() {
     document.getElementById('learning-video-preview-thumb').src = pendingVideo.thumbnail_url;
     document.getElementById('learning-video-title').value = pendingVideo.title;
     document.getElementById('learning-video-channel').value = pendingVideo.channel;
-    document.getElementById('learning-video-category').value ||= 'General';
+    document.getElementById('learning-video-category').value = categoryValue('learning-video-add-category');
     document.getElementById('learning-video-preview-status').textContent = metadataHidden
       ? 'YouTube hides this video’s public details. If this is your unlisted video, confirm its title and approve the exact link.'
       : 'Ready for parent approval. BodeeGuard will also verify that the video permits embedded playback.';
@@ -284,7 +293,7 @@ async function saveVideo() {
         ...pendingVideo,
         title: document.getElementById('learning-video-title').value.trim(),
         channel: document.getElementById('learning-video-channel').value.trim(),
-        category: document.getElementById('learning-video-category').value.trim() || 'General'
+        category: categoryValue('learning-video-category')
       })
     });
     document.getElementById('learning-video-url').value = '';
@@ -299,6 +308,7 @@ async function saveVideo() {
 }
 
 async function retireVideo(id) {
+  if (libraryBusy) return;
   try {
     await request(`/videos/${encodeURIComponent(id)}`, { method: 'DELETE' });
     await loadLearningVideosTab();
@@ -308,18 +318,102 @@ async function retireVideo(id) {
   }
 }
 
+
+function normalizeCategory(value) {
+  const name = String(value || '').trim().replace(/\s+/g, ' ').slice(0, 80) || 'General';
+  return [...defaultCategories, ...libraryVideos.map(video => video.category || 'General')]
+    .find(category => category.toLowerCase() === name.toLowerCase()) || name;
+}
+function categoryValue(id) { return normalizeCategory(document.getElementById(id)?.value); }
+function visibleVideos() {
+  const category = document.getElementById('learning-video-filter')?.value || '';
+  const query = (document.getElementById('learning-video-library-search')?.value || '').trim().toLowerCase();
+  return libraryVideos.filter(video => (!category || (video.category || 'General') === category) &&
+    (!query || [video.title, video.channel, video.category].join(' ').toLowerCase().includes(query)));
+}
+function updateCategoryOptions() {
+  const categories = [...new Set([...defaultCategories, ...libraryVideos.map(video => video.category || 'General')])].sort((a,b) => a.localeCompare(b));
+  document.getElementById('learning-video-categories').innerHTML = categories.map(name => '<option value="' + escapeHtml(name) + '"></option>').join('');
+  const filter = document.getElementById('learning-video-filter'), current = filter.value;
+  filter.innerHTML = '<option value="">All categories</option>' + categories.map(name => '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + ' (' + libraryVideos.filter(video => (video.category || 'General') === name).length + ')</option>').join('');
+  if (categories.includes(current)) filter.value = current;
+}
+function updateSelection() {
+  const count = selectedVideos.size, all = document.getElementById('learning-video-select-all'), visible = visibleVideos();
+  document.getElementById('learning-video-selection-count').textContent = count + ' selected';
+  document.getElementById('learning-video-move').disabled = busy || libraryBusy || !count;
+  document.getElementById('learning-video-clear-selection').disabled = libraryBusy || !count;
+  all.checked = !!visible.length && visible.every(video => selectedVideos.has(video.id));
+  all.indeterminate = !all.checked && visible.some(video => selectedVideos.has(video.id));
+  all.disabled = libraryBusy || !visible.length;
+}
+async function moveSelectedVideos() {
+  if (busy || libraryBusy || !selectedVideos.size) return;
+  libraryBusy = true;
+  setBusy(true);
+  const category = categoryValue('learning-video-move-category'), ids = [...selectedVideos];
+  const status = document.getElementById('learning-video-organization-status');
+  document.querySelectorAll('#learning-video-organizer input, #learning-video-organizer select, #learning-video-organizer button').forEach(el => { el.disabled = true; });
+  renderLibrary();
+  let moved = 0;
+  const failures = [];
+  for (const id of ids) {
+    status.textContent = 'Moving videos… ' + moved + ' of ' + ids.length;
+    try {
+      await request('/videos/' + encodeURIComponent(id), { method:'PATCH', signal:AbortSignal.timeout(30000), body:JSON.stringify({category}) });
+      const video = libraryVideos.find(item => item.id === id);
+      if (video) video.category = category;
+      selectedVideos.delete(id); moved++;
+    } catch (error) { failures.push(error.message || 'No confirmation received.'); }
+  }
+  libraryBusy = false;
+  setBusy(false);
+  document.querySelectorAll('#learning-video-organizer input, #learning-video-organizer select, #learning-video-organizer button').forEach(el => { el.disabled = false; });
+  updateCategoryOptions(); renderLibrary();
+  status.textContent = moved + ' moved to ' + category + '.' + (failures.length ? ' ' + failures.length + ' could not be moved and remain selected. Try again. ' + failures[0] : '');
+  window.showToast?.(status.textContent, !!failures.length);
+}
+function setupCategories() {
+  const row = document.querySelector('.learning-video-add-row');
+  const field = document.createElement('label');
+  field.className = 'learning-video-category-field';
+  field.innerHTML = 'Add videos to category<input id="learning-video-add-category" class="admin-input" list="learning-video-categories" maxlength="80" value="Educational"><span class="settings-hint">Choose a category or type a new one. You can change it during review.</span><datalist id="learning-video-categories"></datalist>';
+  row.before(field);
+  document.getElementById('learning-video-category')?.setAttribute('list','learning-video-categories');
+  document.getElementById('learning-video-category')?.setAttribute('maxlength','80');
+  const organizer = document.createElement('div');
+  organizer.id = 'learning-video-organizer';
+  organizer.innerHTML = '<div class="learning-video-library-tools"><label>Browse category<select id="learning-video-filter" class="admin-input"><option value="">All categories</option></select></label><label>Find videos<input id="learning-video-library-search" class="admin-input" type="search" placeholder="Search title or channel"></label></div>' +
+    '<div class="learning-video-organize-actions"><label class="learning-video-select-all"><input id="learning-video-select-all" type="checkbox"> Select all shown</label><span id="learning-video-selection-count" role="status">0 selected</span><button id="learning-video-clear-selection" class="btn btn-secondary" type="button">Clear</button><label>Move selected to<input id="learning-video-move-category" class="admin-input" list="learning-video-categories" maxlength="80" value="Educational"></label><button id="learning-video-move" class="btn btn-primary" type="button">Move to category</button></div>' +
+    '<p class="settings-hint">Select one or more videos to organize them. Type a new category name to create it. Children see categories before choosing a video.</p><p id="learning-video-organization-status" role="status" aria-live="polite"></p>';
+  document.getElementById('learning-videos-list').before(organizer);
+  document.getElementById('learning-video-filter').addEventListener('change', renderLibrary);
+  document.getElementById('learning-video-library-search').addEventListener('input', renderLibrary);
+  document.getElementById('learning-video-select-all').addEventListener('change', event => { visibleVideos().forEach(video => event.target.checked ? selectedVideos.add(video.id) : selectedVideos.delete(video.id)); renderLibrary(); });
+  document.getElementById('learning-video-clear-selection').addEventListener('click', () => { selectedVideos.clear(); renderLibrary(); });
+  document.getElementById('learning-video-move').addEventListener('click', moveSelectedVideos);
+  updateCategoryOptions(); updateSelection();
+}
 export async function loadLearningVideosTab() {
   const list = document.getElementById('learning-videos-list');
-  if (!list) return;
+  if (!list || libraryBusy) return;
   list.innerHTML = '<p class="settings-hint">Loading learning videos…</p>';
   try {
-    const videos = await request('/videos');
-    const active = videos.filter(video => Number(video.active) === 1);
-    if (!active.length) {
-      list.innerHTML = '<div style="grid-column:1/-1;padding:28px;text-align:center;border:1px dashed rgba(255,255,255,.12);border-radius:12px;color:var(--text-muted);">No learning videos yet. Add states and capitals, multiplication songs, science lessons, or another parent-approved video above.</div>';
-      return;
-    }
-    list.innerHTML = active.map(video => {
+    libraryVideos = (await request('/videos')).filter(video => Number(video.active) === 1);
+    for (const id of selectedVideos) if (!libraryVideos.some(video => video.id === id)) selectedVideos.delete(id);
+    updateCategoryOptions(); renderLibrary();
+  } catch (error) {
+    logger.warn('learning-videos', 'Could not load Learning Videos', error);
+    list.innerHTML = '<p style="color:#fca5a5;">' + escapeHtml(error.message) + '</p>';
+  }
+}
+function renderLibrary() {
+  const list = document.getElementById('learning-videos-list');
+  if (!visibleVideos().length) {
+    list.innerHTML = '<p class="settings-hint">No videos in this view. Choose another category, change your search, or add videos above.</p>';
+    updateSelection(); return;
+  }
+    list.innerHTML = visibleVideos().map(video => {
       const isLocal = video.source_type === 'local_mp4';
       const preview = isLocal
         ? `<div style="width:105px;aspect-ratio:16/9;border-radius:8px;background:linear-gradient(135deg,#064e3b,#075985);display:grid;place-items:center;color:white;"><div style="text-align:center;"><i data-lucide="file-video-2" style="width:28px;height:28px;"></i><div style="font-size:9px;font-weight:800;letter-spacing:.1em;margin-top:2px;">LOCAL MP4</div></div></div>`
@@ -328,8 +422,8 @@ export async function loadLearningVideosTab() {
         ? `${video.channel || 'BodeeGuard MP4 Archive'} · ${formatBytes(video.file_size_bytes)}`
         : (video.channel || 'YouTube');
       return `
-      <article style="display:grid;grid-template-columns:105px minmax(0,1fr);gap:12px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.025);">
-        ${preview}
+      <article class="learning-video-library-card" style="display:grid;grid-template-columns:105px minmax(0,1fr);gap:12px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.025);">
+        <label class="learning-video-select"><input type="checkbox" data-select-video="${escapeHtml(video.id)}" aria-label="Select ${escapeHtml(video.title)}" ${selectedVideos.has(video.id) ? 'checked' : ''} ${libraryBusy ? 'disabled' : ''}>${preview}</label>
         <div style="min-width:0;display:flex;flex-direction:column;gap:4px;">
           <strong style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(video.title)}</strong>
           <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(source)} · ${escapeHtml(video.category || 'General')}</span>
@@ -340,12 +434,12 @@ export async function loadLearningVideosTab() {
         </div>
       </article>`;
     }).join('');
+    list.querySelectorAll('[data-select-video]').forEach(input => input.addEventListener('change', () => { if (input.checked) selectedVideos.add(input.dataset.selectVideo); else selectedVideos.delete(input.dataset.selectVideo); updateSelection(); }));
     list.querySelectorAll('.learning-video-remove').forEach(button => button.addEventListener('click', () => retireVideo(button.dataset.id)));
     window.refreshIcons?.();
-  } catch (error) {
-    logger.warn('learning-videos', 'Could not load Learning Videos', error);
-    list.innerHTML = `<p style="color:#fca5a5;">${escapeHtml(error.message)}</p>`;
-  }
+
+  list.querySelectorAll('.learning-video-remove').forEach(button => { button.disabled = libraryBusy; });
+  updateSelection();
 }
 
 export function setupLearningVideosTab() {
@@ -359,6 +453,7 @@ export function setupLearningVideosTab() {
   input.setAttribute('aria-label', 'YouTube links or video IDs');
   input.setAttribute('aria-describedby', 'learning-video-links-hint');
   original.replaceWith(input);
+  setupCategories();
   const row = input.closest('.learning-video-add-row');
   const hint = document.createElement('p');
   hint.id = 'learning-video-links-hint'; hint.className = 'settings-hint';
