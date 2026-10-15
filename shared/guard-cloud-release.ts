@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.316": {
+  "title": "Learning video categories, daily driving limits and easier school recovery",
+  "sections": [
+    {
+      "heading": "Version 1.2.316",
+      "headline": "Organize learning and keep children moving",
+      "summary": "Group Learning Videos into categories, set a daily Driver’s Education allowance, and improve printer setup and Abeka session handling.",
+      "highlights": [
+        "Choose Educational, Crochet, Drawing or custom categories when adding videos, including pasted lists. Select existing videos and move them together.",
+        "Set each child’s daily Driver’s Education time limit, including a 15-minute option. Driving is an extra activity; time limits do not award course completion or consume Family Games time.",
+        "Devices & Sound reuses installed printers and can prepare compatible Windows IPP network printers without a parent password. Failed connections offer a clear retry.",
+        "Leaving an unfinished assessment offers Keep working or Pause and return. Completed Abeka sessions return to Grades using the provider’s actual controls, and Grades shortcuts reuse the existing lesson."
+      ]
+    }
+  ]
+},
   "1.2.315": {
   "title": "Reliable driving installation and audio during learning videos",
   "sections": [
