@@ -1,5 +1,7 @@
 # Message activity unlocks and responsive parent controls — October 15, 2026
 
+> Deployment update: Published and verified on October 15, 2026. See [guard-parent-controls-deploy-20261015.md](guard-parent-controls-deploy-20261015.md) for exact sources, live checks and rollback targets. This supersedes the historical pending-delivery statements below. No child installer was released.
+
 Pending local parent source based on 841c1be, matching BodeeGuard commit 137bbc05. No deployment or live family settings change has occurred.
 
 A child message asking to unlock Art Studio and Piano now gets a separate parent button for each. Suggestions use the child's actual assignments, saved titles and common aliases; all supported installed activities and custom titles participate. Specific unavailable activities cannot fall back to other media (Learning Videos is never recreational Videos). Private/group author IDs, explicit parent clicks, existing assignment/authentication checks, daily limits and child-sync semantics are preserved. No automatic message is sent.

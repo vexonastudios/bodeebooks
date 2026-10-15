@@ -1,5 +1,7 @@
 # Guard Music playlists and bulk paste — October 15, 2026
 
+> Deployment update: Published and verified on October 15, 2026. See [guard-parent-controls-deploy-20261015.md](guard-parent-controls-deploy-20261015.md) for exact sources, live checks and rollback targets. This supersedes the historical pending-delivery statements below. No child installer was released.
+
 Implemented in `codex/release-310`; not pushed or deployed. Paired cloud source
 and tests: `C:/Projects/worktrees/bodee-guard/headset-reconnect`, receipt
 `docs/cloud-music-import-20261015.md`.

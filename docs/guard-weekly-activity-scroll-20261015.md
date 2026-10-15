@@ -1,5 +1,7 @@
 # Weekly activity pinned-column styling — October 15, 2026
 
+> Deployment update: Published and verified on October 15, 2026. See [guard-parent-controls-deploy-20261015.md](guard-parent-controls-deploy-20261015.md) for exact sources, live checks and rollback targets. This supersedes the historical pending-delivery statements below. No child installer was released.
+
 Pending local source based on parent website `e3a9d76` and BodeeGuard `60cafdce`. This is a parent-dashboard stylesheet update; nothing has been deployed or changed in family records.
 
 The weekly report's pinned labels used the translucent card background, allowing daily time values to show through during horizontal scrolling. General dashboard table rules also overrode its intended layout. The report now uses opaque theme-aware pinned cells, a scoped stacking layer and divider, separate table borders, right-aligned times, a visible caption while scrolling and consistent wrapping for long activity names. The Total label uses the same opaque pinned treatment.

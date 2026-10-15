@@ -1,5 +1,7 @@
 # Parent Assistant game-lock confirmation — October 15, 2026
 
+> Deployment update: Published and verified on October 15, 2026. See [guard-parent-controls-deploy-20261015.md](guard-parent-controls-deploy-20261015.md) for exact sources, live checks and rollback targets. This supersedes the historical pending-delivery statements below. No child installer was released.
+
 Pending local source, based on website `efdeac7f` and BodeeGuard `90d38d6d`. No deployment, child release or real family settings change is included.
 
 The Assistant now offers an explicit review button for locking Family Games, BodeeBooks Games, or both for everyone. It understands the reported voice transcription “booty book games.” The review names the target areas and explains that the lock stays until the parent allows them again in Daily plan. Schedules, time allowances and progress are preserved. Cancellation writes nothing; double-clicks and lost-response retries cannot apply the action twice.
