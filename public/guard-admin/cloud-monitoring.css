@@ -170,3 +170,5 @@
 .cloud-abeka-parent-preference{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:12px;cursor:pointer;font-size:14px;line-height:1.5}
 .cloud-abeka-parent-preference input{flex:0 0 20px;width:20px;height:20px;accent-color:#a78bfa}
 @media(max-width:600px){.cloud-abeka-parent-shortcut{gap:10px;padding:12px;margin-bottom:16px}.cloud-abeka-parent-copy strong{font-size:15px}.cloud-abeka-parent-copy small{font-size:12px}.cloud-abeka-parent-open{width:100%;box-sizing:border-box}}
+
+.cloud-quick-item{min-width:0}.cloud-quick-item .cloud-quick-choice{width:100%}.cloud-quick-item .cloud-action-inline{font-size:12px;overflow-wrap:anywhere}

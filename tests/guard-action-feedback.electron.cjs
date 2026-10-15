@@ -44,13 +44,13 @@ async function run() {
   await win.loadURL(origin);
   for (let i=0; !(await js('window.ready')) && i<50; i++) await delay(50);
   assert.equal(await js('window.ready'),true);
-  // Inline success and the popup fade, release their space, and stay gone after refresh.
+  // Inline success appears once, expires, and stays gone after refresh.
   await js("success('music');advance(6400);feedback.render()");
-  assert.equal(await js("slot('music').hidden || toast.hidden"),false);
+  assert.equal(await js("!slot('music').hidden && toast.hidden"),true);
   assert.equal(await js("slot('music').dataset.dismissing"),'false');
   await js('advance(100)');
   assert.equal(await js("slot('music').dataset.dismissing"),'true');
-  assert.equal(await js('toast.dataset.dismissing'),'true');
+  assert.equal(await js('toast.hidden'),true,'inline success must not also open a popup');
   assert.equal(await js("getComputedStyle(slot('music')).transitionDuration"),'0.2s');
   for(let i=0; (await js("getComputedStyle(slot('music')).opacity"))!=='0' && i<20; i++) await delay(50);
   assert.equal(await js("getComputedStyle(slot('music')).opacity"),'0');
@@ -58,6 +58,8 @@ async function run() {
   assert.equal(await js("slot('music').hidden && toast.hidden"),true);
   await js("slot('music').remove();feedback.mount(document.getElementById('controls'),'music');feedback.render()");
   assert.equal(await js("slot('music').hidden"),true,'remount must not revive expired entries');
+  await js("success('away');advance(6500)");assert.equal(await js('toast.dataset.dismissing'),'true','a result without an inline control uses a fading popup');
+  await js('advance(200)');assert.equal(await js('toast.hidden'),true);
   // Staggered controls each expire; a pending or failed request never silently disappears.
   await js("success('music');advance(3000);success('video');window.pending=feedback.begin('screen','Requesting screenshot');advance(3700)");
   assert.equal(await js("slot('music').hidden && !slot('video').hidden && !slot('screen').hidden"),true);
@@ -71,7 +73,7 @@ async function run() {
   await js("feedback.finish(newTicket,'New music setting');advance(6500);window.retry=feedback.begin('music','Retrying');feedback.finish(newTicket,'Obsolete response');advance(200)");
   assert.equal(await js("slot('music').textContent"),'Retrying');
   // Same-group replacement and a slower different action leave the newest toast intact.
-  await js("window.old=feedback.begin('music','First','media');window.next=feedback.begin('video','Second','media');feedback.finish(old,'Old result');feedback.finish(next,'Video saved');advance(6400);window.slow=feedback.begin('screen','Slow screenshot');success('music');feedback.finish(slow,'Screenshot saved')");
+  await js("window.old=feedback.begin('music','First','media');window.next=feedback.begin('video','Second','media');feedback.finish(old,'Old result');feedback.finish(next,'Video saved');advance(6400);window.slow=feedback.begin('screen','Slow screenshot');document.getElementById('controls').style.display='none';success('music');document.getElementById('controls').style.display='';feedback.finish(slow,'Screenshot saved')");
   assert.equal(await js('toast.querySelector("strong").textContent'),'music unlocked');
   await js('advance(300)');
   assert.equal(await js('toast.hidden || toast.dataset.dismissing === "true"'),false,'old toast fade cannot dismiss the new action');

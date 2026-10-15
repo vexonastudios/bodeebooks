@@ -63,10 +63,10 @@ export function parentActionFeedback(root = document.getElementById('admin-dashb
       slot.append(glyph(entry.state === 'pending' ? 'loader-circle' : entry.state === 'error' ? 'circle-alert' : 'circle-check'), text);
     }
     for (const control of root.querySelectorAll('[data-action-feedback-control]')) {
-      const pending = entries.get(control.dataset.actionFeedbackControl)?.state === 'pending';
+      const pending = [...entries.values()].some(entry=>entry.state==='pending'&&entry.group===control.dataset.actionFeedbackGroup);
       control.dataset.actionPending = String(pending); control.setAttribute('aria-busy', String(pending));
       const label = control.querySelector('span');
-      if (label) { if (!control.dataset.actionLabel) control.dataset.actionLabel = label.textContent; label.textContent = pending ? 'Saving…' : control.dataset.actionLabel; }
+      if (label && control.dataset.actionKeepLabel !== 'true') { if (!control.dataset.actionLabel) control.dataset.actionLabel = label.textContent; label.textContent = pending ? 'Saving…' : control.dataset.actionLabel; }
       if (pending) control.disabled = true;
     }
     window.lucide?.createIcons();

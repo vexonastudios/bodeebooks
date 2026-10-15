@@ -150,10 +150,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
     const change=extra=>mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:model.student.id,...extra}});
     const main=button(unlocked?`${label} unlocked`:kind==='audiobook'?'Bypass Audiobooks':`Unlock ${label}`,unlocked?'lock-open':glyph,
       el=>run(el,()=>change({operation:'override',unlocked:!unlocked}),{pending:(unlocked?'Restoring '+label.toLowerCase()+' rules':'Unlocking '+label.toLowerCase())+' for '+child+'…',title:unlocked?label+' rules restored for '+child:label+' unlocked for '+child,detail:unlocked?'Saved. School and schedule requirements apply again on the child app’s next sync.':'Saved for today. Daily time limits still apply. The child app receives the change on its next sync.',errorTitle:'Could not confirm '+label.toLowerCase()+' access for '+child}),'monitor-media-main');
-    notices.bind(main,key);main.dataset.cloudMutation='true';main.title=unlocked?'Restore the usual school and schedule requirements':'Bypass school and schedule requirements for today. The daily time limit still applies.';
+    notices.bind(main,key);main.dataset.cloudMutation='true';main.dataset.cloudIndependent='true';main.title=unlocked?'Restore the usual school and schedule requirements':'Bypass school and schedule requirements for today. The daily time limit still applies.';
     const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));summary.setAttribute('aria-label',`Add ${label.toLowerCase()} time for ${model.student.name}`);
     const options=node('div','monitor-media-time-popover');options.append(node('strong','',`Extra ${label.toLowerCase()} time today`));
-    for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await change({operation:'extra-time',minutes});menu.open=false;},{pending:'Adding '+minutes+' '+label.toLowerCase()+' minutes for '+child+'…',title:minutes+' '+label.toLowerCase()+' minutes added for '+child,detail:'Saved to today’s allowance. School and schedule requirements still apply.'}),'btn btn-secondary');notices.bind(add,key+':'+minutes,key);add.dataset.cloudMutation='true';options.append(add);}
+    for(const minutes of [15,30,60]){const add=button(`+${minutes} minutes`,'clock-plus',el=>run(el,async()=>{await change({operation:'extra-time',minutes});menu.open=false;},{pending:'Adding '+minutes+' '+label.toLowerCase()+' minutes for '+child+'…',title:minutes+' '+label.toLowerCase()+' minutes added for '+child,detail:'Saved to today’s allowance. School and schedule requirements still apply.'}),'btn btn-secondary');notices.bind(add,key+':'+minutes,key);add.dataset.cloudMutation='true';add.dataset.cloudIndependent='true';options.append(add);}
     menu.append(summary);row.append(main,menu,options);notices.mount(row,key);for(const minutes of [15,30,60])notices.mount(row,key+':'+minutes);return row;
   }
   function gameControl(model){
@@ -182,7 +182,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
           detail:'Saved for today. Schoolwork, chores and allowed game hours still apply.',errorTitle:'Could not confirm game time for '+student.name})
           .finally(()=>gameTimePending.delete(student.id));
       },'btn btn-secondary');
-      notices.bind(add,key);add.dataset.cloudMutation='true';options.append(add);
+      notices.bind(add,key);add.dataset.cloudMutation='true';add.dataset.cloudIndependent='true';options.append(add);
     }
     options.append(node('span','','Schoolwork and allowed game hours still apply.'));
     menu.append(summary);row.append(main,menu,options);notices.mount(row,key);return row;
@@ -192,7 +192,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
     quickDialog.replaceChildren();
     const shell=node('div','cloud-quick-dialog-shell'),head=node('header','cloud-quick-dialog-header');
     const heading=node('div');heading.append(node('h2','','Quick Unlock · '+model.student.name),
-      node('p','','Tap an activity to unlock it for today. Daily media limits still apply.'));
+      node('p','','Tap as many activities as you need. Each saves separately for today; daily limits still apply.'));
     heading.querySelector('h2').id='cloud-quick-unlock-title';
     const close=button('Close','x',()=>quickDialog.close(),'cloud-quick-close');close.setAttribute('aria-label','Close Quick Unlock');
     head.append(heading,close);
@@ -200,24 +200,20 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
     for(const subject of quickUnlockChoices(model.goals)){
       const unlocked=!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
         &&Array.isArray(model.student.quick_unlock.subjectIds)&&subject.subjectIds.every(id=>model.student.quick_unlock.subjectIds.includes(id));
-      const choice=button(subject.label,unlocked?'circle-check':subject.icon,async el=>{
-        el.disabled=true;
-        quickDialog.querySelector('.cloud-quick-status').textContent='Saving '+subject.label+' for '+model.student.name+'…';
-        try{
-          await mutate('computer-command',{kind:'quick-unlock',studentId:model.student.id,subjectId:subject.id,unlocked:!unlocked});
-          const status=quickDialog.querySelector('.cloud-quick-status');if(status){status.textContent=subject.label+(unlocked?' rules restored':' unlocked for today')+' for '+model.student.name+'. Saved; applies on the child app’s next sync.';status.setAttribute('role','status');}
-        }catch(error){
-          const status=quickDialog.querySelector('.cloud-quick-status');if(status){status.textContent=error.message;status.setAttribute('role','alert');}
-        }finally{if(el.isConnected)el.disabled=false;setControls();}
-      },`cloud-quick-choice${unlocked?' is-unlocked':''}`);
+      const key=model.student.id+':quick:'+subject.subjectIds.slice().sort().join(','),item=node('div','cloud-quick-item');
+      const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>run(el,async()=>{
+        await mutate('computer-command',{kind:'quick-unlock',studentId:model.student.id,subjectId:subject.id,unlocked:!unlocked});
+      },{pending:'Saving '+subject.label+' for '+model.student.name+'…',title:subject.label+(unlocked?' rules restored':' unlocked for today'),detail:'Saved for '+model.student.name+'. Applies on the child app’s next sync.',errorTitle:'Could not confirm '+subject.label}),
+      `cloud-quick-choice${unlocked?' is-unlocked':''}`);
+      notices.bind(choice,key);choice.dataset.cloudIndependent='true';choice.dataset.actionKeepLabel='true';
       choice.style.setProperty('--quick-color',subject.color);
       choice.style.setProperty('--quick-accent',subject.accent);
       choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';
-      choice.append(node('small','',unlocked?'Unlocked today':'Tap to unlock'));choices.append(choice);
+      choice.append(node('small','',unlocked?'Unlocked today':'Tap to unlock'));item.append(choice);notices.mount(item,key);choices.append(item);
     }
     if(!model.goals.length)choices.append(node('p','cloud-quick-empty','Assign school subjects before using Quick Unlock.'));
     const foot=node('footer','cloud-quick-dialog-footer'),status=node('p','cloud-quick-status',priorStatus),done=button('Done','check',()=>quickDialog.close(),'btn btn-secondary');
-    status.setAttribute('role','status');foot.append(status,done);shell.append(head,choices,foot);quickDialog.append(shell);window.lucide?.createIcons();
+    status.setAttribute('role','status');foot.append(status,done);shell.append(head,choices,foot);quickDialog.append(shell);notices.render();window.lucide?.createIcons();
   }
   function openQuickDialog(studentId){
     const model=monitoringChildren(getSnapshot(),connectionNow()).find(item=>item.student.id===studentId);if(!model)return;
@@ -285,12 +281,12 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
       actions.append(gameControl(model));
       if(mediaTypes.some(([kind])=>model.media[kind].unlocked)){
         const lockMedia=button('Lock Media','lock-keyhole',el=>run(el,async()=>{
-          for(const [kind] of mediaTypes)if(model.media[kind].unlocked)await mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:student.id,operation:'override',unlocked:false}});
+          await Promise.all(mediaTypes.filter(([kind])=>model.media[kind].unlocked).map(([kind])=>mutate('media',{path:`/api/${kind==='audiobook'?'audiobooks':kind}/quick-control`,method:'POST',requestId:crypto.randomUUID(),body:{student_id:student.id,operation:'override',unlocked:false}})));
         },{pending:'Restoring media rules for '+student.name+'…',title:'Media rules restored for '+student.name,detail:'Today’s bypasses were removed. The usual rules apply on the child app’s next sync.'}),'monitor-control monitor-control--lock-media');
-        notices.bind(lockMedia,student.id+':media-rules');lockMedia.title='Remove today’s media bypasses and restore your usual rules.';lockMedia.dataset.cloudMutation='true';actions.append(lockMedia);notices.mount(actions,student.id+':media-rules');
+        notices.bind(lockMedia,student.id+':media-rules');lockMedia.title='Remove today’s media bypasses and restore your usual rules.';lockMedia.dataset.cloudMutation='true';lockMedia.dataset.cloudIndependent='true';actions.append(lockMedia);notices.mount(actions,student.id+':media-rules');
       }
       const pair=node('div','monitor-student-actions');
-      const pause=button(device?.locked?'Unlock computer':'Lock computer',device?.locked?'lock-open':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked}),{pending:(device?.locked?'Unlocking ':'Locking ')+student.name+'’s computer…',title:(device?.locked?'Unlock':'Lock')+' requested for '+student.name,detail:'Saved to your family account. The child app will apply it on its next sync.'}),'monitor-student-action monitor-student-action--lock');notices.bind(pause,student.id+':computer-lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';
+      const pause=button(device?.locked?'Unlock computer':'Lock computer',device?.locked?'lock-open':'lock-keyhole',el=>run(el,()=>mutate('set-school-pause',{deviceId:device.id,locked:!device.locked}),{pending:(device?.locked?'Unlocking ':'Locking ')+student.name+'’s computer…',title:(device?.locked?'Unlock':'Lock')+' requested for '+student.name,detail:'Saved to your family account. The child app will apply it on its next sync.'}),'monitor-student-action monitor-student-action--lock');notices.bind(pause,student.id+':computer-lock');pause.disabled=!device;pause.dataset.requiresDevice=String(!!device);pause.dataset.cloudMutation='true';pause.dataset.cloudIndependent='true';
       pair.append(pause,button('Message','send',()=>openMessages(student.id),'monitor-student-action monitor-student-action--message'));actions.append(pair);notices.mount(actions,student.id+':computer-lock');card.append(actions);
       const close=button('Close BodeeGuard','power',el=>run(el,()=>mutate('computer-command',{kind:'close',deviceId:device.id,revision:device.revision,requestId:crypto.randomUUID()}),{pending:'Sending a close request to '+student.name+'…',title:'Close request saved for '+student.name,detail:'The child app has not confirmed it closed. If BodeeGuard remains open after two minutes, refresh the dashboard and try again.',prominent:true}),'monitor-control monitor-control--close');
       notices.bind(close,student.id+':close');

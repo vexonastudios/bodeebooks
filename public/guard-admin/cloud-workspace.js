@@ -6,6 +6,7 @@ import { createParentSessionRecovery, createParentSessionNotice } from './cloud-
 import { createStudentAssignment, createAssignmentConfirmation } from './cloud-student-assignment.js';
 import { setupRecoveryBackups } from './cloud-retention.js';
 import { parentActionFeedback } from './cloud-action-feedback.js';
+import { createControlQueue, isIndependentControl, applyControlResult } from './cloud-control-queue.js';
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
@@ -19,7 +20,7 @@ import { setupActivityLibrary } from './cloud-activity-library.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js?v=20261007-abeka-day1';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
-import { setupCloudMessages } from './cloud-messages.js?v=20261006-child-peer1';
+import { setupCloudMessages } from './cloud-messages.js?v=20261015-all-activities1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
 import { setupCloudMobile } from './cloud-mobile.js?v=20261007-student-reports1';
 import { setupCloudCalendar } from './cloud-calendar.js';
@@ -35,7 +36,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
-import { setupMonitoring } from './cloud-monitoring.js?v=20261007-avatar1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20261015-multi-unlock1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20261007-family1';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20261005-multi1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js?v=20261005-multi1';
@@ -50,7 +51,7 @@ import { setupCloudLegacyArchive } from './cloud-legacy-archive.js';
 import { setupNotificationNavigation } from './cloud-notification-navigation.js?v=20261005-reply-focus1';
 const endpoint = '/guard/dashboard/bridge/';
 let currentTab = 'overview', messageReturnTab = 'overview';
-const messaging = setupCloudMessages({ endpoint, onBack: () => selectTab(messageReturnTab) });
+const messaging = setupCloudMessages({ endpoint, onBack: () => selectTab(messageReturnTab), getSnapshot: () => snapshot, saveControl: (action,data) => mutate(action,data,{notify:false}) });
 const byId = id => document.getElementById(id);
 let snapshot = null;
 let inFlight = null;
@@ -124,7 +125,7 @@ function selectTab(id) {
 }
 function setControls() {
   document.querySelectorAll('[data-cloud-mutation], #add-student-btn, #add-subject-btn, #edit-school-schedule').forEach(control => {
-    control.disabled = !usable || mutating || control.dataset.requiresDevice === 'false' || control.dataset.actionPending === 'true';
+    control.disabled = !usable || mutating || (control.dataset.cloudIndependent !== 'true' && controlQueue.busy) || control.dataset.requiresDevice === 'false' || control.dataset.actionPending === 'true';
   });
 }
 function showSnapshot() {
@@ -155,6 +156,7 @@ function showSnapshot() {
 async function refresh() {
   if (inFlight || document.hidden) return inFlight;
   clearTimeout(timer);
+  const controlVersion = controlQueue.version;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
   inFlight = (async () => {
@@ -162,7 +164,7 @@ async function refresh() {
       const response = await parentSession.read(endpoint, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'The cloud service could not be reached.');
-      snapshot = data;
+      snapshot = controlQueue.mergeSnapshot(data,controlVersion);
       usable = true;
       failures = 0;
       byId('live-text').textContent = 'Connections checked automatically';
@@ -192,8 +194,23 @@ async function refresh() {
   })();
   return inFlight;
 }
+const controlQueue = createControlQueue({
+  canSave: () => usable && !mutating,
+  send: async (action,data) => {
+    let response;
+    try { response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data})}); }
+    catch { throw Error('The connection was interrupted. This change could not be confirmed; refresh before retrying.'); }
+    const result=await response.json();
+    if(!response.ok)throw Error(result.error||'The change could not be saved.');
+    return result;
+  },
+  onSaved: (action,data,result) => {snapshot=applyControlResult(snapshot,action,data,result);monitoring.render();},
+  onState: setControls,
+  refresh
+});
 async function mutate(action, data, { notify = true } = {}) {
-  if (!usable || mutating) throw new Error('Wait for a successful dashboard connection before making changes.');
+  if(isIndependentControl(action,data))return controlQueue.run(action,data);
+  if (!usable || mutating || controlQueue.busy) throw new Error('Wait for a successful dashboard connection before making changes.');
   mutating = true;
   setControls();
   try {

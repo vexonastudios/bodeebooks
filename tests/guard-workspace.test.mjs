@@ -36,7 +36,7 @@ test('full media panels do not crash dashboard initialization when the compact l
 
 test('dashboard removes its initial loading cover after success or a visible connection failure', async () => {
   const source = fs.readFileSync('public/guard-admin/cloud-workspace.js', 'utf8');
-  const refresh = source.slice(source.indexOf('async function refresh()'), source.indexOf('async function mutate('));
+  const refresh = source.slice(source.indexOf('async function refresh()'), source.indexOf('const controlQueue ='));
   for (const ok of [true, false]) {
     const classes = new Set(['cloud-startup-loading']), attributes = {}, messages = [];
     let removed = false, rendered = false;
@@ -44,6 +44,7 @@ test('dashboard removes its initial loading cover after success or a visible con
     const elements = { 'cloud-dashboard-loading': loader, 'live-text': {}, 'live-indicator': { dataset: {} } };
     await vm.runInNewContext(`${refresh}; refresh()`, {
       document: { hidden: false }, inFlight: null, timer: null, endpoint: '/synthetic', snapshot: null, usable: false, failures: 0,
+      controlQueue: {version:0, mergeSnapshot:value=>value}, songRequests:{refreshPending(){}},
       AbortController, setTimeout: () => 1, clearTimeout() {}, byId: id => elements[id], setControls() {},
       feedback: (message, error) => messages.push({ message, error }), showSnapshot: () => { rendered = true; },
       connectionRefresh: { start() {}, isIdle: () => false }, livePush: {start() {}},

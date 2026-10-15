@@ -3,8 +3,8 @@ import { createVoiceRecorder } from './voice-recording.js';
 import { createMessageThread } from './message-thread.js';
 import { createMessageReactions } from './message-reactions.js';
 import { createParentSessionRecovery } from './cloud-parent-session.js';
-import { createMessageMediaActions } from './cloud-message-media-actions.js';
-export function setupCloudMessages({ endpoint, onBack = () => {} }) {
+import { createMessageMediaActions } from './cloud-message-media-actions.js?v=20261015-all-activities1';
+export function setupCloudMessages({ endpoint, onBack = () => {}, getSnapshot = () => null, saveControl }) {
   const el = id => document.getElementById(id);
   const ALL_KIDS = 'all-kids';
   const FAMILY = 'family-conversation';
@@ -14,7 +14,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
   const recipients = () => students.filter(student => !student.archived_at);
   const textNode = (tag, text, className = '') => { const node = document.createElement(tag); node.textContent = text; node.className = className; return node; };
   let students = [];
-  const mediaActions = createMessageMediaActions({ request, getStudents: () => students });
+  const mediaActions = createMessageMediaActions({ request: saveControl || request, getStudents: () => students, getSnapshot });
   let peerSaving = false, peerRevision = 0, childPeerRevision = 0;
   let childPeerSettings = null;
   const childPeerSaving = new Set();
@@ -352,10 +352,10 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     const messages = [...older, ...(page?.messages || [])];
     const unique = [...new Map(messages.map(message => [message.id, message])).values()];
     const thread = el('messages-thread-content');
-    const key = JSON.stringify(unique);
+    const key = JSON.stringify([unique, mediaActions.fingerprint(selected)]);
     if (thread.dataset.rendered !== key) {
       const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40;
-      threadRows.update(unique, { fingerprint: message => JSON.stringify([selected, message.sender, message.body, message.attachment]), refresh: (row, message) => {
+      threadRows.update(unique, { fingerprint: message => JSON.stringify([selected, message.sender, message.body, message.attachment, mediaActions.fingerprint(selected)]), refresh: (row, message) => {
         row.querySelector('.cloud-message-meta').textContent = messageMeta(message);
         row.messageReactions.update(message.reactions);
       }, create: message => {
@@ -620,7 +620,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     familyEmpty.hidden = unique.length > 0 || newGroup;
     if (familyEmpty.parentElement !== familyRows) familyRows.append(familyEmpty);
     familyThreadRows.update(unique, {
-      fingerprint: message => JSON.stringify([selected, message.sender, message.authorStudentId, message.senderName, message.body, message.attachment]),
+      fingerprint: message => JSON.stringify([selected, message.sender, message.authorStudentId, message.senderName, message.body, message.attachment, mediaActions.fingerprint(message.authorStudentId)]),
       refresh: (row, message) => row.messageReactions.update(message.reactions),
       create: message => {
         const row = textNode('article', '', `cloud-message ${message.sender === 'parent' ? 'parent' : 'child'}`);
@@ -773,7 +773,7 @@ export function setupCloudMessages({ endpoint, onBack = () => {} }) {
     },
     setLive(value) { if (live === Boolean(value)) return; live = Boolean(value); publishConversationView(); clearTimeout(timer); if (active) return refresh(); },
     notify(studentId) { if ((studentId === selected || selected === FAMILY || groupId(selected)) && active) return refresh(); },
-    update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); if (!chosenInitialized) { chosenKids = new Set(ids); chosenInitialized = true; } renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && selected !== FAMILY && !groupId(selected) && !students.some(student => student.id === selected)) choose(null); },
+    update(value) { students = value || []; const ids = new Set(recipients().map(student => student.id)); for(const id of recentChildMessages.keys())if(!ids.has(id))recentChildMessages.delete(id); for(const student of recipients())rememberChildMessage(student.id,student.last_child_message_sequence); if (!chosenInitialized) { chosenKids = new Set(ids); chosenInitialized = true; } renderStudents(); if (selected === ALL_KIDS) { if (!recipients().length && !pending.has(ALL_KIDS)) choose(null); else render(); } else if (selected && selected !== FAMILY && !groupId(selected) && !students.some(student => student.id === selected)) choose(null); else if (selected) render(); },
     setActive(value) { active = value; document.body.classList.toggle('cloud-messages-active', active); showConversation(section.dataset.messageView === 'thread'); clearTimeout(timer); if (active) { void loadGroups(); return refresh(); } else { if (settingsDialog.open) settingsDialog.close(); pauseMedia(); } }
   };
 }
