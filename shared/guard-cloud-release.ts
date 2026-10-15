@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.317": {
+  "title": "Videos and audiobooks remember your place",
+  "sections": [
+    {
+      "heading": "Version 1.2.317",
+      "headline": "Easier browsing and more reliable listening",
+      "summary": "Videos and Audiobooks remember expanded collections, searches and saved choices, with clearer playback and parent settings feedback.",
+      "highlights": [
+        "Children can return to expanded collections, save items for later, choose favorites and continue from a saved position.",
+        "Video buffering no longer uses the daily allowance. Next stays inside the chosen collection with a visible Cancel option.",
+        "Finished audiobooks stay available to replay. Continuous listening and next-chapter controls also work in the pinned player.",
+        "Failed collection loads and parent settings saves offer clear retry messages. Parent limits, approved collections and child identity remain enforced."
+      ]
+    }
+  ]
+},
   "1.2.316": {
   "title": "Learning video categories, daily driving limits and easier school recovery",
   "sections": [
