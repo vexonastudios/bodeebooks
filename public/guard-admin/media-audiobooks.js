@@ -6,6 +6,11 @@ const AUDIOBOOK_API = `${API}/audiobooks`;
 const AUDIOBOOK_DEFAULT_MINUTES = window.BODEE_MEDIA_DEFAULTS.audiobook.dailyMinutes;
 
 let initialized = false;
+let studentSettingsReady = '';
+let studentSettingsEpoch = 0;
+let studentSettingsSaving = false;
+let globalSettingsReady = false;
+let globalSettingsSaving = false;
 let students = [];
 let items = [];
 let assignments = {};
@@ -43,6 +48,7 @@ function formatDuration(seconds) {
 }
 async function jsonFetch(url, options = {}) {
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(20000),
     ...options,
     headers: { ...headers(), ...(options.headers || {}) }
   });
@@ -81,7 +87,8 @@ function renderShell() {
           <div class="form-group" style="margin:0;"><label>Until</label><input type="time" id="ab-end-time" class="admin-input" style="max-width:130px;"></div>
           <div style="display:flex;align-items:center;gap:8px;padding-top:18px;"><input type="checkbox" id="ab-enabled" style="width:15px;height:15px;cursor:pointer;"><label for="ab-enabled" style="cursor:pointer;font-size:14px;">Audiobooks enabled</label></div>
           <button class="btn btn-secondary" id="ab-save-global" style="margin-top:18px;">Save</button>
-          <span id="ab-global-saved" style="display:none;font-size:13px;color:var(--accent-green);margin-top:18px;">Saved!</span>
+          <span id="ab-global-saved" role="status" style="font-size:13px;margin-top:18px;"></span>
+          <button class="btn btn-secondary" id="ab-retry-global" hidden>Try loading hours again</button>
         </div>
       </div>
 
@@ -198,6 +205,8 @@ function renderShell() {
             <button class="btn btn-secondary" id="ab-override"><i data-lucide="unlock" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px;"></i> Bypass School/Schedule Today</button>
             <button class="btn btn-secondary" id="ab-override-all"><i data-lucide="users" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px;"></i> Bypass for All Today</button>
           </div>
+          <p id="ab-settings-status" role="status" style="font-size:13px;margin:0;"></p>
+          <button class="btn btn-secondary" id="ab-retry-settings" hidden>Try loading settings again</button>
           <span id="ab-override-status" style="display:none;font-size:12px;color:#fbbf24;"></span>
           <div style="margin-top:4px;padding:14px;border:1px solid rgba(245,158,11,.24);background:rgba(245,158,11,.07);border-radius:10px;">
             <div style="font-size:14px;font-weight:700;color:#fbbf24;">Extra time today</div>
@@ -244,6 +253,8 @@ export function setupAudiobookTab() {
     });
   });
 
+  document.getElementById('ab-retry-global').addEventListener('click', loadGlobalSettings);
+  document.getElementById('ab-retry-settings').addEventListener('click', loadStudentSettings);
   document.getElementById('ab-save-global').addEventListener('click', saveGlobalSettings);
   document.getElementById('ab-lookup').addEventListener('click', lookupAudiobook);
   document.getElementById('ab-youtube-url').addEventListener('keydown', event => {
@@ -291,18 +302,44 @@ export async function loadAudiobookTab() {
   populateStudentSelects();
 }
 
+function audiobookSettingsStatus(scope, message, isError = false) {
+  const status = document.getElementById(scope === 'global' ? 'ab-global-saved' : 'ab-settings-status');
+  status.textContent = message;
+  status.style.color = isError ? 'var(--danger, #f87171)' : 'var(--text-muted)';
+}
+function setAudiobookSettingsBusy(scope, busy) {
+  const ids = scope === 'global'
+    ? ['ab-enabled', 'ab-start-time', 'ab-end-time', 'ab-save-global']
+    : ['ab-max-minutes', 'ab-require-completion', 'ab-save-student', 'ab-override'];
+  ids.forEach(id => { document.getElementById(id).disabled = busy; });
+  if (scope === 'student') document.querySelectorAll('.ab-add-time').forEach(button => { button.disabled = busy; });
+}
 async function loadGlobalSettings() {
+  if (globalSettingsSaving) return;
+  globalSettingsReady = false;
+  setAudiobookSettingsBusy('global', true);
+  document.getElementById('ab-retry-global').hidden = true;
+  audiobookSettingsStatus('global', 'Loading hours…');
   try {
-    const settings = await jsonFetch(`${AUDIOBOOK_API}/settings`);
+    const settings = await jsonFetch(AUDIOBOOK_API + '/settings');
     document.getElementById('ab-start-time').value = settings.audiobook_start_time || '08:00';
     document.getElementById('ab-end-time').value = settings.audiobook_end_time || '21:00';
     document.getElementById('ab-enabled').checked = !!settings.audiobook_enabled;
-  } catch (error) { logger.warn('audiobooks', 'Failed to load global settings', error); }
+    globalSettingsReady = true;
+    setAudiobookSettingsBusy('global', false);
+    audiobookSettingsStatus('global', '');
+  } catch (error) {
+    audiobookSettingsStatus('global', 'Could not load audiobook hours. Try again before editing.', true);
+    document.getElementById('ab-retry-global').hidden = false;
+  }
 }
-
 async function saveGlobalSettings() {
+  if (!globalSettingsReady || globalSettingsSaving) return;
+  globalSettingsSaving = true;
+  setAudiobookSettingsBusy('global', true);
+  audiobookSettingsStatus('global', 'Saving…');
   try {
-    await jsonFetch(`${AUDIOBOOK_API}/settings`, {
+    await jsonFetch(AUDIOBOOK_API + '/settings', {
       method: 'PATCH',
       body: JSON.stringify({
         audiobook_enabled: document.getElementById('ab-enabled').checked,
@@ -310,10 +347,9 @@ async function saveGlobalSettings() {
         audiobook_end_time: document.getElementById('ab-end-time').value
       })
     });
-    const saved = document.getElementById('ab-global-saved');
-    saved.style.display = 'inline';
-    setTimeout(() => { saved.style.display = 'none'; }, 2200);
-  } catch (error) { toast('Failed to save audiobook hours.', true); }
+    audiobookSettingsStatus('global', 'Audiobook hours saved.');
+  } catch (error) { audiobookSettingsStatus('global', 'Could not save audiobook hours. Your changes are still here; try Save again.', true); }
+  finally { globalSettingsSaving = false; setAudiobookSettingsBusy('global', false); }
 }
 
 async function lookupAudiobook() {
@@ -850,14 +886,21 @@ async function handleYoutubePlaylistShelfClick(event) {
 }
 
 async function loadStudentSettings() {
+  if (studentSettingsSaving) return;
   const studentId = document.getElementById('ab-settings-student').value;
+  const epoch = ++studentSettingsEpoch;
+  studentSettingsReady = '';
+  setAudiobookSettingsBusy('student', true);
+  document.getElementById('ab-retry-settings').hidden = true;
+  audiobookSettingsStatus('student', studentId ? 'Loading settings…' : 'Choose a student.');
   if (!studentId) return;
   try {
-    const settings = await jsonFetch(`${AUDIOBOOK_API}/student-settings/${studentId}`);
-    document.getElementById('ab-max-minutes').value = settings.max_daily_minutes || AUDIOBOOK_DEFAULT_MINUTES;
+    const settings = await jsonFetch(AUDIOBOOK_API + '/student-settings/' + studentId);
+    if (epoch !== studentSettingsEpoch || document.getElementById('ab-settings-student').value !== studentId) return;
+    document.getElementById('ab-max-minutes').value = settings.max_daily_minutes ?? AUDIOBOOK_DEFAULT_MINUTES;
     document.getElementById('ab-require-completion').checked = !!settings.require_completion;
     const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
     const unlocked = settings.override_date === today;
     document.getElementById('ab-override').textContent = unlocked ? 'Use Normal School/Schedule' : 'Bypass School/Schedule Today';
     const status = document.getElementById('ab-override-status');
@@ -865,9 +908,16 @@ async function loadStudentSettings() {
     status.textContent = unlocked ? 'School and schedule gates are bypassed today. The daily time limit still applies.' : '';
     const bonusMinutes = Math.floor((settings.daily_bonus_seconds || 0) / 60);
     document.getElementById('ab-extra-time-status').textContent = bonusMinutes > 0
-      ? `${bonusMinutes} extra minutes have been granted for today.`
+      ? bonusMinutes + ' extra minutes have been granted for today.'
       : 'No extra audiobook time has been granted today.';
-  } catch (error) { toast('Could not load audiobook settings.', true); }
+    studentSettingsReady = studentId;
+    setAudiobookSettingsBusy('student', false);
+    audiobookSettingsStatus('student', '');
+  } catch (error) {
+    if (epoch !== studentSettingsEpoch || document.getElementById('ab-settings-student').value !== studentId) return;
+    audiobookSettingsStatus('student', 'Could not load this student’s settings. Try again before editing.', true);
+    document.getElementById('ab-retry-settings').hidden = false;
+  }
 }
 
 async function addExtraTime(event) {
@@ -889,17 +939,31 @@ async function addExtraTime(event) {
 
 async function saveStudentSettings() {
   const studentId = document.getElementById('ab-settings-student').value;
-  if (!studentId) return;
+  if (!studentId || studentSettingsReady !== studentId || studentSettingsSaving) return;
+  const minutes = Number(document.getElementById('ab-max-minutes').value);
+  if (!Number.isInteger(minutes) || minutes < 5 || minutes > 720) {
+    audiobookSettingsStatus('student', 'Enter a daily allowance between 5 and 720 minutes.', true);
+    return;
+  }
+  studentSettingsSaving = true;
+  document.getElementById('ab-settings-student').disabled = true;
+  setAudiobookSettingsBusy('student', true);
+  audiobookSettingsStatus('student', 'Saving…');
   try {
-    await jsonFetch(`${AUDIOBOOK_API}/student-settings/${studentId}`, {
+    await jsonFetch(AUDIOBOOK_API + '/student-settings/' + studentId, {
       method: 'PUT',
       body: JSON.stringify({
-        max_daily_minutes: Number(document.getElementById('ab-max-minutes').value) || AUDIOBOOK_DEFAULT_MINUTES,
+        max_daily_minutes: minutes,
         require_completion: document.getElementById('ab-require-completion').checked
       })
     });
-    toast('Audiobook settings saved.');
-  } catch (error) { toast('Could not save audiobook settings.', true); }
+    audiobookSettingsStatus('student', 'Audiobook settings saved.');
+  } catch (error) { audiobookSettingsStatus('student', 'Could not save. Your changes are still here; try Save again.', true); }
+  finally {
+    studentSettingsSaving = false;
+    document.getElementById('ab-settings-student').disabled = false;
+    setAudiobookSettingsBusy('student', false);
+  }
 }
 
 async function toggleOverride() {
