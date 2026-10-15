@@ -271,13 +271,16 @@ function setupVideoLibrary() {
         video_start_time: document.getElementById('video-start-time')?.value,
         video_end_time:   document.getElementById('video-end-time')?.value
       };
-      await fetch(`${API}/video/settings`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify(body)
-      });
-      const savedEl = document.getElementById('video-settings-saved');
-      if (savedEl) { savedEl.style.display = 'inline'; setTimeout(() => savedEl.style.display = 'none', 2500); }
+      if(saveBtn.disabled)return;
+      const savedEl=document.getElementById('video-settings-saved');if(savedEl)savedEl.style.display='none';
+      saveBtn.disabled=true;
+      try {
+        const response=await fetch(API+'/video/settings',{method:'PATCH',headers:authHeaders(),body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok||result.error)throw new Error(result.error||'Video hours could not be saved.');
+        if(savedEl){savedEl.style.display='inline';setTimeout(()=>savedEl.style.display='none',2500);}
+      }catch(error){window.showToast?.(error.message+' Your edits are still here. Choose Save to retry.',true);}
+      finally{saveBtn.disabled=false;}
     });
   }
 
@@ -1072,18 +1075,30 @@ function setupVideoStudentSettings() {
   document.getElementById('vsett-override-all-btn')?.addEventListener('click', overrideAllToday);
 }
 
+let videoSettingsLoadSequence=0;
 async function loadVideoStudentSettingsForm() {
-  const sel = document.getElementById('vsett-student-sel');
-  if (!sel || !sel.value) return;
+  const sel=document.getElementById('vsett-student-sel');if(!sel?.value)return;
+  const child=sel.value,sequence=++videoSettingsLoadSequence;
+  const maxEl=document.getElementById('vsett-max-min'),reqEl=document.getElementById('vsett-req-completion'),button=document.getElementById('vsett-save-btn');
+  for(const node of [maxEl,reqEl,button])if(node)node.disabled=true;
+  if(button){button.dataset.loadFailed='';button.textContent='Loading…';}
+  const saved=document.getElementById('vsett-saved');if(saved)saved.style.display='none';
   try {
-    const res = await fetch(`${API}/video/student-settings/${sel.value}`, { headers: { 'x-kiosk-key': apiKey() } });
-    const s = await res.json();
-    const maxEl = document.getElementById('vsett-max-min');
-    const reqEl = document.getElementById('vsett-req-completion');
-    if (maxEl) maxEl.value   = s.max_daily_minutes ?? VIDEO_DEFAULT_MINUTES;
-    if (reqEl) reqEl.checked = !!s.require_completion;
-    renderOverrideState(s.override_date);
-  } catch(e) { logger.warn('video', 'Failed to load student video settings', e); }
+    const response=await fetch(API+'/video/student-settings/'+child,{headers:{'x-kiosk-key':apiKey()},signal:AbortSignal.timeout(20000)});
+    const settings=await response.json();
+    if(sequence!==videoSettingsLoadSequence||sel.value!==child)return;
+    if(!response.ok||settings.error)throw new Error(settings.error||'Could not load these settings.');
+    if(maxEl)maxEl.value=settings.max_daily_minutes??VIDEO_DEFAULT_MINUTES;
+    if(reqEl)reqEl.checked=!!settings.require_completion;
+    renderOverrideState(settings.override_date);
+    for(const node of [maxEl,reqEl,button])if(node)node.disabled=false;
+    if(button)button.textContent='Save Settings';
+  } catch(error) {
+    if(sequence!==videoSettingsLoadSequence||sel.value!==child)return;
+    if(button){button.disabled=false;button.dataset.loadFailed='true';button.textContent='Retry loading settings';}
+    window.showToast?.('Could not load this child’s video settings. Choose Retry loading settings.',true);
+    logger.warn('video','Failed to load student video settings',error);
+  }
 }
 
 function renderOverrideState(overrideDate) {
@@ -1166,20 +1181,37 @@ async function overrideAllToday() {
 
 async function saveVideoStudentSettings() {
   const sel = document.getElementById('vsett-student-sel');
-  if (!sel || !sel.value) return;
-  const body = {
-    max_daily_minutes: parseInt(document.getElementById('vsett-max-min')?.value) || VIDEO_DEFAULT_MINUTES,
-    require_completion: document.getElementById('vsett-req-completion')?.checked ?? true
-  };
-  await fetch(`${API}/video/student-settings/${sel.value}`, {
-    method: 'PUT', headers: authHeaders(),
-    body: JSON.stringify(body)
-  });
+  const button = document.getElementById('vsett-save-btn');
+  if (!sel?.value || button?.disabled) return;
+  if(button?.dataset.loadFailed==='true'){await loadVideoStudentSettingsForm();return;}
+  const studentId = sel.value;
+  const minutes = Number(document.getElementById('vsett-max-min')?.value);
   const savedEl = document.getElementById('vsett-saved');
-  if (savedEl) { savedEl.style.display = 'inline'; setTimeout(() => savedEl.style.display = 'none', 2500); }
-  if (window.showToast) window.showToast('✅ Video settings saved!');
+  if (savedEl) savedEl.style.display = 'none';
+  if (!Number.isInteger(minutes) || minutes < 5 || minutes > 480) {
+    window.showToast?.('Choose a whole number from 5 to 480 minutes.', true); return;
+  }
+  const original = button?.textContent;
+  if (button) { button.disabled = true; button.textContent = 'Saving…'; }
+  sel.disabled = true;
+  const fields=['vsett-max-min','vsett-req-completion'].map(id=>document.getElementById(id));
+  fields.forEach(node=>{if(node)node.disabled=true;});
+  try {
+    const response = await fetch(API + '/video/student-settings/' + studentId, {
+      method: 'PUT', headers: authHeaders(), signal: AbortSignal.timeout(20000),
+      body: JSON.stringify({max_daily_minutes: minutes, require_completion: document.getElementById('vsett-req-completion')?.checked ?? true})
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.success !== true) throw new Error(result.error || 'Your settings could not be saved.');
+    if (savedEl) { savedEl.style.display = 'inline'; setTimeout(() => savedEl.style.display = 'none', 2500); }
+    window.showToast?.('Video settings saved.');
+  } catch (error) {
+    window.showToast?.((error.name === 'TimeoutError' ? 'The connection timed out.' : error.message) + ' Your edits are still here. Choose Save to retry.', true);
+  } finally {
+    fields.forEach(node=>{if(node)node.disabled=false;});
+    sel.disabled = false; if (button) { button.disabled = false; button.textContent = original; }
+  }
 }
-
 // ─────────────────────────────────────────────
 //  WATCH HISTORY
 // ─────────────────────────────────────────────
