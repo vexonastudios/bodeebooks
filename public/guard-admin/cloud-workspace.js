@@ -28,7 +28,7 @@ import { setupCloudFiles } from './cloud-files.js?v=20261007-grade-preview1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20261007-grade-preview1';
 import { setupCloudGames } from './cloud-games-ui.js?v=20261001-game-time1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
-import { setupCloudAssistant } from './cloud-assistant.js?v=20261005-reply-format1';
+import { setupCloudAssistant } from './cloud-assistant.js?v=20261015-game-lock1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';

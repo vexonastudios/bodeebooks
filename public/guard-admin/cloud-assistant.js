@@ -233,14 +233,15 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     if(!review || !Number.isInteger(review.studentCount) || review.studentCount<1 || review.studentCount>50)return;
     const game=type==='game-time';
     if(game && (!Number.isInteger(review.minutes)||review.minutes<1||review.minutes>240))return;
-    if(!game && !['games-unlock','math-enable'].includes(review.kind))return;
+    if(!game && !['games-unlock','games-lock','math-enable'].includes(review.kind))return;
+    if(review.kind==='games-lock' && (!Array.isArray(review.targets)||!review.targets.length||review.targets.some(t=>!['family-games','bodeebooks-games'].includes(t))))return;
     cancelReview();
     const approval={prompt:review.prompt,studentCount:review.studentCount,reviewFingerprint:review.reviewFingerprint,requestId:crypto.randomUUID(),
       ...(game?{minutes:review.minutes,studentId:review.studentId || 'all'}:{kind:review.kind})};
     const token={expires:Date.now()+10*60*1000};
     pendingReview=token;
     const approve=document.createElement('button');approve.type='button';approve.className='btn btn-primary';
-    approve.textContent=game?'Yes, add '+review.minutes+' minutes for '+(review.targetLabel || 'all '+review.studentCount+' kids'):review.kind==='games-unlock'?'Yes, unlock games today':'Yes, enable Math Coach';
+    approve.textContent=game?'Yes, add '+review.minutes+' minutes for '+(review.targetLabel || 'all '+review.studentCount+' kids'):review.kind==='games-unlock'?'Yes, unlock games today':review.kind==='games-lock'?'Lock '+(review.targets.length===2?'both game areas':review.targets[0]==='family-games'?'Family Games':'BodeeBooks Games')+' for everyone':'Yes, enable Math Coach';
     const cancel=document.createElement('button');cancel.type='button';cancel.className='btn btn-secondary';cancel.textContent='Cancel';
     const status=document.createElement('p');status.setAttribute('role','status');
     const actions=document.createElement('div');actions.className='assistant-message-actions assistant-confirmation';
