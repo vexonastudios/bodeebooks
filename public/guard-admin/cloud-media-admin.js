@@ -1,4 +1,4 @@
-import {initMusicAdmin} from './media-music.js?v=20261006-mobile-media1';
+import {initMusicAdmin} from './media-music.js?v=20261015-music-import1';
 import {setupVideoTab,loadVideoTab} from './media-video.js?v=20261006-mobile-media1';
 import {setupAudiobookTab,loadAudiobookTab} from './media-audiobooks.js?v=20261006-mobile-media1';
 import {setupLearningVideosTab,loadLearningVideosTab} from './media-learning-videos.js';
@@ -29,14 +29,15 @@ document.addEventListener('click',event=>{
   const player=document.createElement('iframe');player.title='Media preview';player.src='/guard-admin/cloud-learning-player.html#'+new URLSearchParams({video:id,start:'0'});player.allow='autoplay; encrypted-media; fullscreen';player.style.cssText='border:0;width:100%;height:min(70vh,650px);display:block;margin-top:14px';
   dialog.append(close,player);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
 });
-let active='',musicReady;
+let active='';
 function refresh(){if(document.hidden)return;const panel=document.querySelector('.tab-content.active'),next=panel?.id,adding=panel?.classList.contains('mobile-media-add')&&document.body.classList.contains('cloud-mobile'),view=next+':'+adding;if(view===active)return;active=view;
   if(adding&&['tab-videos','tab-audiobooks'].includes(next)){window.refreshIcons();return;}
-  const loaded=next==='tab-music'?(musicReady||=Promise.resolve().then(()=>initMusicAdmin())):({'tab-videos':loadVideoTab,'tab-audiobooks':loadAudiobookTab,'tab-learning-videos':loadLearningVideosTab,'tab-family-watch':loadFamilyWatchTab}[next])?.();
+  const loaded=next==='tab-music'?initMusicAdmin():({'tab-videos':loadVideoTab,'tab-audiobooks':loadAudiobookTab,'tab-learning-videos':loadLearningVideosTab,'tab-family-watch':loadFamilyWatchTab}[next])?.();
   if(adding&&next==='tab-music'){
     const form=panel.querySelector('.mobile-media-add-form');
     if(form){form.inert=true;form.setAttribute('aria-busy','true');void loaded.finally(()=>{form.inert=false;form.removeAttribute('aria-busy');}).catch(error=>window.showToast(error.message,true));}
   }
+  void loaded?.catch(error=>window.showToast(error.message,true));
   window.refreshIcons();
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){active='';refresh();}});
