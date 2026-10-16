@@ -1,4 +1,4 @@
-import {initMusicAdmin} from './media-music.js?v=20261015-music-library2';
+import {initMusicAdmin} from './media-music.js?v=20261015-music-library3';
 import {setupVideoTab,loadVideoTab} from './media-video.js?v=20261006-mobile-media1';
 import {setupAudiobookTab,loadAudiobookTab} from './media-audiobooks.js?v=20261006-mobile-media1';
 import {setupLearningVideosTab,loadLearningVideosTab} from './media-learning-videos.js';

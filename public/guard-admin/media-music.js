@@ -11,6 +11,9 @@ let _allStudents = [];
 let _assignments = {}; // { student_id: [track_id,...] }
 let _youtubePlaylists = [];
 let _youtubePlaylistAssignments = {};
+let _playlistAccess = null;
+let _playlistAccessRequest = 0;
+const _playlistVideosCache = new Map();
 document.addEventListener('cloud-music-library-changed', () => { if (_musicInited) void loadMusicTracks().catch(error => window.showToast?.(error.message, true)); });
 const MUSIC_DEFAULT_MINUTES = window.BODEE_MEDIA_DEFAULTS.music.dailyMinutes;
 
@@ -347,6 +350,7 @@ function wireMusicYoutubePlaylistButtons() {
 }
 
 async function refreshMusicYoutubePlaylists() {
+  _playlistVideosCache.clear();
   try {
     [_youtubePlaylists, _youtubePlaylistAssignments] = await Promise.all([
       musicPlaylistFetch('/api/music/youtube-playlists'),
@@ -395,7 +399,7 @@ function renderMusicYoutubePlaylistAssignments() {
 }
 
 // Keep song assignments distinct from access to an entire YouTube playlist.
-// This presentation uses existing records and never fetches each source's songs.
+// Individual song assignments and whole-playlist access remain separate.
 function clarifyMusicLibraryViews() {
   const panel = document.getElementById('mplay');
   const tab = document.querySelector('#tab-music [data-stab="mplay"]');
@@ -411,13 +415,72 @@ function clarifyMusicLibraryViews() {
   available.parentElement.querySelector('h4').textContent = 'Other approved songs';
   const help = document.createElement('p');
   help.className = 'settings-hint';
-  help.textContent = 'These songs are not assigned individually to this child. They may already be available through an approved YouTube playlist.';
+  help.textContent = 'Songs already available through an approved YouTube playlist are marked below. You can also add one individually if you want it to remain after playlist access is removed.';
   available.before(help);
   const assignedHelp = document.createElement('p');
   assignedHelp.className = 'settings-hint';
   assignedHelp.textContent = 'Removing a song here removes its individual assignment. Access through an approved YouTube playlist is managed separately.';
   document.getElementById('playlist-assigned-list').before(assignedHelp);
-  document.getElementById('playlist-add-all-btn').textContent = 'Add all these songs';
+  document.getElementById('playlist-add-all-btn').textContent = 'Add songs not in playlists';
+  document.getElementById('playlist-assigned-list').parentElement.parentElement.classList.add('music-playlist-columns');
+  const layout = document.createElement('style');
+  layout.textContent = '@media (max-width: 620px) { .music-playlist-columns { grid-template-columns: minmax(0, 1fr) !important; } .music-playlist-columns > div { min-width: 0; padding: 12px !important; } .music-playlist-columns > div > div:first-child { flex-wrap: wrap; } .music-playlist-song-row { flex-wrap: wrap; align-items: flex-start !important; } .music-playlist-song-row .music-playlist-song-info { flex: 1 1 calc(100% - 72px) !important; } .music-playlist-song-row .music-playlist-song-info > div:first-child { white-space: normal !important; overflow-wrap: anywhere; } .music-playlist-song-row .music-playlist-song-action { margin-left: 58px; max-width: calc(100% - 58px); white-space: normal; text-align: left; } }';
+  panel.append(layout);
+}
+
+// Check only when a parent views Individual songs or changes children. Source
+// videos are cached briefly across children; failed checks stay explicit.
+async function musicPlaylistVideos(source) {
+  const cached = _playlistVideosCache.get(source.id);
+  if (cached && cached.until > Date.now()) return cached.promise;
+  const promise = mget(`/api/music/youtube-playlists/${encodeURIComponent(source.id)}/videos`);
+  _playlistVideosCache.set(source.id, { promise, until: Date.now() + 5 * 60000 });
+  try {
+    const videos = await promise;
+    if (!Array.isArray(videos)) throw Error('Could not verify playlist songs.');
+    return videos;
+  } catch (error) {
+    _playlistVideosCache.delete(source.id);
+    throw error;
+  }
+}
+
+async function refreshMusicPlaylistAccess(studentId) {
+  const request = ++_playlistAccessRequest;
+  _playlistAccess = { studentId, status: 'checking', songs: new Map() };
+  loadPlaylistAssignView();
+  const assigned = new Set(_assignments[studentId] || []);
+  const candidates = new Set(_allTracks.filter(track => track.screened && track.active !== 0 && !assigned.has(track.id)).map(track => track.youtube_id).filter(Boolean));
+  if (!candidates.size) {
+    _playlistAccess = { studentId, status: 'ready', songs: new Map() };
+    loadPlaylistAssignView();
+    return;
+  }
+  try {
+    const sources = await mget(`/api/music/youtube-playlists/for/${encodeURIComponent(studentId)}`);
+    if (!Array.isArray(sources)) throw Error('Could not verify playlist access.');
+    const songs = new Map();
+    let failed = 0;
+    let next = 0;
+    // Limit concurrent playlist fetches to avoid a burst of YouTube requests.
+    const worker = async () => {
+      while (next < sources.length && songs.size < candidates.size) {
+        const source = sources[next++];
+        try {
+          for (const video of await musicPlaylistVideos(source)) {
+            if (candidates.has(video.youtube_id) && !songs.has(video.youtube_id)) songs.set(video.youtube_id, source.name || 'a playlist');
+          }
+        } catch (_) { failed++; }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(2, sources.length) }, worker));
+    if (request !== _playlistAccessRequest) return;
+    _playlistAccess = { studentId, status: failed ? 'partial' : 'ready', songs };
+  } catch (_) {
+    if (request !== _playlistAccessRequest) return;
+    _playlistAccess = { studentId, status: 'error', songs: new Map() };
+  }
+  loadPlaylistAssignView();
 }
 
 // ── Playlists Tab ─────────────────────────────────────
@@ -460,13 +523,15 @@ async function refreshPlaylistsTab() {
       sel.addEventListener('change', () => {
         document.getElementById('quick-add-card').style.display = 'none';
         if (_musicBatch?.mode === 'child') { _musicBatch = null; renderMusicBatch(); }
-        loadPlaylistAssignView();
+        void refreshMusicPlaylistAccess(sel.value);
       });
       addAllBtn.addEventListener('click', async () => {
         const sid = sel.value;
         if (!sid) return;
+        const access = _playlistAccess;
+        if (access?.studentId !== sid || access.status !== 'ready') return;
         const assigned = new Set(_assignments[sid] || []);
-        const tracks = _allTracks.filter(t => t.screened && t.active !== 0 && !assigned.has(t.id));
+        const tracks = _allTracks.filter(t => t.screened && t.active !== 0 && !assigned.has(t.id) && !access.songs.has(t.youtube_id));
         addAllBtn.disabled = sel.disabled = true;
         let failed = 0;
         try {
@@ -496,13 +561,13 @@ async function refreshPlaylistsTab() {
         catch (error) { window.showToast?.(error.message, true); }
       });
     }
-    loadPlaylistAssignView();
-  } catch (error) { playlistNotice(error.message || 'Could not load playlists.', true); }
+    void refreshMusicPlaylistAccess(sel.value);
+  } catch (error) { ++_playlistAccessRequest; _playlistAccess = null; playlistNotice(error.message || 'Could not load playlists.', true); }
   finally {
     _playlistLoading = false;
     sel.disabled = !_allStudents.length;
     quickAddTrigger.disabled = !_allStudents.length;
-    addAllBtn.disabled = !_allStudents.length || !document.querySelector('#playlist-available-list [data-music-track]');
+    addAllBtn.disabled = !_allStudents.length || _musicBatchBusy || _playlistAccess?.studentId !== sel.value || _playlistAccess.status !== 'ready' || !_allTracks.some(t => t.screened && t.active !== 0 && !(_assignments[sel.value] || []).includes(t.id) && !_playlistAccess.songs.has(t.youtube_id));
   }
 }
 
@@ -528,11 +593,13 @@ function loadPlaylistAssignView() {
 
   const assignedTracks = screened.filter(t => assignedIds.has(t.id));
   const availableTracks = screened.filter(t => !assignedIds.has(t.id));
+  const access = _playlistAccess?.studentId === sid ? _playlistAccess : { status: 'checking', songs: new Map() };
+  const individuallyAvailable = availableTracks.filter(t => !access.songs.has(t.youtube_id));
 
   if (currentTitle) currentTitle.textContent = `${student.name}'s individual songs (${assignedTracks.length} song${assignedTracks.length !== 1 ? 's' : ''})`;
   if (availableCount) availableCount.textContent = `${availableTracks.length} not individually assigned`;
 
-  document.getElementById('playlist-add-all-btn').disabled = !availableTracks.length;
+  document.getElementById('playlist-add-all-btn').disabled = _musicBatchBusy || access.status !== 'ready' || !individuallyAvailable.length;
   // 1. Render Left Column: Assigned Songs
   if (!assignedTracks.length) {
     assignedList.innerHTML = `
@@ -568,15 +635,23 @@ function loadPlaylistAssignView() {
   } else {
     availableList.innerHTML = availableTracks.map(t => {
       const thumb = t.thumbnail_url || `https://img.youtube.com/vi/${t.youtube_id}/mqdefault.jpg`;
+      const source = access.songs.get(t.youtube_id);
+      const checking = access.status === 'checking';
+      const uncertain = access.status === 'error' || access.status === 'partial';
+      const note = source
+        ? `<div style="font-size:11px;color:#a78bfa;">Already available through a playlist: ${musicEscape(source)}</div>`
+        : uncertain ? '<div style="font-size:11px;color:#fbbf24;">Could not confirm playlist access</div>' : '';
+      const buttonText = source ? 'Also add individually' : uncertain ? 'Add individually' : checking ? 'Checking playlists…' : 'Add song';
       return `
-      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:10px;">
+      <div class="music-playlist-song-row" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:10px;">
         <img src="${musicEscape(thumb)}" style="width:48px; height:36px; object-fit:cover; border-radius:6px; flex-shrink:0;" alt="">
-        <div style="flex:1; min-width:0;">
+        <div class="music-playlist-song-info" style="flex:1; min-width:0;">
           <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#f1f5f9;">${musicEscape(t.title)}</div>
           <div style="font-size:11px; color:var(--text-muted);">${musicEscape(t.artist || '—')}</div>
+          ${note}
         </div>
-        <button data-music-track="${musicEscape(t.id)}" onclick="toggleAssign('${sid}','${t.id}',false,this)" style="display:flex;align-items:center;padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); color:#34d399;">
-          <i data-lucide="plus" style="width:12px;height:12px;margin-right:4px;"></i> Add song
+        <button class="music-playlist-song-action" data-music-track="${musicEscape(t.id)}" ${checking ? 'disabled' : ''} onclick="toggleAssign('${sid}','${t.id}',false,this)" style="display:flex;align-items:center;padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); color:#34d399;">
+          <i data-lucide="plus" style="width:12px;height:12px;margin-right:4px;"></i> ${buttonText}
         </button>
       </div>`;
     }).join('');
@@ -787,7 +862,7 @@ function setMusicBatchBusy(value) {
     const validChild = _allStudents.some(student => student.id === sid);
     document.getElementById('playlist-student-sel').disabled = !_allStudents.length;
     document.getElementById('playlist-quick-add-btn').disabled = !validChild;
-    document.getElementById('playlist-add-all-btn').disabled = !validChild || !_allTracks.some(track => track.screened && track.active !== 0 && !(_assignments[sid] || []).includes(track.id));
+    document.getElementById('playlist-add-all-btn').disabled = !validChild || _playlistAccess?.studentId !== sid || _playlistAccess.status !== 'ready' || !_allTracks.some(track => track.screened && track.active !== 0 && !(_assignments[sid] || []).includes(track.id) && !_playlistAccess.songs.has(track.youtube_id));
   }
   // Prevent switching tabs/children midway through a saved audience.
   document.querySelectorAll('#tab-music [data-stab]').forEach(button => { button.disabled = value; });
