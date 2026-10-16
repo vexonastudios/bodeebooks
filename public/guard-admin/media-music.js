@@ -53,7 +53,7 @@ document.addEventListener('click', e => {
   const btn = e.target.closest('[data-stab]');
   if (!btn) return;
   document.querySelectorAll('.music-stab').forEach(b => b.classList.remove('active-stab'));
-  btn.classList.add('active-stab');
+  [...document.querySelectorAll('.music-stab')].find(tab => tab.dataset.stab === btn.dataset.stab)?.classList.add('active-stab');
   document.querySelectorAll('.music-stab-body').forEach(b => b.style.display = 'none');
   const panel = document.getElementById(btn.dataset.stab);
   if (panel) panel.style.display = 'block';
@@ -77,6 +77,7 @@ async function initializeMusicAdmin() {
     wireLibraryButtons();
     wireMusicYoutubePlaylistButtons();
     wireMusicBulkImport();
+    clarifyMusicLibraryViews();
   }
 
   // Add active-stab style
@@ -393,6 +394,32 @@ function renderMusicYoutubePlaylistAssignments() {
   }).join('');
 }
 
+// Keep song assignments distinct from access to an entire YouTube playlist.
+// This presentation uses existing records and never fetches each source's songs.
+function clarifyMusicLibraryViews() {
+  const panel = document.getElementById('mplay');
+  const tab = document.querySelector('#tab-music [data-stab="mplay"]');
+  tab.innerHTML = '<i data-lucide="list-music" style="width:16px;height:16px;"></i> Individual songs';
+  panel.querySelector('h3').innerHTML = '<i data-lucide="list-music" class="h3-icon"></i> Individual songs for each child';
+  panel.querySelector('.settings-hint').textContent = 'Choose songs for the selected child here. Whole YouTube playlists have their own access controls.';
+  const note = document.createElement('div');
+  note.className = 'music-library-explanation';
+  note.innerHTML = '<p>This library can include songs children saved from an approved YouTube playlist into their own mixes. Those songs appear individually here; the original playlist stays in YouTube Playlists.</p>' +
+    '<button type="button" class="btn btn-secondary" data-stab="mytplay">Manage YouTube playlists</button>';
+  document.getElementById('quick-add-card').before(note);
+  const available = document.getElementById('playlist-available-list');
+  available.parentElement.querySelector('h4').textContent = 'Other approved songs';
+  const help = document.createElement('p');
+  help.className = 'settings-hint';
+  help.textContent = 'These songs are not assigned individually to this child. They may already be available through an approved YouTube playlist.';
+  available.before(help);
+  const assignedHelp = document.createElement('p');
+  assignedHelp.className = 'settings-hint';
+  assignedHelp.textContent = 'Removing a song here removes its individual assignment. Access through an approved YouTube playlist is managed separately.';
+  document.getElementById('playlist-assigned-list').before(assignedHelp);
+  document.getElementById('playlist-add-all-btn').textContent = 'Add all these songs';
+}
+
 // ── Playlists Tab ─────────────────────────────────────
 function populateMusicStudents(select) {
   const selected = select.value;
@@ -502,8 +529,8 @@ function loadPlaylistAssignView() {
   const assignedTracks = screened.filter(t => assignedIds.has(t.id));
   const availableTracks = screened.filter(t => !assignedIds.has(t.id));
 
-  if (currentTitle) currentTitle.textContent = `${student.name}'s Playlist (${assignedTracks.length} song${assignedTracks.length !== 1 ? 's' : ''})`;
-  if (availableCount) availableCount.textContent = `${availableTracks.length} available`;
+  if (currentTitle) currentTitle.textContent = `${student.name}'s individual songs (${assignedTracks.length} song${assignedTracks.length !== 1 ? 's' : ''})`;
+  if (availableCount) availableCount.textContent = `${availableTracks.length} not individually assigned`;
 
   document.getElementById('playlist-add-all-btn').disabled = !availableTracks.length;
   // 1. Render Left Column: Assigned Songs
@@ -511,7 +538,7 @@ function loadPlaylistAssignView() {
     assignedList.innerHTML = `
       <div style="text-align:center; padding:30px 14px; color:var(--text-muted); font-size:13px; border:1px dashed rgba(255,255,255,0.08); border-radius:10px;">
         <div style="margin-bottom:8px; display:flex; justify-content:center; color:var(--text-muted); opacity:0.6;"><i data-lucide="music-4" style="width:24px;height:24px;"></i></div>
-        No songs in ${studentName}'s playlist yet.<br>Click <strong>+ Add to Playlist</strong> on the right!
+        No individual songs assigned to ${studentName} yet.<br>Choose <strong>Add song</strong> from the approved library.
       </div>`;
   } else {
     assignedList.innerHTML = assignedTracks.map((t, idx) => {
@@ -536,7 +563,7 @@ function loadPlaylistAssignView() {
     availableList.innerHTML = `
       <div style="text-align:center; padding:30px 14px; color:var(--text-muted); font-size:13px; border:1px dashed rgba(255,255,255,0.08); border-radius:10px;">
         <div style="margin-bottom:8px; display:flex; justify-content:center; color:var(--text-muted); opacity:0.6;"><i data-lucide="party-popper" style="width:24px;height:24px;"></i></div>
-        ${screened.length ? 'All screened songs are already in ' + studentName + '\'s playlist!' : 'No screened songs yet. Add songs directly or approve songs in the Library.'}
+        ${screened.length ? 'All approved library songs are individually assigned to ' + studentName + '.' : 'No screened songs yet. Add songs directly or approve songs in the Library.'}
       </div>`;
   } else {
     availableList.innerHTML = availableTracks.map(t => {
@@ -549,7 +576,7 @@ function loadPlaylistAssignView() {
           <div style="font-size:11px; color:var(--text-muted);">${musicEscape(t.artist || '—')}</div>
         </div>
         <button data-music-track="${musicEscape(t.id)}" onclick="toggleAssign('${sid}','${t.id}',false,this)" style="display:flex;align-items:center;padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); color:#34d399;">
-          <i data-lucide="plus" style="width:12px;height:12px;margin-right:4px;"></i> Add to Playlist
+          <i data-lucide="plus" style="width:12px;height:12px;margin-right:4px;"></i> Add song
         </button>
       </div>`;
     }).join('');
@@ -713,6 +740,10 @@ function parseMusicLinks(value) {
 function wireMusicBulkImport() {
   const style = document.createElement('style');
   style.textContent = `
+    #tab-music .music-library-explanation {margin:0 0 20px;padding:14px 16px;border:1px solid rgba(139,92,246,.3);border-radius:10px;background:rgba(139,92,246,.07)}
+    #tab-music .music-library-explanation p {margin:0 0 12px;line-height:1.6;color:var(--text-secondary);font-size:13px}
+    #tab-music #mplay .settings-hint {line-height:1.6}
+    #tab-music #playlist-available-count {text-align:right}
     #tab-music textarea.music-links {min-height:86px;resize:vertical;width:100%;min-width:0;box-sizing:border-box;font:inherit;padding:12px}
     .music-batch {margin-top:18px;padding:18px;border:1px solid #615287;border-radius:12px;background:var(--bg-card,#171726);min-width:0}
     .music-batch[hidden] {display:none}
