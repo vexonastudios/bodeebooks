@@ -1,0 +1,9 @@
+# Parent Music playlist access — October 15, 2026
+
+Status: hosted source committed locally at 498ed02, not pushed or deployed. Matching BodeeGuard renderer source: 1dcc1db3. This follows docs/guard-music-library-clarity-20261015.md.
+
+Individual songs now shows whether a screened song is already available to the selected child through an approved whole YouTube playlist. A parent can deliberately add the song individually, while bulk add skips playlist-covered songs. Unknown access is stated, not guessed. The longer row and two song columns stack on phones. The hosted module is a selective copy of the cloud renderer module, with the existing mediaFetch adapter, and its import cache key is updated to 20261015-music-library3.
+
+The existing parent media bridge and API routes are reused. The check runs only while the parent opens Individual songs or changes children; it does not poll. No account, child runtime, database, or installed family data changed.
+
+Verification: isolated hosted Music Electron fixture passed against this module with two synthetic children, overlap, bulk skip, source-cache reuse, failed reads, HTML escaping, and 390px layout. `npm run test:guard-account` passed 13/13 at 498ed02. `node node_modules/next/dist/bin/next build --webpack` passed at 498ed02; default Turbopack cannot traverse this worktree's node_modules junction outside its filesystem root. Evidence: BodeeGuard .tmp/music-library-clarity/playlist-access-mobile.png and .tmp/verification/electron/fixture-dAXiMt, website .tmp/music-playlist-access-committed-build.log and .tmp/music-playlist-access-account.log. The broader BodeeGuard student-workspace Electron check has an unrelated intermittent failure recorded in its companion receipt. No production deployment has occurred.
