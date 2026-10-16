@@ -1,0 +1,7 @@
+# Parent Assistant time grants and Music clarity — October 16, 2026
+
+The parent site source `a8c99a0` on `codex/release-310` was pushed and published to the existing BodeeBooks Vercel project as `dpl_CJytMPtAHsL5ypxzE3NRwSeFNrCi`. Previous healthy deployment `dpl_6FeNDAuWDKrr1ybNCeCDubbkkWMc` remains available for rollback. The matching BodeeGuard API source is `7b5865f5`, deployed as `dpl_7tyoynn3aUu5tP2REpr3ePnqn36e`; its release receipt is `docs/cloud-assistant-time-release-20261016.md` in the separate BodeeGuard repository.
+
+The site was deployed from a clean whole-repository Git archive. The build and runtime installer version stayed at 1.2.317. The local Webpack production build and Assistant review fixture passed; the hosted production build passed. Both `guard.bodeebooks.com` and `bodeebooks.com` returned the exact new release ID. The deployed `cloud-assistant.js`, `cloud-workspace.js`, `cloud-media-admin.js`, and `media-music.js` matched the archived source byte-for-byte on both origins. Anonymous download requests reached the parent sign-in page. The signed recovery manifest remained unchanged at SHA-256 `23c3de86c962d6d22941b26efcf39390ec17da53ffa8738e4cf455afeb48d12a`.
+
+The reviewed Assistant button now names the activity receiving extra minutes. Music's Individual songs view identifies songs already available through an approved YouTube playlist. No existing child playlist or household control was changed during verification. An already-open parent dashboard may need a refresh to load the new assets.

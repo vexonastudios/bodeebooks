@@ -1,6 +1,6 @@
 # Clarify individual songs and YouTube playlists — October 15, 2026
 
-Status: implemented and verified locally, not pushed or deployed. Based on cloud 30197ad2 and website ff0b2df. Parent presentation only; no API, storage, assignments, child runtime or family data changed.
+Status: published to the parent website October 16, 2026. See [deployment receipt](guard-assistant-time-release-20261016.md). Based on cloud 30197ad2 and website ff0b2df. Parent presentation only; no API, storage, assignments, child runtime or family data changed.
 
 ## Finding
 
@@ -25,4 +25,4 @@ The screenshot's right column shows songs not individually assigned to the selec
 
 Evidence: cloud .tmp/music-library-clarity-{media,runtime,ui,static,copy}.log and .tmp/music-library-clarity/{desktop,mobile}.png; website .tmp/music-library-clarity-{account,build}.log. The UI fixture's initial added selector assertion had a quoting error, corrected before the final passing run. No product gate was weakened.
 
-A future parent website deployment is sufficient. No new API deployment or child installer is needed. Do not delete or reassign saved music to make the list shorter.
+The parent website deployment is complete. No child installer was needed for this change. Do not delete or reassign saved music to make the list shorter.
