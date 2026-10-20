@@ -9,6 +9,20 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.319": {
+    title: "PDF worksheets, easier playlists and a school clock",
+    sections: [{
+      heading: "Version 1.2.319",
+      headline: "Simpler family tools and clearer school controls",
+      summary: "Import PDF worksheet pages, find child playlist creation easily and check the time inside Abeka.",
+      highlights: [
+        "Choose PDF pages in the parent Worksheet Library. Selected pages become separate JPG worksheets; conversion stays on your device.",
+        "The Assistant follows the child name in extra-time requests, including Driver’s Education, instead of choosing a previous example.",
+        "Children have an always-visible Create playlist button in Music and a current-time clock beside the Abeka lesson controls.",
+        "Printing has bounded waits and Stop waiting controls. The 22-day driving course and saved progress from 1.2.318 remain included."
+      ]
+    }]
+  },
   "1.2.318": {
   "title": "Shorter driving days with saved progress",
   "sections": [

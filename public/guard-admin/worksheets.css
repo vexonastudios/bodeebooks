@@ -15,6 +15,9 @@
 .worksheet-upload-drop > span svg { width: 34px; height: 34px; color: #67e8f9; }
 .worksheet-upload-drop > span strong { color: var(--text-primary); }
 .worksheet-upload-drop > span small { font-size: 11px; }
+.worksheet-upload-drop > [hidden] { display:none!important; }
+.worksheet-upload-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; align-items:center; }
+.worksheet-upload-actions .btn { min-height:44px; }
 .worksheet-upload-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); align-content: start; gap: 13px; }
 .worksheet-upload-fields label:not(.worksheet-visible-toggle), .worksheet-edit-fields label:not(.worksheet-visible-toggle) { display: grid; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 800; }
 .worksheet-upload-fields input[type="text"], .worksheet-upload-fields textarea, .worksheet-edit-fields input:not([type="checkbox"]), .worksheet-edit-fields textarea { width: 100%; padding: 11px 12px; color: var(--text-primary); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; outline: none; background: rgba(4, 10, 24, .72); resize: vertical; }
@@ -26,6 +29,16 @@
 #worksheet-upload-submit svg { width: 16px; height: 16px; }
 .worksheet-upload-status { grid-column: 1 / -1; min-height: 17px; margin: 0; color: var(--text-muted); font-size: 12px; }
 .worksheet-upload-status.error, .worksheet-admin-status.error { color: #fca5a5; }
+.worksheet-pdf-controls { grid-column:1 / -1; display:grid; gap:14px; padding:16px; border:1px solid #22d3ee55; border-radius:12px; background:#08263655; }
+.worksheet-pdf-controls[hidden] { display:none; }
+.worksheet-pdf-heading { display:flex; gap:10px; align-items:flex-start; }
+.worksheet-pdf-heading svg { width:22px; height:22px; flex:none; color:#67e8f9; }
+.worksheet-pdf-heading strong { color:var(--text-primary); font-size:14px; }
+.worksheet-pdf-controls p { margin:4px 0 0; color:#a7b5cf; font-size:12px; line-height:1.5; }
+.worksheet-pdf-navigation { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
+.worksheet-pdf-navigation label { flex:1; min-width:130px; }
+.worksheet-pdf-navigation .btn,.worksheet-pdf-controls select { min-height:44px; }
+.worksheet-pdf-controls select { width:100%; padding:9px; border:1px solid #ffffff30; border-radius:9px; background:#081021; color:var(--text-primary); font:inherit; }
 .worksheet-admin-status { min-height: 19px; margin-bottom: 11px; color: var(--text-muted); font-size: 12px; }
 .worksheet-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
 .worksheet-admin-card { overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: 14px; background: rgba(5, 11, 25, .66); }
