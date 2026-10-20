@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.318": {
+  "title": "Shorter driving days with saved progress",
+  "sections": [
+    {
+      "heading": "Version 1.2.318",
+      "headline": "A shorter trip, one skill at a time",
+      "summary": "The family driving route is now three lessons within a 22-day self-paced course. Earlier course work remains saved.",
+      "highlights": [
+        "Days 7, 8 and 9 cover home to Roland, Roland to the Rigsby approach, and onward to 311 Hedges, with separate questions.",
+        "Completed older lessons and actual quiz answers keep their credit as later days move forward two places.",
+        "Texas Road School 0.58 improves traffic pacing and includes progressive scenery loading, clearer night and tire-trouble teaching, and more forgiving curb feedback.",
+        "Students can complete several course days today. Updates remain private and assigned to the same family."
+      ]
+    }
+  ]
+},
   "1.2.317": {
   "title": "Videos and audiobooks remember your place",
   "sections": [
