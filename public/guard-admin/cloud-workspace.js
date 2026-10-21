@@ -1,3 +1,4 @@
+import { setupParentExitControls } from './cloud-parent-exit-controls.js';
 import { setupCloudBible } from './cloud-bible-family.js';
 import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
@@ -135,6 +136,7 @@ function showSnapshot() {
   monitoring.render();
   weeklyActivity.update();
   renderComputers();
+  parentExitControls.render();
   renderStudents();
   renderSubjects();
   dailyPlan.update();
@@ -153,6 +155,7 @@ function showSnapshot() {
   notificationNavigation.update();
   setControls();
 }
+const parentExitControls=setupParentExitControls({getSnapshot:()=>snapshot,mutate,node,button});
 async function refresh() {
   if (inFlight || document.hidden) return inFlight;
   clearTimeout(timer);
@@ -538,7 +541,7 @@ const livePush=window.CloudPush.createCloudPushClient({
   },
   onConnection:connected=>{byId('live-indicator').dataset.messagesConnected=String(connected);messaging.setLive(connected);},
   onReady:()=>{window.dispatchEvent(new Event('cloud-student-report-refresh'));window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
-  onSignal:hint=>{if(hint.kind==='refresh')window.dispatchEvent(new Event('cloud-student-report-refresh'));
+  onSignal:hint=>{if(hint.kind==='refresh'){window.dispatchEvent(new Event('cloud-student-report-refresh'));void refresh();}
     if(hint.kind==='settings')void chores.refresh(true);
     if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
     if(hint.kind==='screenshots')screenshots.refresh();

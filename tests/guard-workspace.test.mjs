@@ -10,6 +10,22 @@ class CloudApiError extends Error { constructor(message, status) { super(message
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
 
+test('parent exit controls keep authentication, same-origin protection, explicit confirmation and fixed authority',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+  const settings={action:'parent-exit-settings',studentId:deviceId,showIcon:true,householdId:'forged',password:'never-forward'};
+  assert.equal((await route.POST(request(settings))).status,200);
+  assert.deepEqual(calls.at(-1),{path:'/parent-exit/settings',body:{studentId:deviceId,showIcon:true}});
+  const review={action:'parent-exit-review',id:deviceId,studentId:deviceId,decision:'deduct',confirmation:true,householdId:'forged',coins:999};
+  assert.equal((await route.POST(request(review))).status,200);
+  assert.deepEqual(calls.at(-1),{path:'/parent-exit/review',body:{id:deviceId,studentId:deviceId,decision:'deduct',confirmation:true}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(review))).status,401);
+  assert.equal((await route.POST(request(review,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal(calls.length,2);
+  const manifest=JSON.parse(fs.readFileSync('app/guard/dashboard/generated/workspace.json','utf8'));
+  assert.match(manifest.html,/id="cloud-parent-exit-controls"/);
+  assert.match(fs.readFileSync('public/guard-admin/cloud-workspace.js','utf8'),/parentExitControls.render\(\)/);
+});
+
 test('App Launcher bridge restores per-computer approvals with parent authentication and fixed authority', async () => {
   const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({ path, body: JSON.parse(init.body) }); return { computers: [], apps: [] }; } });
   assert.equal((await route.POST(request({ action: 'approved-apps', operation: 'list', householdId: 'forged' }))).status, 200);

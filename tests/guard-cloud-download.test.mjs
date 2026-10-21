@@ -161,8 +161,10 @@ test('download keeps sign-in, entitlement and outage checks', async () => {
 test('the public setup surfaces no longer send families to a parent installation or LAN discovery', () => {
   for (const name of ['app/guard/page.tsx', 'components/GuardAccountEntry.tsx']) {
     const source = fs.readFileSync(name, 'utf8');
-    assert.doesNotMatch(source, /install on the parent computer|Set up the parent computer|\bLAN\b|home network|home Wi-Fi|local install link|2 parent\/admin|Auto-Scan/);
-    assert.match(source, /nothing to install/);
+    // Sibling games may mention home Wi-Fi for multiplayer. That does not
+    // require a parent installation or the retired LAN discovery/setup flow.
+    assert.doesNotMatch(source, /install on the parent computer|Set up the parent computer|\bLAN\b|home network|local install link|2 parent\/admin|Auto-Scan/);
+    assert.match(source, /nothing to install|Only your child’s Windows computer needs the child app/);
   }
 });
 

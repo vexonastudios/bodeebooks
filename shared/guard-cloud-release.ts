@@ -10,17 +10,21 @@ export type GuardAccountRelease = {
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
   "1.2.320": {
-    title: "Grammar assignments and clearer quiz returns",
-    sections: [{
-      heading: "Version 1.2.320",
-      headline: "Add Grammar and return from Abeka assessments more easily",
-      summary: "Assign Grammar through the Activity Library or Daily Plan, and update Windows children for the completed-quiz return improvements.",
-      highlights: [
-        "Grammar starts in Not allowed. Assign it to selected children through the existing learning plan, with your chosen hours and expectations.",
-        "Completed Abeka assessments offer Back to Abeka, and returning to Grades no longer reveals an older retained quiz page. Submit inside Abeka and check its recorded result before starting the next quiz.",
-        "Failed assessment returns have clearer retry guidance and a specific, bounded diagnostic category. Staff reports also identify Driver’s Education usage and known media-provider errors more clearly."
-      ]
-    }]
+    "title": "Parent exit controls, Grammar and quiz returns",
+    "sections": [
+      {
+        "heading": "Version 1.2.320",
+        "headline": "Choose how children reach parent controls",
+        "summary": "Hide the parent exit icon, review exit attempts, and use the Grammar and Abeka improvements.",
+        "highlights": [
+          "The parent exit icon is hidden by default on updated children. Use Ctrl+Alt+Q to open parent controls, or show the icon for selected children under Live Monitoring → Parent exit & activity.",
+          "Review possible exit attempts without recording passwords. You can dismiss a report or explicitly confirm a one-time 100-coin deduction; nothing is deducted automatically.",
+          "Grammar starts in Not allowed. Assign it to selected children through the existing learning plan, with your chosen hours and expectations.",
+          "Completed Abeka assessments offer Back to Abeka, and returning to Grades no longer reveals an older retained quiz page. Submit inside Abeka and check its recorded result before starting the next quiz.",
+          "Failed assessment returns have clearer retry guidance and a specific, bounded diagnostic category. Staff reports also identify Driver’s Education usage and known media-provider errors more clearly."
+        ]
+      }
+    ]
   },
   "1.2.319": {
     title: "PDF worksheets, easier playlists and a school clock",

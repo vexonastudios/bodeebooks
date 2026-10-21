@@ -1,4 +1,17 @@
 /* Browser transport additions only; base.css and monitoring.css remain shared. */
+.cloud-parent-exit-controls { margin-top: 24px; }
+.cloud-parent-exit-controls h2 { margin-top: 0; }
+.cloud-parent-exit-controls details { margin-top: 16px; }
+.cloud-exit-setting { display: flex; align-items: center; gap: 12px; padding: 12px 0; flex-wrap: wrap; }
+.cloud-exit-setting input { width: 20px; height: 20px; flex: 0 0 auto; }
+.cloud-exit-alert { padding: 12px 16px; border-left: 3px solid var(--accent-yellow, #fbbf24); background: var(--bg-secondary, #182039); border-radius: 8px; }
+.cloud-exit-report { padding: 16px; margin-top: 12px; border: 1px solid var(--border-color, #34394b); border-radius: 12px; overflow-wrap: anywhere; }
+.cloud-exit-report h3 { margin: 0 0 8px; }
+.cloud-exit-report .cloud-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.cloud-exit-deduction.cloud-panel { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; margin: auto; box-sizing: border-box; background: var(--bg-secondary, #182039); color: var(--text-primary, #f8fafc); border: 1px solid var(--border-color, #34394b); }
+.cloud-exit-deduction::backdrop { background: #0009; }
+.cloud-exit-deduction .cloud-actions { display: flex; flex-wrap: wrap; gap: 12px; } .cloud-parent-exit-controls .btn, .cloud-exit-deduction .btn { min-height: 44px; }
+/* Browser transport additions only; base.css and monitoring.css remain shared. */
 
 /* Shared controls from the original Admin stylesheet (outside its imports). */
 .cloud-workspace {

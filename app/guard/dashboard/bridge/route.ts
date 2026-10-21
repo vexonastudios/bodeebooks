@@ -197,6 +197,8 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
       break;
     }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
+    case "parent-exit-settings": path = "/parent-exit/settings"; method = "POST"; body = { studentId: input.studentId, showIcon: input.showIcon }; break;
+    case "parent-exit-review": path = "/parent-exit/review"; method = "POST"; body = { id: input.id, studentId: input.studentId, decision: input.decision, confirmation: input.confirmation }; break;
     case "edit-student": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
       path = `/students/${input.studentId}`; method = "PATCH"; body = { name: input.name, grade: input.grade, ...(Object.hasOwn(input, "photo") ? { photo: input.photo } : {}) };
