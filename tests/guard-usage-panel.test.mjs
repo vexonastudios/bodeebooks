@@ -38,3 +38,9 @@ test('zero requests and isolated expected denials do not generate spurious warni
   const f=load([row('poems-voice',{aiRequests:5}),row('messages',{requests:100,clientErrors:1}),row('files',{requests:1,serverErrors:1})]);
   assert.deepEqual(f.warnings,[]);assert.doesNotMatch(f.render(),/NaN|Infinity/);
 });
+
+test('Driver’s Education has a recognizable label in usage and failure warnings',()=>{
+  const panel=load([row('drivers-education',{requests:100,serverErrors:6,dbQueries:1800})]);
+  assert.match(panel.warnings[0],/Driver’s Education: 6.0%/);
+  assert.match(panel.render(),/Driver’s Education/);
+});

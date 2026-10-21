@@ -4,7 +4,7 @@ import {Activity,ArrowDownUp,ArrowLeft,Database,DollarSign,RefreshCw,TriangleAle
 import type {ResourceUsage,UsageRow,UsageCounters} from "./types";
 import UsageInsights,{UsageTrends} from "./UsageInsights";
 import styles from "./admin.module.css";
-const labels:Record<string,string>={"coloring-studio":"Coloring Studio","math-coach":"Math Coach","parent-assistant":"Parent Assistant","learning-videos":"Learning videos","family-watch":"Family Watch","science-spelling":"Science Spelling","sync":"Connection & settings","activation":"Computer activation","other":"Other / unknown","operator":"Staff dashboard","legacy":"LAN imports","daily":"Daily questions"};
+const labels:Record<string,string>={"coloring-studio":"Coloring Studio","math-coach":"Math Coach","drivers-education":"Driver’s Education","parent-assistant":"Parent Assistant","learning-videos":"Learning videos","family-watch":"Family Watch","science-spelling":"Science Spelling","sync":"Connection & settings","activation":"Computer activation","other":"Other / unknown","operator":"Staff dashboard","legacy":"LAN imports","daily":"Daily questions"};
 const feature=(id:string)=>labels[id]||id.charAt(0).toUpperCase()+id.slice(1).replaceAll("-"," ");
 const count=(n:number)=>n.toLocaleString();
 const money=(micros:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:micros>0&&micros<10000?4:2}).format(micros/1e6);
