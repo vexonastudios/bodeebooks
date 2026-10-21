@@ -9,6 +9,19 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.320": {
+    title: "Grammar assignments and clearer quiz returns",
+    sections: [{
+      heading: "Version 1.2.320",
+      headline: "Add Grammar and return from Abeka assessments more easily",
+      summary: "Assign Grammar through the Activity Library or Daily Plan, and update Windows children for the completed-quiz return improvements.",
+      highlights: [
+        "Grammar starts in Not allowed. Assign it to selected children through the existing learning plan, with your chosen hours and expectations.",
+        "Completed Abeka assessments offer Back to Abeka, and returning to Grades no longer reveals an older retained quiz page. Submit inside Abeka and check its recorded result before starting the next quiz.",
+        "Failed assessment returns have clearer retry guidance and a specific, bounded diagnostic category. Staff reports also identify Driver’s Education usage and known media-provider errors more clearly."
+      ]
+    }]
+  },
   "1.2.319": {
     title: "PDF worksheets, easier playlists and a school clock",
     sections: [{
