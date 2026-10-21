@@ -15,6 +15,9 @@ const handwriting = () => ({ key:'preset:handwriting', preset:'handwriting', tit
 const isNumerals = value => { try { const url = new URL(value); return url.origin === 'https://numerals.bodeebooks.com' && !url.username && !url.password; } catch { return false; } };
 const numerals = () => ({ key:'preset:numerals', preset:'numerals', title:'Numerals · Roman Numerals', icon:'hash', color:'#f59e0b',
   url:'https://numerals.bodeebooks.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
+const isGrammar = value => { try { const url = new URL(value); return url.origin === 'https://grammar.bodeebooks.com' && !url.username && !url.password; } catch { return false; } };
+const grammar = () => ({ key:'preset:grammar', preset:'grammar', title:'Grammar', icon:'book-open', color:'#a78bfa',
+  url:'https://grammar.bodeebooks.com/', goal:0, placement:'blocked', previousPlacement:'anytime', days:[0,1,2,3,4,5,6], start:null, end:null, limitMinutes:null });
 const names = { 'drivers-education':'Driver’s Education', games:'Games', 'art-studio': 'Art Studio', 'coloring-studio': 'Coloring Studio', notebook: 'Writing', typing: 'Typing School', words: 'Confused Words', 'math-coach': 'Math Coach', 'long-division': 'Long Division', 'learning-videos': 'Learning Videos', poems: 'Poems' };
 const icons = { 'drivers-education':'car-front', music: 'music', videos: 'video', audiobooks: 'headphones', typing: 'keyboard', spelling: 'spell-check', vocabulary: 'book-a', poems: 'mic', notebook: 'notebook-pen', 'art-studio': 'palette', 'coloring-studio': 'paintbrush', 'math-coach': 'calculator', 'long-division': 'divide', geography: 'globe', piano: 'piano', logic: 'brain', reading: 'book-open' };
 icons.games = 'gamepad-2';
@@ -58,7 +61,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
     if (module) seen.add(module);
     const stats = details.media?.[mediaKinds[module]], plan = assignment?.dailyPlan;
     const placement = plan?.placement || (subject.accessTier === 'after_school' || subject.isReward ? 'after_school' : subject.accessTier === 'school_optional' ? subject.scheduleStart ? 'scheduled' : 'anytime' : 'school');
-    cards.push({ key: subject.id, subjectId: subject.id, module, ...(isQuizlet(subject) ? {preset:'quizlet', assignmentScoped:!subject.planOnly} : subject.planOnly && isHandwriting(subject.url) ? {preset:'handwriting'} : subject.planOnly && isNumerals(subject.url) ? {preset:'numerals'} : {}), title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
+    cards.push({ key: subject.id, subjectId: subject.id, module, ...(isQuizlet(subject) ? {preset:'quizlet', assignmentScoped:!subject.planOnly} : subject.planOnly && isHandwriting(subject.url) ? {preset:'handwriting'} : subject.planOnly && isNumerals(subject.url) ? {preset:'numerals'} : subject.planOnly && isGrammar(subject.url) ? {preset:'grammar'} : {}), title: subject.title, icon: subject.icon || icons[module] || 'book-open', url: subject.url, color: subject.color, alwaysOpen: subject.alwaysOpen,
       goal: subject.isSchoolPortal || ['spelling','vocabulary','poems'].includes(module) ? 0 : assignment?.dailyGoalMinutes ?? 0, portal: subject.isSchoolPortal,
       placement: subject.active === false || !assignment || assignment.active === false ? 'blocked' : placement, previousPlacement:placement, globallyDisabled:subject.active === false, notAssigned:!assignment,
       days: plan?.days || subject.scheduleDays || stats?.days || defaultDays(placement),
@@ -80,6 +83,7 @@ export function dailyPlanCards(snapshot, details, studentId) {
   if (!snapshot.rules.subjects.some(isQuizlet)) cards.push(quizlet());
   if (!snapshot.rules.subjects.some(s => isHandwriting(s.url))) cards.push(handwriting());
   if (!snapshot.rules.subjects.some(s => isNumerals(s.url))) cards.push(numerals());
+  if (!snapshot.rules.subjects.some(s => isGrammar(s.url))) cards.push(grammar());
   for (const card of cards) if (card.disabled && card.placement !== 'blocked') { card.previousPlacement = card.placement; card.placement = 'blocked'; }
   return cards;
 }
@@ -119,6 +123,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
       subject = { id: newId(), title: card.title, kind: card.preset ? 'website' : 'activity', url: card.url, icon: card.icon, active: true, accessTier: 'school_optional', planOnly: true, assignments: [],
         ...(card.preset === 'handwriting' ? {isSchoolPortal:false,alwaysOpen:true,color:'#34d399',allowedDomains:['letters.bodeebooks.com']} : {}),
         ...(card.preset === 'numerals' ? {isSchoolPortal:false,alwaysOpen:true,color:'#f59e0b',allowedDomains:['numerals.bodeebooks.com']} : {}),
+        ...(card.preset === 'grammar' ? {portalProvider:'none',isSchoolPortal:false,alwaysOpen:true,color:'#a78bfa',description:'Grammar Mission Control · 42 short video lessons for grades 5–8.',allowedDomains:['grammar.bodeebooks.com']} : {}),
         ...(card.preset === 'quizlet' ? { portalProvider:'quizlet', isSchoolPortal:false, alwaysOpen:true, color:'#4255ff', allowedDomains:['quizlet.com','accounts.google.com'] } : {}) };
       subjects.push(subject);
     }
@@ -134,7 +139,7 @@ export function saveDailyPlan(snapshot, studentId, changes, newId = () => crypto
     if (!Number.isInteger(card.goal) || card.goal < 0 || card.goal > 480) throw Error('Choose a school goal from 0 to 480 minutes.');
     if (card.limitMinutes !== null && (!Number.isInteger(card.limitMinutes) || card.limitMinutes < 1 || card.limitMinutes > 480)) throw Error('Choose a daily time limit from 1 to 480 minutes.');
     if (card.placement === 'school' && card.limitMinutes !== null && card.goal > card.limitMinutes) throw Error(`The ${card.title} practice goal cannot exceed its daily time limit.`);
-    if (card.placement === 'school' && !card.portal && !card.assignedWork && (card.module || ['handwriting','numerals'].includes(card.preset)) && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
+    if (card.placement === 'school' && !card.portal && !card.assignedWork && (card.module || ['handwriting','numerals','grammar'].includes(card.preset)) && card.goal === 0) throw Error(`Set a time goal for ${card.title}.`);
     if (!card.days.length) throw Error(`Choose at least one day for ${card.title}.`);
     if ((!!card.start !== !!card.end) || card.start && card.start >= card.end || card.placement === 'scheduled' && !card.start) throw Error(`Choose valid hours for ${card.title}.`);
     const blocked = card.placement === 'blocked';
@@ -169,6 +174,8 @@ export function familyPlanCards(snapshot, template = snapshot.rules.dailyPlanTem
   if (handwritingPreset >= 0 && baseline.some(c => c.subjectId && isHandwriting(c.url))) baseline.splice(handwritingPreset, 1);
   const numeralsPreset = baseline.findIndex(c => c.preset === 'numerals' && !c.subjectId);
   if (numeralsPreset >= 0 && baseline.some(c => c.subjectId && isNumerals(c.url))) baseline.splice(numeralsPreset, 1);
+  const grammarPreset = baseline.findIndex(c => c.preset === 'grammar' && !c.subjectId);
+  if (grammarPreset >= 0 && baseline.some(c => c.subjectId && isGrammar(c.url))) baseline.splice(grammarPreset, 1);
   for (const card of baseline) {
     // Color describes the activity, not its placement or family plan settings.
     const subject = snapshot.rules.subjects.find(s => s.active !== false && s.url === card.url);

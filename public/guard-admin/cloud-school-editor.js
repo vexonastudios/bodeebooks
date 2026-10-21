@@ -7,6 +7,12 @@ export function quizletSubjectPreset() {
     allowedDomains: ['quizlet.com', 'accounts.google.com'], assignments: [] };
 }
 
+export function grammarSubjectPreset() {
+  return { kind: 'website', title: 'Grammar', url: 'https://grammar.bodeebooks.com/', icon: 'book-open', color: '#a78bfa',
+    description: 'Grammar Mission Control · 42 short video lessons for grades 5–8, with captions and thinking pauses.',
+    accessTier: 'school_optional', portalProvider: 'none', isSchoolPortal: false, alwaysOpen: true, active: true, assignments: [] };
+}
+
 export function cloudSubjectEdit(captured, subjectId, form) {
   const subject = captured.rules.subjects.find(item => item.id === subjectId), kind = form.get('kind');
   const assignments = captured.students.flatMap(student => {
@@ -35,6 +41,7 @@ export function cloudSubjectEdit(captured, subjectId, form) {
 export function editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate, close, showError }, subject = null, { preset } = {}) {
   const isNew = !subject;
   if (isNew && preset === 'quizlet') subject = quizletSubjectPreset();
+  if (isNew && preset === 'grammar') subject = grammarSubjectPreset();
   if (isNew && ['abeka', 'bju'].includes(preset)) subject = {
     kind: 'website', title: preset === 'abeka' ? 'Abeka Academy' : 'Bob Jones / BJU Press',
     url: preset === 'abeka' ? 'https://academy.abeka.com/' : 'https://homeschoolhub.com/auth',
@@ -119,7 +126,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   for (const student of children) {
     const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 }, row = node('div', 'cloud-assignment-row');
     const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current && current.active !== false); enabled.setAttribute('aria-label', `Assign to ${student.name}`);
-    const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? (subject?.portalProvider === 'quizlet' ? 0 : 30), 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
+    const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? (subject?.portalProvider === 'quizlet' || preset === 'grammar' ? 0 : 30), 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
     const update = () => { for (const wrapper of [goal, order]) { const input = wrapper.querySelector('input'); input.disabled = !enabled.checked; input.required = enabled.checked; } };
     const childLabel = node('label', 'cloud-subject-child'); childLabel.append(enabled, node('span', '', student.name + (student.archived_at ? ' (archived; settings retained)' : '')));
     childInputs.push(enabled); enabled.addEventListener('change', () => { update(); updateSelection(); }); update(); row.append(childLabel, goal, order); assignmentGrid.append(row);
@@ -128,6 +135,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   if (subject?.assignments?.some(a => a.dailyPlan)) assignmentFields.append(node('p', 'cloud-note', 'This subject has individual Daily plan settings. Change its placement and days in Daily plan.'));
   if (!children.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
   if (subject?.portalProvider === 'quizlet') basics.append(node('p', 'cloud-note', 'Choose the children who may use Quizlet. You can use its home page or paste a specific Quizlet set link. Sign in to Quizlet on the child computer if needed; BodeeGuard does not create a Quizlet account or subscription.'));
+  if (preset === 'grammar') basics.append(node('p', 'cloud-note', 'Choose children, then organize Grammar in Daily Plan. Use the course home or a lesson link such as https://grammar.bodeebooks.com/#mission-06. No separate login is needed. BodeeGuard tracks study time; the site does not send lesson completion or scores.'));
   const grid = node('div', 'cloud-subject-grid'); grid.append(basics, availability, appearance, assignmentFields);
   let remove = null;
   if (!isNew) { remove = button('Remove subject', async () => {
@@ -135,7 +143,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
     try { await mutate('save-subjects', editSubjects(captured, subject.id, '', '', true)); close(); } catch (error) { showError(error.message); }
   }, 'btn btn-danger cloud-subject-remove'); remove.prepend(glyph('trash-2')); remove.title = 'Remove subject'; }
   changeKind();
-  editor(isNew ? preset === 'quizlet' ? 'Add Quizlet Study' : 'Add activity' : 'Edit activity details', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
+  editor(isNew ? preset === 'quizlet' ? 'Add Quizlet Study' : preset === 'grammar' ? 'Add Grammar' : 'Add activity' : 'Edit activity details', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
   document.getElementById('cloud-editor-title')?.prepend(glyph(isNew ? 'plus' : 'notebook-pen'));
   const dialog = document.getElementById('cloud-editor');
   if (remove && dialog?.open) { dialog.querySelector('.modal-actions')?.prepend(remove); dialog.addEventListener('close', () => remove.remove(), { once: true }); }

@@ -32,6 +32,7 @@ export function setupActivityLibrary({ getSnapshot, editSubject, canEdit, handwr
   const presets = [
     ['website', 'globe', 'School or study website', 'Add Abeka, BJU, a math website or another approved link.'],
     ...(handwriting ? [['handwriting', 'pencil', 'Add Handwriting', 'Choose letters and paper practice for each child.']] : []),
+    ['grammar', 'book-open', 'Add Grammar', '42 short video lessons with examples, captions and thinking pauses.'],
     ['activity', 'blocks', 'Built-in activity', 'Add another entry for an included learning activity.'],
     ['offline', 'notebook-pen', 'Offline work', 'Track a workbook, reading assignment or other paper work.'],
   ];
@@ -39,6 +40,7 @@ export function setupActivityLibrary({ getSnapshot, editSubject, canEdit, handwr
     ['abeka', 'school', 'Abeka Academy', 'Start with the Abeka school website.'],
     ['bju', 'school', 'Bob Jones / BJU Press', 'Start with the BJU Homeschool Hub website.'],
     ['quizlet', 'layers', 'Quizlet', 'Flashcards, practice tests and study sets.'],
+    ['grammar', 'book-open', 'Grammar', 'Grammar Mission Control · video lessons for grades 5–8.'],
     ['custom-website', 'globe', 'Another website', 'Enter any other school or study website.'],
   ];
   function showChoices(websiteStep = false) {
