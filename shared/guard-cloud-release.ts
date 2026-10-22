@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.323": {
+  "title": "Private Quizlet question review",
+  "sections": [
+    {
+      "heading": "Version 1.2.323",
+      "headline": "Review questions sent to Ask Quizlet",
+      "summary": "Optional per-child question history with a visible child notice and clear capture status.",
+      "highlights": [
+        "Open Overview → Quizlet AI questions to turn review on for a child and read newly observed questions sent to Ask Quizlet. Existing families remain off until a parent enables it.",
+        "Children see a notice when review is active. This records submitted questions or observed send attempts, not drafts, passwords, ordinary study answers, AI replies or uploads.",
+        "Review needs this Windows update and applies inside BodeeGuard only. Status is best effort: an empty history or unsupported page does not prove there was no activity.",
+        "Questions are limited to 2,000 characters and kept for 30 days. Interrupted connections retry from encrypted local storage; duplicate receipts do not duplicate history. Turn review off or clear history from the same panel."
+      ]
+    }
+  ]
+},
   "1.2.322": {
   "title": "Reliable update restarts and automatic spelling audio",
   "sections": [
