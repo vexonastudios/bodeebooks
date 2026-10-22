@@ -6,7 +6,7 @@ first from `2e387547b890047f694a9ac099c33ababcb27481` to production
 hashes passed; anonymous import access returned 401. The API deployment
 `dpl_B5mZED8LcLsTbEWbVQC6QHnChy2n` was healthy before this promotion.
 
-The next matching Windows release is 1.2.324. Parent download notes mirror its
+The matching Windows release is 1.2.324. Parent download notes mirror its
 reviewed release-note data; 13 account tests and TypeScript passed. The final
 publisher will deploy the matching download and independent recovery metadata
 before switching the signed child feed. Source and deployment evidence for
@@ -21,5 +21,23 @@ the new Windows release. Missing history does not establish completion and
 previously unseen grades cannot be backfilled. No household review preference
 or official Abeka assessment/grade was changed during deployment.
 
-Final publication details will be recorded after the Windows artifacts,
-matching parent download and pinned signed feeds have been verified.
+## Completed publication
+
+Published October 22, 2026 at 21:09 UTC (4:09 PM Central). Matching source
+`62f246a`, production `dpl_HnoJSrappSMJ6txLtk9VXUWL3Gx3`. Both public aliases,
+the authenticated download, independent signed recovery metadata and all three
+assessment asset hashes passed. Signed-in browser verification confirmed
+1.2.324, its expanded assessment notes and the authenticated reporting panel's
+first-check/empty-history guidance. No household preference was changed.
+
+Windows source `d9400aa08ee4d37764399f186fb58cb0c9900e8b`, build
+`57ea23f539cd0821b71e2753b24ffeae`, installer SHA-256
+`c14a9b2c7565c3673e6b0710528998eee8d57ba778e975f3b149d4720a79e7a0`.
+Defender scans were clean. Both immutable installer keys and the child-facing
+backup matched the receipt. Signed child feed SHA-256
+`3d441d4a92f931ca9f75f71e77e3ea60b712192614ace3abf9fdbe61788b60df`
+was switched last and verified with the pinned key. Previous feeds/deployments
+remain available for rollback. No family computer was installed, Stable
+promotion performed or additional paid GitHub Actions run.
+
+Actual child uptake and live provider capture/import remain acceptance checks.
