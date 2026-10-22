@@ -1,4 +1,5 @@
 import { setupParentExitControls } from './cloud-parent-exit-controls.js';
+import { setupQuizletReview } from './cloud-quizlet-review.js';
 import { setupCloudBible } from './cloud-bible-family.js';
 import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
@@ -87,6 +88,7 @@ function feedback(text, error = false) {
   parentActionFeedback().page(text,error);
 }
 function selectTab(id) {
+  quizletReview.update(id==='overview');
   chores.setActive(id === 'chores');
   weeklyActivity.setActive(id === 'overview');
   approvedApps.setActive(id === 'apps');
@@ -137,6 +139,7 @@ function showSnapshot() {
   weeklyActivity.update();
   renderComputers();
   parentExitControls.render();
+  quizletReview.update(currentTab==='overview');
   renderStudents();
   renderSubjects();
   dailyPlan.update();
@@ -156,6 +159,7 @@ function showSnapshot() {
   setControls();
 }
 const parentExitControls=setupParentExitControls({getSnapshot:()=>snapshot,mutate,node,button});
+const quizletReview=setupQuizletReview({getSnapshot:()=>snapshot,endpoint,node,button});
 async function refresh() {
   if (inFlight || document.hidden) return inFlight;
   clearTimeout(timer);

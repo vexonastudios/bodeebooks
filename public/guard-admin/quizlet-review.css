@@ -1,0 +1,6 @@
+#cloud-quizlet-review summary{font-weight:700;font-size:1.1rem;cursor:pointer;padding:.5rem 0}
+#cloud-quizlet-review label{display:grid;gap:.4rem;max-width:24rem;margin:1rem 0}
+.cloud-quizlet-history{display:grid;gap:.75rem;margin:1rem 0;max-height:36rem;overflow:auto}
+.cloud-quizlet-question{border:1px solid var(--border-color,#34364b);background:var(--bg-card,#171a2b);border-radius:12px;padding:1rem;min-width:0}
+.cloud-quizlet-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;margin:.5rem 0}
+.cloud-quizlet-coverage{border-left:3px solid #a5b4fc;padding-left:.8rem;margin:1rem 0}

@@ -9,6 +9,20 @@ import vm from 'node:vm';
 class CloudApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
+test('Quizlet review uses authenticated fixed routes and never accepts child text or household authority from the parent bridge',async()=>{
+  const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+  const settings={action:'quizlet-review-settings',studentId:deviceId,enabled:true,householdId:'forged',question:'never-forward'};
+  assert.equal((await route.POST(request(settings))).status,200);
+  assert.deepEqual(calls[0],{path:'/quizlet-review/settings',body:{studentId:deviceId,enabled:true}});
+  await route.POST(request({action:'quizlet-review-list',studentId:deviceId,offset:50,householdId:'forged'}));
+  assert.deepEqual(calls[1],{path:'/quizlet-review/list',body:{studentId:deviceId,offset:50}});
+  await route.POST(request({action:'quizlet-review-clear',studentId:deviceId,confirmation:true,householdId:'forged'}));
+  assert.deepEqual(calls[2],{path:'/quizlet-review/clear',body:{studentId:deviceId,confirmation:true}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(settings))).status,401);
+  assert.equal((await route.POST(request(settings,{requestOrigin:'https://foreign.example'}))).status,403);
+  const manifest=JSON.parse(fs.readFileSync('app/guard/dashboard/generated/workspace.json','utf8'));
+  assert.match(manifest.html,/id="cloud-quizlet-review"/);
+});
 
 test('parent exit controls keep authentication, same-origin protection, explicit confirmation and fixed authority',async()=>{
   const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});

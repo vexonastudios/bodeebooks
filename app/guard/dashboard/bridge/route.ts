@@ -198,6 +198,9 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
     case "parent-exit-settings": path = "/parent-exit/settings"; method = "POST"; body = { studentId: input.studentId, showIcon: input.showIcon }; break;
+    case "quizlet-review-list": path = "/quizlet-review/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
+    case "quizlet-review-settings": path = "/quizlet-review/settings"; method = "POST"; body = { studentId: input.studentId, enabled: input.enabled }; break;
+    case "quizlet-review-clear": path = "/quizlet-review/clear"; method = "POST"; body = { studentId: input.studentId, confirmation: input.confirmation }; break;
     case "parent-exit-review": path = "/parent-exit/review"; method = "POST"; body = { id: input.id, studentId: input.studentId, decision: input.decision, confirmation: input.confirmation }; break;
     case "edit-student": {
       if (typeof input.studentId !== "string" || !uuid.test(input.studentId)) return response({ error: "Choose a child from your family." }, 400);
