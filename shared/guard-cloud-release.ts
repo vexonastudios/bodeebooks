@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.324": {
+  "title": "Abeka quiz and test reporting",
+  "sections": [
+    {
+      "heading": "Version 1.2.324",
+      "headline": "See unfinished Abeka assessments by child",
+      "summary": "Review outstanding, locked, submitted and graded assessments with clear coverage status.",
+      "highlights": [
+        "Open Overview → Abeka quizzes & tests to review each child’s known outstanding or locked assessments, submitted work awaiting a grade, and recorded grades.",
+        "Updated Windows computers can check the Abeka student dashboard during lessons. Missing or stale checks stay visible; an empty list or checked box does not prove a quiz was submitted.",
+        "Accredited families can export a metadata summary from Abeka’s separate parent Assessment Permissions page, then choose the child and school year and review it before importing.",
+        "Parent review flags and earlier-year outstanding work remain visible. Reporting problems do not block school, alter grades or unlock assessments. History starts with observed records; previously unseen grades cannot be reconstructed."
+      ]
+    }
+  ]
+},
   "1.2.323": {
   "title": "Private Quizlet question review",
   "sections": [
