@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.321": {
+  "title": "Math Coach beside Abeka, with test safeguards",
+  "sections": [
+    {
+      "heading": "Version 1.2.321",
+      "headline": "Math help alongside lessons",
+      "summary": "Children can open Math Coach beside Abeka, while tests and quizzes keep both Math Coach and Writing unavailable.",
+      "highlights": [
+        "Math Coach joins Writing on the school toolbar and opens beside the lesson without reloading its video or starting a second study clock.",
+        "During a test or quiz, both tools are blocked, including tools that were already open. Writing drafts stay saved.",
+        "Existing Math Coach permissions, question allowances and parent locks still apply. Closing the panel restores the full lesson view.",
+        "Returning to a lesson makes the tools available again. Use Reload in Math Coach to reconnect after a test."
+      ]
+    }
+  ]
+},
   "1.2.320": {
     "title": "Parent exit controls, Grammar and quiz returns",
     "sections": [
