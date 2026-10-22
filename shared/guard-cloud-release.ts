@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.322": {
+  "title": "Reliable update restarts and automatic spelling audio",
+  "sections": [
+    {
+      "heading": "Version 1.2.322",
+      "headline": "Updates work with the parent exit icon hidden",
+      "summary": "Repairs update restart preparation and makes Earn Coins spelling words play automatically.",
+      "highlights": [
+        "Updates can restart when the parent exit icon is hidden or inside a collapsed toolbar. Your chosen icon visibility and password-protected recovery are preserved.",
+        "Already stuck on 1.2.320 or 1.2.321? Temporarily show the affected child’s exit icon under Overview → Parent exit & activity, or use this release’s parent-account installer for an in-place update. Hide the icon again after 1.2.322 is installed.",
+        "Earn Coins reads each spelling word as its question opens. Hear the word remains available for replay, and hints or refreshes do not repeatedly start narration.",
+        "Earn Coins action buttons have Lucide icons alongside their labels. Leaving the activity or switching children cancels pending narration."
+      ]
+    }
+  ]
+},
   "1.2.321": {
   "title": "Math Coach beside Abeka, with test safeguards",
   "sections": [
