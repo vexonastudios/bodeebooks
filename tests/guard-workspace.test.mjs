@@ -703,6 +703,37 @@ test('student deletion requires explicit confirmation and strips forged authorit
  assert.deepEqual(calls,[[`/students/${deviceId}/delete`,{method:'POST',body:JSON.stringify({confirmation:true,expectedName:'Test Child'})}]]);
 });
 
+test('assessment review uses fixed authenticated routes and strips forged family authority',async()=>{
+ const manifest=JSON.parse(fs.readFileSync('app/guard/dashboard/generated/workspace.json','utf8'));
+ const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+ const input={action:'abeka-assessments-list',studentId:deviceId,term:'2026-2027',householdId:'forged',answers:'never-forward'};
+ assert.equal((await route.POST(request(input))).status,200);
+ assert.deepEqual(calls[0],{path:'/abeka-assessments/list',body:{studentId:deviceId,term:'2026-2027'}});
+ const snapshot={version:1,source:'permissions',records:[]};
+ const importRoute=load('assessment-import/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
+ await importRoute.POST(request({...input,action:'abeka-assessments-import',id:deviceId,snapshot,confirmation:true}));
+ assert.deepEqual(calls[1],{path:'/abeka-assessments/import',body:{id:deviceId,studentId:deviceId,snapshot,confirmation:true}});
+ assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(input))).status,401);
+ assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+ assert.match(manifest.html,/id="cloud-abeka-assessments"/);
+ assert.match(manifest.html,/cloud-abeka-assessments\.css/);
+});
+
+test('large assessment summaries use a dedicated bounded parent import without broadening ordinary dashboard limits',async()=>{
+ const calls=[],api=async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};},route=load('assessment-import/route.ts',{api});
+ const input={action:'abeka-assessments-import',id:deviceId,studentId:deviceId,confirmation:true,snapshot:{version:1,source:'permissions',recognized:true,sections:['permissions'],term:'2026-2027',records:Array.from({length:500},(_,i)=>({course:'Synthetic '+ 'a'.repeat(100),title:'Quiz '+i+' '+ 'b'.repeat(140),source:'permissions',status:'listed',permission:'locked'}))},householdId:'forged',answers:'never-forward'};
+ assert.ok(JSON.stringify(input).length>96000);
+ assert.equal((await load('bridge/route.ts',{api}).POST(request(input))).status,413);
+ assert.equal((await load('assessment-import/route.ts',{authenticated:false,api}).POST(request(input))).status,401);
+ assert.equal((await route.POST(request(input,{requestOrigin:'https://foreign.example'}))).status,403);
+ assert.equal((await route.POST(request({...input,confirmation:false}))).status,400);
+ assert.equal((await route.POST(request({...input,action:'set-school-pause'}))).status,400);
+ assert.equal((await route.POST(request({...input,padding:'x'.repeat(512*1024)}))).status,413);
+ assert.equal((await route.POST(request(input))).status,200);assert.equal(calls.length,1);
+ assert.deepEqual(Object.keys(calls[0].body).sort(),['confirmation','id','snapshot','studentId']);assert.equal(calls[0].path,'/abeka-assessments/import');
+ assert.match(fs.readFileSync('public/guard-admin/cloud-abeka-assessments.js','utf8'),/assessment-import\//);
+});
+
 test('parent dashboard startup imports all resolve to deployed assets', () => {
   const assetRoot = path.resolve('public/guard-admin');
   const pending = ['cloud-workspace.js', 'cloud-media-admin.js'];

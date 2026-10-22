@@ -198,6 +198,9 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     }
     case "add-student": path = "/students"; method = "POST"; body = { name: input.name, grade: input.grade }; break;
     case "parent-exit-settings": path = "/parent-exit/settings"; method = "POST"; body = { studentId: input.studentId, showIcon: input.showIcon }; break;
+    case "abeka-assessments-list": path="/abeka-assessments/list"; method="POST"; body={studentId:input.studentId,term:input.term}; break;
+    case "abeka-assessments-import": return response({ error: "Use the designated assessment import endpoint." }, 400);
+    case "abeka-assessments-review": path="/abeka-assessments/review"; method="POST"; body={studentId:input.studentId,term:input.term,key:input.key,lastSeen:input.lastSeen,decision:input.decision,confirmation:input.confirmation}; break;
     case "quizlet-review-list": path = "/quizlet-review/list"; method = "POST"; body = { studentId: input.studentId, offset: input.offset }; break;
     case "quizlet-review-settings": path = "/quizlet-review/settings"; method = "POST"; body = { studentId: input.studentId, enabled: input.enabled }; break;
     case "quizlet-review-clear": path = "/quizlet-review/clear"; method = "POST"; body = { studentId: input.studentId, confirmation: input.confirmation }; break;
