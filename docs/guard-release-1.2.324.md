@@ -41,3 +41,26 @@ remain available for rollback. No family computer was installed, Stable
 promotion performed or additional paid GitHub Actions run.
 
 Actual child uptake and live provider capture/import remain acceptance checks.
+
+## October 22 mobile layout correction
+
+Published the desktop-only assessment overview from website source `b747a4d`
+to `dpl_E2roLBfKzJHEKntUdxqiTdrSdShq`. The existing `cloud-mobile` layout now
+hides the complete Abeka quizzes/tests panel. Desktop reporting and the site's
+curated mobile spacing, navigation and controls are retained. Only the mobile
+stylesheet and its recorded export hash changed. Matching shared source is
+local BodeeGuard commit `5834a242`.
+
+Retained verification covers static checks, 226 focused dashboard unit cases,
+five isolated desktop scenarios, and 63 website workspace cases. The candidate
+was built from a clean Git archive. Its release identity, exact archived CSS
+bytes, installer sign-in requirement and unchanged signed 1.2.324 recovery feed
+passed before promotion. Both public aliases independently resolved to the new
+deployment and served the reviewed CSS afterward. Served CSS SHA-256:
+`090a4183ffd756480ac57b1192a62c8990558c310eb354be0991559701ae417f`.
+
+Publication evidence is retained in
+`.tmp/mobile-assessment-publication-b747a4d/publication.json`. Previous deployment
+`dpl_HnoJSrappSMJ6txLtk9VXUWL3Gx3` remains available for rollback. The API, Windows
+installer, child update feed and family preferences were not changed. Existing
+open dashboard tabs need to refresh/reopen to load the new stylesheet.
