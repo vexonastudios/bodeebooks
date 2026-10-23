@@ -48,3 +48,17 @@
 body:has(#poem-modal.active) .parent-assistant-launcher { display: none !important; }
 #poem-modal .poem-photo-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
 #poem-modal .poem-scan { margin-top: 4px; }
+.poem-filter-label { display: grid; gap: 5px; color: #cbd1e5; font-size: 12px; font-weight: 700; }
+.poem-library-help, .poem-card .poem-history-note { color: #aab4cc; font-size: 13px; line-height: 1.5; }
+.poem-card .poem-history-note { margin-top: 12px; }
+.poem-card-actions { flex-wrap: wrap; }
+.poem-card-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; }
+.poem-card-actions svg { width: 16px; height: 16px; flex: none; }
+.poem-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.poem-pagination p { flex: 1; min-width: 140px; margin: 0; color: #cbd1e5; font-size: 13px; line-height: 1.5; text-align: center; }
+.poem-pagination .btn { min-height: 44px; white-space: normal; }
+@media (max-width: 640px) {
+  .poem-filter-label, .poem-filter-label select { width: 100%; }
+  .poem-pagination p { order: -1; flex-basis: 100%; }
+  .poem-pagination .btn { flex: 1; min-width: 0; }
+}
