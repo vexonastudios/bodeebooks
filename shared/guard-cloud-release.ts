@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.326": {
+  "title": "Personal spelling review that keeps school moving",
+  "sections": [
+    {
+      "heading": "Version 1.2.326",
+      "headline": "Help each child learn and retain spelling words",
+      "summary": "Personal daily reviews teach missed words, revisit earlier learning and show clear progress without a perfect-score gate.",
+      "highlights": [
+        "Each child receives up to 12 word checks from assigned words and earlier reviews. Independent successes spread later review over time; difficult words return sooner.",
+        "Word workshops explain tricky spelling, offer spoken explanations and letter building, and allow at most four optional memory retries. Children can save unheard words or skip retries and continue school even with mistakes.",
+        "Parent Spelling cards separate practice completion, independent recall and later retention, with difficult words and coverage warnings before the scheduled test.",
+        "Print an optional paper practice sheet and record actual school test results separately from BodeeGuard practice, mastery and coins. Existing parent locks and saved-work recovery remain in place."
+      ]
+    }
+  ]
+},
   "1.2.325": {
   "title": "Reliable Abeka completion and lighter syncing",
   "sections": [
