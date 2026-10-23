@@ -1,5 +1,6 @@
 import { createSpellingPhotoTray } from './cloud-spelling-photos.js?v=20260910-prompt1';
 import { createLearningRecipientPicker, createLearningAssignmentBatch } from './cloud-learning-assignment.js?v=20261005-multi1';
+import { spellingReviewMarkup, bindSpellingReviews } from './cloud-spelling-review.js?v=20261023-daily1';
 // Adapted from the original weekly-list editor and progress cards.
 export function newAssignmentDates(value) {
   const fallback=new Date(),local=`${fallback.getFullYear()}-${String(fallback.getMonth()+1).padStart(2,'0')}-${String(fallback.getDate()).padStart(2,'0')}`;
@@ -30,9 +31,10 @@ async function request(route,options={}){
   if(saving)throw Error('This Spelling change is already saving.');
   if(pending&&pending.fingerprint!==fingerprint)throw new Error('A previous Spelling change is awaiting confirmation. Use Retry saved change.');
   if(!pending){const value=options.body?JSON.parse(options.body):{},coach=route.includes('/admin/coach/');let command;
-    if(coach){const student=data.students.find(child=>child.id===decodeURIComponent(route.split('/').at(-1)));if(!student)throw new Error('Refresh the selected child.');command={kind:'settings',studentId:student.id,revision:student.coach_revision,enabled:value.enabled};}
+    if(route.includes('/school-result/')){const listId=decodeURIComponent(route.split('/').at(-1)),list=data.lists.find(item=>item.id===listId);if(!list)throw Error('Refresh this spelling list.');command={...value,kind:'school-result',studentId:list.student_id,listId};}
+    else if(coach){const student=data.students.find(child=>child.id===decodeURIComponent(route.split('/').at(-1)));if(!student)throw new Error('Refresh the selected child.');command={kind:'settings',studentId:student.id,revision:student.coach_revision,enabled:value.enabled};}
     else {const listId=options.method==='POST'?crypto.randomUUID():decodeURIComponent(route.split('/').at(-1)),old=data.lists.find(list=>list.id===listId),archive=options.method==='DELETE';if(!old&&options.method!=='POST')throw new Error('Refresh the selected list.');const words=archive?old.words:value.words.map(word=>editingWords.find(item=>item.word.toLocaleLowerCase()===word.toLocaleLowerCase())||{word});command={kind:'list',studentId:archive?old.student_id:value.student_id,listId,revision:old?.revision||0,title:archive?old.title:value.title,weekStart:archive?old.week_start:value.week_start,testDate:archive?old.test_date:value.test_date,practiceOnly:archive?old.practice_only:value.practice_only,status:archive?'archived':value.status,words};}
-    const ids=options.method==='POST'?recipients.ids():[command.studentId];
+    const ids=options.method==='POST'&&command.kind==='list'?recipients.ids():[command.studentId];
     if(!ids.length)throw Error('Choose at least one child.');
     pending={fingerprint,batch:createLearningAssignmentBatch(ids.map(studentId=>({name:data.students.find(child=>child.id===studentId)?.name||'child',command:{...command,studentId,id:crypto.randomUUID(),...(options.method==='POST'?{listId:crypto.randomUUID(),revision:0}:{})}})))};
   }
@@ -73,7 +75,7 @@ function renderCompletedSession(session) {
   const eventual = Number(session.eventual_correct) || 0;
   return `<div class="spelling-session-status is-complete">
     <strong>✓ ${escapeHtml(modeLabel(session.mode))} completed ${escapeHtml(sessionDateLabel(session.completed_date || session.session_date))}</strong>
-    <span>${session.guided_practice ? `${Number(session.unaided_first_try)||0}/${total} spelled from memory on the first try · Guided practice includes copying and letter hints` : `${firstTry}/${total} right first try · ${missedFirstTry} missed first try · ${eventual}/${total} eventually correct`}</span>
+    <span>${session.daily_review ? `${session.independent}/${total} remembered without help · ${session.relearned} recalled after teaching · ${session.deferred} unheard words saved for later` : session.guided_practice ? `${Number(session.unaided_first_try)||0}/${total} spelled from memory on the first try · Guided practice includes copying and letter hints` : `${firstTry}/${total} right first try · ${missedFirstTry} missed first try · ${eventual}/${total} eventually correct`}</span>
   </div>`;
 }
 
@@ -85,7 +87,7 @@ function renderActiveSession(session) {
   const missedFirstTry = Number(session.missed_first_try_so_far) || 0;
   return `<div class="spelling-session-status is-progress">
     <strong>⏳ ${escapeHtml(modeLabel(session.mode))} not finished</strong>
-    <span>${corrected}/${total} words completed · ${attempted}/${total} attempted · ${firstTry} right first try · ${missedFirstTry} missed first try</span>
+    <span>${session.list?.adaptive_version===3 ? `${attempted}/${total} word checks done · ${firstTry} remembered without hints · extra retries are optional` : `${corrected}/${total} words completed · ${attempted}/${total} attempted · ${firstTry} right first try · ${missedFirstTry} missed first try`}</span>
   </div>`;
 }
 
@@ -170,16 +172,18 @@ function render() {
     return `<article class="spelling-list-card ${status === 'active' ? 'is-active' : ''}" data-spelling-list="${escapeHtml(list.id)}">
       <div class="spelling-list-top"><div><div class="spelling-list-student">${escapeHtml(list.student_name)}</div><div class="spelling-list-title">${escapeHtml(list.title)}</div></div><span class="spelling-list-badge ${status}">${escapeHtml(status === 'active' ? 'Active list' : status)}</span></div>
       <div class="spelling-list-meta"><span>${list.word_count} words</span>${list.practice_only?'<span>Practice anytime</span>':`<span>Week ${dateLabel(list.week_start)}</span><span>Pre-test ${dateLabel(list.test_date)}</span>`}</div>
-      <div class="spelling-list-progress"><div><strong>${list.study_days ?? list.days_practiced ?? 0}</strong><span>Study days</span></div><div><strong>${latestStudy ? `${studyFirstTry}/${studyTotal}` : '—'}</strong><span>${latestStudy?.guided_practice?'First try · includes help':'Right first try'}</span></div><div><strong>${latestStudy ? studyMissed : '—'}</strong><span>Missed first try</span></div></div>
+      <div class="spelling-list-progress"><div><strong>${list.study_days ?? list.days_practiced ?? 0}</strong><span>Study days</span></div><div><strong>${latestStudy ? `${studyFirstTry}/${studyTotal}` : '—'}</strong><span>${latestStudy?.daily_review?'From memory · no hints':latestStudy?.guided_practice?'First try · includes help':'Right first try'}</span></div><div><strong>${latestStudy ? studyMissed : '—'}</strong><span>Missed first try</span></div></div>
       ${list.progression ? `<div class="spelling-session-status"><strong>${Number(list.progression.ready)||0}/${list.word_count} ready without hints</strong><span>${Number(list.progression.copy)||0} learning · ${Number(list.progression.partial)||0} using letter hints · ${Number(list.progression.recall)||0} practicing from memory</span><span>Ready means correct from memory on two practice days. Copying and same-day retries do not count.</span></div>` : ''}
       <div class="spelling-pretest-row"><strong>Practice pre-test:</strong> ${list.practice_only ? 'No scheduled test' : latestTest ? `${Math.round(Number(latestTest.score_percent))}% · ${latestTest.first_try_correct}/${latestTest.total_words} right` : `Not taken yet · opens ${dateLabel(list.test_date)}`}</div>
       ${list.source_science_list_id?'<p class="spelling-history-row">Earlier practice results are saved in Previous results below.</p>':''}${renderCompletedSession(latestStudy)}
       ${activeSessions.map(renderActiveSession).join('')}
       ${list.trouble_words?.length ? `<div class="spelling-trouble-row"><strong>Needs work:</strong> ${list.trouble_words.map(item => `${escapeHtml(item.word)} (${item.misses})`).join(' · ')}</div>` : ''}
+      ${spellingReviewMarkup(list,data.date)}
       <div class="spelling-history-row">${completedCount} completed · ${activeSessions.length} unfinished</div>
       <footer class="learning-list-actions"><button type="button" class="btn btn-secondary" data-spelling-edit="${escapeHtml(list.id)}">Edit list</button><button type="button" class="btn btn-secondary" data-spelling-assign="${escapeHtml(list.id)}"><i data-lucide="users" aria-hidden="true"></i>Assign to more children</button></footer>
     </article>`;
   }).join('');
+  bindSpellingReviews(root,{notice,save:async(listId,value)=>{await request(`${API}/admin/school-result/${listId}`,{method:'PUT',body:JSON.stringify(value)});await loadSpellingTab();}});
   root.querySelectorAll('[data-spelling-list]').forEach(card => card.addEventListener('click', event => openModal(data.lists.find(list => list.id === card.dataset.spellingList),'',!!event.target.closest('[data-spelling-assign]'))));
   window.lucide?.createIcons?.();
 }
