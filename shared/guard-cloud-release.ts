@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.325": {
+  "title": "Reliable Abeka completion and lighter syncing",
+  "sections": [
+    {
+      "heading": "Version 1.2.325",
+      "headline": "Keep completed schoolwork counted",
+      "summary": "Preserve observed Abeka completion when future lessons appear, with less repeated background syncing.",
+      "highlights": [
+        "Abeka advancing to a future lesson no longer discards a checkmark observed moments earlier or clears an already confirmed completed day when a later page is partial.",
+        "School coins still require all assigned daily requirements to finish and are paid only once. Previously unobserved completion cannot be reconstructed from lesson numbers.",
+        "Connection and settings checks make fewer repeated database reads and consume duplicate sync wakes together. Parent updates and Close/Sleep retain their existing delivery and acknowledgements.",
+        "The Abeka quizzes and tests overview appears on desktop, keeping the mobile parent layout compact."
+      ]
+    }
+  ]
+},
   "1.2.324": {
   "title": "Abeka quiz and test reporting",
   "sections": [
