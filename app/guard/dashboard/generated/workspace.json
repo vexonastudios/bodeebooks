@@ -313,8 +313,8 @@
     "renderer/js/admin/cloud-parent-exit-controls.js": "6b8ff3f9dd904af9e962c3be1431cc7d3c292b18bd43de83570e51400f90345f",
     "renderer/js/admin/cloud-quizlet-review.js": "169af786c1a1678e955d3ebebe6ae0a78292919b867c4dfb0dc59965e9d8c43c",
     "renderer/css/admin/quizlet-review.css": "2dfc3399810c022d881908efd57311ae468c5ceeff08807a1b9b5feb06ffc75b",
-    "renderer/js/admin/cloud-abeka-assessments.js": "de6d2ce17b3616e8001eabe1ff750c885345e496a344b2b3e407d128f7e9fb4d",
-    "renderer/css/admin/cloud-abeka-assessments.css": "5ee5ad1417e999373d019c25b754b2c1292432dbe3623b5b1da888a1b7abf393",
+    "renderer/js/admin/cloud-abeka-assessments.js": "38f4f8920b91f64e545cf06b42552188ab6a56193c1ef331b6a6ba68fc7d6727",
+    "renderer/css/admin/cloud-abeka-assessments.css": "97d0026a43af59a1601dbdcf102fc415dd227a48baa2292326224765c6abb6f3",
     "shared/abekaAssessments.js": "02563d4d81636cfc816007de807e0802dad76be09fa331bc94958dcb10fdddc0",
     "renderer/js/admin/cloud-spelling-review.js": "72984c42ff51465f0a6c8b7b2c729aa39084ef6154df7a9bb5bcf91c89ff6288"
   },
