@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.327": {
+  "title": "Listen to the Bible and follow each verse",
+  "sections": [
+    {
+      "heading": "Version 1.2.327",
+      "headline": "Chapter audio with verse-by-verse highlighting",
+      "summary": "Children can listen to the Berean Standard Bible and follow the verse being read.",
+      "highlights": [
+        "All 1,189 chapters use the existing Bob Souer recordings. Open Bible, choose a chapter and select Listen to chapter; listening requires an internet connection.",
+        "The current verse is highlighted as the recording plays. Follow reading keeps it visible; scrolling pauses following, and Go to current verse brings it back.",
+        "Playback speed, seeking and chapter repeat stay aligned. Listening positions are remembered, and saved notes and highlights are preserved.",
+        "If audio fails, children can retry or keep reading. This release retains the compact desktop assessment overview and clearer parent poem archive controls."
+      ]
+    }
+  ]
+},
   "1.2.326": {
   "title": "Personal spelling review that keeps school moving",
   "sections": [
