@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.328": {
+  "title": "Practice Family Games against the computer",
+  "sections": [
+    {
+      "heading": "Version 1.2.328",
+      "headline": "Computer opponents for all four board games",
+      "summary": "Children can practice Chess, Checkers, Connect Four and Fleet Battle on their own.",
+      "highlights": [
+        "Each built-in board game now offers Easy and Challenge computer opponents, a short practice tip and Practice again after the game.",
+        "Practice uses the existing Family Games allowance, hours and parent locks. Computer moves run locally without paid AI calls.",
+        "Children can leave while the computer is thinking. A failed turn has a clear retry; the lobby buttons remain available after completed actions.",
+        "Choose Host or Find sibling games to play over home Wi-Fi. Computer practice does not require home-network setup."
+      ]
+    }
+  ]
+},
   "1.2.327": {
   "title": "Listen to the Bible and follow each verse",
   "sections": [
