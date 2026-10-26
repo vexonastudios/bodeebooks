@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.329": {
+  "title": "More reliable updates and less idle background work",
+  "sections": [
+    {
+      "heading": "Version 1.2.329",
+      "headline": "Recover update attempts and keep school available",
+      "summary": "Removes unnecessary restart blockers and reduces repeated background work while computers are idle.",
+      "highlights": [
+        "Saved conversations, unchanged planners and idle device settings no longer hold up an update. Unsent messages, active lessons and unfinished work stay protected.",
+        "The Windows updater retries brief handoff file-read failures and safely retires abandoned pre-install attempts when no installer or unfinished recovery is active.",
+        "A server compatibility fix helps versions 1.2.320 and 1.2.321 past their hidden parent-exit icon defect. The saved parent preference returns after the new version is reported.",
+        "Quiet computers pause unchanged Bible and dashboard refreshes. Parent updates, saved progress, reconnect and Close/Sleep remain available; heartbeat checks perform fewer database queries."
+      ]
+    }
+  ]
+},
   "1.2.328": {
   "title": "Practice Family Games against the computer",
   "sections": [
