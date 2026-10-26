@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.330": {
+  "title": "Student walkthroughs and learning beside Abeka",
+  "sections": [
+    {
+      "heading": "Version 1.2.330",
+      "headline": "Help children discover new features after updating",
+      "summary": "A dismissible illustrated walkthrough introduces updates, with Learning Videos and corrected Math Coach panels beside Abeka.",
+      "highlights": [
+        "Children see an illustrated walkthrough when the updated dashboard is ready. Next, Back, Skip for now and Close are always available, and What’s new reopens it later.",
+        "Any approved Learning Video, including Crochet, can be pinned beside school. Open it from the Abeka toolbar or pin before entering school; playback keeps its position.",
+        "The blank Math Coach panel is repaired using corrected Windows native view composition. Learning Videos, Writing and Math Coach remain unavailable during tests and quizzes.",
+        "Recovery status no longer sits over student input areas. Recent Bible audio, computer game practice and personal spelling improvements remain included."
+      ]
+    }
+  ]
+},
   "1.2.329": {
   "title": "More reliable updates and less idle background work",
   "sections": [
