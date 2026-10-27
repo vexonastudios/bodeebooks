@@ -9,11 +9,13 @@
 .guardPage a{text-decoration:none}
 .guardPage button{font:inherit;cursor:pointer}
 .guardPage a:focus-visible,.guardPage button:focus-visible,.guardPage summary:focus-visible{outline:3px solid #b87418;outline-offset:5px}
-.guardPage section[id]{scroll-margin-top:calc(var(--nav-height,64px) + 76px)}
+.guardPage section[id]{scroll-margin-top:76px}
 .hero{background:radial-gradient(ellipse at 87% 49%,#dce9d7 0,transparent 49%),#f3f5ec;padding:25px 0 76px;border-bottom:1px solid var(--guard-line)}
 .productBar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:60px}
 .brand{display:flex;align-items:center;gap:11px;color:var(--guard-ink);font-size:1.12rem}
 .brand img{border:1px solid #dce5dd;border-radius:12px}
+.backButton{min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;border:1px solid #c7d5c8;border-radius:9px;color:#214b40;background:#fffefb;font-size:.8rem;font-weight:700;line-height:1.4;transition:background .16s,border-color .16s}
+.backButton:hover{background:#eaf0e6;border-color:#aabfaa}
 .textLink{display:inline-flex;align-items:center;gap:10px;font-size:.875rem;font-weight:650;color:var(--guard-green);line-height:1.6}
 .textLink:hover{text-decoration:underline;text-underline-offset:5px}
 .heroGrid{display:grid;grid-template-columns:1fr 1.13fr;align-items:center;gap:46px}
@@ -38,7 +40,7 @@
 .heroCaption{display:flex;align-items:center;gap:12px;margin:24px 0 0 15px;color:#4e685d;font-size:.76rem}
 .heroCaption svg{flex-shrink:0;color:#367959}
 .heroCaption strong{font-size:.88rem;color:#224d3b;font-weight:650}
-.tourNav{border-bottom:1px solid var(--guard-line);background:#fffefb;position:sticky;top:var(--nav-height,64px);z-index:5}
+.tourNav{border-bottom:1px solid var(--guard-line);background:#fffefb;position:sticky;top:0;z-index:5}
 .tourNav .container{display:flex;justify-content:space-between;gap:24px;overflow:auto;scrollbar-width:thin}
 .tourNav a{display:flex;align-items:center;gap:5px;flex-shrink:0;color:#466255;font-size:.76rem;font-weight:650;padding:20px 0;border-bottom:2px solid transparent;white-space:nowrap}
 .tourNav a:hover{border-color:var(--guard-green);color:var(--guard-green)}
