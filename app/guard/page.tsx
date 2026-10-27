@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { ArrowDown, ArrowRight, BookOpen, CalendarCheck, Check, Gamepad2, GraduationCap, Laptop, MessageCircle, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, BookOpen, CalendarCheck, Check, Gamepad2, GraduationCap, Laptop, MessageCircle, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 import GuardAuthActions from "@/components/GuardAuthActions";
 import TourScreenshot from "./TourScreenshot";
 import styles from "./guard.module.css";
@@ -24,12 +25,12 @@ const questions = [
 ];
 
 export default function GuardPage() {
-  return <div className={styles.guardPage}>
+  return <div className={styles.guardPage} data-bodeeguard-landing>
     <section className={styles.hero} aria-labelledby="guard-title">
       <div className={styles.container}>
         <div className={styles.productBar}>
           <a className={styles.brand} href="#guard-title"><Image src="/guard-icons/bodeeguard-parent-192.png" alt="" width={42} height={42} /><strong>BodeeGuard</strong></a>
-          <a href="#tour" className={styles.textLink}>Take a look inside <ArrowDown size={16} /></a>
+          <Link href="/" className={styles.backButton}><ArrowLeft size={16} /> Back to Bodee Books</Link>
         </div>
         <div className={styles.heroGrid}>
           <div className={styles.heroCopy}>

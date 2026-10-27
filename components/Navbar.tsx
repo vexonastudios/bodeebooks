@@ -19,7 +19,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={styles.nav}>
+    <nav className={styles.nav} data-public-site-header>
       <div className={`container ${styles.inner}`}>
         {/* Logo */}
         <Link href="/" className={styles.logo}>
