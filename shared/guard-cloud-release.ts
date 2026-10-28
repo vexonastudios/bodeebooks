@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.333": {
+  "title": "More reliable updates",
+  "sections": [
+    {
+      "heading": "Version 1.2.333",
+      "headline": "Keep BodeeGuard updates moving",
+      "summary": "Update downloads can resume after a connection interruption, and prepared updates are easier to finish.",
+      "highlights": [
+        "Interrupted update downloads can resume instead of always starting over.",
+        "BodeeGuard remembers prepared updates after reopening and continues checking for newer releases.",
+        "The update notice distinguishes a downloaded update from the version currently running. Saved work still receives protection before a restart."
+      ]
+    }
+  ]
+},
   "1.2.332": {
   "title": "Clear document alerts and easier everyday recovery",
   "sections": [

@@ -18,7 +18,7 @@ async function accountPage(params={}) {
     if(name==='next/headers')return {cookies:async()=>({get:()=>({value:'1'})})};
     if(name==='../actions')return new Proxy({},{get:()=>async()=>{}});
     if(name.endsWith('/guard-cloud-release'))return cloudReleaseModule;
-    if(['./InstallerShareLink','../InstallerDownload'].includes(name)){const f=path.resolve(path.dirname(filename),name+'.tsx'),c=new Module(f);c.require=component.require;c._compile(ts.transpileModule(fs.readFileSync(f,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,f);return c.exports;}
+    if(['./InstallerShareLink','../InstallerDownload','../WindowsInstallerNotice'].includes(name)){const f=path.resolve(path.dirname(filename),name+'.tsx'),c=new Module(f);c.require=component.require;c._compile(ts.transpileModule(fs.readFileSync(f,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,f);return c.exports;}
     if(name==='./ChildSetup')return {__esModule:true,default:props=>React.createElement('section',{'data-collapsed':String(props.initiallyCollapsed)},props.children)};
     if(name==='./PlanControls'||name==='../AccountRetry'||name.endsWith('/GuardSignOut'))return {__esModule:true,default:()=>null};
     if(name==='../SubmitButton')return {__esModule:true,default:props=>React.createElement('button',null,props.children)};
