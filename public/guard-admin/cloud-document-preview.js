@@ -1,6 +1,6 @@
 // Render submitted copies in the parent's browser. PDF scripts, links and
 // attachments are never executed. No document bytes are persisted by this UI.
-import { documentNode as node, documentButton as button } from './cloud-documents.js?v=20261007-grade-preview1';
+import { documentNode as node, documentButton as button } from './cloud-documents.js?v=20261028-document-alert1';
 let current = null;
 export function closeDocumentPreview() { current?.close(); }
 export async function previewDocument({ file: initial, childName, read, review, grade, print = false }) {

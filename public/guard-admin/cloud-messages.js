@@ -369,6 +369,11 @@ export function setupCloudMessages({ endpoint, onBack = () => {}, getSnapshot = 
           review.onclick=()=>document.dispatchEvent(new CustomEvent('cloud-open-song-requests'));row.append(review);
         }
         const attachment = message.attachment ? window.cloudFileTools.attachment(message.attachment, () => request('read-file', { id: message.attachment.id })) : null;
+        if (message.attachment?.purpose === 'paper' && !message.attachment.removed && typeof window.cloudOpenSubmittedDocument === 'function') {
+          const paper = textNode('button', 'Open document for review or printing', 'btn btn-primary'); paper.type = 'button';
+          paper.addEventListener('click', () => window.cloudOpenSubmittedDocument(message.attachment.id));
+          row.append(paper);
+        }
         if (attachment) row.append(attachment);
         row.append(meta);
         const child = selected;

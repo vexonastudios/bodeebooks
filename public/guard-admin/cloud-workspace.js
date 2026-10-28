@@ -23,13 +23,13 @@ import { setupActivityLibrary } from './cloud-activity-library.js';
 import { setupCloudSchoolReview } from './cloud-school-review.js?v=20261007-abeka-day1';
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
-import { setupCloudMessages } from './cloud-messages.js?v=20261015-all-activities1';
+import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
 import { setupCloudMobile } from './cloud-mobile.js?v=20261007-student-reports1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
-import { setupCloudFiles } from './cloud-files.js?v=20261007-grade-preview1';
-import { setupCloudDocuments } from './cloud-documents.js?v=20261007-grade-preview1';
+import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
+import { setupCloudDocuments } from './cloud-documents.js?v=20261028-document-alert1';
 import { setupCloudGames } from './cloud-games-ui.js?v=20261001-game-time1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js?v=20261016-activity-time1';
@@ -458,7 +458,7 @@ const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, edit
 const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
 const recoveryBackups = setupRecoveryBackups({ endpoint, root: byId('cloud-settings-backups') || byId('tab-settings') });
 const files = setupCloudFiles({ endpoint, gradePaper: records.gradePaper });
-const documents = setupCloudDocuments({ request: files.request, gradePaper: records.gradePaper, getStudents: () => snapshot?.students || [] });
+const documents = setupCloudDocuments({ request: files.request, gradePaper: records.gradePaper, getStudents: () => snapshot?.students || [], navigate: selectTab });
 const songRequests = setupSongRequests({ endpoint, navigate: selectTab });
 const dailyQuestions = setupCloudDailyQuestions({ endpoint, getSnapshot: () => snapshot });
 const practice = setupCloudPractice({ endpoint, getSnapshot: () => snapshot });
@@ -548,10 +548,10 @@ const livePush=window.CloudPush.createCloudPushClient({
     return response.json();
   },
   onConnection:connected=>{byId('live-indicator').dataset.messagesConnected=String(connected);messaging.setLive(connected);},
-  onReady:()=>{window.dispatchEvent(new Event('cloud-student-report-refresh'));window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
+  onReady:()=>{void documents.refreshPending(true);window.dispatchEvent(new Event('cloud-student-report-refresh'));window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);void songRequests.refreshPending();},
   onSignal:hint=>{if(hint.kind==='refresh'){window.dispatchEvent(new Event('cloud-student-report-refresh'));void refresh();}
     if(hint.kind==='settings')void chores.refresh(true);
-    if(hint.kind==='messages'){messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
+    if(hint.kind==='messages'){void documents.refreshPending(true);messaging.notify(hint.studentId);window.parent.postMessage({type:'bodeeguard-message-hint'},location.origin);}
     if(hint.kind==='screenshots')screenshots.refresh();
     if(hint.kind==='media')void songRequests.refreshPending(true);
   }

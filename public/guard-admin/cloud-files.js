@@ -7,7 +7,7 @@ export function setupCloudFiles({ endpoint, gradePaper }) {
   async function request(action, input = {}) {
     const response = await fetch(action === 'upload-file' ? endpoint.replace(/bridge\/?$/, 'upload/') : endpoint,
       { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(28000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
-    const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Private files could not be reached.'); return result;
+    const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Private files could not be reached.'); if (['review-file','remove-file'].includes(action)) window.dispatchEvent(new Event('cloud-documents-changed')); return result;
   }
   function render() {
     const filter = el('cloud-paper-state')?.value || 'pending';

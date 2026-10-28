@@ -28,12 +28,13 @@ const messageGroups = Array.from({length:20},(_,i)=>({id:'group-' + i,kind:i%2?'
 let peerMessagingEnabled=false, failPeerSetting=true;
 const childPeerSettings=new Map(fixture.students.map(student=>[student.id,true]));
 let failSend = true, failSharedSend = true;
-const calls = [];
+const calls = [], papers=[];
+const paperData='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const server = http.createServer(async (req, res) => {
   if (req.url === '/') {
     const workspace = JSON.parse(fs.readFileSync(path.join(site, 'app/guard/dashboard/generated/workspace.json'), 'utf8'));
     res.setHeader('Content-Type', 'text/html');
-    res.end(workspace.html.replace('</head>', '<script>window.chatViews=[];addEventListener("message",event=>{if(event.source===window&&event.origin===location.origin&&event.data?.type==="bodeeguard-conversation-view")chatViews.push(event.data.studentId);});window.WebSocket=class{constructor(){window.fixtureSocket=this;setTimeout(()=>this.onopen?.(),0)}send(){this.onmessage?.({data:"pong"})}close(){}};</script><link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width:900px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"></head>')); return;
+    res.end(workspace.html.replace('</head>', '<script>window.chatViews=[];addEventListener("message",event=>{if(event.source===window&&event.origin===location.origin&&event.data?.type==="bodeeguard-conversation-view")chatViews.push(event.data.studentId);});window.WebSocket=class{constructor(){window.fixtureSocket=this;setTimeout(()=>this.onopen?.(),0)}send(){this.onmessage?.({data:"pong"})}close(){}};</script><link rel="stylesheet" href="/guard-admin/parent-mobile.css" media="(max-width:900px)"><link rel="stylesheet" href="/guard-admin/cloud-mobile.css"><link rel="stylesheet" href="/guard-admin/cloud-documents.css?v=20261028-document-alert1"></head>')); return;
   }
   const assetPath = new URL(req.url, 'http://fixture.local').pathname;
   if (/^\/guard-admin\/[a-z0-9.-]+$/.test(assetPath)) {
@@ -50,7 +51,9 @@ const server = http.createServer(async (req, res) => {
     if(input.action==='push-ticket')output={url:'wss://bodeeguard-cloud-assets.james-7f8.workers.dev/v1/push/connect?fixture=synthetic'};
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
-    if (input.action === 'list-files') output = { files: [], usage: { bytes: 0 } };
+    if (input.action === 'list-files') output = { files: papers, usage: { bytes: 0 } };
+    if (input.action === 'read-file') output = {file:papers.find(file=>file.id===input.id),data:paperData};
+    if (input.action === 'review-file') {const file=papers.find(file=>file.id===input.id);file.reviewedAt=input.reviewed?new Date().toISOString():null;output={file};}
     if (input.action === 'list-message-groups') output = {groups:messageGroups,peerMessagingEnabled,
       childPeerSettings:[...childPeerSettings].map(([studentId,enabled])=>({studentId,enabled}))};
     if (input.action === 'list-family-messages') output = {messages:[],childrenCanPost:false,version:'0'};
@@ -340,6 +343,48 @@ async function run() {
   win.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter'});
   await new Promise(r=>setTimeout(r,100));
   assert.equal(calls.filter(x=>x.action==='send-message').length,3,'empty Enter does not send');
+  const paper={id:'33333333-3333-4333-8333-333333333333',studentId:activeChild,source:'child',purpose:'paper',name:'Essay <b>proofread</b>.png',mime:'image/png',size:Buffer.from(paperData,'base64').length,ready:true,createdAt:new Date().toISOString(),reviewedAt:null,gradeId:null};
+  papers.push(paper,{...paper,id:'44444444-4444-4444-8444-444444444444',source:'parent'},{...paper,id:'55555555-5555-4555-8555-555555555555',ready:false});
+  history.get(activeChild).push({id:'paper-notice',sequence:'40',sender:'child',body:'Document sent for review or printing: '+paper.name,createdAt:paper.createdAt,attachment:{id:paper.id,purpose:'paper',name:paper.name,mime:paper.mime,size:paper.size}});
+  await js('window.fixtureSocket.onmessage({data:JSON.stringify({kind:"messages",studentId:"11111111-1111-4111-8111-000000000001"})})');
+  await wait('document.querySelector(".cloud-document-count")?.textContent==="1"');
+  await wait('[...document.querySelectorAll(".cloud-message button")].some(b=>b.textContent==="Open document for review or printing")');
+  for(const width of [390,320]) {
+    win.setContentSize(width,844);await new Promise(r=>setTimeout(r,150));
+    assert.equal(await js('(()=>{const b=[...document.querySelectorAll(".cloud-message button")].find(b=>b.textContent==="Open document for review or printing");b.scrollIntoView({block:"center",behavior:"instant"});const r=b.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.height>=42&&document.documentElement.scrollWidth<=innerWidth;})()'),true,'document message action fits a phone and is touchable');
+    await new Promise(r=>setTimeout(r,150));
+    if(width===390)fs.writeFileSync(path.join(site,'.tmp','document-message-action.png'),(await win.webContents.capturePage()).toPNG());
+  }
+  await js('[...document.querySelectorAll(".cloud-message button")].find(b=>b.textContent==="Open document for review or printing").click()');
+  await wait('!!document.querySelector(".cloud-document-dialog canvas")');
+  assert.equal(await js('document.querySelector(".cloud-document-dialog h2").textContent'),paper.name);
+  assert.equal(await js('!!document.querySelector(".cloud-document-dialog h2 b")'),false);
+  assert.equal(await js('document.querySelector(".cloud-document-count").hidden'),false,'opening does not silently resolve the request');
+  assert.equal(await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Print").disabled'),false);
+  await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Close").click();document.querySelector("[data-mobile-tab=overview]").click()');
+  for(const width of [1280,390,320]) {
+    win.setContentSize(width,844);await new Promise(r=>setTimeout(r,150));
+    assert.equal(await visible('#tab-overview .cloud-document-attention'),true);
+    assert.equal(await js('getComputedStyle(document.querySelector("#tab-overview .cloud-document-attention")).display'),'flex','document reminder uses the production stylesheet');
+    const fit=await js('(()=>{const r=document.querySelector("#tab-overview .cloud-document-attention").getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth;})()');assert.equal(fit,true);
+    fs.writeFileSync(path.join(site,'.tmp','document-attention-'+width+'.png'),(await win.webContents.capturePage()).toPNG());
+  }
+  await win.reload();await wait('document.querySelectorAll(".monitor-card").length===9');
+  await wait('document.querySelector(".cloud-document-count")?.textContent==="1"');
+  assert.equal(await visible('#tab-overview .cloud-document-attention'),true,'unreviewed documents load without opening Documents or receiving a new message');
+  await js('document.querySelector("#tab-overview .cloud-document-attention button").click()');
+  await wait('document.querySelector("#tab-documents").classList.contains("active")');
+  assert.equal(await js('document.querySelectorAll("#tab-documents select")[1].value'),'pending');
+  await js('document.querySelector(".cloud-document-card button").click()');await wait('!!document.querySelector(".cloud-document-dialog canvas")');
+  await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Mark reviewed").click()');
+  await wait('document.querySelector(".cloud-document-count").hidden');
+  assert.equal(await js('document.querySelector("#tab-overview .cloud-document-attention").hidden'),true);
+  await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Close").click()');
+  await win.reload();await wait('document.querySelectorAll(".monitor-card").length===9');await wait('!!document.querySelector(".cloud-document-count")');
+  assert.equal(await js('document.querySelector(".cloud-document-count").hidden'),true,'review acknowledgement survives a fresh dashboard load');
+  const requestCount=calls.filter(call=>call.action==='list-files').length;await new Promise(r=>setTimeout(r,1200));
+  assert.equal(calls.filter(call=>call.action==='list-files').length,requestCount,'no document idle polling');
+  console.log('Document notifications passed: live submit hint, ready child-only count, phone/desktop reminder, direct message action, exact private preview, literal titles, reachable Print, explicit review and persisted resolution.');
   console.log('Mobile messages passed: visible chat leases, incoming live reply, list/connection-loss release, reconnect, desktop/phone Enter sends, Shift+Enter multiline, IME/repeat/empty guards, latest student first/read-stable order, previous-section back, nine-child list/search, full-screen chat, four sizes, drafts, exact-ID send retry, older messages, attachment removal, navigation and desktop split view.');win.destroy();
 }
 run().then(() => { server.close(); app.quit(); }).catch(error => { console.error(error.stack); server.close(); app.exit(1); });

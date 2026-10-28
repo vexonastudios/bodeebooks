@@ -1,4 +1,4 @@
-import { previewDocument, closeDocumentPreview } from './cloud-document-preview.js?v=20261007-grade-preview1';
+import { previewDocument, closeDocumentPreview } from './cloud-document-preview.js?v=20261028-document-alert1';
 
 export const documentNode = (tag, className = '', text = '') => {
   const node = document.createElement(tag); node.className = className; node.textContent = text; return node;
@@ -8,12 +8,12 @@ export function documentButton(label, icon, action, className = 'btn btn-seconda
   const glyph = documentNode('i'); glyph.dataset.lucide = icon; glyph.setAttribute('aria-hidden', 'true');
   button.append(glyph, document.createTextNode(label)); button.addEventListener('click', action); return button;
 }
-export function setupCloudDocuments({ request, gradePaper, getStudents }) {
+export function setupCloudDocuments({ request, gradePaper, getStudents, navigate }) {
   const root = document.getElementById('tab-documents');
-  let active = false, loading = null, files = [], loaded = false;
+  let active = false, loading = null, files = [], loaded = false, lastLoaded = 0, refreshAgain = false;
   const header = documentNode('div', 'tab-header');
   const heading = documentNode('h2', '', 'Documents');
-  const refresh = documentButton('Refresh', 'refresh-cw', () => void load()); header.append(heading, refresh);
+  const refresh = documentButton('Refresh', 'refresh-cw', () => void load(true)); header.append(heading, refresh);
   const intro = documentNode('p', 'cloud-note', 'Writing and papers your children submit. Open a copy to review, grade or print. Drafts stay on their computers.');
   const filters = documentNode('div', 'cloud-document-filters');
   const children = documentNode('select', 'admin-input'); children.setAttribute('aria-label', 'Child');
@@ -33,10 +33,10 @@ export function setupCloudDocuments({ request, gradePaper, getStudents }) {
       const option = documentNode('option', '', student.name + (student.archived_at ? ' (archived)' : '')); option.value = student.id; return option;
     }));
     if ([...children.options].some(option => option.value === selected)) children.value = selected;
-    if (loaded) render();
+    if (loaded) render(); else if (getStudents().length) void load();
   }
   const canGrade = file => !file.gradeId && getStudents().some(child => child.id === file.studentId && !child.archived_at);
-  function grade(file) { closeDocumentPreview(); gradePaper(file, () => load()); }
+  function grade(file) { closeDocumentPreview(); gradePaper(file, () => load(true)); }
   function open(file, print = false) {
     void previewDocument({ file, read: () => request('read-file', { id: file.id }), print,
       childName: getStudents().find(child => child.id === file.studentId)?.name || 'Child',
@@ -45,7 +45,28 @@ export function setupCloudDocuments({ request, gradePaper, getStudents }) {
         files = files.map(item => item.id === current.id ? result.file : item); render(); return result.file;
       }, grade: canGrade(file) ? grade : null });
   }
+  const reminders = ['overview', 'grades'].map(tab => {
+    const reminder = documentNode('aside', 'cloud-document-attention'); reminder.hidden = true;
+    reminder.setAttribute('aria-label', 'Documents awaiting your review');
+    const copy = documentNode('div'), title = documentNode('strong'), detail = documentNode('span', '', 'Open a submission to proofread, print or grade it.');
+    copy.append(title, detail);
+    reminder.append(copy, documentButton('Review documents', 'file-check', () => { state.value = 'pending'; children.value = ''; search.value = ''; navigate('documents'); render(); }));
+    document.querySelector('#tab-' + tab + ' .tab-header')?.after(reminder);
+    return { reminder, title };
+  });
+  function attention() {
+    const total = files.filter(file => file.ready && !file.reviewedAt && !file.gradeId).length;
+    for (const {reminder, title} of reminders) { reminder.hidden = !total; title.textContent = total + (total === 1 ? ' document needs your review' : ' documents need your review'); }
+    for (const nav of document.querySelectorAll('[data-tab="documents"],[data-mobile-tab="grades"]')) {
+      let badge = nav.querySelector('.cloud-document-count');
+      if (!badge) { badge = documentNode('span', 'cloud-unread-badge cloud-document-count'); badge.setAttribute('aria-hidden', 'true'); nav.append(badge); }
+      badge.hidden = !total; badge.textContent = total > 99 ? '99+' : String(total);
+      nav.setAttribute('aria-label', (nav.dataset.mobileTab ? 'Papers' : 'Documents') + (total ? ', ' + total + ' awaiting review' : ''));
+    }
+  }
   function render() {
+    attention();
+    if (!active) return; // Keep hidden document cards out of live dashboard refreshes.
     const matches = files.filter(file => (!children.value || file.studentId === children.value) &&
       (!search.value || file.name.toLocaleLowerCase().includes(search.value.toLocaleLowerCase())) &&
       (!state.value || (state.value === 'pending' ? !file.reviewedAt && !file.gradeId : state.value === 'graded' ? !!file.gradeId : !!file.reviewedAt)));
@@ -67,20 +88,33 @@ export function setupCloudDocuments({ request, gradePaper, getStudents }) {
     if (!matches.length) list.append(documentNode('p', 'cloud-document-empty', files.length ? 'No documents match these filters.' : 'Nothing submitted yet. Your child can choose Submit to parent in Writing.'));
     window.lucide?.createIcons();
   }
-  async function load() {
-    if (!active) return; if (loading) return loading;
-    refresh.disabled = true; status.textContent = 'Loading documents…';
+  async function load(force = false) {
+    if (document.hidden) { refreshAgain = true; return; }
+    if (loading) { if (force) refreshAgain = true; return loading; }
+    if (!force && loaded && Date.now() - lastLoaded < 60000) { attention(); return; }
+    refreshAgain = false; refresh.disabled = true; status.textContent = 'Loading documents…';
     loading = (async () => {
       try {
         const result = await request('list-files');
         // Existing Writing releases already submit child-owned paper PDFs.
         // Never request local editable drafts or list message attachments here.
-        files = result.files.filter(file => file.purpose === 'paper' && file.source === 'child'); loaded = true; render();
+        files = result.files.filter(file => file.purpose === 'paper' && file.source === 'child' && !file.removed); loaded = true; lastLoaded = Date.now(); render();
       } catch (error) { status.textContent = `${error.message} Select Refresh to try again.`; }
-      finally { refresh.disabled = false; loading = null; }
+      finally { refresh.disabled = false; loading = null; if (refreshAgain && !document.hidden) { refreshAgain = false; void load(true); } }
     })(); return loading;
   }
   children.addEventListener('change', render); state.addEventListener('change', render); search.addEventListener('input', render);
+  window.cloudOpenSubmittedDocument = async id => {
+    if (typeof id !== 'string' || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(id)) return;
+    state.value = ''; children.value = ''; search.value = ''; navigate('documents');
+    await (loading || load(true));
+    let file = files.find(item => item.id === id && item.ready);
+    if (!file) { await load(true); file = files.find(item => item.id === id && item.ready); }
+    if (file && active) open(file);
+    else status.textContent = 'This submission is no longer available. Refresh Documents to see the remaining copies.';
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) void load(refreshAgain); });
+  window.addEventListener('cloud-documents-changed', () => void load(true));
   update(); window.lucide?.createIcons();
-  return { update, setActive(value) { active = value; if (active) void load(); else closeDocumentPreview(); } };
+  return { update, refreshPending: load, setActive(value) { active = value; if (active) void load(true); else closeDocumentPreview(); } };
 }

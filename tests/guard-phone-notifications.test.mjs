@@ -230,3 +230,11 @@ test('noon preference saves for the signed-in parent and an offline save never f
  assert.equal(f.calls.at(-1).userId,'parent');assert.equal(f.calls.at(-1).details.enabled,true);assert.equal(f.state.permissionCalls,0);
  f.state.offline=true;await f.client.setSchoolCheckIn(false);assert.equal(f.client.state().schoolCheckIn.enabled,true);assert.match(f.client.state().message,/offline/);
 });
+
+
+test('submitted paper alerts clearly request review or printing without exposing private titles or content',async()=>{
+  const w=worker(),studentId='11111111-1111-4111-8111-111111111111';
+  await w.event('push',{data:{json:()=>({type:'message',document:true,accountUserId:'parent',studentId,sequence:'4',unread:1,totalUnread:1,title:'Secret essay'})}});
+  const options=w.notifications[0][1];assert.match(options.body,/document for review or printing/);assert.ok(!JSON.stringify(options).includes('Secret essay'));
+  await w.event('notificationclick',{notification:{close(){},data:options.data}});assert.equal(w.opened[0],'/dashboard/?conversation='+studentId+'#messages/'+studentId);
+});

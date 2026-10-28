@@ -85,7 +85,7 @@ self.addEventListener('push', event => {
   const message = studentName ? previewText(data.preview?.message,160) : '';
   event.waitUntil(Promise.all([
     self.registration.showNotification(studentName && message ? studentName + ' · BodeeGuard' : 'BodeeGuard', {
-      body: test ? 'Notifications are working on this device.' : studentName && message ? message : unread > 1 ? unread + ' unread messages from your child. Tap to open Messages.' : 'New message from your child. Tap to open Messages.',
+      body: test ? 'Notifications are working on this device.' : studentName && message ? message : data.document === true ? 'Your child sent a document for review or printing. Tap to open the submission in Messages.' : unread > 1 ? unread + ' unread messages from your child. Tap to open Messages.' : 'New message from your child. Tap to open Messages.',
       icon: '/guard-icons/bodeeguard-parent-192.png',
       tag: test ? 'bodeeguard-test' : 'bodeeguard-messages' + (studentId ? '-' + studentId : ''),
       renotify: true,
