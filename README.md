@@ -1,5 +1,10 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+For the current website/BodeeGuard source, preserved historical branches and the
+explicit deployment procedure, read [source baselines](docs/source-baselines.md).
+`main` and `codex/release-310` are reconciled; pushing either is a source backup,
+while production publication uses the verified Vercel release procedure.
+
 ## Getting Started
 
 First, run the development server:

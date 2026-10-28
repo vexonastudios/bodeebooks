@@ -1,4 +1,10 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "codex/release-310": false
+    }
+  },
   "redirects": [
     {
       "source": "/category/:path*",
