@@ -1,5 +1,7 @@
 # Submitted document alerts — October 28, 2026
 
+Deployment follow-up: this feature is live in [parent release 1.2.332](guard-release-1.2.332.md). The original implementation evidence below records the pre-deployment state.
+
 Implemented locally on website baseline edb1c562c44e447a075e256f613b78a0422d2c16, paired with the cloud API document notification change. Not deployed. Preserve the existing parent workspace; this was a selective update, not a full export from an older renderer.
 
 ## Parent behavior

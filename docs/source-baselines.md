@@ -1,5 +1,9 @@
 # Website source baselines — October 28, 2026
 
+## Published release follow-up
+
+Parent release 1.2.332 is live from 194e37e7c0c1e9fb414d6513a421fa8be4310875. The release branch and GitHub main are fast-forwarded together with the receipt. See [deployment and verification](guard-release-1.2.332.md). The cleanup snapshot below records the earlier baseline.
+
 The production website code baseline is `868f95284afb05e21b11464809ebfea850b11c5e`
 from `codex/release-310`, including the current BodeeGuard header/back link,
 wording, parent dashboard, account and download flows. The cleanup intentionally
