@@ -1,20 +1,23 @@
 import { createSpellingPhotoTray } from './cloud-spelling-photos.js?v=20260928-vocabulary1';
 // Local photos only; no list is assigned until the parent saves the reviewed terms.
-export function createVocabularyPhotoScan({input,status,onBusy,onResult,hasTerms=()=>false}) {
+export function createVocabularyPhotoScan({input,status,onBusy,onResult,onReview,hasTerms=()=>false}) {
   let pending=null,review=null,running=false,preparing=false,enabled=false,locked=false,epoch=0,controller=null,reported=false;
   const actions=document.createElement('div');actions.className='vocabulary-scan-recovery';
   const make=(text,fn)=>{const el=document.createElement('button');el.type='button';el.className='btn btn-secondary';el.textContent=text;el.onclick=fn;actions.append(el);return el;};
   const retry=make('Retry this photo scan',()=>void request()),discard=make('Cancel scan',()=>{reset();status.textContent='Scan canceled. Your entered words are kept.';});
   status.after(actions);
   const preview=document.createElement('section');preview.className='vocabulary-scan-preview';preview.hidden=true;preview.setAttribute('aria-label','Latest vocabulary scan');actions.after(preview);
-  const heading=document.createElement('h3'),words=document.createElement('p'),source=document.createElement('details'),summary=document.createElement('summary'),photos=document.createElement('div'),help=document.createElement('p'),choices=document.createElement('div');
-  summary.textContent='View the photos used for this scan';source.append(summary,photos);choices.className='vocabulary-scan-choices';preview.append(heading,words,source,help,choices);
+  const heading=document.createElement('h3'),words=document.createElement('p'),coverage=document.createElement('p'),reviewButton=document.createElement('button'),source=document.createElement('details'),summary=document.createElement('summary'),photos=document.createElement('div'),help=document.createElement('p'),choices=document.createElement('div');
+  coverage.className='vocabulary-scan-coverage';reviewButton.type='button';reviewButton.className='btn btn-secondary vocabulary-review-definitions';reviewButton.textContent='Review definitions';reviewButton.onclick=()=>{source.open=false;onReview?.();};
+  summary.textContent='View the photos used for this scan';source.append(summary,photos);choices.className='vocabulary-scan-choices';preview.append(heading,words,coverage,reviewButton,source,help,choices);
   const choice=(label,mode)=>{const el=document.createElement('button');el.type='button';el.className='btn btn-secondary';el.textContent=label;el.onclick=()=>apply(mode);choices.append(el);return el;};
   const replace=choice('Replace current words','replace'),append=choice('Add to current words','append');
   const tray=createSpellingPhotoTray({input,status,prefix:'vocabulary',onBusy(value){preparing=value;update();},onScan:async(images,prompt)=>{clearPreview();pending={id:crypto.randomUUID(),images,prompt};await request();}});
   function clearPreview(){review=null;preview.hidden=true;photos.replaceChildren();words.textContent='';source.open=false;}
   function showPreview(result,images){
-    heading.textContent='Words from this scan';words.textContent=result.terms.map(term=>term.word).join(' · ');
+    heading.textContent='Words and definitions from this scan';words.textContent=result.terms.map(term=>term.word).join(' · ');
+    const missing=result.terms.filter(term=>!String(term.exact_definition||term.definition||'').trim());
+    coverage.textContent=(result.terms.length-missing.length)+' of '+result.terms.length+' definitions read.'+(missing.length?' Missing definitions: '+missing.map(term=>term.word).join(', ')+'. Retake a clearer photo or fill these in below.':' Check the Definition fields below against your photo.');coverage.classList.toggle('needs-review',missing.length>0);
     photos.replaceChildren(...images.map((page,index)=>{const figure=document.createElement('figure'),image=document.createElement('img'),caption=document.createElement('figcaption');image.src=`data:${page.mime};base64,${page.data}`;image.alt='Photo sent for vocabulary scan, page '+(index+1);caption.textContent='Page '+(index+1);figure.append(image,caption);return figure;}));
     help.textContent=review?'Your current words below have not changed. Choose whether this scan replaces them or adds another page.':'These are the words returned from these photos. Review the editable list below before saving.';
     preview.hidden=false;choices.hidden=!review;
@@ -28,6 +31,7 @@ export function createVocabularyPhotoScan({input,status,onBusy,onResult,hasTerms
     tray.setState({busy:running,enabled,locked:locked||!!pending||!!review});
     retry.hidden=!pending;discard.hidden=!pending&&!preparing&&!review;retry.disabled=running||locked;discard.disabled=locked;
     replace.disabled=append.disabled=locked||running;
+    reviewButton.hidden=!!review;reviewButton.disabled=locked||running;
     const active=running||preparing||!!pending||!!review;
     if(reported!==active){reported=active;onBusy(active);}
   }

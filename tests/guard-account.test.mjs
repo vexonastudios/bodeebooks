@@ -31,7 +31,7 @@ async function render(account) {
     if (name === 'next/headers') return { cookies: async () => ({get: () => undefined}) };
     if (name === 'next/navigation') return {useRouter: () => ({refresh(){}})};
     if (name === '../AccountRetry' || name === '@/components/GuardSignOut') return {__esModule:true,default:() => React.createElement('button',null,name.includes('Retry')?'Try again':'Sign out')};
-    if (['./ChildSetup','./InstallerShareLink','./PlanControls','../InstallerDownload'].includes(name)) {
+    if (['./ChildSetup','./InstallerShareLink','./PlanControls','../InstallerDownload','../WindowsInstallerNotice'].includes(name)) {
       const childPath=path.resolve(path.dirname(filename),name+'.tsx'), child=new Module(childPath);
       child.require=component.require;
       child._compile(ts.transpileModule(fs.readFileSync(childPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,childPath);
@@ -73,6 +73,19 @@ test('closed enrollment does not offer a ticking trial or an unusable download',
   assert.match(html, /Welcome, Jamie Test/);
   assert.match(html, /Family enrollment has not opened yet/);
   assert.doesNotMatch(html, /Start 30-day trial — no card|Download child app for Windows|Invite a family to Beta/);
+});
+
+test('public customer setup offers a deliberate trial, then a cloud download without private Beta instructions', async () => {
+  const ready = await render(fixture({ release: cloudReleaseFixture(),
+    enrollment: { customerLaunchOpen: true, canStartTrial: true, canSubscribe: true } }));
+  assert.match(ready, /Start 30-day trial/);
+  assert.match(ready, /does not yet have a verified Windows publisher/);
+  assert.doesNotMatch(ready, /Download child app for Windows|PRIVATE.VALIDATION/);
+  const active = await render(fixture({ entitlementStatus: 'trial', trialEndsAt: '2030-10-01T00:00:00Z', release: cloudReleaseFixture(),
+    trialEligible: false, enrollment: { customerLaunchOpen: true, canStartTrial: false, canSubscribe: false } }));
+  assert.match(active, /href="\/guard\/download\/windows"/);
+  assert.match(active, /No automatic charge/);
+  assert.doesNotMatch(active, /Start 30-day trial|PRIVATE.VALIDATION|Invite a family to Beta/);
 });
 
 test('trial access has no cancellation, resume, or Stripe card-collection buttons', async () => {

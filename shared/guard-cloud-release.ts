@@ -1077,8 +1077,8 @@ function validVersion(value: string) {
 
 // The authenticated account service owns signature verification and rollout
 // eligibility. This is an additional product/channel boundary, not a verifier.
-// Until its catalog supports the cloud manifest, existing LAN releases return
-// null. Never substitute a private validation build or a generic latest release.
+// The catalog and child updater share the signed cloud manifest. Older LAN
+// artifacts return null. Never substitute a private build or generic latest release.
 export function cloudAccountRelease(account: {
   releaseChannel: string;
   release?: GuardAccountRelease | null;

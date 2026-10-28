@@ -1,0 +1,5 @@
+.notice { display:flex; align-items:flex-start; gap:12px; margin:18px 0; padding:16px; border:1px solid #86632b; border-radius:14px; background:#241f17; color:#f5e5c5; font-size:14px; line-height:1.55; }
+.notice > svg { flex:none; margin-top:2px; color:#fbbf24; }
+.notice p { margin:6px 0 0; }
+.notice a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
+.notice a:focus-visible { outline:2px solid #fbbf24; outline-offset:3px; }

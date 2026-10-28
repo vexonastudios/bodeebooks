@@ -394,17 +394,37 @@ byId('vocabulary-list-grid').before(listTabs);byId('vocabulary-list-grid').setAt
 function renderListTabs(){for(const tab of listTabs.children){const selected=tab.dataset.vocabularyView===listView;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;}byId('vocabulary-list-grid').setAttribute('aria-labelledby','vocabulary-view-'+listView);}
 listTabs.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=[...listTabs.children],index=tabs.indexOf(event.target);const target=event.key==='Home'?tabs[0]:event.key==='End'?tabs.at(-1):tabs[(index+1)%tabs.length];target.focus();target.click();});renderListTabs();
 const archived=document.createElement('option');archived.value='archived';archived.textContent='Archived — retained history and older-word reviews';byId('vocabulary-list-status').append(archived);
-photoScan=createVocabularyPhotoScan({input:byId('vocabulary-list-photos'),status:byId('vocabulary-scan-status'),hasTerms:()=>terms.some(term=>term.word||term.definition),onBusy(value){scanBusy=value;controls();},onResult(result,{mode='append'}={}){
+function reviewDefinitions(index){
+  const fields=[...byId('vocabulary-term-editor').querySelectorAll('[data-vocabulary-field="definition"]')];
+  const field=Number.isInteger(index)?fields[index]:fields.find(field=>!field.value.trim())||fields[0];
+  if(field){field.focus({preventScroll:true});field.scrollIntoView({block:'center'});}
+}
+photoScan=createVocabularyPhotoScan({input:byId('vocabulary-list-photos'),status:byId('vocabulary-scan-status'),hasTerms:()=>terms.some(term=>term.word||term.definition),onReview:reviewDefinitions,onBusy(value){scanBusy=value;controls();},onResult(result,{mode='append'}={}){
   if(!result.is_vocabulary_list||!result.terms.length)return 'No vocabulary words were found. Take a clearer photo with the words and definitions visible.';
-  if(mode==='replace'){terms=[];sourceNotes='';}
-  const key=word=>word.trim().normalize('NFKC').toLocaleLowerCase('en-US'),seen=new Set(terms.map(t=>key(t.word))),added=[];let skipped=0;
-  for(const source of result.terms){const term=normalizeTerm(source);if(seen.has(key(term.word))){skipped++;continue;}seen.add(key(term.word));added.push(term);}
-  if(terms.length+added.length>60)return 'This scan would exceed 60 words. Your current words are kept. Remove unneeded entries, then scan fewer words.';
-  const first=terms.length;terms.push(...added);listSource='photo';sourceNotes=[sourceNotes,result.notes].filter(Boolean).join(' ').slice(0,800);
+  const next=mode==='replace'?[]:terms.map(term=>({...term,review_fields:[...term.review_fields]}));
+  const key=word=>word.trim().normalize('NFKC').toLocaleLowerCase('en-US'),seen=new Map(next.map((term,index)=>[key(term.word),index])),first=next.length;let skipped=0,filled=0,firstFilled;
+  for(const source of result.terms){
+    const term=normalizeTerm(source),index=seen.get(key(term.word));
+    if(index!==undefined){
+      const existing=next[index];
+      if(!existing.definition.trim()&&term.definition){
+        existing.definition=term.definition;
+        existing.review_fields=existing.review_fields.filter(field=>!['definition','exact_definition'].includes(field));
+        if(term.review_fields.some(field=>['definition','exact_definition'].includes(field)))existing.review_fields.push('definition');
+        existing.completeness=existing.review_fields.length?'needs_review':'complete';filled++;firstFilled??=index;
+      }else skipped++;
+      continue;
+    }
+    seen.set(key(term.word),next.length);next.push(term);
+  }
+  if(next.length>60)return 'This scan would exceed 60 words. Your current words are kept. Remove unneeded entries, then scan fewer words.';
+  const added=next.length-first;terms=next;listSource='photo';sourceNotes=[mode==='replace'?'':sourceNotes,result.notes].filter(Boolean).join(' ').slice(0,800);
   if(!editingId&&first===0&&result.title&&byId('vocabulary-list-title').value==='Weekly Vocabulary')byId('vocabulary-list-title').value=result.title;
   renderTermEditor();byId('vocabulary-form-error').textContent='';
-  requestAnimationFrame(()=>{if(byId('vocabulary-list-modal').classList.contains('active'))byId('vocabulary-term-editor').querySelectorAll('[data-vocabulary-field="word"]')[first]?.focus();});
-  return added.length+' words added with their printed definitions and context. Review before Save & assign.'+(skipped?' '+skipped+' duplicate words skipped; your existing entries were kept.':'')+(result.notes?' '+result.notes:'');
+  const firstMissing=terms.findIndex(term=>!term.definition.trim());
+  requestAnimationFrame(()=>{if(byId('vocabulary-list-modal').classList.contains('active'))reviewDefinitions(firstMissing>=0?firstMissing:firstFilled??(added?first:undefined));});
+  const missing=terms.filter(term=>!term.definition.trim()).length;
+  return added+' words added.'+(filled?' '+filled+' empty definition'+(filled===1?'':'s')+' filled from this scan.':'')+(skipped?' '+skipped+' duplicate words skipped; your existing entries were kept.':'')+(missing?' '+missing+' definition'+(missing===1?' is':'s are')+' still missing. Retake a clearer photo or fill in the Definition fields.':' All words have definitions. Review them against your photo before saving.')+(result.notes?' '+result.notes:'');
 }});
 byId('vocabulary-list-status').addEventListener('change',()=>recipients.setActive(byId('vocabulary-list-status').value==='active'));
 setupVocabulary();window.addEventListener('beforeunload',event=>{if(pending||busy||scanBusy){event.preventDefault();event.returnValue='';}});

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import ChildSetup from "./ChildSetup";
 import InstallerShareLink from "./InstallerShareLink";
 import InstallerDownload from "../InstallerDownload";
+import WindowsInstallerNotice from "../WindowsInstallerNotice";
 import PlanControls, {type AiAllowance} from "./PlanControls";
 import { AlertTriangle, ArrowLeft, ArrowRight, ChevronDown, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, RotateCcw, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
@@ -257,6 +258,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           </aside>
         )}
 
+        {!isComplimentary && release && <WindowsInstallerNotice />}
         {!isComplimentary && account.entitlementStatus === "grace" && <aside className={styles.errorNotice} role="status"><strong>Payment needs attention.</strong> Review Plan & billing{statusDate ? ` before ${statusDate}` : ""} to keep family access.</aside>}
         {!isComplimentary && isTrial && <p className={accountStyles.trialNotice}><CalendarClock size={16} /> Trial ends {readableDate(trialEnd) || "after 30 days"} · No automatic charge</p>}
         <nav className={accountStyles.quickActions} aria-label="Account shortcuts">

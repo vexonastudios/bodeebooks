@@ -93,6 +93,10 @@
 .vocabulary-scan-preview figure{margin:12px 0}.vocabulary-scan-preview img{display:block;width:100%;height:auto}.vocabulary-scan-preview figcaption{margin-top:6px;font-size:13px}
 .vocabulary-scan-choices{display:flex;flex-wrap:wrap;gap:10px}.vocabulary-scan-choices .btn{min-height:44px;white-space:normal}
 .vocabulary-scan-preview[hidden],.vocabulary-scan-choices[hidden]{display:none}
+.vocabulary-scan-coverage{color:#91d6c9}.vocabulary-scan-coverage.needs-review{color:#ead08a}
+.vocabulary-review-definitions{min-height:44px;white-space:normal}.vocabulary-review-definitions[hidden]{display:none}
+.vocabulary-term-fields .field-review textarea{border-color:#b79852}
+#vocabulary-list-modal [data-vocabulary-field="definition"]{scroll-margin-block:110px}
 @media(max-width:600px){.vocabulary-scan-preview{margin:12px 16px}.vocabulary-scan-choices .btn{flex:1}}
 .vocabulary-list-tabs{display:flex;gap:8px;margin:0 0 20px;border-bottom:1px solid #ffffff1c;padding-bottom:12px}
 .vocabulary-list-tabs [role=tab]{min-height:44px}.vocabulary-list-tabs [aria-selected=true]{background:#22d3ee1a;border-color:#22d3ee80;color:#8de7de}
