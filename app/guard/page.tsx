@@ -55,9 +55,9 @@ export default function GuardPage() {
 
     <section id="tour" className={`${styles.section} ${styles.intro}`}>
       <div className={styles.container}>
-        <p className={styles.eyebrow}>A look inside the app</p>
-        <h2>Less guessing.<br />More room for learning.</h2>
-        <p className={styles.sectionLead}>Schoolwork, healthy boundaries and a little family fun belong together. Here’s how BodeeGuard brings them into the same day.</p>
+        <p className={styles.eyebrow}>A look inside BodeeGuard</p>
+        <h2>A bodyguard against distractions.<br />More room for learning.</h2>
+        <p className={styles.sectionLead}>BodeeGuard keeps school lessons and approved activities within reach while helping children avoid distracting apps and wandering websites. Parents choose when the school day makes room for family fun.</p>
         <p className={styles.sampleNote}>Explore real screens from the school day. BodeeGuard family examples use fictional names, messages and progress. Select any screenshot to see it larger.</p>
         <div className={styles.pillars}>
           {[{icon:GraduationCap,title:"A place to focus",copy:"Approved school websites and built-in learning activities."},{icon:CalendarCheck,title:"Rules that fit your family",copy:"Required work, time limits and individual daily plans."},{icon:MessageCircle,title:"A parent close by",copy:"Messages, progress and controls from your phone."}].map(({icon:Icon,title,copy})=><div key={title}><Icon size={25} /><h3>{title}</h3><p>{copy}</p></div>)}
