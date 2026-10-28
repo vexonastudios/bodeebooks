@@ -9,6 +9,23 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.332": {
+  "title": "Clear document alerts and easier everyday recovery",
+  "sections": [
+    {
+      "heading": "Version 1.2.332",
+      "headline": "See submitted work and help children stay on track",
+      "summary": "Child documents now call for parent attention, with clearer chore reminders and better Wi-Fi and printer recovery.",
+      "highlights": [
+        "When a child sends a document, it appears in Messages with a direct review or printing action. Enabled parent push notifications announce it, and the dashboard and Papers count keep unreviewed documents visible until reviewed.",
+        "Chore reminders stay open until dismissed, repeat after 15 minutes if unfinished, and let children open the chore or mark it done directly.",
+        "Devices & Sound offers clearer Wi-Fi connection steps, password correction and internet checks, plus printer connection and print-job recovery without leaving BodeeGuard.",
+        "Ordinary update recovery notices can be dismissed and revisited in Updates. Typing-speed digits remain together on narrow dashboard cards.",
+        "Video collections explain when a saved search or filter hides videos. Vocabulary scans preserve visible definitions and parent edits, and flag definitions that still need review."
+      ]
+    }
+  ]
+},
   "1.2.330": {
   "title": "Student walkthroughs and learning beside Abeka",
   "sections": [
