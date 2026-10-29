@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.334": {
+  "title": "A clear way out of setup",
+  "sections": [
+    {
+      "heading": "Version 1.2.334",
+      "headline": "Close setup whenever you need to",
+      "summary": "Parent setup now has an easy-to-find way to close BodeeGuard and return to Windows.",
+      "highlights": [
+        "Choose Close BodeeGuard and return to Windows during pairing or the later setup steps.",
+        "A fresh, unprotected setup closes normally; an already protected computer asks for the parent password.",
+        "You can reopen BodeeGuard and continue setup later."
+      ]
+    }
+  ]
+},
   "1.2.333": {
   "title": "More reliable updates",
   "sections": [
