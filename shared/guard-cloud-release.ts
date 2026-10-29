@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.336": {
+  "title": "Clearer Windows setup",
+  "sections": [
+    {
+      "heading": "Version 1.2.336",
+      "headline": "Cleaner downloads and sharper setup",
+      "summary": "Installer downloads use a customer-facing filename, and the setup sidebar uses sharper artwork and native text.",
+      "highlights": [
+        "Parent downloads save as BodeeGuard-Cloud-Child-Setup followed by the version, without Test in the saved filename.",
+        "Setup uses higher-resolution artwork and native Windows text instead of stretching bitmap lettering.",
+        "Windowed setup, same-computer browser approval and the clear setup exit remain included."
+      ]
+    }
+  ]
+},
   "1.2.335": {
   "title": "Windowed parent setup",
   "sections": [
