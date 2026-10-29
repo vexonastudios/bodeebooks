@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.337": {
+  "title": "Clear update notices and easier setup",
+  "sections": [
+    {
+      "heading": "Version 1.2.337",
+      "headline": "Readable update notices and easier Windows setup",
+      "summary": "The update notice stays below the dashboard header, and new setup has normal window controls and a clear exit.",
+      "highlights": [
+        "Update notices remain fully visible when the White Noise player is available, with a reachable close button. Restart warnings still stay above the player.",
+        "Initial setup opens in a normal window so a parent can use the approval page in their browser and close setup when needed. Protected computers retain their parent-password exit.",
+        "Installer downloads use a clean customer-facing filename. Setup includes sharper artwork and native Windows text."
+      ]
+    }
+  ]
+},
   "1.2.336": {
   "title": "Clearer Windows setup",
   "sections": [
