@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.335": {
+  "title": "Windowed parent setup",
+  "sections": [
+    {
+      "heading": "Version 1.2.335",
+      "headline": "Set up BodeeGuard beside your browser",
+      "summary": "Fresh setup opens in a normal window so parents can approve the computer in their browser.",
+      "highlights": [
+        "During initial setup, minimize, move or close BodeeGuard using the normal Windows controls.",
+        "Open parent approval in the browser on the same computer, then return to setup. You can also approve from a phone.",
+        "Fullscreen protection starts when child protection is enabled. Already protected computers keep their parent-password exit."
+      ]
+    }
+  ]
+},
   "1.2.334": {
   "title": "A clear way out of setup",
   "sections": [
