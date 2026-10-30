@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.338": {
+  "title": "Keep your place in school",
+  "sections": [
+    {
+      "heading": "Version 1.2.338",
+      "headline": "Abeka lessons stay open through background refreshes",
+      "summary": "Routine rule refreshes preserve the live school page. Temporary recovery pauses it in place, with clearer parent review controls.",
+      "highlights": [
+        "Normal school-rule refreshes no longer remove an active Abeka page. Recoverable interruptions keep the same paused lesson or quiz page for Resume school.",
+        "School reconnect retries valid saved rules before waiting for a slow cloud request. Parent locks, changed permissions and child identity remain enforced.",
+        "Documents now offer Mark complete and Reopen review directly, with existing grades preserved.",
+        "Parent exit activity uses compact outcome-colored cards and Clear all for reviewing the displayed reports without changing coins or deleting history."
+      ]
+    }
+  ]
+},
   "1.2.337": {
   "title": "Clear update notices and easier setup",
   "sections": [
