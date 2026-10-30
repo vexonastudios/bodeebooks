@@ -1,6 +1,6 @@
 // Render submitted copies in the parent's browser. PDF scripts, links and
 // attachments are never executed. No document bytes are persisted by this UI.
-import { documentNode as node, documentButton as button } from './cloud-documents.js?v=20261028-document-alert1';
+import { documentNode as node, documentButton as button } from './cloud-documents.js?v=20261030-document-complete1';
 let current = null;
 export function closeDocumentPreview() { current?.close(); }
 export async function previewDocument({ file: initial, childName, read, review, grade, print = false }) {
@@ -21,9 +21,9 @@ export async function previewDocument({ file: initial, childName, read, review, 
   const actions = node('div', 'cloud-document-actions');
   const download = node('a', 'btn btn-secondary', 'Download PDF'); download.hidden = true;
   const printButton = button('Print', 'printer', () => void printAll()); printButton.disabled = true;
-  const reviewed = button(file.reviewedAt ? 'Mark not reviewed' : 'Mark reviewed', 'check-check', async () => {
+  const reviewed = button(file.reviewedAt ? 'Reopen review' : 'Mark complete', 'check-check', async () => {
     reviewed.disabled = true;
-    try { file = await review(file); if (live) { reviewed.lastChild.textContent = file.reviewedAt ? 'Mark not reviewed' : 'Mark reviewed'; status.textContent = 'Review saved.'; } }
+    try { file = await review(file); if (live) { reviewed.lastChild.textContent = file.reviewedAt ? 'Reopen review' : 'Mark complete'; status.textContent = 'Review saved.'; } }
     catch (error) { if (live) status.textContent = error.message; }
     finally { reviewed.disabled = false; }
   }); reviewed.disabled = true;
@@ -129,7 +129,7 @@ export async function previewDocument({ file: initial, childName, read, review, 
       if (image.naturalWidth * image.naturalHeight > 40000000) throw Error('This image is too large to preview. Download the original.');
     }
     if (!live) return; reviewed.disabled = false;
-    status.textContent = file.gradeId ? 'Grade recorded.' : file.reviewedAt ? 'Reviewed.' : 'Ready for your review.';
+    status.textContent = file.gradeId ? 'Grade recorded.' : file.reviewedAt ? 'Completed for parent review.' : 'Ready for your review.';
     await render(); if (print && live) await printAll();
   } catch (error) { if (live) status.textContent = `${error.message} Close and try opening the document again.`; }
 }

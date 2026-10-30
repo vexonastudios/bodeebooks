@@ -34,7 +34,12 @@ test('parent exit controls keep authentication, same-origin protection, explicit
   assert.deepEqual(calls.at(-1),{path:'/parent-exit/review',body:{id:deviceId,studentId:deviceId,decision:'deduct',confirmation:true}});
   assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(review))).status,401);
   assert.equal((await route.POST(request(review,{requestOrigin:'https://foreign.example'}))).status,403);
-  assert.equal(calls.length,2);
+  const clear={action:'parent-exit-clear',confirmation:true,householdId:'forged',decision:'deduct',reports:[{id:deviceId,studentId:deviceId,sequence:3,password:'never-forward',coins:100}]};
+  assert.equal((await route.POST(request(clear))).status,200);
+  assert.deepEqual(calls.at(-1),{path:'/parent-exit/clear',body:{confirmation:true,reports:[{id:deviceId,studentId:deviceId,sequence:3}]}});
+  assert.equal((await load('bridge/route.ts',{authenticated:false}).POST(request(clear))).status,401);
+  assert.equal((await route.POST(request(clear,{requestOrigin:'https://foreign.example'}))).status,403);
+  assert.equal(calls.length,3);
   const manifest=JSON.parse(fs.readFileSync('app/guard/dashboard/generated/workspace.json','utf8'));
   assert.match(manifest.html,/id="cloud-parent-exit-controls"/);
   assert.match(fs.readFileSync('public/guard-admin/cloud-workspace.js','utf8'),/parentExitControls.render\(\)/);

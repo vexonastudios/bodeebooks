@@ -376,7 +376,7 @@ async function run() {
   await wait('document.querySelector("#tab-documents").classList.contains("active")');
   assert.equal(await js('document.querySelectorAll("#tab-documents select")[1].value'),'pending');
   await js('document.querySelector(".cloud-document-card button").click()');await wait('!!document.querySelector(".cloud-document-dialog canvas")');
-  await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Mark reviewed").click()');
+  await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Mark complete").click()');
   await wait('document.querySelector(".cloud-document-count").hidden');
   assert.equal(await js('document.querySelector("#tab-overview .cloud-document-attention").hidden'),true);
   await js('[...document.querySelectorAll(".cloud-document-dialog button")].find(b=>b.textContent==="Close").click()');

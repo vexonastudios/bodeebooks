@@ -1,16 +1,36 @@
 /* Browser transport additions only; base.css and monitoring.css remain shared. */
-.cloud-parent-exit-controls { margin-top: 24px; }
-.cloud-parent-exit-controls h2 { margin-top: 0; }
-.cloud-parent-exit-controls details { margin-top: 16px; }
-.cloud-exit-setting { display: flex; align-items: center; gap: 12px; padding: 12px 0; flex-wrap: wrap; }
-.cloud-exit-setting input { width: 20px; height: 20px; flex: 0 0 auto; }
-.cloud-exit-alert { padding: 12px 16px; border-left: 3px solid var(--accent-yellow, #fbbf24); background: var(--bg-secondary, #182039); border-radius: 8px; }
-.cloud-exit-report { padding: 16px; margin-top: 12px; border: 1px solid var(--border-color, #34394b); border-radius: 12px; overflow-wrap: anywhere; }
-.cloud-exit-report h3 { margin: 0 0 8px; }
-.cloud-exit-report .cloud-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.cloud-exit-deduction.cloud-panel { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; margin: auto; box-sizing: border-box; background: var(--bg-secondary, #182039); color: var(--text-primary, #f8fafc); border: 1px solid var(--border-color, #34394b); }
-.cloud-exit-deduction::backdrop { background: #0009; }
-.cloud-exit-deduction .cloud-actions { display: flex; flex-wrap: wrap; gap: 12px; } .cloud-parent-exit-controls .btn, .cloud-exit-deduction .btn { min-height: 44px; }
+.cloud-parent-exit-controls{margin-top:24px}
+.cloud-parent-exit-controls h2{margin:0 0 12px;font-size:20px;line-height:1.3}
+.cloud-parent-exit-controls details{margin-top:12px}
+.cloud-parent-exit-controls summary{cursor:pointer;font-size:14px;line-height:1.5;padding:8px 0;min-height:28px}
+.cloud-parent-exit-controls .cloud-exit-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cloud-parent-exit-controls .cloud-exit-tools p{margin:0;flex:1;min-width:160px;font-size:13px;line-height:1.4}
+.cloud-exit-setting{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+.cloud-exit-setting input{width:20px;height:20px;flex:0 0 auto}
+.cloud-parent-exit-controls .cloud-exit-alert{padding:8px 10px;border-left:3px solid #fbbf24;background:var(--bg-secondary,#182039);border-radius:8px}
+.cloud-parent-exit-controls .cloud-exit-report{--exit-color:#94a3b8;--exit-text:#cbd5e1;padding:10px 12px;margin-top:8px;border:1px solid color-mix(in srgb,var(--exit-color) 35%,transparent);border-left:3px solid var(--exit-color);border-radius:10px;background:color-mix(in srgb,var(--exit-color) 7%,var(--bg-secondary,#131727));overflow-wrap:anywhere}
+.cloud-parent-exit-controls .cloud-exit-report--accepted{--exit-color:#34d399;--exit-text:#a7f3d0}
+.cloud-parent-exit-controls .cloud-exit-report--failed{--exit-color:#f87171;--exit-text:#fecaca}
+.cloud-parent-exit-controls :is(.cloud-exit-report--warning,.cloud-exit-report--pending){--exit-color:#fbbf24;--exit-text:#fde68a}
+.cloud-parent-exit-controls .cloud-exit-report-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cloud-parent-exit-controls .cloud-exit-report h3{margin:0;font-size:16px;line-height:1.3;min-width:0}
+.cloud-parent-exit-controls .cloud-exit-outcome{display:inline-flex;align-items:center;gap:5px;flex:none;padding:4px 7px;border-radius:7px;background:color-mix(in srgb,var(--exit-color) 13%,transparent);color:var(--exit-text);font-size:12px;line-height:1.3;font-weight:600}
+.cloud-parent-exit-controls .cloud-exit-outcome svg{width:15px;height:15px;flex:none}
+.cloud-parent-exit-controls .cloud-exit-report-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;color:var(--text-secondary,#b8bfd4);font-size:12px;line-height:1.4}
+.cloud-parent-exit-controls .cloud-exit-failed-count{color:#fecaca}
+.cloud-parent-exit-controls .cloud-exit-report-details{margin-top:2px}
+.cloud-parent-exit-controls .cloud-exit-report-details summary{font-size:12px;padding:6px 0;min-height:20px;color:var(--text-secondary,#b8bfd4)}
+.cloud-parent-exit-controls .cloud-exit-report-details p{font-size:12px;line-height:1.4;margin:3px 0}
+.cloud-parent-exit-controls .cloud-exit-report .cloud-actions{display:flex;gap:6px!important;flex-wrap:wrap;margin-top:4px}
+.cloud-parent-exit-controls .cloud-exit-report .btn,.cloud-parent-exit-controls .cloud-exit-clear{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto!important;min-width:0!important;flex:0 0 auto;min-height:44px!important;padding:7px 10px;font-size:12px;line-height:1.3;margin:0}
+.cloud-parent-exit-controls .cloud-exit-report .btn{gap:4px;padding:7px}
+.cloud-parent-exit-controls .cloud-exit-report .btn svg{width:14px;height:14px}
+.cloud-parent-exit-controls .btn svg{width:16px;height:16px;flex:none}
+.cloud-parent-exit-controls .cloud-exit-action-status{margin:8px 0;font-size:13px;line-height:1.4;color:var(--text-secondary,#b8bfd4)}
+.cloud-parent-exit-controls .cloud-exit-settings>p{font-size:13px;line-height:1.5;margin:4px 0}
+.cloud-exit-deduction.cloud-panel{width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;margin:auto;box-sizing:border-box;background:var(--bg-secondary,#182039);color:var(--text-primary,#f8fafc);border:1px solid var(--border-color,#34394b)}
+.cloud-exit-deduction::backdrop{background:#0009}
+.cloud-exit-deduction .cloud-actions{display:flex;flex-wrap:wrap;gap:12px}.cloud-exit-deduction .btn{min-height:44px}
 /* Browser transport additions only; base.css and monitoring.css remain shared. */
 
 /* Shared controls from the original Admin stylesheet (outside its imports). */

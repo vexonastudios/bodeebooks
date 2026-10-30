@@ -1,4 +1,4 @@
-import { setupParentExitControls } from './cloud-parent-exit-controls.js';
+import { setupParentExitControls } from './cloud-parent-exit-controls.js?v=20261029-compact1';
 import {setupAbekaAssessments} from './cloud-abeka-assessments.js';
 import { setupQuizletReview } from './cloud-quizlet-review.js';
 import { setupCloudBible } from './cloud-bible-family.js';
@@ -29,7 +29,7 @@ import { setupCloudMobile } from './cloud-mobile.js?v=20261007-student-reports1'
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
-import { setupCloudDocuments } from './cloud-documents.js?v=20261028-document-alert1';
+import { setupCloudDocuments } from './cloud-documents.js?v=20261030-document-complete1';
 import { setupCloudGames } from './cloud-games-ui.js?v=20261001-game-time1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
 import { setupCloudAssistant } from './cloud-assistant.js?v=20261016-activity-time1';
