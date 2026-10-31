@@ -18,4 +18,8 @@ test('game saves preserve conflict checks through the authenticated parent bridg
  assert.equal((await mod.exports.POST(req())).status,200);assert.equal(calls[0][0],'/games/settings');
  assert.deepEqual(JSON.parse(calls[0][1].body),{studentId:input.studentId,revision:1,settings,expectedSettings:input.expectedSettings});
  conflict=true;const response=await mod.exports.POST(req());assert.equal(response.status,409);assert.equal((await response.json()).error,'Review the latest settings.');
+ conflict=false;Object.assign(input,{action:'computer-command',kind:'game-unlock',unlocked:true});
+ assert.equal((await mod.exports.POST(req())).status,200);
+ assert.equal(calls.at(-1)[0],'/computers/command');
+ assert.deepEqual(JSON.parse(calls.at(-1)[1].body),{kind:'game-unlock',studentId:input.studentId,unlocked:true,revision:1});
 });

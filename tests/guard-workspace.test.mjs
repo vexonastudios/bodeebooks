@@ -388,6 +388,7 @@ test('workspace escapes identity, inherits real navigation, restricts scripts an
   assert.equal(result.headers.get('x-frame-options'), 'SAMEORIGIN');
   const html = await result.text();
   assert.match(html, /&lt;script&gt;attack&lt;\/script&gt;/);
+  assert.match(html, /cloud-workspace\.js\?v=20261030-sites1/, 'current controls replace an already-versioned generated bundle');
   assert.doesNotMatch(html, /<script>attack|admin123|admin-password|kioskAPI/);
   for (const label of ['Live Monitoring', 'Student Management', 'Activity library', 'Learning Videos', 'Calendar / Schedule', 'Family Games', 'Account &amp; billing']) assert.ok(html.includes(label), label);
 });

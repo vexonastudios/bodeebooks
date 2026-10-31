@@ -13,8 +13,15 @@ export function grammarSubjectPreset() {
     accessTier: 'school_optional', portalProvider: 'none', isSchoolPortal: false, alwaysOpen: true, active: true, assignments: [] };
 }
 
+export function siteSubjectPreset(local = false) {
+  return { kind: 'website', siteType: local ? 'local' : 'site', title: '', url: '', icon: local ? 'laptop' : 'globe', color: '#38bdf8',
+    accessTier: 'school_optional', portalProvider: 'none', isSchoolPortal: false, alwaysOpen: true, active: true, assignments: [] };
+}
+
 export function cloudSubjectEdit(captured, subjectId, form) {
-  const subject = captured.rules.subjects.find(item => item.id === subjectId), kind = form.get('kind');
+  const siteType = ['site','local'].includes(form.get('kind')) ? form.get('kind') : null;
+
+  const subject = captured.rules.subjects.find(item => item.id === subjectId), kind = siteType ? 'website' : form.get('kind');
   const assignments = captured.students.flatMap(student => {
     const current = subject ? assignmentFor(subject, student.id) : null;
     if (student.archived_at) return current ? [structuredClone(current)] : [];
@@ -24,22 +31,23 @@ export function cloudSubjectEdit(captured, subjectId, form) {
       dailyGoalMinutes: active ? Number(form.get(`goal-${student.id}`)) : current.dailyGoalMinutes,
       displayOrder: active ? Number(form.get(`order-${student.id}`)) : current.displayOrder ?? subject?.displayOrder ?? 0 }];
   });
-  const provider = kind === 'website' ? form.get('portalProvider') : 'none';
+  const provider = !siteType && kind === 'website' ? form.get('portalProvider') : 'none';
   return editSubjects(captured, subjectId, form.get('title'), kind === 'website' ? form.get('url') : kind === 'activity' ? form.get('activityUrl') : '', false, assignments, {
-    kind, accessTier: form.get('accessTier'), active: form.get('active') === 'on', icon: form.get('icon'), color: form.get('color'), description: form.get('description'),
+    kind, siteType, accessTier: form.get('accessTier'), active: form.get('active') === 'on', icon: form.get('icon'), color: form.get('color'), description: form.get('description'),
     displayOrder: Number(form.get('displayOrder')), unlockAfterSubjectId: form.get('unlockAfterSubjectId') || null, isReward: form.get('isReward') === 'on',
     // Quizlet is optional flashcard study, not a provider lesson to verify.
     isSchoolPortal: provider !== 'none' && provider !== 'quizlet', portalProvider: provider, idleMonitoringEnabled: subject?.idleMonitoringEnabled === true,
-    gradeCaptureEnabled: kind === 'website' && subject?.gradeCaptureEnabled === true,
+    gradeCaptureEnabled: !siteType && kind === 'website' && subject?.gradeCaptureEnabled === true,
     alwaysOpen: form.get('alwaysOpen') === 'on',
     scheduleStart: form.get('alwaysOpen') === 'on' ? null : form.get('scheduleStart') || null,
     scheduleEnd: form.get('alwaysOpen') === 'on' ? null : form.get('scheduleEnd') || null,
-    allowedDomains: kind === 'website' ? String(form.get('allowedDomains') || '').split(/[,\n\r]+/).map(value => value.trim()).filter(Boolean) : []
+    allowedDomains: !siteType && kind === 'website' ? String(form.get('allowedDomains') || '').split(/[,\n\r]+/).map(value => value.trim()).filter(Boolean) : []
   });
 }
 
 export function editCloudSubject({ snapshot, editor, field, selectField, node, button, mutate, close, showError }, subject = null, { preset } = {}) {
   const isNew = !subject;
+  if (isNew && ['site','local'].includes(preset)) subject = siteSubjectPreset(preset === 'local');
   if (isNew && preset === 'quizlet') subject = quizletSubjectPreset();
   if (isNew && preset === 'grammar') subject = grammarSubjectPreset();
   if (isNew && ['abeka', 'bju'].includes(preset)) subject = {
@@ -55,11 +63,11 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   const panel = (title, symbol, ...fields) => { const el = node('section', 'cloud-subject-panel'), heading = node('h3', '', title); heading.prepend(glyph(symbol)); el.append(heading, ...fields); return el; };
   const pair = (...fields) => { const el = node('div', 'cloud-subject-pair'); el.append(...fields); return el; };
   const captured = structuredClone(snapshot), subjectId = subject?.id || crypto.randomUUID();
-  const kind = subject?.kind || (['activity', 'offline'].includes(preset) ? preset : null) || (subject?.url?.startsWith('app://') ? 'activity' : subject && !subject.url ? 'offline' : 'website');
+  const kind = subject?.siteType || subject?.kind || (['activity', 'offline'].includes(preset) ? preset : null) || (subject?.url?.startsWith('app://') ? 'activity' : subject && !subject.url ? 'offline' : 'website');
   const checkbox = (label, name, checked) => { const wrapper = node('label', 'cloud-schedule-toggle'), input = node('input'); input.type = 'checkbox'; input.name = name; input.checked = checked; wrapper.append(input, node('span', '', label)); return wrapper; };
   const numberField = (label, name, value, max = 100000) => { const wrapper = field(label, name, value, { type: 'number' }), input = wrapper.querySelector('input'); input.min = '0'; input.max = String(max); input.step = '1'; return wrapper; };
-  const kindField = selectField('Activity type', 'kind', [{ value: 'website', label: 'School website' }, { value: 'activity', label: 'Learning activity' }, { value: 'offline', label: 'Offline schoolwork' }], kind);
-  const website = field('School website', 'url', kind === 'website' ? subject?.url || '' : '', { type: 'url', maxLength: 2048 });
+  const kindField = selectField('Type', 'kind', [{ value: 'site', label: 'Site' }, { value: 'local', label: 'Local web app' }, { value: 'website', label: 'School website' }, { value: 'activity', label: 'Learning activity' }, { value: 'offline', label: 'Offline schoolwork' }], kind);
+  const website = field('Website address', 'url', ['website','site','local'].includes(kind) ? subject?.url || '' : '', { type: 'url', maxLength: 2048 });
   const choices = (captured.schoolActivities || []).filter(activity => activity.ready && activity.url === `app://${activity.module}` || activity.url === subject?.url)
     .map(activity => ({ value: activity.url, label: `${activity.module.replaceAll('-', ' ')}${activity.ready ? '' : ' (still connecting)'}` }));
   if (kind === 'activity' && subject?.url && !choices.some(choice => choice.value === subject.url)) choices.push({ value: subject.url, label: 'Retained original activity' });
@@ -72,19 +80,31 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   const idle = checkbox('Original idle monitoring setting (still connecting)', 'idleMonitoringEnabled', subject?.idleMonitoringEnabled === true);
   idle.querySelector('input').disabled = true;
   const domainsHelp = node('p', 'cloud-note', 'Each approved website domain includes its subdomains over HTTPS. The school website is already allowed.');
-  let websiteExtras = null;
+  let websiteExtras = null, assignmentGrid = null;
+  const siteHelp = node('p', 'cloud-note');
+  let previousKind = kind;
   function changeKind() {
-    const selected = kindField.querySelector('select').value;
-    website.hidden = selected !== 'website'; website.querySelector('input').required = selected === 'website'; website.querySelector('input').disabled = selected !== 'website';
+    const selected = kindField.querySelector('select').value, isSite = ['site','local'].includes(selected), isWeb = selected === 'website' || isSite;
+    website.querySelector('input').placeholder = selected === 'local' ? 'http://192.168.1.200:43169/' : 'https://example.com/';
+    siteHelp.hidden = !isSite;
+    siteHelp.textContent = selected === 'local' ? 'Paste the full app address, including its port. Keep the host computer on and the child on the same network. Only this address can load. Requires an updated Windows app. Localhost means the child’s own computer.' : 'Enter its HTTPS address here. Children can browse this exact website; outside links, pop-ups and embedded pages are blocked. Requires an updated Windows app. No daily goal is needed. Use Daily Plan to choose when it is available.';
+    if (isNew && isSite && selected !== previousKind && assignmentGrid) {
+      for (const input of assignmentGrid.querySelectorAll('input[name^="goal-"]')) if (!input.dataset.edited) input.value = '0';
+      const tier = document.querySelector('#cloud-editor [name="accessTier"]'); if (tier) tier.value = 'school_optional';
+    }
+    previousKind = selected;
+
+    website.hidden = !isWeb; website.querySelector('input').required = isWeb; website.querySelector('input').disabled = !isWeb;
     activity.hidden = selected !== 'activity'; activity.querySelector('select').required = selected === 'activity'; activity.querySelector('select').disabled = selected !== 'activity';
     for (const wrapper of [domainsLabel, provider, capture]) { wrapper.hidden = selected !== 'website'; wrapper.querySelector('input,textarea,select').disabled = selected !== 'website'; }
     capture.querySelector('input').disabled = true;
-    domainsHelp.hidden = selected !== 'website';
+    domainsLabel.hidden = selected !== 'website'; domains.disabled = domainsLabel.hidden;
+    domainsHelp.hidden = domainsLabel.hidden;
     if (websiteExtras) websiteExtras.hidden = selected !== 'website';
   }
   kindField.querySelector('select').addEventListener('change', changeKind); changeKind();
   const description = node('label', '', 'Description'), descriptionInput = node('textarea', 'admin-input'); descriptionInput.name = 'description'; descriptionInput.rows = 2; descriptionInput.maxLength = 1000; descriptionInput.value = subject?.description || ''; description.append(descriptionInput);
-  const basics = panel('Activity details', 'notebook-pen', field('Name', 'title', subject?.title || ''), kindField, website, activity, provider, description, checkbox('Show this activity', 'active', subject?.active !== false));
+  const basics = panel('Details', 'notebook-pen', field('Name', 'title', subject?.title || ''), kindField, website, siteHelp, activity, provider, description, checkbox('Show this activity', 'active', subject?.active !== false));
   const alwaysOpen = checkbox('Always open — no school calendar or time cutoff', 'alwaysOpen', globalThis.BODEE_CLOUD_SCHEDULE.cloudSubjectAlwaysOpen(subject));
   alwaysOpen.querySelector('span').prepend(glyph('clock'));
   const hours = pair(field('From (optional)', 'scheduleStart', subject?.scheduleStart || '', { type: 'time', required: false }), field('Until (optional)', 'scheduleEnd', subject?.scheduleEnd || '', { type: 'time', required: false }));
@@ -97,7 +117,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   };
   alwaysOpen.querySelector('input').addEventListener('change', updateHours); updateHours();
   const availability = panel('Availability', 'calendar-clock',
-    selectField('Available as', 'accessTier', [{ value: 'school', label: 'Required schoolwork' }, { value: 'school_optional', label: 'Optional schoolwork' }, { value: 'after_school', label: 'After required schoolwork is complete' }], subject?.accessTier || 'school'),
+    selectField('Available as', 'accessTier', [{ value: 'school', label: 'Required schoolwork' }, { value: 'school_optional', label: 'Optional access' }, { value: 'after_school', label: 'After required schoolwork is complete' }], subject?.accessTier || 'school'),
     selectField('Complete this subject first', 'unlockAfterSubjectId', [{ value: '', label: 'No prerequisite' }, ...captured.rules.subjects.filter(item => item.id !== subjectId).map(item => ({ value: item.id, label: item.title + (item.active === false ? ' (hidden)' : '') }))], subject?.unlockAfterSubjectId || ''),
     alwaysOpen, hours, hoursHelp,
     checkbox('Place with rewards', 'isReward', subject?.isReward === true),
@@ -122,11 +142,12 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   const all = button('All children', () => selectChildren(true)), none = button('Clear selection', () => selectChildren(false));
   all.type = none.type = 'button'; all.prepend(glyph('users-round')); none.prepend(glyph('minus'));
   selection.append(all, none, selectionStatus); assignmentFields.append(selection);
-  const assignmentGrid = node('div', 'cloud-subject-children'); assignmentFields.append(assignmentGrid);
+  assignmentGrid = node('div', 'cloud-subject-children'); assignmentFields.append(assignmentGrid);
   for (const student of children) {
     const current = subject ? assignmentFor(subject, student.id) : { dailyGoalMinutes: 30 }, row = node('div', 'cloud-assignment-row');
     const enabled = node('input'); enabled.type = 'checkbox'; enabled.name = `assigned-${student.id}`; enabled.checked = Boolean(current && current.active !== false); enabled.setAttribute('aria-label', `Assign to ${student.name}`);
-    const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? (subject?.portalProvider === 'quizlet' || preset === 'grammar' ? 0 : 30), 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
+    const goal = numberField('Goal (minutes)', `goal-${student.id}`, current?.dailyGoalMinutes ?? (subject?.siteType || subject?.portalProvider === 'quizlet' || preset === 'grammar' ? 0 : 30), 480), order = numberField('Child order', `order-${student.id}`, current?.displayOrder ?? subject?.displayOrder ?? 0);
+    goal.querySelector('input').addEventListener('input', event => { event.target.dataset.edited = 'true'; });
     const update = () => { for (const wrapper of [goal, order]) { const input = wrapper.querySelector('input'); input.disabled = !enabled.checked; input.required = enabled.checked; } };
     const childLabel = node('label', 'cloud-subject-child'); childLabel.append(enabled, node('span', '', student.name + (student.archived_at ? ' (archived; settings retained)' : '')));
     childInputs.push(enabled); enabled.addEventListener('change', () => { update(); updateSelection(); }); update(); row.append(childLabel, goal, order); assignmentGrid.append(row);
@@ -136,6 +157,14 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
   if (!children.length) assignmentFields.append(node('p', 'cloud-note', 'Add a student before assigning this subject.'));
   if (subject?.portalProvider === 'quizlet') basics.append(node('p', 'cloud-note', 'Choose the children who may use Quizlet. You can use its home page or paste a specific Quizlet set link. Sign in to Quizlet on the child computer if needed; BodeeGuard does not create a Quizlet account or subscription.'));
   if (preset === 'grammar') basics.append(node('p', 'cloud-note', 'Choose children, then organize Grammar in Daily Plan. Use the course home or a lesson link such as https://grammar.bodeebooks.com/#mission-06. No separate login is needed. BodeeGuard tracks study time; the site does not send lesson completion or scores.'));
+  const updateSiteLabels = () => {
+    const isSite = ['site','local'].includes(kindField.querySelector('select').value);
+    retained.hidden = isSite;
+    basics.querySelector('[name="active"]').nextElementSibling.textContent = isSite ? 'Show this site' : 'Show this activity';
+    if (isSite) hoursHelp.textContent = alwaysOpen.querySelector('input').checked ? 'Available on weekends and during school breaks. Parent locks still apply. Use Daily Plan for specific days, hours or a daily limit.' : 'Uses the school calendar and the hours you choose here. Use Daily Plan to set other days and times.';
+  };
+  kindField.querySelector('select').addEventListener('change', updateSiteLabels);
+  alwaysOpen.querySelector('input').addEventListener('change', updateSiteLabels); updateSiteLabels();
   const grid = node('div', 'cloud-subject-grid'); grid.append(basics, availability, appearance, assignmentFields);
   let remove = null;
   if (!isNew) { remove = button('Remove subject', async () => {
@@ -143,7 +172,7 @@ export function editCloudSubject({ snapshot, editor, field, selectField, node, b
     try { await mutate('save-subjects', editSubjects(captured, subject.id, '', '', true)); close(); } catch (error) { showError(error.message); }
   }, 'btn btn-danger cloud-subject-remove'); remove.prepend(glyph('trash-2')); remove.title = 'Remove subject'; }
   changeKind();
-  editor(isNew ? preset === 'quizlet' ? 'Add Quizlet Study' : preset === 'grammar' ? 'Add Grammar' : 'Add activity' : 'Edit activity details', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
+  editor(isNew ? preset === 'site' ? 'Add Site' : preset === 'local' ? 'Add Local web app' : preset === 'quizlet' ? 'Add Quizlet Study' : preset === 'grammar' ? 'Add Grammar' : 'Add activity' : 'Edit activity details', [grid], form => mutate('save-subjects', cloudSubjectEdit(captured, subjectId, form)));
   document.getElementById('cloud-editor-title')?.prepend(glyph(isNew ? 'plus' : 'notebook-pen'));
   const dialog = document.getElementById('cloud-editor');
   if (remove && dialog?.open) { dialog.querySelector('.modal-actions')?.prepend(remove); dialog.addEventListener('close', () => remove.remove(), { once: true }); }

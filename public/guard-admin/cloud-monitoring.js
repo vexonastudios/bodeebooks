@@ -14,15 +14,17 @@ export function clockTime(value) {
 const duration = value => value < 60 ? '<1m' : value < 3600 ? `${Math.floor(value/60)}m` : `${Math.floor(value/3600)}h ${Math.floor(value/60)%60}m`;
 const creativeStudioUrls = new Set(['app://coloring','app://coloring-studio']);
 function quickUnlockChoices(goals) {
+  const games = {id:'family-games',familyGames:true,label:'Family Game Room',icon:'gamepad-2',color:'#facc15',accent:'#facc15',subjectIds:[]};
+  goals = goals.filter(goal => goal.url !== 'app://games');
   const studio = goals.filter(goal => creativeStudioUrls.has(goal.url));
-  if (!studio.length) return goals.map(goal => ({...goal, subjectIds:[goal.id]}));
+  if (!studio.length) return [...goals.map(goal => ({...goal, subjectIds:[goal.id]})),games];
   let shown = false;
-  return goals.flatMap(goal => {
+  return [...goals.flatMap(goal => {
     if (!creativeStudioUrls.has(goal.url)) return [{...goal, subjectIds:[goal.id]}];
     if (shown) return [];
     shown = true;
     return [{...goal, label:'Art & Coloring Studio', icon:'palette', subjectIds:studio.map(item => item.id)}];
-  });
+  }),games];
 }
 // Saved grades are free text. Sort recognized school levels numerically;
 // missing/custom levels follow them without changing the saved profiles.
@@ -70,7 +72,12 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
     }
     activity.sort((a,b)=>b.seconds-a.seconds);
     const required=goals.filter(g=>g.required);
-    return {student,devices,device,online,connection,current,media,activity,goals,color:colors[index%colors.length],
+    const gameId=subjects.find(s=>s.kind==='activity'&&s.url==='app://games')?.id || 'fcb07b39-9a02-4ef6-90a2-d09303b8e0a1';
+    const quick=student.quick_unlock;
+    const gamesUnlocked=!!snapshot.activityDate&&quick?.date===snapshot.activityDate
+      && (goals.some(g=>g.url==='app://games'&&quick.subjectIds?.includes(g.id))
+        || quick.gamesPlanRevision===(snapshot.rules?.revision||0)&&quick.subjectIds?.includes(gameId));
+    return {student,devices,device,online,connection,current,media,activity,goals,gamesUnlocked,color:colors[index%colors.length],
       total:todaySeconds(snapshot,student.id),currentSeconds:current?goals.find(g=>g.id===current.id)?.seconds:null,
       done:required.filter(g=>g.complete).length,required:required.length,
       portalChecks:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).map(p=>p.checked_at).filter(Boolean),
@@ -159,8 +166,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
   function gameControl(model){
     const {student}=model,key=student.id+':game-time';
     const row=node('div','monitor-media-action');row.dataset.media='games';
-    const main=button('Family Game Room','gamepad-2',()=>navigate('family-games'),'monitor-media-main');
-    main.title='Open the Family Game Room and game settings';
+    const main=button(model.gamesUnlocked?'Restore game rules':'Unlock Family Game Room','gamepad-2',el=>saveGameUnlock(el,model),'monitor-media-main');
+    notices.bind(main,student.id+':quick:games');main.dataset.cloudMutation='true';main.dataset.cloudIndependent='true';
+    main.title=model.gamesUnlocked?'Restore this child’s usual game rules':'Allow Family Game Room today; time limits, chores and computer locks still apply';
+    main.classList.toggle('is-unlocked',!!model.gamesUnlocked);
     const menu=node('details','monitor-media-time-menu'),summary=node('summary');summary.append(icon('plus'));
     summary.setAttribute('aria-label','Add game time for '+student.name);
     const options=node('div','monitor-media-time-popover');options.append(node('strong','','Extra game time today'));
@@ -184,8 +193,13 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
       },'btn btn-secondary');
       notices.bind(add,key);add.dataset.cloudMutation='true';add.dataset.cloudIndependent='true';options.append(add);
     }
-    options.append(node('span','','Schoolwork and allowed game hours still apply.'));
-    menu.append(summary);row.append(main,menu,options);notices.mount(row,key);return row;
+    options.append(button('Game settings','sliders-horizontal',()=>navigate('family-games'),'btn btn-secondary'),node('span','','Extra time keeps schoolwork and game hours in place.'));
+    menu.append(summary);row.append(main,menu,options);notices.mount(row,key);notices.mount(row,student.id+':quick:games');return row;
+  }
+  function saveGameUnlock(el,model){
+    return run(el,()=>mutate('computer-command',{kind:'game-unlock',studentId:model.student.id,unlocked:!model.gamesUnlocked}),
+      {pending:'Saving Family Game Room for '+model.student.name+'…',title:model.gamesUnlocked?'Usual game rules restored':'Family Game Room unlocked today',
+      detail:'Saved for '+model.student.name+'. '+(model.gamesUnlocked?'Usual game settings apply.':'Ends tonight. Daily time limits, chores and computer locks still apply.')+' Applies when the child app connects.',errorTitle:'Could not confirm Family Game Room'});
   }
   function renderQuickDialog(model){
     const priorStatus=quickDialog.querySelector('.cloud-quick-status')?.textContent||'';
@@ -198,10 +212,10 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
     head.append(heading,close);
     const choices=node('div','cloud-quick-dialog-choices');
     for(const subject of quickUnlockChoices(model.goals)){
-      const unlocked=!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
+      const unlocked=subject.familyGames?model.gamesUnlocked:!!getSnapshot().activityDate&&model.student.quick_unlock?.date===getSnapshot().activityDate
         &&Array.isArray(model.student.quick_unlock.subjectIds)&&subject.subjectIds.every(id=>model.student.quick_unlock.subjectIds.includes(id));
-      const key=model.student.id+':quick:'+subject.subjectIds.slice().sort().join(','),item=node('div','cloud-quick-item');
-      const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>run(el,async()=>{
+      const key=model.student.id+':quick:'+(subject.familyGames?'games':subject.subjectIds.slice().sort().join(',')),item=node('div','cloud-quick-item');
+      const choice=button(subject.label,unlocked?'circle-check':subject.icon,el=>subject.familyGames?saveGameUnlock(el,model):run(el,async()=>{
         await mutate('computer-command',{kind:'quick-unlock',studentId:model.student.id,subjectId:subject.id,unlocked:!unlocked});
       },{pending:'Saving '+subject.label+' for '+model.student.name+'…',title:subject.label+(unlocked?' rules restored':' unlocked for today'),detail:'Saved for '+model.student.name+'. Applies on the child app’s next sync.',errorTitle:'Could not confirm '+subject.label}),
       `cloud-quick-choice${unlocked?' is-unlocked':''}`);
@@ -209,9 +223,9 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
       choice.style.setProperty('--quick-color',subject.color);
       choice.style.setProperty('--quick-accent',subject.accent);
       choice.setAttribute('aria-pressed',String(unlocked));choice.dataset.cloudMutation='true';
-      choice.append(node('small','',unlocked?'Unlocked today':'Tap to unlock'));item.append(choice);notices.mount(item,key);choices.append(item);
+      choice.append(node('small','',subject.familyGames?(unlocked?'Restore usual rules':'Unlock today'):(unlocked?'Unlocked today':'Tap to unlock')));item.append(choice);notices.mount(item,key);choices.append(item);
     }
-    if(!model.goals.length)choices.append(node('p','cloud-quick-empty','Assign school subjects before using Quick Unlock.'));
+    choices.append(node('p','cloud-quick-empty','Family Game Room: skip schoolwork requirements and game hours until tonight. Daily time limits, chores and computer locks still apply.'));
     const foot=node('footer','cloud-quick-dialog-footer'),status=node('p','cloud-quick-status',priorStatus),done=button('Done','check',()=>quickDialog.close(),'btn btn-secondary');
     status.setAttribute('role','status');foot.append(status,done);shell.append(head,choices,foot);quickDialog.append(shell);notices.render();window.lucide?.createIcons();
   }

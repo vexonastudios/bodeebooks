@@ -2,7 +2,7 @@ import { activityAccent } from './cloud-activity-colors.js';
 import { assignmentFor } from './cloud-workspace-model.js';
 
 const groups = [
-  ['websites', 'School & study websites', 'globe', 'School portals and other approved study links.'],
+  ['websites', 'Sites & school websites', 'globe', 'Parent-approved websites, local web apps and school portals.'],
   ['learning', 'Learning activities', 'book-open', 'Practice and creative tools included with BodeeGuard.'],
   ['free-time', 'Media & free time', 'headphones', 'Listening, watching and games. Access is set in Daily Plan.'],
   ['offline', 'Offline work', 'notebook-pen', 'Paper assignments and work away from the computer.'],
@@ -22,7 +22,7 @@ function icon(name, fallback = 'book-open') {
 function siteLabel(subject) {
   if (groupFor(subject) === 'offline') return 'Offline work';
   if (subject.url.startsWith('app://')) return 'Built-in activity';
-  try { return new URL(subject.url).hostname.replace(/^www\./, ''); } catch { return 'School website'; }
+  try { return (subject.siteType === 'local' ? 'Local web app · ' : subject.siteType === 'site' ? 'Site · ' : '') + new URL(subject.url).host.replace(/^www\./, ''); } catch { return 'School website'; }
 }
 
 export function setupActivityLibrary({ getSnapshot, editSubject, canEdit, handwriting = false }) {
@@ -30,6 +30,8 @@ export function setupActivityLibrary({ getSnapshot, editSubject, canEdit, handwr
   const grid = byId('subjects-grid-admin'), search = byId('activity-library-search'), child = byId('activity-library-child');
   const picker = byId('activity-library-picker'), choices = byId('activity-library-choices');
   const presets = [
+    ['site', 'globe', 'Site', 'Let selected children open a website. No schoolwork goal required.'],
+    ['local', 'laptop', 'Local web app', 'Open an app on your home network, such as your audiobook editor.'],
     ['website', 'globe', 'School or study website', 'Add Abeka, BJU, a math website or another approved link.'],
     ...(handwriting ? [['handwriting', 'pencil', 'Add Handwriting', 'Choose letters and paper practice for each child.']] : []),
     ['grammar', 'book-open', 'Add Grammar', '42 short video lessons with examples, captions and thinking pauses.'],

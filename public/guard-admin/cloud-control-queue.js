@@ -1,7 +1,7 @@
 // Independent parent controls can be queued without freezing unrelated buttons.
 // Keep writes ordered, confirm each response, then coalesce the dashboard read.
 export function isIndependentControl(action, data) {
-  return (action === 'computer-command' && data?.kind === 'quick-unlock')
+  return (action === 'computer-command' && ['quick-unlock','game-unlock'].includes(data?.kind))
     || (action === 'media' && /^\/api\/(music|video|audiobooks)\/quick-control$/.test(data?.path || '') && ['override', 'extra-time'].includes(data?.body?.operation))
     || action === 'game-add-time' || action === 'set-school-pause';
 }
@@ -41,7 +41,9 @@ export function createControlQueue({ send, canSave, onSaved = () => {}, onState 
         if (action === 'media' && (result?.status !== 200 || result.body?.success !== true || (data.body.operation === 'override' && result.body.unlocked !== data.body.unlocked))) {
           throw Error(result?.body?.error || 'The change could not be confirmed.');
         }
-        if (action === 'computer-command' && (!Array.isArray(result?.quickUnlock?.subjectIds) || result.quickUnlock.subjectIds.includes(data.subjectId) !== data.unlocked)) {
+        if (action === 'computer-command' && (!Array.isArray(result?.quickUnlock?.subjectIds) || (data.kind === 'game-unlock'
+          ? result.gameUnlock?.studentId !== data.studentId || result.gameUnlock?.unlocked !== data.unlocked || result.gameUnlock?.date !== result.quickUnlock.date
+          : result.quickUnlock.subjectIds.includes(data.subjectId) !== data.unlocked))) {
           throw Error('The unlock could not be confirmed.');
         }
         confirmed.push({ version: ++version, action, data, result });
