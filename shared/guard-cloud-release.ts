@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.339": {
+  "title": "Your approved sites, inside BodeeGuard",
+  "sections": [
+    {
+      "heading": "Version 1.2.339",
+      "headline": "Add Sites and local web apps for selected children",
+      "summary": "Open a parent-approved website or local audiobook editor inside BodeeGuard, with a strict browsing boundary and simpler everyday controls.",
+      "highlights": [
+        "Choose Site or Local web app in Add activity, enter the address and select the children. Optional access starts with no daily time goal; Daily Plan controls still apply.",
+        "Outside links, redirects, pop-ups and embedded pages are blocked. Local web apps stay on the approved address and port. The new choices require this Windows update.",
+        "Family Game Room now has per-child Unlock today in Quick Unlock, on the child card and in its own tab. Daily limits, chores and computer locks still apply.",
+        "Update notices are compact, dismissible and back at the bottom. The What’s new button fits its label without overlapping nearby controls."
+      ]
+    }
+  ]
+},
   "1.2.338": {
   "title": "Keep your place in school",
   "sections": [
