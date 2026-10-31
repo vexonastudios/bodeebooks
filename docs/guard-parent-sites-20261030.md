@@ -1,5 +1,7 @@
 # Parent-approved Sites and local web apps — October 30, 2026
 
+Publication follow-up: live in [Family Beta 1.2.339](guard-release-1.2.339.md). Preparation status below is historical.
+
 Implemented locally on codex/release-310, base 6c1059b. Not deployed or pushed.
 Existing pending Family Game Room controls are preserved. No family data changed.
 
