@@ -65,6 +65,22 @@ const server = http.createServer(async (req, res) => {
     const waitWrite = async predicate => { for (let i = 0; i < 160; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 50)); } throw Error('Timed out waiting for media save'); };
     await win.loadURL(origin);
     await wait('document.querySelectorAll(".mobile-media-choice").length===3');
+    await evalJs("window.fixtureNavigate('music');document.getElementById('mreq-badge').textContent='5';document.getElementById('mreq-badge').style.display='inline-block'");
+    const musicTabs = await evalJs("(() => { const tabs=[...document.querySelectorAll('#tab-music .music-subnav .music-stab')]; const rows=tabs.map(tab=>Math.round(tab.getBoundingClientRect().top)); const nav=document.querySelector('#tab-music .music-subnav'); return { count:tabs.length, rows, height:nav.getBoundingClientRect().height, scrollWidth:document.getElementById('tab-music').scrollWidth, clientWidth:document.querySelector('.main-content').clientWidth }; })()");
+    assert.equal(musicTabs.count, 6);
+    assert.equal(musicTabs.rows[0], musicTabs.rows[1]);
+    assert.equal(new Set(musicTabs.rows).size, 3);
+    assert.ok(musicTabs.height < 190, 'Music tabs should fit in three compact rows');
+    assert.ok(musicTabs.scrollWidth <= musicTabs.clientWidth + 1, 'Music page should fit the phone width');
+    if (process.env.BODEE_CAPTURE) {
+      const folder = path.join(site, '.tmp', 'mobile-media-ui'); fs.mkdirSync(folder, { recursive: true });
+      fs.writeFileSync(path.join(folder, 'music-navigation.png'), await win.webContents.capturePage().then(image => image.toPNG()));
+    }
+    await evalJs("document.querySelector('#tab-music [data-stab=\"mytplay\"]').click()");
+    await wait("getComputedStyle(document.getElementById('mytplay')).display!=='none'");
+    const playlistFields = await evalJs("(() => { const fields=[...document.querySelectorAll('.music-ypl-fields .form-group')].map(field=>field.getBoundingClientRect()); const main=document.querySelector('.main-content').getBoundingClientRect(); return { sameLeft:Math.abs(fields[0].left-fields[1].left)<1, stacked:fields[1].top>fields[0].bottom, within:fields.every(field=>field.right<=main.right+1) }; })()");
+    assert.deepEqual(playlistFields, { sameLeft: true, stacked: true, within: true });
+    await evalJs("window.fixtureNavigate('mobile-add')");
     assert.deepEqual(await evalJs('[...document.querySelectorAll(".mobile-schoolwork-copy strong")].map(el=>el.textContent)'),
       ['Spelling', 'Vocabulary', 'Poems', 'Worksheets', 'Learning videos']);
     assert.equal(await evalJs('document.querySelector(".mobile-schoolwork-choices").getBoundingClientRect().top < document.querySelector(".mobile-media-choices").getBoundingClientRect().top'), true);

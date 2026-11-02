@@ -21,6 +21,17 @@
 .cloud-mobile .cloud-feedback { font-size: 12px; margin-bottom: 14px; }
 .cloud-mobile .tab-header { flex-wrap: wrap; margin-bottom: 18px; }
 .cloud-mobile .tab-header h1, .cloud-mobile-menu > h1 { font-size: 22px; }
+/* Keep Music navigation and playlist entry usable on narrow parent screens. */
+.cloud-mobile #tab-music > .tab-header { display: block; margin-bottom: 12px; }
+.cloud-mobile #tab-music > .tab-header h1 { margin-bottom: 4px; }
+.cloud-mobile #tab-music > .tab-header p { margin: 0 !important; font-size: 12px !important; line-height: 1.4; }
+.cloud-mobile #tab-music .music-subnav { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px !important; margin-bottom: 14px !important; }
+.cloud-mobile #tab-music .music-subnav .music-stab { display: flex; align-items: center; justify-content: center; gap: 5px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 8px 6px; font-size: 12px; line-height: 1.25; text-align: center; white-space: normal; }
+.cloud-mobile #tab-music .music-subnav .music-stab svg { flex: 0 0 16px; margin-right: 0 !important; }
+.cloud-mobile #tab-music .music-subnav #mreq-badge { flex: 0 0 auto; margin-left: 0 !important; }
+.cloud-mobile #tab-music .music-ypl-fields { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+.cloud-mobile #tab-music .music-ypl-fields > .form-group { min-width: 0; }
+.cloud-mobile #tab-music .music-ypl-fields .admin-input { box-sizing: border-box; width: 100%; min-width: 0; }
 .cloud-mobile .monitor-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .cloud-mobile .monitor-card { padding: 12px; border-radius: 20px; }
 .cloud-mobile .monitor-card-top { margin: 0; gap: 8px; }
