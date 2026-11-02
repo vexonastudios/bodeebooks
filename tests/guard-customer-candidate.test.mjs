@@ -9,7 +9,7 @@ import ts from 'typescript';
 const filename=path.resolve('shared/guard-customer-candidate.ts'),mod=new Module(filename);
 mod.filename=filename;mod.paths=Module._nodeModulePaths(path.dirname(filename));
 mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,filename);
-const {canDownloadCandidate,candidateDownloadUrl,candidatePath}=mod.exports;
+const {canDownloadCandidate,candidateDownloadUrl,candidatePath,releasedCustomerR2Url}=mod.exports;
 
 test('candidate is restricted to the explicitly configured verified account',()=>{
  const old=process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL;process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL='owner@example.test';
@@ -31,6 +31,8 @@ test('candidate URL is short-lived and signs only the fixed R2 path',()=>{
   const url=new URL(candidateDownloadUrl()),expires=url.searchParams.get('expires');
   assert.equal(url.pathname,candidatePath);assert.ok(Number(expires)-Date.now()/1000>295 && Number(expires)-Date.now()/1000<=300);
   assert.equal(url.searchParams.get('signature'),createHmac('sha256','synthetic-secret').update(['bodeeguard-installer-download-v1','GET',candidatePath,expires].join('\n')).digest('hex'));
+  assert.equal(new URL(releasedCustomerR2Url('stable','1.2.339')).pathname,candidatePath);
+  assert.equal(releasedCustomerR2Url('beta','1.2.339'),null);assert.equal(releasedCustomerR2Url('stable','1.2.340'),null);
   process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN='http://assets.example.test/';assert.equal(candidateDownloadUrl(),null);
  }finally{
   if(oldOrigin===undefined)delete process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN;else process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN=oldOrigin;

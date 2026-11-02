@@ -259,7 +259,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           </aside>
         )}
 
-        {canDownloadCandidate(user) && <aside className={styles.successNotice} aria-label="Customer installer test">
+        {canDownloadCandidate(user) && !release && <aside className={styles.successNotice} aria-label="Customer installer test">
           <strong>Customer installer for your setup test · 1.2.339</strong>
           <p>This is the Stable customer build, separate from Family Beta. It is not yet the public release. Windows may show an unverified publisher warning.</p>
           <a className={styles.portalButton} href="/guard/download/customer-candidate/">Download customer installer for Windows</a>

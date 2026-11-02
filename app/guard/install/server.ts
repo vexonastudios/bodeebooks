@@ -1,5 +1,6 @@
 import { cloudAccountRelease, internalPilotRelease } from "../../../shared/guard-cloud-release";
 import { internalPilotDownloadUrl } from "../../../shared/guard-installer-download";
+import { releasedCustomerR2Url } from "../../../shared/guard-customer-candidate";
 export const privateHeaders = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" };
 export function sameOrigin(request: Request) {
   return request.headers.get("origin") === new URL(request.url).origin && request.headers.get("sec-fetch-site") !== "cross-site";
@@ -14,7 +15,10 @@ export function installerLink(descriptor: {kind?: string; channel?: string; vers
     const {channel = "",version = ""} = descriptor;
     const url = `https://github.com/vexonastudios/bodeeguard-${channel}-releases/releases/download/cloud-child-v${version}/BodeeGuard-Cloud-Child-Setup-${version}.exe`;
     const release = cloudAccountRelease({releaseChannel:channel,release:{version,downloadUrl:url}});
-    if (release) return {url,version,expiresAt:null};
+    if (release) {
+      const r2 = releasedCustomerR2Url(channel, version);
+      return r2 ? {url:r2,version,expiresAt:new Date(Number(new URL(r2).searchParams.get("expires"))*1000).toISOString()} : {url,version,expiresAt:null};
+    }
   }
   throw Error("download_unavailable");
 }

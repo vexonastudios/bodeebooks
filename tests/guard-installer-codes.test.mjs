@@ -59,6 +59,12 @@ test('release descriptors cannot inject redirects or select another installer',a
  const r=await request({action:'redeem',result:{descriptor:{kind:'catalog',channel:'stable',version:'1.2.250'}}});
  assert.equal(r.response.status,200);assert.equal(r.data.url,'https://github.com/vexonastudios/bodeeguard-stable-releases/releases/download/cloud-child-v1.2.250/BodeeGuard-Cloud-Child-Setup-1.2.250.exe');assert.equal(r.data.expiresAt,null);
 });
+test('Stable 1.2.339 code redeems to the exact temporary signed R2 mirror',async()=>{
+ const r=await request({action:'redeem',result:{descriptor:{kind:'catalog',channel:'stable',version:'1.2.339'}}});
+ assert.equal(r.response.status,200);const url=new URL(r.data.url);
+ assert.equal(url.pathname,'/v1/installers/candidates/f7fad65465130af86e25e735d18196aa/BodeeGuard-Cloud-Child-Setup-1.2.339.exe');
+ assert.ok(Date.parse(r.data.expiresAt)>Date.now());
+});
 test('the short address rewrites locally and the page does not demand parent login',()=>{
  const {guardRoute}=load('shared/guard-domain.ts');
  for(const [route,method] of [['/install/','GET'],['/install/redeem/','POST'],['/install/code/','POST']]) assert.deepEqual(guardRoute('https://guard.bodeebooks.com'+route,method),{kind:'rewrite',url:'https://guard.bodeebooks.com/guard'+route});

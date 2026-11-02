@@ -60,6 +60,12 @@ async function download({ account, authenticated = true, apiOk = true, failFetch
       status: typeof init === 'number' ? init : init.status, headers: { ...(init.headers || {}), Location: String(url) },
     }) } };
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
+    if (name.endsWith('/guard-customer-candidate')) {
+      const helperPath=path.resolve('shared/guard-customer-candidate.ts'), helper=new Module(helperPath);
+      helper.require=createRequire(helperPath);
+      helper._compile(ts.transpileModule(fs.readFileSync(helperPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,helperPath);
+      return helper.exports;
+    }
     if (name.endsWith('/guard-installer-download')) {
       const helperPath=path.resolve('shared/guard-installer-download.ts'), helper=new Module(helperPath);
       helper.require=createRequire(helperPath);
@@ -124,6 +130,17 @@ test('authenticated download sends no credential to GitHub and never caches the 
   assert.equal(calls[0].init.redirect, 'error');
   assert.equal(calls[0].init.cache, 'no-store');
   assert.ok(calls[0].init.signal);
+});
+
+test('verified Stable 1.2.339 customer downloads use the matching expiring R2 object', async () => {
+  const account = {...active, release:cloudReleaseFixture('stable','1.2.339')};
+  const {response}=await download({account,internalPilot:true});
+  const url=new URL(response.headers.get('location'));
+  assert.equal(response.status,307);assert.equal(url.origin,'https://assets.example');
+  assert.equal(url.pathname,'/v1/installers/candidates/f7fad65465130af86e25e735d18196aa/BodeeGuard-Cloud-Child-Setup-1.2.339.exe');
+  assert.match(url.searchParams.get('signature'),/^[a-f0-9]{64}$/);
+  const shared=await download({account,internalPilot:true,share:true});const data=await shared.response.json();
+  assert.equal(new URL(data.url).pathname,url.pathname);assert.ok(Date.parse(data.expiresAt)>Date.now());
 });
 
 test('the internal Family Beta download is an expiring signed asset URL, not a GitHub link', async () => {

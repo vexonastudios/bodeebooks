@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { randomUUID } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { cloudAccountRelease, internalPilotRelease } from "../../../../shared/guard-cloud-release";
+import { releasedCustomerR2Url } from "../../../../shared/guard-customer-candidate";
 
 type AccountDownloadStatus = {
   billingMode: "stripe" | "complimentary";
@@ -51,8 +52,10 @@ async function download(request: Request, share = false) {
     }
     if (release) {
       trackDownload(release.version);
-      return share ? Response.json({ url: release.downloadUrl, version: release.version, expiresAt: null }, { headers: privateHeaders })
-        : NextResponse.redirect(release.downloadUrl, { status: 307, headers: privateHeaders });
+      const r2 = releasedCustomerR2Url(account.releaseChannel, release.version), url = r2 || release.downloadUrl;
+      const expiresAt = r2 ? new Date(Number(new URL(r2).searchParams.get("expires")) * 1000).toISOString() : null;
+      return share ? Response.json({ url, version: release.version, expiresAt }, { headers: privateHeaders })
+        : NextResponse.redirect(url, { status: 307, headers: privateHeaders });
     }
     const pilot = internalPilotRelease(account, process.env.BODEEGUARD_INTERNAL_PILOT_INSTALLER_VERSION);
     const downloadUrl = pilot && internalPilotDownloadUrl(pilot.version);

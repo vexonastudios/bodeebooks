@@ -21,3 +21,9 @@ export function candidateDownloadUrl() {
   url.searchParams.set("signature", createHmac("sha256", secret).update(message).digest("hex"));
   return url.toString();
 }
+
+// Only this exact verified Stable release is mirrored in the candidate R2 key.
+// Later versions use the signed catalog URL until their own mirror is configured.
+export function releasedCustomerR2Url(channel: string, version: string) {
+  return channel === "stable" && version === "1.2.339" ? candidateDownloadUrl() : null;
+}
