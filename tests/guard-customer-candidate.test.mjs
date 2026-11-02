@@ -1,0 +1,39 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import Module from 'node:module';
+import ts from 'typescript';
+
+const filename=path.resolve('shared/guard-customer-candidate.ts'),mod=new Module(filename);
+mod.filename=filename;mod.paths=Module._nodeModulePaths(path.dirname(filename));
+mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,filename);
+const {canDownloadCandidate,candidateDownloadUrl,candidatePath}=mod.exports;
+
+test('candidate is restricted to the explicitly configured verified account',()=>{
+ const old=process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL;process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL='owner@example.test';
+ const user=(email,status)=>({primaryEmailAddress:{emailAddress:email,verification:{status}}});
+ try{
+  assert.equal(canDownloadCandidate(user('OWNER@example.test','verified')),true);
+  assert.equal(canDownloadCandidate(user('other@example.test','verified')),false);
+  assert.equal(canDownloadCandidate(user('owner@example.test','unverified')),false);
+  assert.equal(canDownloadCandidate(null),false);
+  delete process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL;
+  assert.equal(canDownloadCandidate(user('owner@example.test','verified')),false);
+ }finally{if(old===undefined)delete process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL;else process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL=old;}
+});
+
+test('candidate URL is short-lived and signs only the fixed R2 path',()=>{
+ const oldOrigin=process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN,oldSecret=process.env.BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET;
+ process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN='https://assets.example.test/';process.env.BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET='synthetic-secret';
+ try{
+  const url=new URL(candidateDownloadUrl()),expires=url.searchParams.get('expires');
+  assert.equal(url.pathname,candidatePath);assert.ok(Number(expires)-Date.now()/1000>295 && Number(expires)-Date.now()/1000<=300);
+  assert.equal(url.searchParams.get('signature'),createHmac('sha256','synthetic-secret').update(['bodeeguard-installer-download-v1','GET',candidatePath,expires].join('\n')).digest('hex'));
+  process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN='http://assets.example.test/';assert.equal(candidateDownloadUrl(),null);
+ }finally{
+  if(oldOrigin===undefined)delete process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN;else process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN=oldOrigin;
+  if(oldSecret===undefined)delete process.env.BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET;else process.env.BODEEGUARD_INTERNAL_PILOT_DOWNLOAD_SECRET=oldSecret;
+ }
+});

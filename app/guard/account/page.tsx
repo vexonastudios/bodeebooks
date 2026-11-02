@@ -9,6 +9,7 @@ import WindowsInstallerNotice from "../WindowsInstallerNotice";
 import PlanControls, {type AiAllowance} from "./PlanControls";
 import { AlertTriangle, ArrowLeft, ArrowRight, ChevronDown, CalendarClock, CheckCircle2, CircleHelp, CreditCard, Download, ExternalLink, FileText, KeyRound, Laptop, Monitor, RotateCcw, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { cloudAccountRelease, internalPilotRelease, type GuardAccountRelease } from "../../../shared/guard-cloud-release";
+import { canDownloadCandidate } from "../../../shared/guard-customer-candidate";
 import { changeBodeeGuardReleaseChannel, openBodeeGuardBilling, removeBodeeGuardComputer, renameBodeeGuardComputer, resumeBodeeGuardSubscription, scheduleBodeeGuardCancellation, startBodeeGuardTrial, subscribeToBodeeGuard } from "../actions";
 import SubmitButton from "../SubmitButton";
 import { manageBodeeGuardBetaInvitation } from "../actions";
@@ -258,6 +259,12 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           </aside>
         )}
 
+        {canDownloadCandidate(user) && <aside className={styles.successNotice} aria-label="Customer installer test">
+          <strong>Customer installer for your setup test · 1.2.339</strong>
+          <p>This is the Stable customer build, separate from Family Beta. It is not yet the public release. Windows may show an unverified publisher warning.</p>
+          <a className={styles.portalButton} href="/guard/download/customer-candidate/">Download customer installer for Windows</a>
+          <p>Family access and pairing are not enabled on this account yet.</p>
+        </aside>}
         {!isComplimentary && release && <WindowsInstallerNotice />}
         {!isComplimentary && account.entitlementStatus === "grace" && <aside className={styles.errorNotice} role="status"><strong>Payment needs attention.</strong> Review Plan & billing{statusDate ? ` before ${statusDate}` : ""} to keep family access.</aside>}
         {!isComplimentary && isTrial && <p className={accountStyles.trialNotice}><CalendarClock size={16} /> Trial ends {readableDate(trialEnd) || "after 30 days"} · No automatic charge</p>}

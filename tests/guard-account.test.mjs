@@ -39,6 +39,7 @@ async function render(account) {
     }
     if (name === '../actions') return new Proxy({}, { get: () => async () => {} });
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
+    if (name.endsWith('/guard-customer-candidate')) return {canDownloadCandidate:()=>false};
     if (name === '../SubmitButton') return { __esModule: true, default: props => React.createElement('button', { className: props.className, type: 'submit' }, props.children) };
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => key }) };
     if (name === 'next/link') return { __esModule: true, default: props => React.createElement('a', props, props.children) };
