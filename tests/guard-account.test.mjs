@@ -81,6 +81,7 @@ test('public customer setup offers a deliberate trial, then a cloud download wit
     enrollment: { customerLaunchOpen: true, canStartTrial: true, canSubscribe: true } }));
   assert.match(ready, /Start 30-day trial/);
   assert.match(ready, /does not yet have a verified Windows publisher/);
+  assert.match(ready, /Windows-wide app restrictions and control of secure-attention shortcuts are not yet complete/);
   assert.doesNotMatch(ready, /Download child app for Windows|PRIVATE.VALIDATION/);
   const active = await render(fixture({ entitlementStatus: 'trial', trialEndsAt: '2030-10-01T00:00:00Z', release: cloudReleaseFixture(),
     trialEligible: false, enrollment: { customerLaunchOpen: true, canStartTrial: false, canSubscribe: false } }));
