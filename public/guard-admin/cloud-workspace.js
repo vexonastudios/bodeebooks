@@ -24,7 +24,7 @@ import { setupCloudSchoolReview } from './cloud-school-review.js?v=20261007-abek
 import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-groups.js';
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
-import { setupSongRequests } from './cloud-song-requests.js?v=20260929-song-requests1';
+import { setupSongRequests } from './cloud-song-requests.js?v=20261101-song-search1';
 import { setupCloudMobile } from './cloud-mobile.js?v=20261007-student-reports1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';

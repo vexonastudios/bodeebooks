@@ -4,7 +4,7 @@ export function setupSongRequests({ endpoint, navigate }) {
     const n = el('button', '', 'btn btn-secondary'); n.type = 'button';
     const mark = el('i'); mark.dataset.lucide = icon; n.append(mark, el('span', text)); n.onclick = action; return n;
   };
-  const sheet = el('link'); sheet.rel = 'stylesheet'; sheet.href = '/guard-admin/cloud-song-requests.css?v=20260929-song-requests1'; document.head.append(sheet);
+  const sheet = el('link'); sheet.rel = 'stylesheet'; sheet.href = '/guard-admin/cloud-song-requests.css?v=20261101-song-search1'; document.head.append(sheet);
   let pending = 0, reading = null, dirty = true, lastRead = 0, loading = null, generation = 0, displayedPending = null;
   const list = document.getElementById('mreq-list');
   async function call(path, body, method = 'GET', requestId) {
@@ -89,9 +89,11 @@ export function setupSongRequests({ endpoint, navigate }) {
     const close = button('Close', 'x', () => dialog.close()); head.append(el('h2', `Song for ${request.student_name}`), close);
     const status = el('p', '', 'song-request-status'); status.setAttribute('role', 'status');
     const existing = el('select'); existing.setAttribute('aria-label', 'Choose from your music library'); existing.append(new Option('Choose a recording from your library…', ''));
-    const url = el('input'); url.placeholder = 'Paste a YouTube song link'; url.setAttribute('aria-label', 'YouTube song link');
+    const url = el('input'); url.placeholder = 'Search song or artist, or paste a YouTube link'; url.setAttribute('aria-label', 'Song or artist, or YouTube link');
     const title = el('input'); title.maxLength = 200; title.setAttribute('aria-label', 'Recording title'); title.placeholder = 'Recording title';
     const preview = el('div', '', 'song-review-preview');
+    const searchStatus = el('p', '', 'song-review-search-status'); searchStatus.setAttribute('role', 'status');
+    const results = el('div', '', 'song-review-results');
     const check = el('input'); check.type = 'checkbox'; check.disabled = true;
     const consent = el('label', '', 'song-review-consent'); consent.append(check, el('span', 'I reviewed this recording and approve it for this child.'));
     let selected = null, attempt = null, preparation = 0, busy = false;
@@ -104,26 +106,50 @@ export function setupSongRequests({ endpoint, navigate }) {
       catch (error) { status.textContent = error.message; }
       finally { busy = false; approve.disabled = !check.checked; }
     }); approve.disabled = true;
-    function reset() { preparation++; selected = null; check.checked = false; check.disabled = true; approve.disabled = true; preview.replaceChildren(); }
+    function reset() { preparation++; selected = null; check.checked = false; check.disabled = true; approve.disabled = true; preview.replaceChildren(); results.replaceChildren(); searchStatus.textContent = ''; }
     function prepare(track) {
       if (!/^[A-Za-z0-9_-]{11}$/.test(track.youtube_id || '')) throw Error('Choose a valid YouTube recording.');
       selected = track.id ? { track_id: track.id } : { youtube_id: track.youtube_id, artist: track.artist || '' };
-      title.value = track.title; title.readOnly = Boolean(track.id); check.disabled = false; status.textContent = 'Play the recording to review it, then confirm below.';
+      title.value = track.title; title.readOnly = Boolean(track.id); check.disabled = false; searchStatus.textContent = ''; status.textContent = 'Play the recording to review it, then confirm below.';
       const frame = el('iframe'); frame.title = 'Review the selected song'; frame.src = 'https://www.youtube-nocookie.com/embed/' + track.youtube_id;
       frame.allow = 'encrypted-media; fullscreen'; frame.referrerPolicy = 'strict-origin-when-cross-origin'; preview.replaceChildren(frame);
     }
     const lookup = button('Find recording', 'search', async () => {
-      reset(); const ticket = preparation;
-      const id = url.value.trim().match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/)?.[1] || (/^[A-Za-z0-9_-]{11}$/.test(url.value.trim()) ? url.value.trim() : null);
-      if (!id) { status.textContent = 'Paste a YouTube song link.'; return; }
-      lookup.disabled = true; status.textContent = 'Finding the recording…';
-      try { const info = await call('/api/music/lookup?youtube_id=' + id); if (ticket === preparation && dialog.open) prepare({ youtube_id: id, title: info.title, artist: info.author_name }); }
-      catch (error) { status.textContent = error.message; }
+      reset();
+      const ticket = preparation, input = url.value.trim();
+      const id = input.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/)?.[1] ||
+        (/^[A-Za-z0-9_-]{11}$/.test(input) ? input : null);
+      if (!input) { searchStatus.textContent = 'Enter a song, artist, or YouTube link.'; return; }
+      lookup.disabled = true;
+      searchStatus.textContent = id ? 'Finding the recording…' : 'Searching for recordings…';
+      try {
+        if (id) {
+          const info = await call('/api/music/lookup?youtube_id=' + id);
+          if (ticket === preparation && dialog.open) prepare({ youtube_id: id, title: info.title, artist: info.author_name });
+        } else {
+          if (input.length < 2) { searchStatus.textContent = 'Enter at least two characters to search.'; return; }
+          const found = await call('/api/youtube/search?type=video&q=' + encodeURIComponent(input));
+          if (ticket !== preparation || !dialog.open) return;
+          const tracks = (found.results || []).filter(item => /^[A-Za-z0-9_-]{11}$/.test(item.youtube_id || ''));
+          searchStatus.textContent = tracks.length ? 'Choose a recording below to play and review.' : 'No recordings found. Try a different song or artist.';
+          for (const item of tracks) {
+            const choice = button(item.title + (item.channel ? ' — ' + item.channel : ''), 'play', () => {
+              reset();
+              url.value = item.youtube_url || 'https://www.youtube.com/watch?v=' + item.youtube_id;
+              prepare({ youtube_id: item.youtube_id, title: item.title, artist: item.channel });
+            });
+            choice.classList.add('song-review-result');
+            results.append(choice);
+          }
+          window.lucide?.createIcons();
+        }
+      } catch (error) { if (ticket === preparation) searchStatus.textContent = error.message; }
       finally { lookup.disabled = false; }
     });
+    url.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); lookup.click(); } });
     const options = new Map(); existing.onchange = () => { reset(); url.value = ''; if (options.has(existing.value)) prepare(options.get(existing.value)); };
     url.oninput = () => { reset(); existing.value = ''; }; check.onchange = () => { approve.disabled = !check.checked || busy; };
-    const source = el('div', '', 'song-review-source'); source.append(existing, el('p', 'Or choose a different recording'), url, lookup, title);
+    const source = el('div', '', 'song-review-source'); source.append(existing, el('p', 'Or choose a different recording'), url, lookup, searchStatus, results, title);
     dialog.append(head, el('p', `Requested: ${request.song_title || request.details}${request.artist_hint ? ' — ' + request.artist_hint : ''}`), source, preview, consent, status, approve);
     dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
     close.onclick = () => { if (!busy) dialog.close(); };

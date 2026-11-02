@@ -11,3 +11,9 @@
 .song-review-consent{display:flex;gap:12px;align-items:flex-start;margin-top:18px;line-height:1.5}.song-review-consent input{width:22px;height:22px;flex:none;accent-color:#34d399}
 @media(max-width:600px){.song-review-dialog{padding:16px}.song-request-actions .btn{flex:1}.song-review-dialog> .btn{width:100%}.song-review-dialog h2{font-size:20px}}
 @media(min-width:760px){.song-review-dialog[open]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px}.song-review-dialog>.song-request-actions,.song-review-dialog>p,.song-review-dialog>.song-review-consent,.song-review-dialog>.btn{grid-column:1/-1}.song-review-preview iframe{margin:0;height:auto}.song-review-dialog>.btn{justify-self:end}.song-review-dialog>.song-review-consent{margin:0}}
+
+.song-review-search-status{margin:0;min-height:0;color:#b8b2cc;overflow-wrap:anywhere}
+.song-review-search-status:empty,.song-review-results:empty{display:none}
+.song-review-results{display:grid;gap:8px;max-height:min(36dvh,320px);overflow:auto;overscroll-behavior:contain}
+.song-review-dialog .song-review-result{width:100%;justify-content:flex-start;text-align:left;white-space:normal;overflow-wrap:anywhere;padding:10px 12px}
+.song-review-dialog .song-review-result span{min-width:0}
