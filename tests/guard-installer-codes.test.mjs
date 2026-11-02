@@ -5,13 +5,13 @@ import path from 'node:path';
 import Module,{createRequire} from 'node:module';
 import ts from 'typescript';
 function load(filename,auth){
- filename=path.resolve(filename);const module=new Module(filename),native=createRequire(filename);
- module.require=name=>{
+ filename=path.resolve(filename);const loaded=new Module(filename),native=createRequire(filename);
+ loaded.require=name=>{
   if(name==='@clerk/nextjs/server')return{auth:async()=>({isAuthenticated:auth,getToken:async()=>auth?'synthetic-parent-token':null})};
   if(name.startsWith('.'))return load(path.resolve(path.dirname(filename),name+'.ts'),auth);
   return native(name);
  };
- module._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,filename);return module.exports;
+ loaded._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,filename);return loaded.exports;
 }
 async function request({action='code',authenticated=true,status=200,result,origin='https://guard.bodeebooks.com',body,raw,fail=false}={}){
  const savedFetch=globalThis.fetch;
