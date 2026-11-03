@@ -10,7 +10,8 @@ export async function POST(request: Request) {
     const {result,error} = await installerApi("/v1/account/installer-codes",{},token);
     if (error) return error;
     const link = installerLink(result.descriptor);
-    if (!/^[2-9A-HJ-NP-Z]{5}-[2-9A-HJ-NP-Z]{5}$/.test(result.code) || !Number.isFinite(Date.parse(result.expiresAt))) return unavailable();
+    // Accept both formats while the API rolls over and older grants expire.
+    if (!/^(?:[A-HJ-NP-Z]{3}[2-9]|[2-9A-HJ-NP-Z]{5}-[2-9A-HJ-NP-Z]{5})$/.test(result.code) || !Number.isFinite(Date.parse(result.expiresAt))) return unavailable();
     return Response.json({code:result.code,expiresAt:result.expiresAt,version:link.version},{headers:privateHeaders});
   } catch { return unavailable(); }
 }

@@ -22,8 +22,8 @@ export default function InstallForm() {
   }
   return <form className={styles.activationForm} onSubmit={submit}>
     <label htmlFor="download-code">Download code from the parent’s phone</label>
-    <input id="download-code" value={code} onChange={event=>{setCode(event.target.value.toUpperCase());setLink(null);setError("");}} placeholder="XXXXX-XXXXX" required minLength={10} maxLength={24} autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-describedby="download-help download-error" disabled={busy} />
-    <p id="download-help" className={styles.pairingHelp}>10 letters and numbers. Spaces and the dash are optional.</p>
+    <input id="download-code" value={code} onChange={event=>{setCode(event.target.value.toUpperCase());setLink(null);setError("");}} placeholder="MKR7" required minLength={4} maxLength={24} autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-describedby="download-help download-error" disabled={busy} />
+    <p id="download-help" className={styles.pairingHelp}>3 letters and 1 number, like MKR7. Capital or lowercase letters both work.</p>
     <button className={styles.portalButton} type="submit" disabled={busy}>{busy ? <LoaderCircle size={18} className={styles.spin} /> : <KeyRound size={18} />}{busy?"Checking code…":"Get download"}</button>
     <div id="download-error" role="alert">{error && <p className={styles.errorMessage}>{error}</p>}</div>
     {link && <div className={styles.installReady}>
