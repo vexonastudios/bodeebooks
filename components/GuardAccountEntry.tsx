@@ -40,7 +40,7 @@ const clerkAppearance = {
 
 const setupSteps = [
   { number: "1", title: "Parent account", detail: "Create and verify your secure login" },
-  { number: "2", title: "Start when ready", detail: "30 days free · no card · no automatic charge" },
+  { number: "2", title: "Start when ready", detail: "At least 30 days free · no card · no automatic charge" },
   { number: "3", title: "Connect child computers", detail: "Install the child app · approve from your browser" },
 ];
 
@@ -96,8 +96,8 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
               <aside className={styles.planCard} aria-label="BodeeGuard trial details">
                 <div>
                   <span className={styles.planLabel}>What happens after signup</span>
-                  <strong>30 days of full BodeeGuard access</strong>
-                  <p>Start the trial from your account when enrollment and the Windows download are available. Creating an account does not start the clock. After 30 days, choose whether to subscribe for $19.99 per month; otherwise access ends without a charge.</p>
+                  <strong>At least 30 days of full BodeeGuard access</strong>
+                  <p>Start the trial from your account when enrollment and the Windows download are available. Creating an account does not start the clock. When your trial ends, choose whether to subscribe for $19.99 per month; otherwise access ends without a charge.</p>
                 </div>
                 <ul>
                   <li><Check size={15} /> No charge—or trial code—for creating this account</li>
@@ -151,7 +151,7 @@ export default async function GuardAccountEntry({ mode }: GuardAccountEntryProps
             {isSignUp && (
               <div className={styles.nextNote}>
                 <CreditCard size={17} />
-                <p><strong>Next:</strong> After email verification, open your parent account. When enrollment opens, select Start 30-day trial to begin. Your trial does not start automatically and no card is required.</p>
+                <p><strong>Next:</strong> After email verification, open your parent account. When enrollment opens, select Start free trial to begin. Your trial does not start automatically and no card is required.</p>
               </div>
             )}
           </section>

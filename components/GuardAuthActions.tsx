@@ -16,7 +16,7 @@ export default function GuardAuthActions() {
         <Link className={styles.secondaryButton} href="/guard/sign-in">
           <LogIn size={17} /> Parent sign in
         </Link>
-        <span className={styles.accountNote}>Creating an account is free. The 30-day trial requires no card and creates no automatic charge; subscribe afterward only if you choose.</span>
+        <span className={styles.accountNote}>Creating an account is free. Your free trial includes at least 30 days, requires no card and creates no automatic charge; subscribe afterward only if you choose.</span>
       </Show>
       <Show when="signed-in">
         <Link className={styles.primaryButton} href="/guard/account">

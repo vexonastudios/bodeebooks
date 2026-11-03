@@ -21,7 +21,7 @@ const questions = [
   ["Does it replace our homeschool curriculum?", "No. Keep using your curriculum and school accounts. BodeeGuard helps organize access and adds its own learning tools. Third-party school subscriptions and accounts, such as Abeka, are separate."],
   ["Can my children have different rules?", "Yes. Set a family default, then adjust individual children’s activities, required schoolwork, schedules and time limits. You can also send messages and grant extra time from the parent dashboard."],
   ["Does the parent dashboard need to stay open?", "No. The child app applies the rules you have saved. The parent dashboard pauses routine checks when idle and refreshes when you return. Remote changes reach a child computer when it reconnects."],
-  ["Can we try it before subscribing?", "Creating a parent account is free. The 30-day trial requires no card and creates no automatic charge. You choose whether to subscribe afterward; your parent account shows the available plan and setup steps."],
+  ["Can we try it before subscribing?", "Creating a parent account is free. Your free trial includes at least 30 days, requires no card and creates no automatic charge. You choose whether to subscribe afterward; your parent account shows the available plan and setup steps."],
 ];
 
 export default function GuardPage() {

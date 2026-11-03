@@ -196,3 +196,20 @@ test('paid scheduled cancellation still offers resumption after cloud-only onboa
   assert.match(html, /Payment history/);
   assert.doesNotMatch(html, /Cancel at the end of my billing period/);
 });
+
+
+test('early access displays the API launch offer while active access uses its confirmed end', async () => {
+  const offer={minimumDays:30,endsAt:'2027-01-01T06:00:00.000Z',extendedForLaunch:true,paidLaunchAt:'2027-01-01T06:00:00.000Z',timeZone:'America/Chicago'};
+  const ready=await render(fixture({trialOffer:offer,release:cloudReleaseFixture(),enrollment:{customerLaunchOpen:true,canStartTrial:true,canSubscribe:true}}));
+  assert.match(ready,/Start extended free trial/);assert.match(ready,/Early-access trial through January 1, 2027/);assert.match(ready,/at least 30 days/);
+  assert.doesNotMatch(ready,/Start 30-day trial/);
+  const active=await render(fixture({trialOffer:offer,entitlementStatus:'trial',trialEndsAt:'2027-01-19T12:00:00.000Z',trialEligible:false,release:cloudReleaseFixture()}));
+  assert.match(active,/January 19, 2027/);assert.match(active,/No automatic charge/);assert.doesNotMatch(active,/Start extended free trial|Trial ends January 1, 2027/);
+});
+
+test('postlaunch and invalid offers retain the standard thirty-day enrollment wording', async () => {
+  for(const offer of [{extendedForLaunch:false,endsAt:'2027-02-01T12:00:00Z'},{extendedForLaunch:true,endsAt:'invalid'}]) {
+    const html=await render(fixture({trialOffer:offer,release:cloudReleaseFixture(),enrollment:{customerLaunchOpen:true,canStartTrial:true,canSubscribe:true}}));
+    assert.match(html,/Start 30-day trial/);assert.doesNotMatch(html,/Start extended free trial/);
+  }
+});
