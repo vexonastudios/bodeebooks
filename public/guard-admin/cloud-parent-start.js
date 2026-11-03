@@ -2,7 +2,7 @@ import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetu
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
 import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js';
-import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick1';
+import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick2';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
@@ -29,7 +29,8 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     previewDraft:input=>request('preview-family-prompt',input),
     confirmDraft:async input=>{const result=await request('confirm-family-prompt',input);await refresh();return result;},
     onBusy:value=>{promptBusy=value;if(value){unlockPrompt=lockControls(footer);dismiss.disabled=true;if(manualChildren)manualChildren.inert=true;}else{unlockPrompt?.();unlockPrompt=null;dismiss.disabled=false;if(manualChildren)manualChildren.inert=false;status();}},
-    onSaved:()=>{manualChildren?.refresh?.();updateWelcome();}
+    onSaved:()=>{manualChildren?.refresh?.();updateWelcome();},
+    onManualEntry:()=>{if(manualChildren){manualChildren.open=true;manualChildren.querySelector('[name=childName]')?.focus();}}
   });
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
   const launch=button('Family setup',()=>open(),true);launch.id='parent-start-guide';

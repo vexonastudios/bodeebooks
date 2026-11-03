@@ -23,7 +23,7 @@ const server=http.createServer(async(req,res)=>{
   const chunks=[];for await(const chunk of req)chunks.push(chunk);const input=JSON.parse(Buffer.concat(chunks));res.setHeader('Content-Type','application/json');
   if(input.action==='get-setup'){res.end(JSON.stringify(state));return;}
   if(input.action==='save-setup'){state={...state,...input,revision:state.revision+1};res.end(JSON.stringify(state));return;}
-  if(input.action==='preview-family-prompt'){previews++;assert.equal(input.prompt,'Mia is in grade 3 with Abeka');await new Promise(r=>setTimeout(r,100));res.end(JSON.stringify({children:[{name:'Mia',grade:'3',provider:'abeka',schoolName:'Abeka'}],notes:[]}));return;}
+  if(input.action==='preview-family-prompt'){previews++;if(input.prompt==='No setup details yet'){res.end(JSON.stringify({children:[],notes:[]}));return;}assert.equal(input.prompt,'Mia is in grade 3 with Abeka');await new Promise(r=>setTimeout(r,100));res.end(JSON.stringify({children:[{name:'Mia',grade:'3',provider:'abeka',schoolName:'Abeka'}],notes:[]}));return;}
   if(input.action==='confirm-family-prompt'){
    confirms.push(input);if(!snapshot.students.length)snapshot.students.push({id:'mia',name:'Mia',grade:'3',main_school:{provider:'abeka'}});
    if(lostReply){lostReply=false;res.writeHead(503);res.end(JSON.stringify({error:'Connection lost'}));return;}
@@ -68,6 +68,13 @@ async function main(){
  await wait('window.aborts>0');await js('guide.open(0)');await wait('document.querySelector("dialog[open] textarea")');
  assert.equal(await js('document.querySelector("textarea").value'),'June is in kindergarten');
  assert.match(await js('document.querySelector(".family-prompt-status").textContent'),/Dictation stopped/);
+ await js('document.querySelector("textarea").value="No setup details yet";document.querySelector("textarea").dispatchEvent(new Event("input"))');await click('Create family draft');
+ await wait('document.querySelector(".family-prompt-status").textContent.includes("could not make a draft")');
+ assert.equal(await js('document.querySelector(".family-prompt-review")'),null,'empty response has no review or confirmation');
+ assert.equal(await js('document.querySelector("textarea").value'),'No setup details yet','failed parsing preserves the transcript');
+ await click('Add children one at a time');
+ assert.equal(await js('document.querySelector(".setup-manual-children").open'),true);assert.equal(await js('document.activeElement.name'),'childName');
+ assert.equal(await js('document.querySelector("textarea").value'),'');assert.equal(confirms.length,2,'manual fallback never confirms a draft');
  await new Promise(r=>setTimeout(r,150));
  fs.mkdirSync(path.join(root,'.tmp/quick-setup'),{recursive:true});fs.writeFileSync(path.join(root,'.tmp/quick-setup/phone.png'),(await win.webContents.capturePage()).toPNG());
  console.log('Active quick setup passed: first-step mount, server draft, review, guarded navigation, safe retry, manual preservation, school handoff, widths and microphone cleanup.');

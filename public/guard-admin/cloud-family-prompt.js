@@ -2,7 +2,7 @@ import {decorateSetup,setupField} from './cloud-setup-controls.js?v=20261103-qui
 const node=(tag,text='',cls='')=>{const el=document.createElement(tag);el.textContent=text;el.className=cls;return el;};
 const key=name=>name.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('en-US');
 const button=(label,icon,fn,primary=false)=>{const el=node('button',label,'btn '+(primary?'btn-primary':'btn-secondary'));el.type='button';const mark=node('i','','setup-icon');mark.dataset.lucide=icon;mark.setAttribute('aria-hidden','true');el.prepend(mark);el.onclick=()=>void fn();return el;};
-export function createFamilyPrompt({getSnapshot,previewDraft,confirmDraft,onBusy=()=>{},onSaved=()=>{}}){
+export function createFamilyPrompt({getSnapshot,previewDraft,confirmDraft,onBusy=()=>{},onSaved=()=>{},onManualEntry=()=>{}}){
   let host=null,description='',draft=null,previewRequest=null,saveRequest=null,saved=false,pending=null,recognition=null,voiceTimer=null,voiceBase='',message='',failure=false;
   const updateStatus=(text,bad=false)=>{message=text;failure=bad;const status=host?.querySelector('.family-prompt-status');if(status){status.textContent=text;status.dataset.error=String(bad);}};
   function stopVoice(){clearTimeout(voiceTimer);voiceTimer=null;const active=recognition;recognition=null;if(active){active.onresult=active.onend=active.onerror=null;active.abort();}if(host){const voice=host.querySelector('[data-family-voice]');voice?.setAttribute('aria-pressed','false');if(voice)voice.lastChild.textContent='Speak instead';const textarea=host.querySelector('textarea');if(textarea)textarea.readOnly=false;}}
@@ -25,7 +25,7 @@ export function createFamilyPrompt({getSnapshot,previewDraft,confirmDraft,onBusy
       try{
         const value=await previewDraft(previewRequest),existing=(getSnapshot()?.students||[]).filter(c=>!c.archived_at);
         draft={children:value.children.map(child=>({...child,url:'',selected:!existing.some(c=>key(c.name)===key(child.name))})),notes:value.notes||[],rulesRevision:getSnapshot()?.rules?.revision||0};
-        saveRequest=null;saved=false;updateStatus(value.children.length?'Check names, grades and schools below. Nothing has been saved yet.':'No children found. Add their names and try again.',!value.children.length);
+        saveRequest=null;saved=false;updateStatus(value.children.length?'Check names, grades and schools below. Nothing has been saved yet.':'We could not make a draft from that wording. Your description is kept. You can edit it and try again, or add children one at a time.',!value.children.length);
       }catch(error){previewRequest=null;updateStatus(error.message||'Could not create a draft. Add children individually below or try again.',true);}
     });
   }
@@ -48,7 +48,10 @@ export function createFamilyPrompt({getSnapshot,previewDraft,confirmDraft,onBusy
     const label=node('label','','setup-field');label.append(node('span','Your children and their school'));const textarea=node('textarea');textarea.rows=4;textarea.maxLength=4000;textarea.value=description;textarea.placeholder='Mia is in 3rd grade with Abeka. Jonah is in 5th grade with Bob Jones. June is in kindergarten with no online school yet.';textarea.disabled=Boolean(pending)||Boolean(saveRequest)||saved;textarea.oninput=()=>{description=textarea.value;previewRequest=null;if(draft){draft=null;host.querySelector('.family-prompt-review')?.remove();updateStatus('Description changed. Create a new draft before saving.');}};label.append(textarea);host.append(label);
     const tools=node('div','','family-prompt-actions'),voice=button('Speak instead','mic',startVoice);voice.dataset.familyVoice='';voice.setAttribute('aria-pressed',String(Boolean(recognition)));const create=button(draft?'Create a new draft':'Create family draft','sparkles',preview,true);voice.disabled=create.disabled=Boolean(pending)||Boolean(saveRequest)||saved;tools.append(voice,create);host.append(tools,node('p','BodeeGuard parses your text on its own server. Nothing is saved until you confirm. Optional dictation uses your browser’s speech service.','family-prompt-privacy'));
     const status=node('p',message,'family-prompt-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.dataset.error=String(failure);host.append(status);
-    if(draft&&!saved){
+    if(draft&&!saved&&!draft.children.length){
+      const manual=button('Add children one at a time','user-round-plus',()=>{stopVoice();description='';draft=null;previewRequest=null;updateStatus('Add your children individually below.');render();onManualEntry();});manual.disabled=Boolean(pending);host.append(manual);
+    }
+    if(draft&&!saved&&draft.children.length){
       const review=node('section','','family-prompt-review');review.append(node('h4','Review your children'),node('p','Select the children to add. Missing grades can be filled in later. Existing children are deselected to avoid duplicates.','setup-copy'));
       for(const note of draft.notes)review.append(node('p',note,'family-prompt-note'));
       draft.children.forEach((child,index)=>{
