@@ -26,9 +26,8 @@ async function run(){
   const win=new BrowserWindow({show:false,width:1200,height:920,webPreferences:{offscreen:true,sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}}),js=async s=>{try{return await win.webContents.executeJavaScript(s.includes('await ')?'(async()=>{'+s+'})()':s,true);}catch(e){throw Error('Renderer fixture failed at: '+s+' / '+e.message);}};
   win.webContents.on('console-message',event=>console.log('renderer:',event.message));await win.loadURL(origin);for(let i=0;i<50&&!await js('window.ready');i++)await delay(30);assert.equal(await js('ready'),true);
   await js("typeDescription('Mia is in grade 3 with Abeka; Jonah is in grade 5.');clickText('Create family draft');await settle()");
-  assert.equal(await js('calls.length'),0,'no AI request without explicit consent');
-  await js("document.querySelector('.family-prompt-consent input').click();clickText('Create family draft');await settle()");
-  assert.equal(await js('calls.length'),1);assert.equal(await js('calls[0].input.consent'),true);
+  assert.equal(await js('calls.length'),1);assert.equal(await js('calls[0].input.prompt'),'Mia is in grade 3 with Abeka; Jonah is in grade 5.');
+  assert.equal(await js('document.querySelector(".family-prompt-consent")'),null);
   assert.deepEqual(await js("[...document.querySelectorAll('.family-prompt-include input')].map(i=>i.checked)"),[true,false,true]);
   assert.equal(await js('calls.some(c=>c.action==="confirm")'),false,'a draft does not save');
   assert.equal(await js('component.flush().then(()=>false,()=>true)'),true,'continuing requires review');
@@ -45,6 +44,7 @@ async function run(){
   await js("voice.onerror({error:'not-allowed'})");assert.equal(await js("document.querySelector('textarea').readOnly"),false);assert.match(await js("document.querySelector('.family-prompt-status').textContent"),/denied/);
   await js("clickText('Speak instead');component.unmount()");assert.equal(await js('aborted>=2'),true,'closing releases speech service');
   await js("Object.defineProperty(window,'SpeechRecognition',{value:undefined,configurable:true});Object.defineProperty(window,'webkitSpeechRecognition',{value:undefined,configurable:true});component.mount(document.getElementById('host'));clickText('Speak instead')");assert.match(await js("document.querySelector('.family-prompt-status').textContent"),/keyboard microphone/);
-  console.log('Family prompt: consent, editable draft, duplicate defaults, retries, 4 responsive widths and dictation lifecycle passed');win.destroy();server.close();app.exit(0);
+  await js("clickText('Create family draft');await settle();Object.defineProperty(window,'SpeechRecognition',{value:class{start(){window.voice=this;}abort(){}},configurable:true});clickText('Speak instead');voice.onresult({results:[[{transcript:'June is in grade one'}]]});");assert.equal(await js('document.querySelector(".family-prompt-review")'),null,'dictated edits also discard stale review');
+  console.log('Family prompt: server draft, editable review, duplicate defaults, retries, 4 responsive widths and dictation lifecycle passed');win.destroy();server.close();app.exit(0);
 }
 run().catch(error=>{console.error(error);server.close();app.exit(1);});

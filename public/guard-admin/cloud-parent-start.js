@@ -1,7 +1,8 @@
-import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js';
+import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261103-quick1';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
 import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js';
+import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick1';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
@@ -13,17 +14,23 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20260927-finish1';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-quick1';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
   const later=button('Save and close',()=>save(true)),back=button('Back',()=>move(-1)),next=button('Continue',()=>move(1),true);
-  const dismiss=button('Close',()=>{if(!busy)dialog.close();});dismiss.classList.add('setup-dismiss');
+  const dismiss=button('Close',()=>{if(!busy&&!promptBusy)dialog.close();});dismiss.classList.add('setup-dismiss');
   dismiss.setAttribute('aria-label','Close setup without saving');dismiss.title='Saved changes are kept. Unsaved edits will be discarded.';
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{draft=null;render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null,reviewing=false;
-  let choreChoice=null,choreRequest=null;
+  let choreChoice=null,choreRequest=null,promptBusy=false,unlockPrompt=null,manualChildren=null;
+  const familyPrompt=createFamilyPrompt({getSnapshot,
+    previewDraft:input=>request('preview-family-prompt',input),
+    confirmDraft:async input=>{const result=await request('confirm-family-prompt',input);await refresh();return result;},
+    onBusy:value=>{promptBusy=value;if(value){unlockPrompt=lockControls(footer);dismiss.disabled=true;if(manualChildren)manualChildren.inert=true;}else{unlockPrompt?.();unlockPrompt=null;dismiss.disabled=false;if(manualChildren)manualChildren.inert=false;status();}},
+    onSaved:()=>{manualChildren?.refresh?.();updateWelcome();}
+  });
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
   const launch=button('Family setup',()=>open(),true);launch.id='parent-start-guide';
   (document.querySelector('#overview-actions')||document.querySelector('#tab-overview .tab-header'))?.append(launch);
@@ -53,7 +60,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     next.textContent=index===3?(canFinish()?'Finish setup & hide reminder':'Save & finish later'):index===2?(reviewing?'Save plan & continue':'Review choices'):'Continue';
   }
   async function open(startAt) {
-    if(busy||dialog.open||!getSnapshot())return;
+    if(busy||promptBusy||dialog.open||!getSnapshot())return;
     busy=true;launch.disabled=settingsLaunch.disabled=true;previousFocus=document.activeElement;
     try {
       state=await request('get-setup');
@@ -82,7 +89,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     }finally{unlock();}
   }
   async function save(close=false) {
-    if(busy||!state)return false;
+    if(busy||promptBusy||!state)return false;
     if(draft?.dirty){error.textContent='Review and save your activity choices first, or use Discard activity changes.';return false;}
     busy=true;const unlock=lockControls(footer);error.textContent='';
     try{await persist();if(close)dialog.close();return true;}
@@ -90,7 +97,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     finally{busy=false;unlock();status();}
   }
   async function move(direction) {
-    if(busy)return;
+    if(busy||promptBusy)return;
     if(index===2&&direction<0&&reviewing){reviewing=false;render();return;}
     if(index===2&&direction<0&&draft?.dirty){error.textContent='Review and save your activity choices first, or discard them.';return;}
     busy=true;const unlock=lockControls(footer);error.textContent='';
@@ -246,8 +253,14 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(section);
   }
   function render() {
-    footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
-    if(index===0){body.append(node('p','Add everyone now. Start with one family plan, then adjust only what each child needs.','setup-copy'));pending.push(inlineChildren({host:body,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}}));}
+    familyPrompt.unmount();manualChildren=null;footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
+    if(index===0){
+      familyPrompt.mount(body);pending.push(()=>familyPrompt.flush());
+      manualChildren=node('details','','setup-manual-children');manualChildren.append(node('summary','Add children one at a time'));
+      const manualHost=node('div');manualChildren.append(manualHost);body.append(manualChildren);
+      const saveChild=inlineChildren({host:manualHost,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}});
+      manualChildren.refresh=saveChild.refresh;pending.push(saveChild);
+    }
     else if(index===1){
       body.append(node('p','Choose a school for each child. You will sign into school later on the child’s computer.','setup-copy'));
       for(const child of children())pending.push(inlineSchool({host:body,student:child,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}}));
@@ -257,8 +270,8 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     if(index===2||index===3&&!state.chores?.chosen&&!state.completed)choreOptions();
     body.scrollTop=0;decorateSetup(dialog);
   }
-  dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy)dialog.close();});
-  dialog.addEventListener('close',()=>{updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
+  dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy&&!promptBusy)dialog.close();});
+  dialog.addEventListener('close',()=>{familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
   return {open,update(){
     updateWelcome();
     if(started||!getSnapshot())return;started=true;

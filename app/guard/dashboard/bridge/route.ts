@@ -68,6 +68,7 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "attendance-list": path = "/attendance/list"; method = "POST"; body = { date: input.date }; break;
     case "attendance-excuse": path = "/attendance/excuse"; method = "POST"; body = { date: input.date, studentId: input.studentId }; break;
     case "daily-plan": path = "/daily-plan"; method = "POST"; body = { studentId: input.studentId }; break;
+    case "preview-family-prompt": path = "/setup/family-prompt/preview"; method = "POST"; body = {requestId:input.requestId,prompt:input.prompt}; break;
     case "confirm-family-prompt": path = "/setup/family-prompt/confirm"; method = "POST"; body = { requestId: input.requestId, confirmed: input.confirmed, rulesRevision: input.rulesRevision,
       children: Array.isArray(input.children) ? input.children.map((child: unknown) => {
         const row = child && typeof child === "object" ? child as Record<string, unknown> : {};

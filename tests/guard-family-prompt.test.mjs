@@ -17,3 +17,17 @@ test('reviewed family save is authenticated, same origin and strips submitted ho
   assert.equal(calls[0][0],'/setup/family-prompt/confirm');
   assert.deepEqual(JSON.parse(calls[0][1].body),{requestId:input.requestId,confirmed:true,rulesRevision:0,children:[{name:'Mia',grade:'3',provider:'abeka',schoolName:'Abeka',url:''}]});
 });
+
+test('server preview is authenticated, same origin and forwards only the description and request ID',async()=>{
+  const filename=path.resolve('app/guard/dashboard/bridge/route.ts'),localRequire=createRequire(filename),mod=new Module(filename),calls=[];
+  let authenticated=false;mod.filename=filename;
+  mod.require=name=>name==='@clerk/nextjs/server'?{auth:async()=>({isAuthenticated:authenticated})}:name==='../cloud-api'?{CloudApiError:class extends Error{},cloudApi:async(...args)=>{calls.push(args);return{children:[],notes:[]};}}:localRequire(name);
+  mod._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,filename);
+  const input={action:'preview-family-prompt',requestId:'11111111-1111-4111-8111-111111111111',prompt:'Mia is in grade 3.',householdId:'foreign',consent:true,confirmed:true};
+  const request=(origin='https://guard.example')=>new Request('https://guard.example/guard/dashboard/bridge/',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(input)});
+  assert.equal((await mod.exports.POST(request())).status,401);authenticated=true;
+  assert.equal((await mod.exports.POST(request('https://foreign.example'))).status,403);assert.equal(calls.length,0);
+  assert.equal((await mod.exports.POST(request())).status,200);
+  assert.equal(calls[0][0],'/setup/family-prompt/preview');
+  assert.deepEqual(JSON.parse(calls[0][1].body),{requestId:input.requestId,prompt:input.prompt});
+});

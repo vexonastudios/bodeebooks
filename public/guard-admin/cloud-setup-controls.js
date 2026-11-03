@@ -49,7 +49,7 @@ export function inlineChildren({ host, getSnapshot, mutate, onError }) {
   }
   add.onclick = () => { if (!name.input.value.trim()) { name.input.required = true; name.input.reportValidity(); return; } void save().catch(onError); };
   editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); add.click(); } });
-  editor.append(name.label, grade.label, add); renderList(); host.append(list, editor); return save;
+  editor.append(name.label, grade.label, add); renderList(); host.append(list, editor); save.refresh = renderList; return save;
 }
 export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
   const section = node('section', '', 'setup-child setup-school-form'); section.append(node('h3', student.name));
