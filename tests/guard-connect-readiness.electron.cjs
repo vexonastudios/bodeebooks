@@ -61,7 +61,7 @@ else {
   assert.equal(await js('document.querySelector(".parent-start-readiness li:last-child").dataset.done'),'false','pending child acknowledgement is not ready');
   snapshot.devices[0].acknowledged_revision=snapshot.devices[0].revision;
   await click('Check again');await wait('document.querySelector(".parent-start-readiness li:last-child").dataset.done==="true"');
-  assert.equal(await js('document.querySelector(".parent-start-readiness li:first-child").dataset.done'),'false','opening readiness does not mark missing school choices complete');
+  assert.equal(await js('document.querySelector(".parent-start-readiness li:first-child").dataset.done'),'false','opening readiness does not mark missing activity choices complete');
   assert.equal(await js('document.querySelector(".parent-start-readiness>strong").textContent'),'Setup still needs attention');
   for(const [name,width,height]of [['phone',390,844],['desktop',1280,900]]){
    win.setContentSize(width,height);await new Promise(resolve=>setTimeout(resolve,120));
@@ -73,7 +73,7 @@ else {
   await js('document.querySelectorAll(".setup-chores input")[1].click()');
   await click('Save & finish later');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,false);
   assert.equal(choreWrites.length,1);assert.equal(choreWrites[0].enabled,false,'skip persists as off');
-  assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),false,'missing school remains actionable');
+  assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),false,'missing activity plan remains actionable');
   snapshot.students[0].main_school={provider:'abeka'};
   snapshot.rules.subjects=[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}},{studentId:'later-child',dailyPlan:{placement:'school'}}]}];
   snapshot.students.push({id:'later-child',name:'Later Child',main_school:{provider:'none'}});

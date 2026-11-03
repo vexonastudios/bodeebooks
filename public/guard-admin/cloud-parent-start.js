@@ -1,12 +1,12 @@
-import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261103-quick1';
+import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261103-schools1';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
-import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js';
+import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js?v=20261103-schools1';
 import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick2';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
-  {id:0,title:'Add your children'}, {id:1,title:'Choose their school'},
+  {id:0,title:'Add your children'}, {id:1,title:'Add school websites (optional)'},
   {id:4,title:'Choose their activities'}, {id:7,title:'Connect & check readiness'}
 ];
 const node = (tag,text='',cls='') => { const el=document.createElement(tag);el.textContent=text;el.className=cls;return el; };
@@ -14,7 +14,7 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-quick1';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-schools1';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -67,7 +67,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       state=await request('get-setup');
       choreChoice=state.chores?.chosen?state.chores.enabled:null;choreRequest=null;
       index=Number.isInteger(startAt)?startAt:state.completed?(nextSetupStep(getSnapshot(),state)?.step??0):Math.max(0,steps.findIndex(step=>step.id>=state.step));
-      // Pairing returns directly to the computer checklist. Missing school or plan
+      // Pairing returns directly to the computer checklist. Missing activity plan
       // choices remain visible there and never become complete just by opening it.
       if(startAt===3)index=children().length?3:0;
       draft=null;reviewing=false;render();dialog.showModal();updateWelcome();
@@ -106,7 +106,6 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       for(const commit of pending)await commit();
       validateChoreChoice();
       if(direction>0&&index===0&&!children().length)throw Error('Add at least one child to continue. You can also save and close.');
-      if(direction>0&&index===1&&children().some(child=>!child.main_school?.provider))throw Error('Choose a school for each child, or select No online school.');
       if(index===2&&direction>0){
         if(!reviewing){reviewing=true;render();return;}
         await savePlan();
@@ -263,8 +262,9 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       manualChildren.refresh=saveChild.refresh;pending.push(saveChild);
     }
     else if(index===1){
-      body.append(node('p','Choose a school for each child. You will sign into school later on the child’s computer.','setup-copy'));
-      for(const child of children())pending.push(inlineSchool({host:body,student:child,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}}));
+      body.append(node('p','Add as many websites as each child needs: math on one site, grammar on another. Not ready, or using books? Continue without adding websites and come back later.','setup-copy'));
+      body.append(node('p','Added websites start as weekday schoolwork. You can adjust their days and requirements in Daily Plan. Sign into each school later on the child’s computer.','setup-note'));
+      for(const child of children())pending.push(inlineSchool({host:body,student:child,getSnapshot,mutate,refresh,searchSites:input=>request('find-school-sites',input),onChange:()=>{error.textContent='';},onError:failure=>{error.textContent=failure.message;}}));
       const optional=node('details');optional.append(node('summary','School hours and days off (optional)'),button('School calendar',()=>section('calendar')));body.append(optional);
     }else if(index===2){if(reviewing)reviewPlan();else activityPicker();}
     else readiness();

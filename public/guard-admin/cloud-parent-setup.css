@@ -20,3 +20,25 @@
 .family-prompt{border:1px solid #8871b9;border-radius:14px;padding:18px;margin:0 0 22px;background:linear-gradient(140deg,#a78bfa12,#34d39906)}.family-prompt-heading{display:flex;align-items:center;gap:6px}.family-prompt-heading h3{margin:0 0 10px;font-size:20px}.family-prompt .setup-field textarea{box-sizing:border-box;resize:vertical;width:100%;min-height:112px;max-height:260px;min-width:0;padding:12px;border:1px solid #716584;border-radius:10px;background:#202034;color:#f1edff;font:inherit;line-height:1.5}.family-prompt-consent{font-size:13px;line-height:1.5}.family-prompt-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.family-prompt-actions .btn{min-height:44px}.family-prompt-privacy,.family-prompt-note{font-size:12px;line-height:1.5;color:#bcb5d0;overflow-wrap:anywhere}.family-prompt-status{font-size:14px;color:#8de3bd;line-height:1.5}.family-prompt-status:empty{display:none}.family-prompt-status[data-error=true]{color:#fda4af}.family-prompt-review{border-top:1px solid #ffffff22;margin-top:18px;padding-top:12px}.family-prompt-review h4{font-size:18px;margin:4px 0 12px}.family-prompt-child{min-width:0;margin:16px 0;padding:12px;border:1px solid #70638d;border-radius:12px}.family-prompt-child legend{font-weight:600;font-size:13px;padding:0 6px}.family-prompt-include{display:flex!important;align-items:center;gap:8px;font-size:14px}.family-prompt-include input{width:18px!important;height:18px;accent-color:#a78bfa}.family-prompt-fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:0 12px}.family-prompt-fields>.setup-field:nth-child(n+3),.family-prompt-fields>.family-prompt-note{grid-column:1/-1}.family-prompt input::placeholder,.family-prompt textarea::placeholder{color:#a7a0b8}@media(max-width:600px){.family-prompt{padding:14px}.family-prompt-fields{grid-template-columns:1fr}.family-prompt-actions .btn{flex:1 1 150px;font-size:14px}.family-prompt-heading h3{font-size:18px}}
 
 .setup-manual-children{margin:10px 0 18px;border-top:1px solid #ffffff22;padding-top:14px}.setup-manual-children>summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:8px}.setup-manual-children>div{padding-top:10px}
+/* Optional school websites: compact per-child lists and explicit approval. */
+.setup-school-heading,.setup-school-actions,.setup-school-search{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.setup-school-heading{justify-content:space-between;margin-bottom:12px}
+.setup-school-heading h3{margin:0}
+.setup-school-count{font-size:.8rem;color:#b6aed1;border:1px solid #ffffff18;padding:4px 9px;border-radius:99px}
+.setup-school-list{display:grid;gap:10px;margin-bottom:12px}
+.setup-school-site,.setup-school-result{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #ffffff16;border-radius:12px;background:#ffffff04;min-width:0}
+.setup-school-site>div:first-child,.setup-school-result>div:first-child{min-width:0}
+.setup-school-address{display:block;font-size:.82rem;color:#b7b4ce;overflow-wrap:anywhere;margin-top:4px}
+.setup-school-site .btn,.setup-school-result .btn{padding:8px 12px;font-size:.84rem;flex-shrink:0;min-height:40px}
+.setup-school-editor{border-top:1px solid #ffffff1c;padding-top:16px;display:grid;gap:12px}
+.setup-school-editor[hidden],.setup-school-editor [hidden]{display:none!important}
+.setup-school-editor .setup-note{margin:0;font-size:.85rem}
+.setup-school-search{align-items:flex-end}.setup-school-search .setup-field{flex:1;min-width:180px}
+.setup-school-search .btn{min-height:44px}
+.setup-school-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.setup-school-result small{display:block;color:#aaa3c1;font-size:.76rem;margin-top:4px}
+.setup-school-result strong{font-size:.9rem}
+.setup-school-review{display:grid;gap:12px;border:1px solid #a78bfa55;background:#a78bfa09;border-radius:12px;padding:14px}
+.setup-school-preview,.setup-school-web-search{color:#c4b5fd;font-size:.86rem;overflow-wrap:anywhere}
+.setup-school-form>[data-error=true]{color:#fda4af}
+@media(max-width:700px){.setup-school-results{grid-template-columns:1fr}.setup-school-site{align-items:flex-start;flex-direction:column}.setup-school-actions .btn{min-height:44px}.setup-school-form{padding:14px}.setup-school-search>.btn{width:100%}.setup-school-result{flex-wrap:wrap}}

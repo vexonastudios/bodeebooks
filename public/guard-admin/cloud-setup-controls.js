@@ -51,42 +51,7 @@ export function inlineChildren({ host, getSnapshot, mutate, onError }) {
   editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); add.click(); } });
   editor.append(name.label, grade.label, add); renderList(); host.append(list, editor); save.refresh = renderList; return save;
 }
-export function inlineSchool({ host, student, getSnapshot, mutate, onError }) {
-  const section = node('section', '', 'setup-child setup-school-form'); section.append(node('h3', student.name));
-  const providerLabel = node('label', '', 'setup-field'), select = node('select'); select.name = `school-${student.id}`;
-  for (const [value, title] of [['','Choose a school'],['abeka','Abeka Academy'],['bju','Bob Jones / BJU Press'],['custom','Another school website'],['none','No online school']]) { const option=node('option',title); option.value=value; select.append(option); }
-  select.value = student.main_school?.provider || ''; providerLabel.append(node('span', 'First school website'), select);
-  const linked = getSnapshot().rules?.subjects?.find(row => row.id === student.main_school?.subjectId);
-  if (student.main_school?.schoolName && !student.main_school?.provider) section.append(node('p', 'School noted: '+student.main_school.schoolName+'. Choose a website below, or No online school for offline curriculum.', 'setup-copy'));
-  const defaults = { abeka:'https://academy.abeka.com/', bju:'https://homeschoolhub.com/auth' };
-  const title = setupField('School name', 'schoolTitle', linked?.title || student.main_school?.schoolName || ''), url = setupField('School website', 'schoolUrl', linked?.url || defaults[select.value] || '', 'url');
-  url.input.maxLength = 2048; title.input.maxLength = 120;
-  const saveButton = node('button', 'Save school', 'btn btn-secondary'); saveButton.type='button';
-  const status = node('span', '', 'setup-inline-status'); status.setAttribute('role','status');
-  let dirty = false, pending = null;
-  function update(reset = false) {
-    const online = !!select.value && select.value !== 'none';
-    title.label.hidden = select.value !== 'custom'; title.input.disabled = title.label.hidden;
-    url.label.hidden = !online; url.input.disabled = !online; url.input.required = online;
-    if (reset) url.input.value = defaults[select.value] || '';
-  }
-  select.onchange = () => { dirty=true; status.textContent=''; update(true); };
-  section.addEventListener('input', () => { dirty=true; status.textContent=''; });
-  function save() {
-    if (pending) return pending;
-    if (!dirty) return Promise.resolve();
-    if (!select.value) return Promise.reject(Error(`Choose ${student.name}’s school, or No online school.`));
-    if (!url.input.reportValidity()) return Promise.reject(Error('Enter the school website.'));
-    const change={ studentId:student.id, revision:getSnapshot().rules.revision, provider:select.value, title:title.input.disabled?null:title.input.value, url:url.input.disabled?null:url.input.value };
-    saveButton.disabled=true; select.disabled=true; title.input.disabled=true; url.input.disabled=true;
-    pending=(async()=>{
-      await mutate('setup-school', change, {notify:false});
-      dirty=false; status.textContent='Saved';
-    })().finally(()=>{pending=null; saveButton.disabled=false; select.disabled=false; update();});
-    return pending;
-  }
-  saveButton.onclick=()=>void save().catch(onError); update(); section.append(providerLabel,title.label,url.label,saveButton,status,node('p','Uses more than one school website? Add the others in Students → Your children’s schools.','setup-note')); host.append(section); return save;
-}
+export {inlineSchool} from './cloud-school-picker.js?v=20261103-schools1';
 // Reuse working dashboard controls in a guide substep; keep the guide and its
 // exact DOM (including drafts and scroll position) mounted for the return.
 export function setupSections({ dialog, body, footer, navigate, onReturn }) {

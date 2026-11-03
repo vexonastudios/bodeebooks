@@ -61,8 +61,8 @@ async function main(){
  assert.match(await js('document.querySelector(".setup-manual-children").textContent'),/Mia/);
  await js('document.querySelector("[name=childName]").value=""');
  for(const width of [1200,390,320]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,50));assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1'));}
- await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Choose their school"');
- assert.equal(await js('document.querySelector("[name=school-mia]").value'),'abeka');
+ await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Add school websites (optional)"');
+ assert.match(await js('document.querySelector(".setup-school-form").textContent'),/Mia/);assert.equal(await js('document.querySelector(".setup-school-editor").hidden'),true);
  await click('Back');await wait('document.querySelector(".family-prompt")');await click('Add more children');await click('Speak instead');
  await js('voice.onresult({results:[[{transcript:"June is in kindergarten"}]]})');await click('Close');await wait('!document.querySelector("dialog[open]")');
  await wait('window.aborts>0');await js('guide.open(0)');await wait('document.querySelector("dialog[open] textarea")');

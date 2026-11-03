@@ -48,9 +48,9 @@ test('new never-confirmed computer is not hidden by family completion',()=>{
   const s=family();s.devices[0].acknowledged_revision=0;
   assert.match(nextSetupStep(s,{completed:true}).label,/get computer confirmation/);
 });
-test('school and activity choices remain required and archived profiles are excluded',()=>{
+test('school sites are optional, activity choices remain required and archived profiles are excluded',()=>{
   const s=family();s.students.push({id:'old',archived_at:'2020-01-01'});s.students[0].main_school=null;
-  assert.equal(familyReadiness(s,{}).length,1);assert.equal(nextSetupStep(s,{}).step,1);
+  assert.equal(familyReadiness(s,{}).length,1);assert.equal(familyReadiness(s,{})[0].ready,true);
   s.students[0].main_school={provider:'none'};s.rules.subjects=[];assert.equal(nextSetupStep(s,{}).step,2);
 });
 test('no children is never complete',()=>{

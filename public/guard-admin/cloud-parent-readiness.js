@@ -23,7 +23,6 @@ export function familyReadiness(snapshot, setup) {
     const connected = !!device && connectionState(device, now) === 'Connected';
     const hasPlan = snapshot.rules.subjects.some(subject => subject.assignments?.some(a => a.studentId === child.id && a.dailyPlan));
     const checks = [
-      {id:'school',label:'School chosen',done:!!child.main_school?.provider,step:1,action:'Choose school',detail:'Choose a school website, or select No online school.'},
       {id:'activities',label:'Activity choices saved',done:hasPlan || setup?.completed === true,step:2,action:'Choose activities',detail:'Review the daily plan and save this child’s activity choices.'},
       {id:'computer',label:'Computer assigned',done:!!device,step:3,action:'Connect a computer',detail:'Install BodeeGuard, approve its pairing code, and assign this child.'},
       {id:'recovery',label:'Parent recovery configured',done:device?.recovery_configured === true,step:3,action:'Set up parent recovery',detail:'On this child’s computer, open BodeeGuard and finish parent recovery setup. Then tap Check again here.'},
