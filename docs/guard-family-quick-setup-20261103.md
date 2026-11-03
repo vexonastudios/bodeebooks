@@ -22,3 +22,9 @@ Cloud counterpart and final deployment receipt:
 `bodee-guard/docs/family-quick-setup-20261103.md`.
 Ignored local evidence and screenshots: `.tmp/quick-setup/`.
 No Windows installer or update channel is changed by this parent feature.
+
+Published from source `97149ab073b482396969c9490fea4b5ecc14f3d2` as deployment
+`dpl_5ZjBP7JSMTHmELsF1UrJpHiCUX1q`, after commercial API deployment
+`dpl_7uRQoSs3qP2t6PkBGpsiJJ7tRQHG`. Candidate and public release identity match.
+The live tutorial account displayed Quick family setup and correctly parsed a
+fictional three-child description. Its review was discarded without saving.
