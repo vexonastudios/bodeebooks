@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.340": {
+  "title": "More dependable recovery",
+  "sections": [
+    {
+      "heading": "Version 1.2.340",
+      "headline": "More reliable recovery and early trial dates",
+      "summary": "This maintenance release improves parent exit, recovery and Windows shortcut handling. The parent account shows extended early trial dates, and staff monitoring checks both release channels.",
+      "highlights": [
+        "Parent exit and background cleanup recover from failures without skipping school and session saves.",
+        "Recovery reports clear old errors after a successful restore. Saved work and existing parent decisions are preserved.",
+        "Dedicated Windows browser and application shortcut keys are handled more consistently. Setup explains Windows account protection without preventing setup.",
+        "Early trials last until at least January 1, 2027; families joining near or after launch still receive a full 30 days."
+      ]
+    }
+  ]
+},
   "1.2.339": {
   "title": "Your approved sites, inside BodeeGuard",
   "sections": [
