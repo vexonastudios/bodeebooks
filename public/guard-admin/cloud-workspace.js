@@ -1,6 +1,6 @@
-import { setupParentExitControls } from './cloud-parent-exit-controls.js?v=20261029-compact1';
+import { setupParentExitControls } from './cloud-parent-exit-controls.js?v=20261103-overview1';
 import {setupAbekaAssessments} from './cloud-abeka-assessments.js';
-import { setupQuizletReview } from './cloud-quizlet-review.js';
+import { setupQuizletReview } from './cloud-quizlet-review.js?v=20261103-overview1';
 import { setupCloudBible } from './cloud-bible-family.js';
 import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
@@ -89,7 +89,7 @@ function feedback(text, error = false) {
   parentActionFeedback().page(text,error);
 }
 function selectTab(id) {
-  quizletReview.update(id==='overview');
+  quizletReview.update(id);
   abekaAssessments.update(id==='overview');
   chores.setActive(id === 'chores');
   weeklyActivity.setActive(id === 'overview');
@@ -141,7 +141,7 @@ function showSnapshot() {
   weeklyActivity.update();
   renderComputers();
   parentExitControls.render();
-  quizletReview.update(currentTab==='overview');
+  quizletReview.update(currentTab);
   abekaAssessments.update(currentTab==='overview');
   renderStudents();
   renderSubjects();

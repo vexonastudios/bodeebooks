@@ -1,6 +1,6 @@
 /* global document, window */
 export function setupParentExitControls({getSnapshot,mutate,node,button}) {
-  let settingsOpen=false,historyOpen=false,recentOpen=true,busy=false,notice='';
+  let settingsOpen=false,historyOpen=false,recentOpen=true,panelOpen=false,busy=false,notice='';
   const icon=name=>{const el=document.createElement('i');el.dataset.lucide=name;el.setAttribute('aria-hidden','true');return el;};
   const appearance=report=>report.state==='authorized'?['accepted','Accepted','shield-check']:
     report.state==='incorrect-password'||report.failed_attempts>0?['failed','Failed','shield-alert']:
@@ -58,24 +58,30 @@ export function setupParentExitControls({getSnapshot,mutate,node,button}) {
   function render() {
     const root=document.getElementById('cloud-parent-exit-controls'),snapshot=getSnapshot();
     if(!root || !snapshot)return;
+    panelOpen=root.querySelector('.cloud-overview-section')?.open ?? panelOpen;
     root.replaceChildren();
     const data=snapshot.parentExitControls;
-    root.append(node('h2','','Parent exit & activity'));
-    if(!data) {root.append(node('p','cloud-note','Exit activity is not available from this service yet.'));return;}
-    const attempts=data.attempts||[],unreviewed=attempts.filter(row=>!row.reviewed_at),reviewed=attempts.filter(row=>row.reviewed_at);
+    const attempts=data?.attempts||[],unreviewed=attempts.filter(row=>!row.reviewed_at),reviewed=attempts.filter(row=>row.reviewed_at);
     const pending=unreviewed.filter(row=>row.state!=='authorized'&&(row.source!=='recovery'||row.failed_attempts>0));
+    const panel=node('details','cloud-overview-section'),summary=node('summary','cloud-overview-summary'),intro=node('span','cloud-overview-copy');
+    panel.open=panelOpen;
+    intro.append(node('strong','','Parent exit & activity'),node('small','','Review attempts to leave BodeeGuard and manage parent exit controls.'));
+    const badge=node('span','cloud-overview-badge'+(pending.length?' is-attention':''),!data?'Unavailable':pending.length?pending.length+' to review':unreviewed.length?unreviewed.length+' new reports':'No new reports');
+    summary.append(icon('shield-check'),intro,badge,icon('chevron-down'));
+    const body=node('div','cloud-overview-body');panel.append(summary,body);root.append(panel);
+    if(!data) {body.append(node('p','cloud-note','Exit activity is not available from this service yet.'));window.lucide?.createIcons();return;}
     const tools=node('div','cloud-exit-tools');
-    const alert=node('p',pending.length?'cloud-exit-alert':'cloud-note',pending.length?pending.length+' possible exit '+(pending.length===1?'attempt needs':'attempts need')+' review':'No unreviewed exit attempts.');alert.setAttribute('role','status');
+    const alert=node('p',pending.length?'cloud-exit-alert':'cloud-note',pending.length?pending.length+' possible exit '+(pending.length===1?'attempt needs':'attempts need')+' review':'Review the new reports below. Clearing a report leaves coins unchanged.');alert.setAttribute('role','status');
     const clear=button('Clear all',()=>clearReports(unreviewed),'btn btn-secondary cloud-exit-clear');clear.prepend(icon('list-checks'));
     clear.disabled=busy||!unreviewed.length||unreviewed.some(report=>!Number.isInteger(report.sequence));clear.title='Mark displayed reports reviewed. Coins stay unchanged.';
-    tools.append(alert,clear);root.append(tools);
-    const status=node('p','cloud-exit-action-status',notice);status.setAttribute('role','status');status.setAttribute('aria-live','polite');if(notice)root.append(status);
+    if(unreviewed.length){tools.append(alert,clear);body.append(tools);}
+    const status=node('p','cloud-exit-action-status',notice);status.setAttribute('role','status');status.setAttribute('aria-live','polite');if(notice)body.append(status);
     const recent=node('details','cloud-exit-recent');recent.open=recentOpen;recent.addEventListener('toggle',()=>{recentOpen=recent.open;});recent.append(node('summary','','Recent exit activity'+(unreviewed.length?' · '+unreviewed.length:'')));
     const list=node('div','cloud-exit-list');for(const report of unreviewed)list.append(reportCard(report));
-    if(!unreviewed.length)list.append(node('p','cloud-note','All caught up. Reviewed reports are saved below.'));
-    recent.append(list);root.append(recent);
-    if(reviewed.length) {const history=node('details','cloud-exit-history');history.open=historyOpen;history.addEventListener('toggle',()=>{historyOpen=history.open;});history.append(node('summary','','Reviewed history · '+reviewed.length));const saved=node('div','cloud-exit-list');for(const report of reviewed)saved.append(reportCard(report));history.append(saved);root.append(history);}
-    const settings=node('details','cloud-exit-settings');settings.open=settingsOpen;settings.addEventListener('toggle',()=>{settingsOpen=settings.open;});settings.append(node('summary','','Exit settings & shortcuts'));
+    if(!unreviewed.length)body.append(node('p','cloud-note cloud-exit-empty',reviewed.length?'All caught up. Your reviewed reports are in the history below.':'No exit reports yet. Attempts to open parent controls will appear here after the child’s computer syncs.'));
+    else {recent.append(list);body.append(recent);}
+    if(reviewed.length) {const history=node('details','cloud-exit-history');history.open=historyOpen;history.addEventListener('toggle',()=>{historyOpen=history.open;});const heading=node('summary');heading.append(icon('history'),node('span','','Reviewed history · '+reviewed.length));history.append(heading);const saved=node('div','cloud-exit-list');for(const report of reviewed)saved.append(reportCard(report));history.append(saved);body.append(history);}
+    const settings=node('details','cloud-exit-settings');settings.open=settingsOpen;settings.addEventListener('toggle',()=>{settingsOpen=settings.open;});const settingsHeading=node('summary');settingsHeading.append(icon('settings-2'),node('span','','Exit settings & shortcuts'));settings.append(settingsHeading);
     settings.append(node('p','cloud-note','The exit icon is hidden by default. Parents can open controls with Ctrl+Alt+Q or Ctrl+Shift+Q. Reports never contain typed passwords.'));
     for(const student of snapshot.students.filter(row=>!row.archived_at)) {
       const label=node('label','cloud-exit-setting'),input=document.createElement('input');input.type='checkbox';input.disabled=busy;
@@ -85,7 +91,7 @@ export function setupParentExitControls({getSnapshot,mutate,node,button}) {
       input.onchange=async()=>{const previous=!input.checked;input.disabled=true;state.textContent='Saving…';try {await mutate('parent-exit-settings',{studentId:student.id,showIcon:input.checked});state.textContent='Saved';}catch(error){input.checked=previous;state.textContent=error.message;}finally{input.disabled=false;}};
       label.append(input,node('span','',student.name),state);settings.append(label);
     }
-    root.append(settings);window.lucide?.createIcons();
+    body.append(settings);window.lucide?.createIcons();
   }
   return {render};
 }
