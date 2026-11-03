@@ -16,5 +16,6 @@ Next webpack build passed. Isolated desktop/mobile, exit-report, Quizlet and
 focused dashboard checks are recorded in the cloud repository's
 `docs/overview-disclosures-20261103.md`.
 
-Prepared locally for the next parent-dashboard deployment; not published by
-this task. No API or Windows release is required.
+Published with the authorized optional-school-sites batch on November 3, 2026.
+See `docs/guard-optional-school-sites-20261103.md` for exact source/deployment
+identities and live verification. No Windows release was needed.

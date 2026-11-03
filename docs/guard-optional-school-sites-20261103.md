@@ -30,5 +30,28 @@ Workspace JS, onboarding imports and setup CSS use `20261103-schools1`; Overview
 CSS retains its previous valid version. The active guide is website-owned.
 Do not replace these files with an older full dashboard export.
 
-Prepared locally, not deployed. Next release: API first, then this website.
-No migration, paid search provider, new secret or Windows release is needed.
+## Production delivery — November 3, 2026
+
+Published after the API, including the pending Overview disclosure improvements.
+
+- Website source: `ca8a25ea65cfeca0f8e1469596216ee3f5efba92`.
+  Deployment: `dpl_3zYb9NTBvWCQgS5WWqqnkWNMbZ3a`.
+- API source: `0bb87499a635c120d3ae668cf0bfe6c4119d2902`.
+  Deployment: `dpl_DGCF3QQDhbH4C9BVXPPEtcYNPC3c`.
+- Previous website rollback: `dpl_DYBHrjQ6YzucuXLZh5GrvSgpZw5N`.
+  Previous API rollback: `dpl_JA4aofRpnbzVih2Dg6mu5346oC9P`.
+
+Clean source candidates reached READY and passed checks before promotion. The
+public dashboard release endpoint reports the new deployment ID (the configured
+release identity); changed setup and Overview assets match source with normalized
+line endings. API public health passed, and school lookup requires account auth.
+
+The live signed-in demo dashboard showed optional Step 2 and existing separate
+sites, returned online Khan Academy/Khan Academy Kids suggestions, and filled a
+selected URL into an unsaved draft. The draft was cancelled; no website or family
+setting was saved. Compact exit/recovery disclosures and absence of Quizlet on
+this family's Overview were verified. Local visual receipt:
+`.tmp/live-optional-schools-20261103.png` (not committed).
+
+Live: https://guard.bodeebooks.com/dashboard/ . No migration, paid search provider,
+new secret, Windows release or update-feed change was needed or performed.
