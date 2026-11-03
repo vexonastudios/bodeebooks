@@ -14,7 +14,7 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-schools1';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-connect2';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -191,9 +191,14 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(button('Check again',async()=>{if(busy)return;busy=true;try{for(const commit of pending)await commit();await refresh();render();}catch(failure){error.textContent=failure.message;}finally{busy=false;}}));
     const connections=node('details','','parent-start-more');connections.open=!(getSnapshot().devices||[]).some(device=>!device.revoked_at);
     connections.append(node('summary','Connect a Windows computer'),node('p','On the child’s Windows computer, download and install BodeeGuard. Choose Get pairing code. You can approve that code from this phone or any signed-in parent browser.','setup-copy'));
-    const download=link('Get Windows installer','/guard/account/?setup=connect#child-setup-heading'),approve=link('Approve pairing code','/guard/activate/?setup=1');
-    for(const anchor of [download,approve]){anchor.target='_blank';anchor.rel='noopener';}
-    connections.append(download,approve,node('p','This setup stays open. Return here after approving the code.','setup-copy'));body.append(connections);
+    const connectionLinks=()=>{
+      const download=link('Get Windows installer','/guard/account/?setup=connect#child-setup-heading'),approve=link('Enter pairing code','/guard/activate/?setup=1');
+      // The parent workspace intentionally blocks popups. User-activated top
+      // navigation works in the installed PWA and in the browser's real frame.
+      for(const anchor of [download,approve])anchor.target='_top';
+      return [download,approve];
+    };
+    connections.append(...connectionLinks(),node('p','These pages open in this tab. Your saved family setup is kept. Choose Continue setup after installing or approving the code.','setup-copy'));body.append(connections);
     const unassigned=(getSnapshot().devices||[]).filter(device=>!device.revoked_at&&!device.student_id);
     for(const device of unassigned){
       const row=node('section','','setup-child setup-computer-assignment'),field=node('label','','setup-field'),select=node('select');
@@ -230,7 +235,10 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       if(row.next){
         const action=node('div','','setup-next-action');action.append(node('strong',(later?'When you’re ready: ':'Next: ')+row.next.action),node('p',row.next.detail));
         if(row.next.step<3)action.append(button(row.next.action,()=>{index=row.next.step;render();}));
-        else if(row.next.id==='computer')action.append(button('Connect or assign a computer',()=>{connections.open=true;const target=body.querySelector('.setup-computer-assignment')||connections;target.scrollIntoView({block:'start',behavior:'smooth'});target.querySelector('select,summary')?.focus();}));
+        else if(row.next.id==='computer'){
+          if(unassigned.length)action.append(button('Assign a connected computer',()=>{const target=body.querySelector('.setup-computer-assignment');target.scrollIntoView({block:'start',behavior:'smooth'});target.querySelector('select')?.focus();}));
+          else action.append(node('p','Already installed? Open BodeeGuard on the child’s computer and enter its pairing code here.','setup-copy'),...connectionLinks());
+        }
         card.append(action);
       }
       if(row.child.main_school?.provider&&row.child.main_school.provider!=='none'){

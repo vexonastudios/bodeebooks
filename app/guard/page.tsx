@@ -30,7 +30,10 @@ export default function GuardPage() {
       <div className={styles.container}>
         <div className={styles.productBar}>
           <a className={styles.brand} href="#guard-title"><Image src="/guard-icons/bodeeguard-parent-192.png" alt="" width={42} height={42} /><strong>BodeeGuard</strong></a>
-          <Link href="/" className={styles.backButton}><ArrowLeft size={16} /> Back to Bodee Books</Link>
+          <nav className={styles.productActions} aria-label="Parent account">
+            <Link href="/" prefetch={false} className={styles.backButton}><ArrowLeft size={16} /> Back to Bodee Books</Link>
+            <a href="https://guard.bodeebooks.com/account/" className={styles.primaryButton}>Parent sign in <ArrowRight size={16} /></a>
+          </nav>
         </div>
         <div className={styles.heroGrid}>
           <div className={styles.heroCopy}>

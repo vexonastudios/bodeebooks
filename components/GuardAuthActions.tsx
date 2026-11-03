@@ -1,29 +1,17 @@
-"use client";
-
-import { Show } from "@clerk/nextjs";
-import GuardSignOut from "./GuardSignOut";
-import Link from "next/link";
 import { ArrowRight, LogIn } from "lucide-react";
+import { GUARD_ORIGIN } from "@/shared/guard-domain";
 import styles from "@/app/guard/guard.module.css";
 
 export default function GuardAuthActions() {
   return (
     <div className={styles.authActions}>
-      <Show when="signed-out">
-        <Link className={styles.primaryButton} href="/guard/sign-up">
-          Create parent account <ArrowRight size={17} />
-        </Link>
-        <Link className={styles.secondaryButton} href="/guard/sign-in">
-          <LogIn size={17} /> Parent sign in
-        </Link>
-        <span className={styles.accountNote}>Creating an account is free. Your free trial includes at least 30 days, requires no card and creates no automatic charge; subscribe afterward only if you choose.</span>
-      </Show>
-      <Show when="signed-in">
-        <Link className={styles.primaryButton} href="/guard/account">
-          Open parent account <ArrowRight size={17} />
-        </Link>
-        <GuardSignOut className={styles.secondaryButton} />
-      </Show>
+      <a className={styles.primaryButton} href={`${GUARD_ORIGIN}/sign-up/`}>
+        Create parent account <ArrowRight size={17} />
+      </a>
+      <a className={styles.secondaryButton} href={`${GUARD_ORIGIN}/account/`}>
+        <LogIn size={17} /> Parent sign in
+      </a>
+      <span className={styles.accountNote}>Creating an account is free. Your free trial includes at least 30 days, requires no card and creates no automatic charge; subscribe afterward only if you choose.</span>
     </div>
   );
 }

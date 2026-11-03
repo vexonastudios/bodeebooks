@@ -9,7 +9,7 @@
 .parent-start-readiness li { display:flex; align-items:center; gap:9px; margin:9px 0; color:#d0c6df; font-size:14px; }
 .parent-start-readiness li[data-done=true] { color:#8de3bd; }
 .parent-start-readiness li svg { width:18px; height:18px; flex-shrink:0; }
-.parent-start-more>.btn { margin:4px 8px 8px 0; }
+.parent-start-more>.btn,.setup-next-action>.btn { margin:4px 8px 8px 0; max-width:100%; }
 .parent-start-dialog .daily-plan-preview { width:min(760px,calc(100vw - 32px)); }
 .parent-start-dialog header{position:relative;padding-right:88px}
 .parent-start-dialog .setup-dismiss{position:absolute;top:12px;right:12px;min-width:44px;min-height:44px;padding:8px;font-size:12px}

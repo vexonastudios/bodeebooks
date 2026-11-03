@@ -12,6 +12,8 @@
 .guardPage section[id]{scroll-margin-top:76px}
 .hero{background:radial-gradient(ellipse at 87% 49%,#dce9d7 0,transparent 49%),#f3f5ec;padding:25px 0 76px;border-bottom:1px solid var(--guard-line)}
 .productBar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:60px}
+.productActions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;align-items:center}
+@media(max-width:600px){.productBar{flex-wrap:wrap}.productActions{width:100%;justify-content:flex-start}.productActions>a{flex:1;min-width:0;text-align:center}}
 .brand{display:flex;align-items:center;gap:11px;color:var(--guard-ink);font-size:1.12rem}
 .brand img{border:1px solid #dce5dd;border-radius:12px}
 .backButton{min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;border:1px solid #c7d5c8;border-radius:9px;color:#214b40;background:#fffefb;font-size:.8rem;font-weight:700;line-height:1.4;transition:background .16s,border-color .16s}

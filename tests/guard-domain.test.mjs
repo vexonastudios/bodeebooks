@@ -87,6 +87,17 @@ test('Clerk forms use the actual parent host paths, returning sign-in to dashboa
   }
 });
 
+test('marketing account links are usable in the initial HTML without the identity SDK', () => {
+  const Component = loadComponent('components/GuardAuthActions.tsx', {
+    '@/shared/guard-domain': compiled.exports,
+    '@clerk/nextjs': new Proxy({}, {get(){throw Error('Marketing links must not wait for identity loading');}}),
+  });
+  const html = renderToStaticMarkup(React.createElement(Component));
+  assert.match(html, /href="https:\/\/guard\.bodeebooks\.com\/account\/"[^>]*>.*Parent sign in/);
+  assert.match(html, /href="https:\/\/guard\.bodeebooks\.com\/sign-up\/"/);
+  assert.doesNotMatch(html, /Sign out/);
+});
+
 test('bookstore analytics are never mounted on parent domains or old parent paths', () => {
   const previous = globalThis.window;
   try {
