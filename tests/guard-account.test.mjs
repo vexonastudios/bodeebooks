@@ -213,3 +213,15 @@ test('postlaunch and invalid offers retain the standard thirty-day enrollment wo
     assert.match(html,/Start 30-day trial/);assert.doesNotMatch(html,/Start extended free trial/);
   }
 });
+
+
+test('billing failure keeps a free retry and directs setup to activation instead of blocked child setup', async () => {
+  const html = await render(fixture({ release: cloudReleaseFixture(), hasBillingAccount:true, trialEligible:null,
+    billing:{available:false,invoices:[],plan:null,paymentMethod:null,subscription:null},
+    enrollment:{customerLaunchOpen:true,canStartTrial:false,canRetryTrial:true,canSubscribe:true} }));
+  assert.match(html, /Retry free trial — no card/);
+  assert.match(html, /href="#account-billing"/);
+  assert.match(html, /Activate access first, then add children/);
+  assert.match(html, /Family access is not active yet/);
+  assert.doesNotMatch(html, /Subscribe for \$19.99|Setup will be available here when family enrollment opens|access and family computers are unaffected/);
+});
