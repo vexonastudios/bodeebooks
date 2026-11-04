@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 const moduleUrl = text => 'data:text/javascript;base64,' + Buffer.from(text).toString('base64');
 const workspace = moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-workspace-model.js', import.meta.url), 'utf8'));
-const { familyReadiness, nextSetupStep, canFinishSetup } = await import(moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-parent-readiness.js', import.meta.url), 'utf8').replace("'./cloud-workspace-model.js'", JSON.stringify(workspace))));
+const { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } = await import(moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-parent-readiness.js', import.meta.url), 'utf8').replace("'./cloud-workspace-model.js'", JSON.stringify(workspace))));
 function family() {
   return { parentPassword:{configured:true,revision:1},students:[{id:'child',name:'Test Child',main_school:{provider:'none'}}],
     devices:[{id:'pc',student_id:'child',revision:3,acknowledged_revision:3,recovery_configured:true,family_password_revision:1,last_seen_at:'2020-01-01T00:00:00Z',locked:true}],
@@ -14,6 +14,20 @@ test('offline and paused does not block finishing a confirmed computer',()=>{
   assert.equal(nextSetupStep(family(),{completed:false}).label,'Finish setup and hide this reminder');
   assert.equal(nextSetupStep(family(),{completed:true}),null);
 });
+test('working computer keeps the daily layout independent of unfinished setup choices', () => {
+  const snapshot = family();
+  snapshot.rules.subjects = [];
+  snapshot.students.push({ id: 'later', name: 'Later Child' });
+  assert.equal(canFinishSetup(snapshot, { completed: false }), false);
+  assert.equal(hasWorkingComputer(snapshot, { completed: false }), true);
+  snapshot.devices[0].revision++;
+  assert.equal(hasWorkingComputer(snapshot, { completed: false }), false, 'pending first acknowledgement is not enough');
+  snapshot.activity = [{ student_id: 'child', seconds: 600 }];
+  assert.equal(hasWorkingComputer(snapshot, { completed: false }), true, 'normal pending changes do not displace daily controls after use');
+  snapshot.devices[0].revoked_at = '2026-01-01';
+  assert.equal(hasWorkingComputer(snapshot, { completed: true }), false);
+});
+
 test('pending first confirmation tells the parent what to do',()=>{
   const s=family();s.devices[0].acknowledged_revision=2;
   const row=familyReadiness(s,{completed:false})[0];assert.equal(row.ready,false);assert.equal(row.next.id,'controls');

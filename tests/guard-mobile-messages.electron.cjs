@@ -22,6 +22,7 @@ fixture.students = ['Alex', 'Jamie', 'Taylor', 'Morgan', 'Jordan', 'Avery', 'Cas
 fixture.students.forEach((student,i) => { student.last_child_message_sequence = i===0 ? '9' : i===1 ? '8' : null; });
 fixture.students[0].main_school = { provider: 'abeka' };
 let choresEnabled = true;
+let studentReportCount = 2;
 const history = new Map();
 history.set('11111111-1111-4111-8111-000000000001', [{id:'incoming-1', sequence:'9', sender:'child', body:'I finished my reading. Can we play a game after lunch?', createdAt:new Date().toISOString()}, {id:'outgoing-1',sender:'parent',body:'Of course! Thank you for finishing your work.',createdAt:new Date().toISOString(),receivedAt:new Date().toISOString()}]);
 const messageGroups = Array.from({length:20},(_,i)=>({id:'group-' + i,kind:i%2?'parent':'siblings',closedAt:i===0?'2026-10-05T12:00:00Z':null,members:fixture.students.filter((_,j)=>i===19||[i%9,(i+1)%9,(i+2)%9].includes(j)).map(student=>({studentId:student.id,name:student.name}))}));
@@ -41,6 +42,11 @@ const server = http.createServer(async (req, res) => {
     const file = path.join(site, 'public', assetPath);
     if (fs.existsSync(file)) { res.setHeader('Content-Type', file.endsWith('.css') ? 'text/css' : 'text/javascript'); res.end(fs.readFileSync(file)); return; }
   }
+  if (req.url === '/guard/report/api/') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ count: studentReportCount }));
+    return;
+  }
   if (req.url === '/guard/dashboard/bridge/' || req.url === '/guard/dashboard/upload/') {
     res.setHeader('Content-Type', 'application/json');
     if (req.method === 'GET') { fixture.serverTime = new Date().toISOString(); res.end(JSON.stringify(fixture)); return; }
@@ -50,6 +56,7 @@ const server = http.createServer(async (req, res) => {
     if (input.action === 'chores') output = { enabled: choresEnabled, revision: 1, date: new Date().toISOString().slice(0,10), timeZone: 'America/Chicago', students: fixture.students, items: [], history: [], computers: [] };
     if(input.action==='push-ticket')output={url:'wss://bodeeguard-cloud-assets.james-7f8.workers.dev/v1/push/connect?fixture=synthetic'};
     if (input.action === 'set-school-pause') { fixture.devices[0].locked = input.locked; fixture.devices[0].revision++; }
+    if (input.action === 'get-setup') output = { completed: false, step: 4, features: {}, contentChoices: {}, catalog: { version: 1 } };
     if (input.action === 'list-grades') output = { grades: [], nextBefore: null };
     if (input.action === 'list-files') output = { files: papers, usage: { bytes: 0 } };
     if (input.action === 'read-file') output = {file:papers.find(file=>file.id===input.id),data:paperData};
@@ -95,6 +102,10 @@ async function run() {
   await wait('document.querySelectorAll(".monitor-card").length===9');
   await wait('document.querySelectorAll(".chore-child-summary").length===9');
   const visible = selector => js(`!!document.querySelector(${JSON.stringify(selector)})?.getClientRects().length`);
+  await wait('document.querySelector("#tab-overview").dataset.familyDashboardActive==="true"');
+  assert.equal(await visible('#parent-start-guide'),false,'active family sees daily controls before finishing the guide');
+  assert.equal(await visible('#overview-actions a[href="/guard/activate/"]'),false,'active family approval moves out of Controls');
+  assert.equal(await visible('.parent-start-welcome'),false,'unfinished checklist stays out of daily mobile controls');
   for (const width of [320,390,768]) {
     win.setContentSize(width,844); await new Promise(r=>setTimeout(r,100));
     const tools = await js(`[...document.querySelector('.mobile-overview-shortcuts').children].filter(el=>el.getClientRects().length).map(el=>({box:el.getBoundingClientRect().toJSON(),icon:!!el.querySelector('svg'),label:el.getAttribute('aria-label')}))`);
@@ -132,6 +143,9 @@ async function run() {
   await js('window.dispatchEvent(new Event("cloud-chores-setting-saved"))');
   await wait('document.querySelector(".chore-summary").hidden');
   assert.equal(await visible('.chore-summary'),false,'disabled chores are not exposed by the compact layout');
+  await js('document.querySelector("[data-mobile-tab=mobile-more]").click()');
+  assert.equal(await visible('[data-more-item=chores]'),false,'disabled chores are hidden in More');
+  await js('document.querySelector("[data-mobile-tab=overview]").click()');
   assert.equal(await js('document.querySelectorAll(".chore-child-summary").length'),0);
   choresEnabled=true;
   await js('window.dispatchEvent(new Event("cloud-chores-setting-saved"))');
@@ -145,6 +159,38 @@ async function run() {
   win.setContentSize(390,844); await new Promise(r=>setTimeout(r,100));
   assert.equal(await visible('.monitor-card .chore-child-summary'),false,'returning to mobile restores collapsed details');
   console.log('Mobile overview passed: 320/390/768px compact icon row, collapsed Quick Unlock, expanded chores and power controls, existing shortcut actions, optional chores visibility and desktop restoration.');
+  await js('document.querySelector("[data-mobile-tab=mobile-more]").click()');
+  const moreRows = await js(`[...document.querySelectorAll('#tab-mobile-more .mobile-more-item:not([hidden])')].map(row => ({
+    id: row.dataset.moreItem,
+    icon: row.querySelector('.mobile-more-symbol svg')?.getAttribute('data-lucide'),
+    label: row.querySelector('.mobile-more-label')?.textContent,
+    arrow: !!row.querySelector(':scope > svg.lucide-chevron-right'),
+    height: row.getBoundingClientRect().height,
+    color: getComputedStyle(row.querySelector('.mobile-more-symbol')).color
+  }))`);
+  assert.ok(moreRows.length > 20 && moreRows.every(row => row.icon && row.label && row.arrow && row.height >= 44), 'More rows use labeled icons and touch targets');
+  const row = id => moreRows.find(item => item.id === id);
+  assert.equal(row('chores').icon, 'list-checks');
+  assert.equal(row('videos').icon, 'tv-2');
+  assert.equal(row('chores').height, row('videos').height, 'Chores shares the regular row layout');
+  assert.notEqual(row('chores').color, row('videos').color, 'feature colors help distinguish entries');
+  assert.equal(row('family-watch').label, 'Family Watch');
+  assert.equal(row('approve-computer').icon, 'monitor-check');
+  assert.equal(await js('document.querySelector("[data-more-item=approve-computer]").getAttribute("href")'),'/guard/activate/');
+  assert.match(await js('document.querySelector("[data-more-item=report-bug] small").textContent'), /2 student reports need/);
+  studentReportCount = 0;
+  await js('window.dispatchEvent(new Event("cloud-student-report-refresh"))');
+  await wait('document.querySelector(".cloud-student-report-banner").hidden');
+  await js('document.querySelector("[data-more-item=settings]").click()');
+  assert.equal(await visible('#tab-settings .settings-header-actions button'),true,'Family setup remains reachable in Settings');
+  await js('document.querySelector("[data-mobile-tab=mobile-more]").click()');
+  assert.equal(await js('document.documentElement.scrollWidth<=innerWidth && document.querySelector(".main-content").scrollWidth<=document.querySelector(".main-content").clientWidth'),true,'More fits the phone viewport');
+  await js('document.querySelector("[data-more-item=videos]").scrollIntoView({block:"center"})');
+  fs.writeFileSync(path.join(site,'.tmp','mobile-more-icons.png'),(await win.webContents.capturePage()).toPNG());
+  await js('document.querySelector("[data-more-item=chores]").click()');
+  assert.equal(await js('document.querySelector("#tab-chores").classList.contains("active")'),true,'the More row opens Chores');
+  await js('document.querySelector("[data-mobile-tab=overview]").click()');
+
   await js('document.querySelector("[data-mobile-tab=messages]").click()');
   await wait('document.querySelectorAll(".cloud-chat-person").length===9');
   assert.equal(await js('document.querySelector(".cloud-chat-person").dataset.studentId'),'11111111-1111-4111-8111-000000000001');

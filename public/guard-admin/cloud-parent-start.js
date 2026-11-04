@@ -1,7 +1,7 @@
 import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261103-schools1';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
-import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js?v=20261103-password1';
+import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } from './cloud-parent-readiness.js?v=20261104-daily-controls1';
 import { setupPassword } from './cloud-setup-password.js?v=20261103-password1';
 import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick2';
 import { activityAccent } from './cloud-activity-colors.js';
@@ -34,6 +34,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     onManualEntry:()=>{if(manualChildren){manualChildren.open=true;manualChildren.querySelector('[name=childName]')?.focus();}}
   });
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
+  const overview = document.getElementById('tab-overview');
   const launch=button('Family setup',()=>open(),true);launch.id='parent-start-guide';
   (document.querySelector('#overview-actions')||document.querySelector('#tab-overview .tab-header'))?.append(launch);
   const settingsLaunch=button('Family setup',()=>open());const settingsIcon=node('i');settingsIcon.setAttribute('data-lucide','users');settingsIcon.setAttribute('aria-hidden','true');settingsLaunch.prepend(settingsIcon);(document.querySelector('#tab-settings .settings-header-actions')||document.querySelector('#tab-settings .tab-header'))?.append(settingsLaunch);
@@ -46,7 +47,9 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   function setupRows() {return familyReadiness(getSnapshot(),state);}
   function canFinish() {return canFinishSetup(getSnapshot(),state);}
   function updateWelcome() {
-    const snapshot=getSnapshot();if(!snapshot||!state){welcome.hidden=true;return;}
+    const snapshot=getSnapshot();
+    if (overview) overview.dataset.familyDashboardActive = String(hasWorkingComputer(snapshot, state));
+    if(!snapshot||!state){welcome.hidden=true;return;}
     const nextStep=nextSetupStep(snapshot,state);
     welcome.hidden=!nextStep;
     if(!nextStep)return;
@@ -59,7 +62,12 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   }
   function status() {
     progress.textContent=`Step ${index+1} of ${steps.length}`;back.disabled=index===0;
-    next.textContent=index===3?(canFinish()?'Finish setup & hide reminder':'Save & finish later'):index===2?(reviewing?'Save plan & continue':'Review choices'):'Continue';
+    if (index === 3) {
+      next.textContent = canFinish() ? 'Finish setup & hide reminder'
+        : hasWorkingComputer(getSnapshot(), state) ? 'Done for now' : 'Save & finish later';
+    } else {
+      next.textContent = index === 2 ? (reviewing ? 'Save plan & continue' : 'Review choices') : 'Continue';
+    }
   }
   async function open(startAt) {
     if(busy||promptBusy||dialog.open||!getSnapshot())return;
@@ -80,7 +88,6 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const unlock=lockControls(body);
     try {
       for(const commit of pending)await commit();
-      validateChoreChoice();
       if(choreChoice!==null&&(!state.chores?.chosen||choreChoice!==state.chores.enabled)){
         choreRequest ||= {operation:'settings',requestId:crypto.randomUUID(),revision:state.chores?.revision||0,enabled:choreChoice};
         const saved=await request('chores',choreRequest);state.chores={enabled:saved.enabled,revision:saved.revision,chosen:true};choreRequest=null;
@@ -106,14 +113,26 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     busy=true;const unlock=lockControls(footer);error.textContent='';
     try {
       for(const commit of pending)await commit();
-      validateChoreChoice();
       if(direction>0&&!getSnapshot().parentPassword?.configured)throw Error('Save your parent password above before continuing. You can also save and close.');
       if(direction>0&&index===0&&!children().length)throw Error('Add at least one child to continue. You can also save and close.');
       if(index===2&&direction>0){
         if(!reviewing){reviewing=true;render();return;}
         await savePlan();
       }
-      if(index===3&&direction>0){const finishing=canFinish();await refresh();if(finishing&&!canFinish()){render();throw Error('A setup check changed. Review the next action below before finishing.');}await persist(index,canFinish());dialog.close();navigate('overview');return;}
+      if (index === 3 && direction > 0) {
+        const finishing = canFinish();
+        if (finishing) {
+          await refresh();
+          if (!canFinish()) {
+            render();
+            throw Error('A setup check changed. Review the next action below before finishing.');
+          }
+        }
+        await persist(index, finishing);
+        dialog.close();
+        navigate('overview');
+        return;
+      }
       const target=Math.max(0,Math.min(3,index+direction));await persist(target);index=target;render();
     }catch(failure){error.textContent=failure.message;}
     finally{busy=false;unlock();status();}
@@ -188,9 +207,10 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const rows=setupRows();
     const summary=node('section','','setup-readiness-summary');
     const deferred=rows.filter(row=>row.connectLater),finishable=canFinish();
+    const working = hasWorkingComputer(getSnapshot(), state);
     summary.dataset.ready=String(finishable);
-    summary.append(node('h3',finishable?'You can finish setup':rows.length?'What’s left to do':'Connect your family'),
-      node('p',!finishable&&rows.length?'Complete the steps marked below. Save & finish later keeps your choices and leaves the reminder visible.':rows.length
+    summary.append(node('h3',finishable?'You can finish setup':working?'You can use your dashboard':rows.length?'What’s left to do':'Connect your family'),
+      node('p',!finishable&&working?'Choose Done for now to use your dashboard. You can revisit these checks under Settings → Family setup.':!finishable&&rows.length?'Complete the steps marked below. Save & finish later keeps your choices.':rows.length
         ?'Choose Finish setup & hide reminder below. Your choices stay saved, and Family setup remains available whenever you need it.'
         :'Add a child to begin.','setup-copy'),node('p','Computers do not have to stay online to finish setup. A paused school day does not undo setup.','setup-copy'));
     if(deferred.length&&finishable)summary.append(node('p',deferred.map(row=>row.child.name).join(', ')+': no computer assigned yet. You can finish now and connect them later from Family setup. Their profiles and choices stay saved.','setup-copy'));
@@ -256,11 +276,8 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(node('p','After saving a student, keep BodeeGuard open on that computer. Tap Check again to see when it confirms the assignment and parent controls.','setup-copy'));
     body.append(button('Review Daily Plan',()=>section('daily-plan')));
   }
-  function validateChoreChoice(){
-    if((index===2||index===3&&!state.completed)&&choreChoice===null)throw Error('Choose Use Chores & Routines or Skip for now.');
-  }
   function choreOptions(){
-    const section=node('fieldset','','setup-chores');section.append(node('legend','Track chores and routines in BodeeGuard?'),node('p','Assign chores, reward completion, and require them before entertainment. Skip if your family uses another chore system.'));
+    const section=node('fieldset','','setup-chores');section.append(node('legend','Track chores and routines in BodeeGuard?'),node('p','Assign chores, reward completion, and require them before entertainment. Optional. Leave this blank to keep your current choice.'));
     for(const [value,label]of [[true,'Use Chores & Routines'],[false,'Skip for now']]){
       const row=node('label','','setup-choice'),input=node('input');input.type='radio';input.name='family-start-chores';input.checked=choreChoice===value;
       input.onchange=()=>{choreChoice=value;choreRequest=null;};row.append(input,node('span',label));section.append(row);

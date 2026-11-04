@@ -65,6 +65,7 @@ else {
   assert.equal(await js('document.querySelector(".setup-computer-assignment select").value'),studentId);
   await click('Save student');await wait('!document.querySelector(".setup-computer-assignment")');assert.equal(writes,2);
   assert.equal(await js('document.querySelector(".parent-start-readiness li:last-child").dataset.done'),'false','pending child acknowledgement is not ready');
+  assert.equal(await js('document.querySelector("#tab-overview").dataset.familyDashboardActive'),'false');
   snapshot.devices[0].acknowledged_revision=snapshot.devices[0].revision;
   await click('Check again');await wait('document.querySelector(".parent-start-readiness li:last-child").dataset.done==="true"');
   assert.equal(await js('[...document.querySelectorAll(".parent-start-readiness li")].find(e=>e.textContent.includes("Activity choices saved")).dataset.done'),'false','opening readiness does not mark missing activity choices complete');
@@ -74,10 +75,14 @@ else {
    assert.ok(await js('{const d=document.querySelector("dialog[open]"),r=d.getBoundingClientRect(),f=d.querySelector("footer").getBoundingClientRect();r.left>=0&&r.right<=innerWidth&&f.bottom<=innerHeight&&d.scrollWidth<=d.clientWidth+1}'));
    fs.writeFileSync(path.join(site,'.tmp','connect-readiness-'+name+'.png'),(await win.webContents.capturePage()).toPNG());
   }
-  assert.equal(await js('document.querySelectorAll(".setup-chores input:checked").length'),0,'new families must choose explicitly');
-  await click('Save & finish later');await wait('document.querySelector(".setup-error").textContent.includes("Choose Use Chores")');assert.equal(choreWrites.length,0);
+  assert.equal(await js('document.querySelectorAll(".setup-chores input:checked").length'),0,'chores are an optional choice');
+  await click('Done for now');await wait('!document.querySelector("dialog[open]")');
+  assert.equal(choreWrites.length,0,'leaving chores blank does not modify family settings');
+  assert.equal(setup.completed,false,'returning to daily controls does not certify missing checks');
+  assert.equal(await js('document.querySelector("#tab-overview").dataset.familyDashboardActive'),'true');
+  await js('guide.open(3)');await wait('document.querySelector("dialog[open]")');
   await js('document.querySelectorAll(".setup-chores input")[1].click()');
-  await click('Save & finish later');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,false);
+  await click('Done for now');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,false);
   assert.equal(choreWrites.length,1);assert.equal(choreWrites[0].enabled,false,'skip persists as off');
   assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),false,'missing activity plan remains actionable');
   snapshot.students[0].main_school={provider:'abeka'};

@@ -18,6 +18,9 @@
 .cloud-mobile #cloud-monitor-stats { display: none; }
 .cloud-mobile #cloud-abeka-assessments { display: none; }
 .cloud-mobile #tab-overview .cloud-overview-refresh { display: none; }
+.cloud-mobile #tab-overview[data-family-dashboard-active="true"] :is(#parent-start-guide, #overview-actions > a[href="/guard/activate/"], .parent-start-welcome) {
+  display: none;
+}
 .cloud-mobile .cloud-feedback { font-size: 12px; margin-bottom: 14px; }
 .cloud-mobile .tab-header { flex-wrap: wrap; margin-bottom: 18px; }
 .cloud-mobile .tab-header h1, .cloud-mobile-menu > h1 { font-size: 22px; }
@@ -60,7 +63,52 @@
 .cloud-mobile .mobile-overview-shortcuts > :focus-visible,
 .cloud-mobile .monitor-quick-unlock:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }
 .cloud-mobile .more-list { display: grid; gap: 10px; margin-top: 18px; }
-.cloud-mobile .more-list > button { width: 100%; text-align: left; min-height: 48px; padding: 14px; }
+.cloud-mobile #tab-mobile-more .mobile-more-item {
+  --more-icon: #c4b5fd;
+  --more-tint: #6553b840;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 12px;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  background: #171b31;
+  color: #ececf7;
+  text-align: left;
+  text-decoration: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.cloud-mobile #tab-mobile-more .mobile-more-item[hidden] { display: none; }
+.cloud-mobile #tab-mobile-more .mobile-more-item:hover { border-color: var(--more-icon); }
+.cloud-mobile #tab-mobile-more .mobile-more-item:focus-visible { outline: 2px solid var(--more-icon); outline-offset: 2px; }
+.cloud-mobile #tab-mobile-more .mobile-more-symbol {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--more-tint);
+  color: var(--more-icon);
+}
+.cloud-mobile #tab-mobile-more .mobile-more-symbol svg { width: 21px; height: 21px; }
+.cloud-mobile #tab-mobile-more .mobile-more-label { display: block; font-size: 15px; font-weight: 650; line-height: 1.35; overflow-wrap: anywhere; }
+.cloud-mobile #tab-mobile-more .mobile-more-description { display: block; margin-top: 3px; color: #a1aec4; font-size: 12px; line-height: 1.4; }
+.cloud-mobile #tab-mobile-more .mobile-more-item > svg { width: 16px; height: 16px; color: #a1aec4; }
+
+/* Match the colors used for these features on the dashboard and Add media. */
+.cloud-mobile #tab-mobile-more :is([data-more-item="videos"], [data-more-item="browsing"], [data-more-item="computer-setup"], [data-more-item="approve-computer"]) { --more-icon: #91d3ff; --more-tint: #2b79b940; }
+.cloud-mobile #tab-mobile-more :is([data-more-item="audiobooks"], [data-more-item="documents"], [data-more-item="worksheets"]) { --more-icon: #76e5c5; --more-tint: #168f7440; }
+.cloud-mobile #tab-mobile-more :is([data-more-item="chores"], [data-more-item="report-bug"]) { --more-icon: #8ae3ce; --more-tint: #55cdb41a; }
+.cloud-mobile #tab-mobile-more [data-more-item="spelling"] { --more-icon: #ffc28f; --more-tint: #b96c2b40; }
+.cloud-mobile #tab-mobile-more [data-more-item="vocabulary"] { --more-icon: #a9caff; --more-tint: #487bbb40; }
+.cloud-mobile #tab-mobile-more [data-more-item="poems"] { --more-icon: #f1b9e0; --more-tint: #af5c9a40; }
+.cloud-mobile #tab-mobile-more [data-more-item="coloring-studio"] { --more-icon: #f9b5d8; --more-tint: #ec48991c; }
+.cloud-mobile #tab-mobile-more [data-more-item="economy"] { --more-icon: #ecd08b; --more-tint: #fbbf241f; }
 
 /* Keep the frequent schoolwork actions first, with the same clear card pattern as media. */
 .cloud-mobile .mobile-section-heading { margin: 6px 0 12px; color: #e2e8f0; font-size: 18px; }
@@ -132,13 +180,7 @@
 .cloud-mobile .header-actions { flex-shrink: 0; gap: 6px; }
 .cloud-mobile .mobile-account-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; max-width: 82px; padding: 7px 8px; text-align: center; line-height: 1.25; color: #e2e8f0; background: var(--surface-2); border: 1px solid var(--line); }
 .cloud-mobile .mobile-account-links { display: grid; gap: 10px; margin-top: 18px; }
-.cloud-mobile .mobile-account-link { display: grid; grid-template-columns: 24px minmax(0, 1fr) 18px; align-items: center; gap: 12px; padding: 16px; border: 1px solid rgba(167,139,250,.35); border-radius: 16px; background: #181d38; color: #e2e8f0; text-decoration: none; }
-.cloud-mobile .mobile-account-link > svg { width: 24px; height: 24px; color: #c4b5fd; }
-.cloud-mobile .mobile-account-link > svg:last-child { width: 18px; height: 18px; }
-.cloud-mobile .mobile-account-link strong, .cloud-mobile .mobile-account-link small { display: block; }
-.cloud-mobile .mobile-account-link strong { font-size: 15px; }
-.cloud-mobile .mobile-account-link small { margin-top: 5px; font-size: 12px; line-height: 1.45; color: #a1aec4; }
-.cloud-mobile .mobile-account-link:focus-visible, .cloud-mobile .mobile-account-button:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }
+.cloud-mobile .mobile-account-button:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }
 
 /* Header actions occupy their own space, never the cards below them. */
 .cloud-mobile .app-header { flex-wrap: wrap; }

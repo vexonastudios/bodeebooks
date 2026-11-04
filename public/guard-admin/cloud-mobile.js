@@ -31,22 +31,36 @@ export function setupCloudMobile({ navigate, refresh }) {
     section.setAttribute('aria-label', title); section.append(make('h1', '', title));
     const list = make('div', 'more-list'); section.append(list); main.append(section); menus[id] = list;
   }
+  function styleMoreRow(item, id, glyph, label, description) {
+    item.classList.add('mobile-more-item');
+    item.dataset.moreItem = id;
+    const mark = make('span', 'mobile-more-symbol');
+    mark.append(icon(glyph));
+    const copy = make('span', 'mobile-more-copy');
+    copy.append(make('span', 'mobile-more-label', label));
+    if (description) copy.append(make('small', 'mobile-more-description', description));
+    item.replaceChildren(mark, copy, icon('chevron-right'));
+  }
+
   const accountLinks = make('nav', 'mobile-account-links');
   accountLinks.setAttribute('aria-label', 'Parent account and computer setup');
-  for (const [label, detail, href, symbol] of [
-    ['Set up a child computer', 'Get the installer and connect a child’s PC from your phone.', '/guard/account/?setup=connect', 'laptop'],
-    ['Parent account', 'Manage your account, subscription and computers.', '/guard/account/', 'user-round']
+  for (const [id, label, detail, href, symbol] of [
+    ['computer-setup', 'Set up a child computer', 'Get the installer and connect a child’s PC from your phone.', '/guard/account/?setup=connect', 'laptop'],
+    ['approve-computer', 'Approve a computer', 'Enter the pairing code from a child’s PC.', '/guard/activate/', 'monitor-check'],
+    ['parent-account', 'Parent account', 'Manage your account, subscription and computers.', '/guard/account/', 'user-round']
   ]) {
-    const link = make('a', 'mobile-account-link'); link.href = href; link.target = '_top';
-    const mark = make('i', ''); mark.dataset.lucide = symbol; mark.setAttribute('aria-hidden', 'true');
-    const copy = make('span', ''); copy.append(make('strong', '', label), make('small', '', detail));
-    const arrow = make('i', ''); arrow.dataset.lucide = 'chevron-right'; arrow.setAttribute('aria-hidden', 'true');
-    link.append(mark, copy, arrow); accountLinks.append(link);
+    const link = make('a', '');
+    link.href = href;
+    link.target = '_top';
+    styleMoreRow(link, id, symbol, label, detail);
+    accountLinks.append(link);
   }
-  const report = make('a', 'mobile-account-link cloud-report-bug');
-  report.href = '/guard/report/'; report.target = '_top';
-  const reportCopy = make('span', ''); reportCopy.append(make('strong', '', 'Report a bug'), make('small', '', 'Tell us what happened, by typing or recording.'));
-  report.append(icon('bug'), reportCopy, icon('chevron-right')); accountLinks.prepend(report);
+  const report = make('a', 'cloud-report-bug');
+  report.href = '/guard/report/';
+  report.target = '_top';
+  styleMoreRow(report, 'report-bug', 'bug', 'Report a bug', 'Tell us what happened, by typing or recording.');
+  const reportDetail = report.querySelector('.mobile-more-description');
+  accountLinks.prepend(report);
   const desktopReport = make('a', 'nav-item cloud-report-bug', 'Report a bug');
   desktopReport.href = '/guard/report/'; desktopReport.target = '_top'; desktopReport.prepend(icon('bug'));
   root.querySelector('.sidebar-nav').append(desktopReport);
@@ -57,7 +71,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   let reportCountBusy=false;
   async function refreshStudentReports(){
     if(reportCountBusy||document.hidden)return;reportCountBusy=true;
-    try{const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});if(!response.ok)return;const data=await response.json(),count=Math.max(0,Math.min(999,Number(data.count)||0));reportNotice.hidden=!count;reportNoticeText.textContent=count===1?'Your child reported a problem · Review report':count+' student problem reports · Review';reportCopy.querySelector('small').textContent=count?count+' student '+(count===1?'report needs':'reports need')+' your review.':'Tell us what happened, or review a child’s report.';desktopReport.setAttribute('aria-label',count?'Report a bug · '+count+' student reports to review':'Report a bug');}catch{/* Leave the saved inbox available if this badge cannot refresh. */}finally{reportCountBusy=false;}
+    try{const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});if(!response.ok)return;const data=await response.json(),count=Math.max(0,Math.min(999,Number(data.count)||0));reportNotice.hidden=!count;reportNoticeText.textContent=count===1?'Your child reported a problem · Review report':count+' student problem reports · Review';reportDetail.textContent=count?count+' student '+(count===1?'report needs':'reports need')+' your review.':'Tell us what happened, or review a child’s report.';desktopReport.setAttribute('aria-label',count?'Report a bug · '+count+' student reports to review':'Report a bug');}catch{/* Leave the saved inbox available if this badge cannot refresh. */}finally{reportCountBusy=false;}
   }
   window.addEventListener('cloud-student-report-refresh',()=>void refreshStudentReports());
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshStudentReports();});
@@ -66,10 +80,14 @@ export function setupCloudMobile({ navigate, refresh }) {
   const addTabs = ['music', 'videos', 'audiobooks', 'learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
-    if (nav.hidden || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
-    const label = nav.textContent.trim();
-    const menuButton = () => button(label + '  ›', () => navigate(id));
-    menus['mobile-more'].append(menuButton());
+    if ((nav.hidden && id !== 'chores') || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
+    const label = nav.cloneNode(true);
+    label.querySelectorAll('.alert-badge, .help-badge').forEach(badge => badge.remove());
+    const item = button('', () => navigate(id), '');
+    styleMoreRow(item, id, nav.querySelector('[data-lucide]')?.dataset.lucide || 'layout-grid', label.textContent.trim());
+    item.hidden = nav.hidden;
+    if (id === 'chores') item.classList.add('chore-mobile-entry');
+    menus['mobile-more'].append(item);
   }
   const addMenu = byId('tab-mobile-add');
   addMenu.classList.add('mobile-media-hub');
@@ -140,8 +158,9 @@ export function setupCloudMobile({ navigate, refresh }) {
       window.lucide?.createIcons();
     }
   }
-  const install = button('Add to Home Screen', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin));
-  install.classList.add('cloud-parent-mobile-install'); install.hidden = true;
+  const install = button('', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin), 'cloud-parent-mobile-install');
+  styleMoreRow(install, 'install', 'smartphone', 'Add to Home Screen');
+  install.hidden = true;
   menus['mobile-more'].prepend(install);
   const desktopInstall = button('', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin), 'nav-item cloud-parent-install');
   desktopInstall.hidden = true;

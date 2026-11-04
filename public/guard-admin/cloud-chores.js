@@ -101,8 +101,7 @@ export function setupCloudChores({endpoint,navigate}) {
     if(nav)nav.hidden=!enabled;summary.hidden=!enabled;tools.hidden=tabs.hidden=libraryBanner.hidden=!enabled;
     choice.textContent=enabled?'Chores are on for your family. School completion and its coins stay separate.':'Optional: assign chores, reward completion, and require chores before entertainment. Chores are currently off.';
     toggle.replaceChildren(icon(enabled?'toggle-right':'toggle-left'),node('span',enabled?'Turn chores off':'Use Chores & Routines'));
-    let mobile=document.querySelector('#tab-mobile-more .chore-mobile-entry');
-    if(!mobile){const menu=document.querySelector('#tab-mobile-more .more-list');if(menu){mobile=button('Chores & Routines',()=>navigate('chores'),'mobile-more-item chore-mobile-entry','list-checks');menu.append(mobile);}}
+    const mobile=document.querySelector('#tab-mobile-more .chore-mobile-entry');
     if(mobile)mobile.hidden=!enabled;
     window.dispatchEvent(new CustomEvent('cloud-chores-updated',{detail:{enabled}}));
   }

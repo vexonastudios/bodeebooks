@@ -13,10 +13,10 @@ import { createControlQueue, isIndependentControl, applyControlResult } from './
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
-import { setupParentStart } from './cloud-parent-start.js?v=20261103-password1';
+import { setupParentStart } from './cloud-parent-start.js?v=20261104-daily-controls1';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
-import { setupCloudChores } from './cloud-chores.js';
+import { setupCloudChores } from './cloud-chores.js?v=20261104-more-icons1';
 import { studentAvatar, editStudentProfile, profileIcon, confirmStudentDeletion } from './cloud-student-profile.js?v=20261007-avatar1';
 import { editCloudSubject } from './cloud-school-editor.js?v=20261030-sites1';
 import { setupActivityLibrary } from './cloud-activity-library.js?v=20261030-sites1';
@@ -25,7 +25,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
-import { setupCloudMobile } from './cloud-mobile.js?v=20261007-student-reports1';
+import { setupCloudMobile } from './cloud-mobile.js?v=20261104-daily-controls1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';

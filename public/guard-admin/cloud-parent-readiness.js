@@ -1,5 +1,20 @@
 import { connectionState } from './cloud-workspace-model.js';
 
+function controlsConfirmed(device) {
+  return Number.isInteger(device.acknowledged_revision) && device.acknowledged_revision > 0
+    && Number.isInteger(device.revision) && device.acknowledged_revision >= device.revision;
+}
+
+// Daily dashboard layout is separate from the setup checklist. One working
+// computer is enough to start, even if other children will join later.
+export function hasWorkingComputer(snapshot, setup) {
+  const children = new Set((snapshot?.students || []).filter(child => !child.archived_at).map(child => child.id));
+  const activeChildren = new Set((snapshot?.activity || []).filter(row => row.seconds > 0).map(row => row.student_id));
+  return (snapshot?.devices || []).some(device => !device.revoked_at && children.has(device.student_id)
+    && device.recovery_configured === true
+    && (controlsConfirmed(device) || device.acknowledged_revision > 0 && (setup?.completed === true || activeChildren.has(device.student_id))));
+}
+
 // Setup evidence is durable. Being online or having school unpaused is a daily
 // status, not a prerequisite for finishing this guide. Never infer school login.
 export function familyReadiness(snapshot, setup) {
@@ -9,8 +24,6 @@ export function familyReadiness(snapshot, setup) {
     const devices = (snapshot.devices || []).filter(device => !device.revoked_at && device.student_id === child.id);
     const passwordConfirmed = device => !snapshot.parentPassword?.configured
       || Number(device.family_password_revision || 0) >= snapshot.parentPassword.revision;
-    const controlsConfirmed = device => Number.isInteger(device.acknowledged_revision) && device.acknowledged_revision > 0
-      && Number.isInteger(device.revision) && device.acknowledged_revision >= device.revision;
     // After the guide has been finished, ordinary control changes do not restart
     // onboarding. Missing recovery or a new password still needs attention.
     const initialConfirmation = device => controlsConfirmed(device)
