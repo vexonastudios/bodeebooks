@@ -5,7 +5,7 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http
 if(app.isPackaged)throw Error('Development fixture only');
 app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'bg-school-picker-')));
 const root=path.resolve(__dirname,'..'),schoolWrites=[],searches=[];
-let snapshot={students:[{id:'bob',name:'Bob'},{id:'betty',name:'Betty'},{id:'billy',name:'Billy'}],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
+let snapshot={parentPassword:{configured:true,revision:1},students:[{id:'bob',name:'Bob'},{id:'betty',name:'Betty'},{id:'billy',name:'Billy'}],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
 let state={revision:0,step:1,completed:false,features:{},contentChoices:{},catalog:{version:1}},failSearch=false,loseReply=false;
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');

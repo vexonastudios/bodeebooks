@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http
 if(app.isPackaged)throw Error('Development fixture only');
 app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'bg-quick-setup-')));
 const root=path.resolve(__dirname,'..');
-let snapshot={students:[],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
+let snapshot={parentPassword:{configured:true,revision:1},students:[],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
 let state={revision:0,step:0,completed:false,features:{},contentChoices:{},catalog:{version:1}},previews=0,confirms=[],lostReply=true;
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');

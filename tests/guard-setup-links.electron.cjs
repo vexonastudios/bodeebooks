@@ -6,7 +6,7 @@ const {app,BrowserWindow,session}=require('electron');
 const site=path.resolve(__dirname,'..');
 const sandbox=fs.readFileSync(path.join(site,'app/guard/dashboard/ParentWorkspace.tsx'),'utf8').match(/sandbox="([^"]+)"/)[1];
 const studentId='11111111-1111-4111-8111-111111111111';
-const snapshot={students:[{id:studentId,name:'Sample Child'}],devices:[],rules:{revision:1,subjects:[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}}]}],schedule:{enabled:false}}};
+const snapshot={parentPassword:{configured:true,revision:1},students:[{id:studentId,name:'Sample Child'}],devices:[],rules:{revision:1,subjects:[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}}]}],schedule:{enabled:false}}};
 const setup={revision:1,step:7,completed:false,features:{},contentChoices:{},chores:{chosen:true,enabled:false,revision:1},catalog:{version:1}};
 let writes=0;
 const server=http.createServer(async(req,res)=>{

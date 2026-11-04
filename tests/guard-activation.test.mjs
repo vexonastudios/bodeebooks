@@ -29,19 +29,19 @@ test('approval page identifies the child computer, with current setup steps and 
   });
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
   assert.equal(protectedRoute, 1);
-  assert.match(html, /Approve your child/); assert.match(html, /Parent setup &amp; connection/);
-  assert.match(html, /Copy code/); assert.match(html, /not this phone or browser/);
-  assert.doesNotMatch(html, /BodeeGuard Settings|Connect this computer to/);
+  assert.match(html, /Approve your child/); assert.match(html, /the child’s computer you’re setting up/);
+  assert.match(html, /pairing code shown on its setup screen/); assert.match(html, /Keep BodeeGuard open on the child’s computer/);
+  assert.doesNotMatch(html, /BodeeGuard Settings|Connect this computer to|Copy code|Paste/);
 });
-test('empty form has separate paste and approval buttons, no placeholder submitted as a code', () => {
+test('empty form identifies the child computer code and only offers approval, without submitting its placeholder', () => {
   const Form = load('app/guard/activate/ActivationForm.tsx', {
     react: { ...React, useActionState: () => [{ status: 'idle', message: '' }, '/synthetic-action', false] },
     '../actions': { approveComputer: () => { throw new Error('Must not approve during render'); } },
   });
   const html = renderToStaticMarkup(React.createElement(Form));
-  assert.match(html, /Paste code/); assert.match(html, /Approve child computer/);
+  assert.doesNotMatch(html, /Paste code/); assert.match(html, /Approve child computer/);
   assert.match(html, /name="userCode"[^>]*value=""/);
-  assert.match(html, /type="submit" disabled=""/); assert.match(html, /field is empty/);
+  assert.match(html, /type="submit" disabled=""/); assert.match(html, /Pairing code shown on the child’s computer/);
   assert.doesNotMatch(html, /Approve this computer/);
 });
 test('successful approval explains the next step and offers the family dashboard', () => {

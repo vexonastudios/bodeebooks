@@ -5,8 +5,8 @@ const moduleUrl = text => 'data:text/javascript;base64,' + Buffer.from(text).toS
 const workspace = moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-workspace-model.js', import.meta.url), 'utf8'));
 const { familyReadiness, nextSetupStep, canFinishSetup } = await import(moduleUrl(fs.readFileSync(new URL('../public/guard-admin/cloud-parent-readiness.js', import.meta.url), 'utf8').replace("'./cloud-workspace-model.js'", JSON.stringify(workspace))));
 function family() {
-  return { students:[{id:'child',name:'Test Child',main_school:{provider:'none'}}],
-    devices:[{id:'pc',student_id:'child',revision:3,acknowledged_revision:3,recovery_configured:true,last_seen_at:'2020-01-01T00:00:00Z',locked:true}],
+  return { parentPassword:{configured:true,revision:1},students:[{id:'child',name:'Test Child',main_school:{provider:'none'}}],
+    devices:[{id:'pc',student_id:'child',revision:3,acknowledged_revision:3,recovery_configured:true,family_password_revision:1,last_seen_at:'2020-01-01T00:00:00Z',locked:true}],
     rules:{subjects:[{assignments:[{studentId:'child',dailyPlan:{placement:'school'}}]}]} };
 }
 test('offline and paused does not block finishing a confirmed computer',()=>{
@@ -29,7 +29,7 @@ test('missing or revoked computers remain required after completion',()=>{
 });
 test('recovery missing resurfaces even for a completed family',()=>{
   const s=family();s.devices[0].recovery_configured=false;
-  assert.match(nextSetupStep(s,{completed:true}).label,/set up parent recovery/);
+  assert.match(nextSetupStep(s,{completed:true}).label,/let the computer receive your password/);
 });
 test('new parent password requires its own confirmation',()=>{
   const s=family();s.parentPassword={configured:true,revision:2};s.devices[0].family_password_revision=1;
@@ -68,11 +68,19 @@ test('connecting a deferred child resurfaces missing device checks',()=>{
  const s=family();s.students.push({id:'later',name:'Later Child',main_school:{provider:'none'}});
  s.devices.push({...s.devices[0],id:'later-pc',student_id:'later',recovery_configured:false,acknowledged_revision:0});
  assert.equal(canFinishSetup(s,{completed:true}),false);
- assert.equal(nextSetupStep(s,{completed:true}).label,'Later Child: set up parent recovery');
+ assert.equal(nextSetupStep(s,{completed:true}).label,'Later Child: let the computer receive your password');
 });
 test('a family with no configured computers cannot hide the guide',()=>{
  const s=family();s.devices=[];
  assert.equal(canFinishSetup(s,{completed:false}),false);
  assert.equal(canFinishSetup(s,{completed:true}),false);
  assert.match(nextSetupStep(s,{completed:true}).label,/connect a computer/);
+});
+
+test('missing family password points to step one even after pairing or older recovery setup',()=>{
+ const s=family();s.parentPassword={configured:false,revision:0};
+ assert.equal(canFinishSetup(s,{completed:true}),false);
+ assert.deepEqual(nextSetupStep(s,{completed:true}),{step:0,label:'Set your parent password'});
+ assert.equal(familyReadiness(s,{})[0].next.id,'family-password');
+ s.students=[];assert.equal(nextSetupStep(s,{}).label,'Set your parent password');
 });

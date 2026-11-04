@@ -2,10 +2,10 @@
 // Local fictional-family regression. Never enrolls or changes a real computer.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const site=path.resolve(__dirname,'..'),studentId='11111111-1111-4111-8111-111111111111';
-let writes=0,failSave=false,failFinish=false,finishWrites=0;
+let writes=0,failSave=false,failFinish=false,finishWrites=0,passwordWrites=0,failPassword=false,delayPasswordSnapshot=false;
 const choreWrites=[];
 const setup={revision:1,step:0,completed:false,features:{},contentChoices:{},catalog:{version:1}};
-const snapshot={students:[{id:studentId,name:'Test Child',main_school:null}],devices:[{id:'test-computer',computer_name:'Study laptop',student_id:null,revision:1,acknowledged_revision:1,recovery_configured:true,last_seen_at:new Date().toISOString(),locked:false}],rules:{revision:1,subjects:[],schedule:{enabled:false}}};
+const snapshot={parentPassword:{configured:true,revision:1},students:[{id:studentId,name:'Test Child',main_school:null}],devices:[{id:'test-computer',computer_name:'Study laptop',student_id:null,revision:1,acknowledged_revision:1,recovery_configured:true,family_password_revision:1,last_seen_at:new Date().toISOString(),locked:false}],rules:{revision:1,subjects:[],schedule:{enabled:false}}};
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://localhost');
  if(url.pathname==='/'){
@@ -18,6 +18,12 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/setup'){
   let raw='';for await(const part of req)raw+=part;const input=JSON.parse(raw);res.setHeader('Content-Type','application/json');
   if(input.action==='get-setup')return res.end(JSON.stringify(setup));
+  if(input.action==='set-parent-password'){
+   passwordWrites++;assert.equal(input.password,'Fictional-parent-42');
+   if(failPassword){failPassword=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not save password. Try again.'}));}
+   if(!delayPasswordSnapshot)snapshot.parentPassword={configured:true,revision:1};
+   return res.end(JSON.stringify({saved:true,delivery:'pending'}));
+  }
   if(input.action==='chores'){
    assert.equal(input.operation,'settings');assert.equal(input.revision,setup.chores?.revision||0);
    choreWrites.push(input);setup.chores={enabled:input.enabled,chosen:true,revision:(setup.chores?.revision||0)+1};return res.end(JSON.stringify(setup.chores));
@@ -61,7 +67,7 @@ else {
   assert.equal(await js('document.querySelector(".parent-start-readiness li:last-child").dataset.done'),'false','pending child acknowledgement is not ready');
   snapshot.devices[0].acknowledged_revision=snapshot.devices[0].revision;
   await click('Check again');await wait('document.querySelector(".parent-start-readiness li:last-child").dataset.done==="true"');
-  assert.equal(await js('document.querySelector(".parent-start-readiness li:first-child").dataset.done'),'false','opening readiness does not mark missing activity choices complete');
+  assert.equal(await js('[...document.querySelectorAll(".parent-start-readiness li")].find(e=>e.textContent.includes("Activity choices saved")).dataset.done'),'false','opening readiness does not mark missing activity choices complete');
   assert.equal(await js('document.querySelector(".parent-start-readiness>strong").textContent'),'Setup still needs attention');
   for(const [name,width,height]of [['phone',390,844],['desktop',1280,900]]){
    win.setContentSize(width,height);await new Promise(resolve=>setTimeout(resolve,120));
@@ -96,7 +102,7 @@ else {
   snapshot.devices[0].recovery_configured=false;
   const beforeFinish=finishWrites;await click('Finish setup & hide reminder');await wait('document.querySelector(".setup-error").textContent.includes("setup check changed")');
   assert.equal(finishWrites,beforeFinish);assert.equal(setup.completed,false);
-  assert.ok(await js('document.querySelector(".setup-next-action").textContent.includes("Set up parent recovery")'));
+  assert.ok(await js('document.querySelector(".setup-next-action").textContent.includes("Let the computer receive your password")'));
   snapshot.devices[0].recovery_configured=true;await click('Check again');await wait('[...document.querySelectorAll("dialog[open] button")].some(button=>button.textContent==="Finish setup & hide reminder"&&!button.disabled)');
   await click('Finish setup & hide reminder');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,true);
   assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),true);
@@ -105,7 +111,7 @@ else {
   assert.ok(await js('!!document.querySelector("#parent-start-guide")'),'guide remains available');
   snapshot.devices[0].recovery_configured=false;
   await win.loadURL(origin);await wait('!!window.guide');await wait('!document.querySelector(".parent-start-welcome").hidden');
-  assert.ok(await js('document.querySelector(".parent-start-welcome").textContent.includes("set up parent recovery")'),'required recovery loss resurfaces a specific action');
+  assert.ok(await js('document.querySelector(".parent-start-welcome").textContent.includes("let the computer receive your password")'),'required recovery loss resurfaces a specific action');
   snapshot.schoolActivities=[];
   await win.loadURL(origin);await wait('!!window.guide');
   await js('guide.open(2)');await wait('!!document.querySelector(".setup-chores")');
@@ -114,6 +120,36 @@ else {
   assert.equal(choreWrites.length,1,'selecting is still a draft');
   await click('Save and close');await wait('!document.querySelector("dialog[open]")');
   assert.equal(choreWrites.length,2);assert.equal(choreWrites[1].enabled,true,'parent can opt in from the active activities flow');
+  // New and already-paired families resolve the password before connection.
+  snapshot.parentPassword={configured:false,revision:0};
+  await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
+  assert.equal(await js('document.querySelector("#parent-start-title").textContent'),'Parent password & children');
+  assert.equal(await js('[...document.querySelectorAll("dialog[open] a")].some(a=>a.textContent==="Get Windows installer")'),false);
+  await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Save your parent password")');
+  await js('document.querySelector("[name=setupParentPassword]").value="Fictional-parent-42";document.querySelector("[name=setupParentPasswordConfirm]").value="different"');
+  await click('Save parent password');assert.equal(passwordWrites,0,'mismatched passwords do not reach the server');
+  await js('document.querySelector("[name=setupParentPasswordConfirm]").value="Fictional-parent-42"');
+  failPassword=true;await click('Save parent password');await wait('document.querySelector(".setup-password-status").textContent.includes("Try again")');
+  assert.equal(await js('document.querySelector("[name=setupParentPassword]").value'),'Fictional-parent-42');
+  delayPasswordSnapshot=true;await click('Save parent password');await wait('document.querySelector(".setup-password-status").textContent.includes("was saved")');
+  assert.equal(await js('document.querySelector("[name=setupParentPassword]").value'),'', 'confirmed password plaintext is cleared even if the snapshot is delayed');
+  assert.equal(passwordWrites,2);snapshot.parentPassword={configured:true,revision:1};
+  await click('Check saved password');await wait('document.querySelector(".setup-parent-password").dataset.ready==="true"');
+  assert.equal(passwordWrites,2,'checking a saved password never submits it again');
+  await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Add school websites (optional)"');
+  await click('Close');await wait('!document.querySelector("dialog[open]")');
+  snapshot.parentPassword={configured:false,revision:0};
+  await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
+  for(const [name,width,height]of [['phone',390,844],['desktop',1280,900]]){
+   win.setContentSize(width,height);await new Promise(resolve=>setTimeout(resolve,120));
+   assert.ok(await js('{const d=document.querySelector("dialog[open]"),r=d.getBoundingClientRect();r.left>=0&&r.right<=innerWidth&&d.scrollWidth<=d.clientWidth+1}'));
+   fs.writeFileSync(path.join(site,'.tmp','setup-password-'+name+'.png'),(await win.webContents.capturePage()).toPNG());
+  }
+  await js('document.querySelector("[name=setupParentPassword]").value="Unsaved-fictional-password"');
+  await click('Close');await wait('!document.querySelector("dialog[open]")');
+  await wait('document.querySelector("[name=setupParentPassword]").value===""');
+  assert.equal(await js('document.querySelector("[name=setupParentPassword]").value'),'','closing clears unsaved passwords');
+  assert.equal(JSON.stringify(setup).includes('password'),false,'passwords never enter the setup draft');
   win.destroy();
   console.log('Connect readiness passed: direct step, named computer, draft/save/retry, matching student, real acknowledgement check, missing prerequisites preserved and phone/desktop fit.');
  }

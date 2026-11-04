@@ -23,10 +23,11 @@ export function familyReadiness(snapshot, setup) {
     const connected = !!device && connectionState(device, now) === 'Connected';
     const hasPlan = snapshot.rules.subjects.some(subject => subject.assignments?.some(a => a.studentId === child.id && a.dailyPlan));
     const checks = [
+      {id:'family-password',label:'Family parent password saved',done:snapshot.parentPassword?.configured===true,step:0,action:'Set parent password',detail:'In Family setup, save your parent password first. You use it to exit BodeeGuard on your children’s computers.'},
       {id:'activities',label:'Activity choices saved',done:hasPlan || setup?.completed === true,step:2,action:'Choose activities',detail:'Review the daily plan and save this child’s activity choices.'},
       {id:'computer',label:'Computer assigned',done:!!device,step:3,action:'Connect a computer',detail:'Install BodeeGuard, approve its pairing code, and assign this child.'},
-      {id:'recovery',label:'Parent recovery configured',done:device?.recovery_configured === true,step:3,action:'Set up parent recovery',detail:'On this child’s computer, open BodeeGuard and finish parent recovery setup. Then tap Check again here.'},
-      {id:'password',label:'Parent password configured',done:!!device && passwordConfirmed(device),step:3,action:'Sync parent password',detail:'Open BodeeGuard on this child’s computer and keep it connected to the internet to receive your parent password. Then tap Check again.'},
+      {id:'recovery',label:'Offline parent access ready',done:device?.recovery_configured === true,step:3,action:'Let the computer receive your password',detail:'Your parent password is already saved. Keep BodeeGuard open and connected on this child’s computer. It receives the password automatically; if asked to confirm it, enter your saved parent password there. Then tap Check again here.'},
+      {id:'password',label:'Latest parent password received',done:!!device && passwordConfirmed(device),step:3,action:'Sync parent password',detail:'Your parent password is already saved. Keep BodeeGuard open and connected on this child’s computer to receive it, then tap Check again here.'},
       {id:'controls',label:'Computer setup confirmed',done:!!device && initialConfirmation(device),step:3,action:'Get computer confirmation',detail:'Open BodeeGuard on this child’s computer and keep it connected to the internet until it confirms the saved assignment and controls. Then tap Check again.'}
     ].filter(check => check.id !== 'password' || snapshot.parentPassword?.configured);
     const next = checks.find(check => !check.done);
@@ -44,6 +45,7 @@ export function canFinishSetup(snapshot, setup) {
 
 export function nextSetupStep(snapshot, setup) {
   const rows = familyReadiness(snapshot, setup);
+  if(snapshot.parentPassword?.configured!==true)return {step:0,label:'Set your parent password'};
   if (!rows.length) return {step:0,label:'Add your children'};
   const unfinished = rows.find(row => row.next && !row.connectLater)
     || (setup?.completed && rows.some(row=>row.ready) ? null : rows.find(row=>row.next));

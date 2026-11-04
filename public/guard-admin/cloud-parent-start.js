@@ -1,12 +1,13 @@
 import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261103-schools1';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
-import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js?v=20261103-schools1';
+import { familyReadiness, nextSetupStep, canFinishSetup } from './cloud-parent-readiness.js?v=20261103-password1';
+import { setupPassword } from './cloud-setup-password.js?v=20261103-password1';
 import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick2';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
-  {id:0,title:'Add your children'}, {id:1,title:'Add school websites (optional)'},
+  {id:0,title:'Parent password & children'}, {id:1,title:'Add school websites (optional)'},
   {id:4,title:'Choose their activities'}, {id:7,title:'Connect & check readiness'}
 ];
 const node = (tag,text='',cls='') => { const el=document.createElement(tag);el.textContent=text;el.className=cls;return el; };
@@ -14,7 +15,7 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-connect2';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261103-password1';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -24,11 +25,11 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{draft=null;render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null,reviewing=false;
-  let choreChoice=null,choreRequest=null,promptBusy=false,unlockPrompt=null,manualChildren=null;
+  let choreChoice=null,choreRequest=null,promptBusy=false,unlockPrompt=null,manualChildren=null,passwordControl=null,unlockPassword=null;
   const familyPrompt=createFamilyPrompt({getSnapshot,
     previewDraft:input=>request('preview-family-prompt',input),
     confirmDraft:async input=>{const result=await request('confirm-family-prompt',input);await refresh();return result;},
-    onBusy:value=>{promptBusy=value;if(value){unlockPrompt=lockControls(footer);dismiss.disabled=true;if(manualChildren)manualChildren.inert=true;}else{unlockPrompt?.();unlockPrompt=null;dismiss.disabled=false;if(manualChildren)manualChildren.inert=false;status();}},
+    onBusy:value=>{promptBusy=value;if(value){unlockPrompt=lockControls(footer);dismiss.disabled=true;body.querySelector('.setup-parent-password')?.setAttribute('inert','');if(manualChildren)manualChildren.inert=true;}else{unlockPrompt?.();unlockPrompt=null;dismiss.disabled=false;body.querySelector('.setup-parent-password')?.removeAttribute('inert');if(manualChildren)manualChildren.inert=false;status();}},
     onSaved:()=>{manualChildren?.refresh?.();updateWelcome();},
     onManualEntry:()=>{if(manualChildren){manualChildren.open=true;manualChildren.querySelector('[name=childName]')?.focus();}}
   });
@@ -51,7 +52,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     if(!nextStep)return;
     const ready=canFinish();
     welcome.replaceChildren(node('h2',!children().length?'Start with the essentials':ready?'Your family setup is ready to finish':'A few setup steps remain'),
-      node('p',!children().length?'Add your children, choose their school and activities, then connect their Windows computer.':ready
+      node('p',!children().length?'Set your parent password, add your children, choose their school and activities, then connect their Windows computer.':ready
         ?'Finish setup for the computers you have connected. You can connect the remaining children later from Family setup.'
         :'Next: '+nextStep.label+'. Review the remaining steps below; your saved choices are kept.'),
       button(!children().length?'Set up my family':ready?'Review & finish setup':'Review remaining steps',()=>open(nextStep.step),true));
@@ -70,6 +71,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       // Pairing returns directly to the computer checklist. Missing activity plan
       // choices remain visible there and never become complete just by opening it.
       if(startAt===3)index=children().length?3:0;
+      if(!getSnapshot().parentPassword?.configured)index=0;
       draft=null;reviewing=false;render();dialog.showModal();updateWelcome();
     }catch(failure){state=null;title.textContent='Family setup';progress.textContent='';body.replaceChildren(button('Try again',()=>{dialog.close();void open(startAt);}),button('Close',()=>dialog.close()));error.textContent=failure.message;footer.hidden=true;dialog.showModal();}
     finally{busy=false;launch.disabled=settingsLaunch.disabled=false;}
@@ -105,6 +107,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     try {
       for(const commit of pending)await commit();
       validateChoreChoice();
+      if(direction>0&&!getSnapshot().parentPassword?.configured)throw Error('Save your parent password above before continuing. You can also save and close.');
       if(direction>0&&index===0&&!children().length)throw Error('Add at least one child to continue. You can also save and close.');
       if(index===2&&direction>0){
         if(!reviewing){reviewing=true;render();return;}
@@ -178,6 +181,10 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     }catch(failure){error.textContent=failure.message;}finally{busy=false;}
   }
   function readiness() {
+    if(!getSnapshot().parentPassword?.configured){
+      body.append(node('p','Set your parent password before connecting or assigning a computer. Already paired computers can stay open while you finish this step.','setup-copy'),button('Set parent password',()=>{index=0;render();},true));
+      return;
+    }
     const rows=setupRows();
     const summary=node('section','','setup-readiness-summary');
     const deferred=rows.filter(row=>row.connectLater),finishable=canFinish();
@@ -261,8 +268,12 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(section);
   }
   function render() {
-    familyPrompt.unmount();manualChildren=null;footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
+    passwordControl?.clear();passwordControl=null;familyPrompt.unmount();manualChildren=null;footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
     if(index===0){
+      passwordControl=setupPassword({host:body,getSnapshot,mutate,refresh,
+        onBusy:value=>{busy=value;if(value){unlockPassword=lockControls(footer);dismiss.disabled=true;body.querySelector('.family-prompt')?.setAttribute('inert','');if(manualChildren)manualChildren.inert=true;}else{unlockPassword?.();unlockPassword=null;dismiss.disabled=false;body.querySelector('.family-prompt')?.removeAttribute('inert');if(manualChildren)manualChildren.inert=false;status();}},
+        onSaved:()=>{error.textContent='';updateWelcome();decorateSetup(dialog);}});
+      pending.push(()=>passwordControl?.validate());
       familyPrompt.mount(body);pending.push(()=>familyPrompt.flush());
       manualChildren=node('details','','setup-manual-children');manualChildren.append(node('summary','Add children one at a time'));
       const manualHost=node('div');manualChildren.append(manualHost);body.append(manualChildren);
@@ -280,7 +291,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.scrollTop=0;decorateSetup(dialog);
   }
   dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy&&!promptBusy)dialog.close();});
-  dialog.addEventListener('close',()=>{familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
+  dialog.addEventListener('close',()=>{passwordControl?.clear();familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
   return {open,update(){
     updateWelcome();
     if(started||!getSnapshot())return;started=true;
