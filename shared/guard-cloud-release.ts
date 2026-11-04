@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.341": {
+  "title": "Clearer computer setup",
+  "sections": [
+    {
+      "heading": "Version 1.2.341",
+      "headline": "Set your parent password first and finish setup clearly",
+      "summary": "Family setup creates the parent password before connecting computers. The child app explains what remains and continues automatically when ready. Remote Close handles small computer clock differences.",
+      "highlights": [
+        "Set one family parent password in the first setup step. This password is separate from website sign-in and is used for parent controls and offline exit.",
+        "An approved child computer points to the exact parent dashboard step, with Check setup again and a separate finish-later exit.",
+        "Installer downloads scroll into view and are highlighted; pairing instructions clearly identify the code on the child computer.",
+        "Remote Close accepts valid commands despite small computer clock differences, while retaining signed authorization, expiry and saved-work protections."
+      ]
+    }
+  ]
+},
   "1.2.340": {
   "title": "More dependable recovery",
   "sections": [
