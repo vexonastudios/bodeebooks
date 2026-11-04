@@ -61,6 +61,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     const people = content.querySelector('.cloud-game-people'); if (people) people.hidden = view !== 'boards';
   }
   function ownAccess() { return room?.children.find(child => child.id === room.studentId)?.access; }
+  function blockedGames(){return room?.children.find(child=>child.id===room.studentId)?.settings?.blockedGames || [];}
+  function canSeeGame(key){return parent || !!room?.studentId && !blockedGames().includes(key);}
   function outOfTime() { const access = ownAccess(); return exhaustedByAction || access?.allowed === false && access.reason === 'Daily game time used'; }
   function requestKey() { return room?.studentId && room?.date ? room.studentId + ':' + room.date : null; }
   function messageDate(value) {
@@ -123,7 +125,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     if (pending) controls.append(button('Retry the same action', () => send(pending), busy || !active, 'rotate-ccw'));
     icons();
   }
-  function preview(index, opener) {
+  function preview(gameId, opener) {
+    const games=FAMILY_GAME_PREVIEWS.filter(game=>canSeeGame(game.id)); let index=games.findIndex(game=>game.id===gameId); if(index<0)return;
     const dialog = node('dialog', '', 'cloud-game-preview'); dialog.setAttribute('aria-label', 'Family game previews');
     const top = node('header'), name = node('h2'), close = button('Close', () => dialog.close(), false, 'x'); top.append(name, close);
     const picture = node('img'); picture.decoding = 'async';
@@ -132,8 +135,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     const details = node('p', '', 'cloud-note'), navigation = node('div', '', 'cloud-game-preview-nav'), counter = node('span');
     let imageIndex = 0;
     const imageButtons = node('div', '', 'cloud-game-preview-nav');
-    const draw = () => { const game = FAMILY_GAME_PREVIEWS[index]; name.textContent = game.name; const images=game.images||[game],current=images[imageIndex]||images[0]; picture.src = new URL(current.image, assetBase).href; picture.alt = current.alt; imageButtons.replaceChildren(); if(images.length>1)imageButtons.append(button('Previous picture',()=>{imageIndex=(imageIndex+images.length-1)%images.length;draw();}),node('span',`${imageIndex+1} / ${images.length}`),button('Next picture',()=>{imageIndex=(imageIndex+1)%images.length;draw();})); description.textContent = game.description; details.textContent = `${game.players} · ${game.details || 'Separate Windows game'}`; availability.textContent = [game.availability || 'Download and play in the BodeeGuard Windows app.', game.help || 'For multiplayer, host and join on the same home network using matching game versions.'].join(' '); counter.textContent = `${index + 1} / ${FAMILY_GAME_PREVIEWS.length}`; };
-    const move = delta => { imageIndex=0; index = (index + delta + FAMILY_GAME_PREVIEWS.length) % FAMILY_GAME_PREVIEWS.length; draw(); };
+    const draw = () => { const game = games[index]; name.textContent = game.name; const images=game.images||[game],current=images[imageIndex]||images[0]; picture.src = new URL(current.image, assetBase).href; picture.alt = current.alt; imageButtons.replaceChildren(); if(images.length>1)imageButtons.append(button('Previous picture',()=>{imageIndex=(imageIndex+images.length-1)%images.length;draw();}),node('span',`${imageIndex+1} / ${images.length}`),button('Next picture',()=>{imageIndex=(imageIndex+1)%images.length;draw();})); description.textContent = game.description; details.textContent = `${game.players} · ${game.details || 'Separate Windows game'}`; availability.textContent = [game.availability || 'Download and play in the BodeeGuard Windows app.', game.help || 'For multiplayer, host and join on the same home network using matching game versions.'].join(' '); counter.textContent = `${index + 1} / ${games.length}`; };
+    const move = delta => { imageIndex=0; index = (index + delta + games.length) % games.length; draw(); };
     navigation.append(button('Previous game', () => move(-1), false, 'arrow-left'), counter, button('Next game', () => move(1), false, 'arrow-right'));
     info.append(imageButtons, description, details, availability, navigation); dialog.append(top, imageArea, info); root.append(dialog);
     dialog.addEventListener('keydown', event => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(event.key === 'ArrowRight' ? 1 : -1); } });
@@ -154,8 +157,8 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
     if (parent) section.append(steps);
     else { const help = node('details', '', 'cloud-game-library-help'); help.append(node('summary', 'How to download & play together'), steps); section.append(help); }
     const banners = node('div', '', 'cloud-game-banners');
-    FAMILY_GAME_PREVIEWS.forEach((game, index) => {
-      const card = button('', () => preview(index, card)); card.className = 'cloud-game-banner'; card.style.setProperty('--game-accent', game.color); card.setAttribute('aria-label', `Preview ${game.name}`);
+    FAMILY_GAME_PREVIEWS.forEach(game => {
+      const card = button('', () => preview(game.id, card)); card.className = 'cloud-game-banner'; card.style.setProperty('--game-accent', game.color); card.setAttribute('aria-label', `Preview ${game.name}`);
       const img = node('img'); img.src = new URL(game.image, assetBase).href; img.alt = game.alt; img.loading = 'lazy'; img.decoding = 'async'; img.width = 960; img.height = 540;
       const cover = node('span', '', 'cloud-game-cover'); cover.dataset.titleStyle = game.coverTitle?.style || 'default';
       const emblem = node('span', '', 'cloud-game-cover-emblem'); emblem.setAttribute('aria-hidden', 'true'); emblem.append(icon(game.icon));
@@ -182,7 +185,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
   function renderExternalState(){
     gallery.hidden=!parent&&!external.supported;
     for(const game of FAMILY_GAME_PREVIEWS){
-      const area=gameActions.get(game.id);area.replaceChildren();
+      const area=gameActions.get(game.id);area.parentElement.hidden=!canSeeGame(game.id);area.replaceChildren();
       const downloadReady=FAMILY_GAME_DOWNLOADS[game.id]?.available!==false;
       if(parent && game.details)area.append(node('small',game.details,'cloud-note'));
       if(parent && game.help)area.append(node('small',game.help,'cloud-note'));
@@ -254,6 +257,9 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       if (type === 'checkbox') wrap.prepend(input); else wrap.append(input); fields.append(wrap); return input;
     };
     field('Enable family games', 'enabled', 'checkbox', child.settings.enabled);
+    const gameChoices=node('fieldset','','cloud-game-choices');gameChoices.append(node('legend','Games this child may play'),node('p','Uncheck a game to hide and block it. Changes apply to this child; games stay subject to the time and school rules below.','cloud-note'));
+    const availableGames=[['tabletop-chess','Chess','Strategy board game'],['tabletop-connect-four','Connect Four','Four-in-a-row board game'],['tabletop-checkers','Checkers','Classic board game'],['tabletop-fleet-battle','Fleet Battle','Battleship-style board game'],...FAMILY_GAME_PREVIEWS.map(game=>[game.id,game.name,game.description])];
+    for(const [key,name,description] of availableGames){const item=node('div','','cloud-game-choice'),label=node('label','','cloud-game-check'),copy=node('span'),check=document.createElement('input');check.type='checkbox';check.name='game';check.value=key;check.checked=!(child.settings.blockedGames||[]).includes(key);copy.append(node('strong',name),node('small',description,'cloud-note'));label.append(check,copy);item.append(label);if(FAMILY_GAME_PREVIEWS.some(game=>game.id===key)){const show=button('Preview',()=>preview(key,show),false,'eye');show.setAttribute('aria-label','Preview '+name);item.append(show);}gameChoices.append(item);} body.append(gameChoices);
     const minutes = field('Daily minutes (0–240)', 'dailyMinutes', 'number', child.settings.dailyMinutes); minutes.min = '0'; minutes.max = '240'; minutes.required = true;
     field('Finish required schoolwork first', 'requireSchool', 'checkbox', child.settings.requireSchool);
     field('Bypass schoolwork today only', 'unlock', 'checkbox', child.settings.unlockDate === date);
@@ -278,7 +284,7 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       event.preventDefault(); if (saving) return;
       if (!draft) {
         const values = new FormData(form);
-        draft = { enabled:values.has('enabled'), requireSchool:values.has('requireSchool'), dailyMinutes:Number(values.get('dailyMinutes')), start:values.get('start'), end:values.get('end') || '24:00', days:values.getAll('day').map(Number), unlockDate:values.has('unlock') ? date : null };
+        draft = { enabled:values.has('enabled'), requireSchool:values.has('requireSchool'), dailyMinutes:Number(values.get('dailyMinutes')), start:values.get('start'), end:values.get('end') || '24:00', days:values.getAll('day').map(Number), unlockDate:values.has('unlock') ? date : null, blockedGames:availableGames.map(([key])=>key).filter(key=>!values.getAll('game').includes(key)) };
         if (!draft.days.length || draft.start >= draft.end) {
           message.textContent = !draft.days.length ? 'Choose at least one allowed day.' : 'Choose a closing time after the opening time, or leave it blank for midnight.';
           message.dataset.state = 'error'; (!draft.days.length ? days.querySelector('input') : ends).focus(); draft = null; return;
@@ -450,7 +456,10 @@ export function setupCloudGames({ root, request, parent = false, renderAvatar, e
       const result = await request('room', { matchId: selected });
       if (ticket !== generation) return;
       if(readUnlockVersion!==unlockVersion){refreshAfterUnlock=true;return;}
+      const previousBlocked=JSON.stringify(blockedGames());
       room = result; fresh = true; failures = 0; exhaustedByAction = false;
+      if(!parent&&previousBlocked!==JSON.stringify(blockedGames()))root.querySelectorAll('.cloud-game-preview[open]').forEach(dialog=>dialog.close());
+      tabletopUI?.setBlockedGames(parent?[]:blockedGames()); onlineUI.setBlockedGames(parent?[]:blockedGames()); renderExternalState();
       for(const [id,state] of unlockStates) if(!state.pending) {
         const child=room.children.find(child=>child.id===id);
         if(!child || state.date && (state.date!==room.date || state.unlocked!==!!(child.access.quickUnlocked ?? child.access.parentUnlock))) unlockStates.delete(id);

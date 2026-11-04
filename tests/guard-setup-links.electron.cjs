@@ -13,13 +13,13 @@ const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://localhost');
  res.setHeader('Content-Type','text/html');
  if(url.pathname==='/')return res.end(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden}iframe{display:block;width:100%;height:100%;border:0}</style><iframe title="Parent dashboard" sandbox="${sandbox}" src="/workspace?setup=connect"></iframe>`);
- if(url.pathname==='/workspace')return res.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/guard-admin/base.css"><section id="tab-overview"><div class="tab-header"></div></section><section id="tab-settings"><div class="tab-header"></div></section><script type="module" src="/fixture.js"></script>');
+ if(url.pathname==='/workspace')return res.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/guard-admin/base.css"><section id="tab-overview"><div class="tab-header"></div></section><section id="tab-settings"><div class="tab-header"></div></section><section id="tab-family-games"><div class="tab-header"></div><p>Game permissions panel</p></section><script type="module" src="/fixture.js"></script>');
  if(url.pathname==='/fixture.js'){
   res.setHeader('Content-Type','text/javascript');return res.end(`import {setupParentStart} from '/guard-admin/cloud-parent-start.js';const guide=setupParentStart({endpoint:'/setup',getSnapshot:()=>(${JSON.stringify(snapshot)}),navigate:()=>{},mutate:()=>{throw Error('No mutation expected')}});guide.update();`);
  }
  if(url.pathname==='/setup'){
   let raw='';for await(const part of req)raw+=part;
-  const input=JSON.parse(raw);if(input.action!=='get-setup'){writes++;res.statusCode=400;return res.end('{}');}
+  const input=JSON.parse(raw);if(input.action==='save-setup'){writes++;setup.revision++;res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(setup));}if(input.action!=='get-setup'){writes++;res.statusCode=400;return res.end('{}');}
   res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(setup));
  }
  if(url.pathname==='/guard/account/'||url.pathname==='/guard/activate/')return res.end(`<h1>${url.pathname.includes('account')?'Windows installer':'Enter pairing code'}</h1><a href="/?setup=connect">Continue setup</a>`);
@@ -64,6 +64,12 @@ async function main(){
  await inside(`document.querySelector('.setup-next-action button').click();`);
  assert.equal(await inside(`return document.activeElement===document.querySelector('.setup-computer-assignment select');`),true);
  assert.equal(writes,0);assert.equal(popups,0);
+ assert.equal(await inside(`return document.body.textContent.includes('Paintball') || document.body.textContent.includes('individual games');`),true,'setup explains individual game choices');
+ await inside(`[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Choose games for each child').click();`);
+ await wait(`document.querySelector('iframe')?.contentDocument?.querySelector('dialog[data-setup-section="family-games"]')`);
+ assert.equal(await inside(`return document.querySelector('dialog').textContent.includes('Game permissions panel');`),true);
+ await inside(`[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Back to setup').click();`);
+ assert.equal(await inside(`return !!document.querySelector('dialog[open]')&&!document.querySelector('dialog').dataset.setupSection;`),true);
  win.destroy();console.log('Setup links passed: production iframe sandbox, desktop/phone download and pairing navigation, saved step return, real assignment control and zero mutations/popups.');
 }
 const timer=setTimeout(()=>{console.error('Setup link fixture timed out');app.exit(1);},30000);

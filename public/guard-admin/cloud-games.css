@@ -137,3 +137,7 @@
 .cloud-game-day-presets{display:flex;flex-wrap:wrap;gap:8px}.cloud-game-day-presets .btn{font-size:13px;padding:8px 12px}
 .cloud-game-people>.cloud-game-settings-all{grid-column:1/-1;width:100%}
 @media(max-width:480px){.cloud-game-settings-header{padding:16px}.cloud-game-settings-header h3{font-size:18px}.cloud-game-settings-body{padding:16px}.cloud-game-settings-footer{padding:12px 16px max(12px,env(safe-area-inset-bottom))}.cloud-game-settings-footer .btn{font-size:14px}.cloud-game-people{grid-template-columns:1fr}}
+
+.cloud-family-room .cloud-game-install-card[hidden]{display:none!important}
+
+.cloud-game-settings .cloud-game-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}.cloud-game-choices>p{grid-column:1/-1;margin:0}.cloud-game-choice{display:flex;align-items:center;gap:8px;min-width:0}.cloud-game-settings .cloud-game-choice label{flex:1;min-width:0;align-items:flex-start}.cloud-game-choice label span{display:grid;gap:3px}.cloud-game-choice label small{line-height:1.4}.cloud-game-choice>button{min-height:44px}

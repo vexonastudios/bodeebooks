@@ -11,12 +11,18 @@ export function setupTabletop({root,request,parent=false,online=false}){
   root.classList.add('tabletop-room');root.append(header,node('p',online?'One player presses Host. The other chooses Join below. Keep this room open on both screens.':'Choose a game. One child hosts, and another joins on the same home Wi-Fi.','cloud-note'),catalog,note,body);
   async function run(kind,input){if(localBusy)return;localBusy=true;draw(true);try{setState(await request(kind,input));}catch(e){note.textContent=e.message;}finally{localBusy=false;draw(true);}}
   function action(input){square=null;return run('move',{id:crypto.randomUUID(),revision:state.match.revision,...input});}
+  let blockedGames=[];
+  function setBlockedGames(value){blockedGames=Array.isArray(value)?value:[];draw(true);}
   function setState(value){state=value||{supported:false,rooms:[]};if(state.game)selected=state.game;counter.textContent=state.remainingSeconds==null?(online?'Private family room':'Home LAN'):`${Math.floor(state.remainingSeconds/60)}:${String(state.remainingSeconds%60).padStart(2,'0')} left`;note.textContent=state.message||'';draw();}
   function draw(force=false){
     const key=JSON.stringify([state.game,state.roomId,state.connected,state.match?.id,state.match?.revision,state.pendingMove,state.rooms,state.busy,state.supported,state.history,localBusy]);
     if(!force&&key===renderKey)return;renderKey=key;root.classList.toggle('has-match',!!state.match);catalog.replaceChildren();body.replaceChildren();
     const busy=localBusy||state.busy||state.pendingMove;
-    for(const [id,name,symbol,mark]of GAMES){const b=button('',()=>{selected=id;square=null;draw(true);},null,!!state.game&&id!==state.game||busy);b.className='tabletop-game'+(selected===id?' selected':'');b.setAttribute('aria-pressed',String(selected===id));const art=node('span',mark,`tabletop-game-icon ${id}`);art.setAttribute('aria-hidden','true');const title=node('span');title.append(node('strong',name),node('small','Play over your home LAN'));b.append(art,title);catalog.append(b);}
+    if(!parent&&state.game&&blockedGames.includes('tabletop-'+state.game)){body.append(node('p','This game is no longer enabled by your parent.','cloud-note'),button('Leave game',()=>run('leave'),'log-out',busy));icons();return;}
+    const permitted=parent?GAMES:GAMES.filter(([id])=>!blockedGames.includes('tabletop-'+id));
+    if(!permitted.some(([id])=>id===selected))selected=permitted[0]?.[0];
+    if(!permitted.length){body.append(node('p','Your parent has not enabled any board games.','cloud-note'));return;}
+    for(const [id,name,symbol,mark]of permitted){const b=button('',()=>{selected=id;square=null;draw(true);},null,!!state.game&&id!==state.game||busy);b.className='tabletop-game'+(selected===id?' selected':'');b.setAttribute('aria-pressed',String(selected===id));const art=node('span',mark,`tabletop-game-icon ${id}`);art.setAttribute('aria-hidden','true');const title=node('span');title.append(node('strong',name),node('small','Play over your home LAN'));b.append(art,title);catalog.append(b);}
     if(parent&&!online||!state.supported){body.append(node('p',parent?'Choose Play as Mom or Dad above to join your children. Children can also play each other over home Wi-Fi in the Windows app.':'Open the updated BodeeGuard Windows app to host or join these games.','cloud-note'));icons();return;}
     if(!state.game){
       const actions=node('div','','cloud-game-actions');actions.append(button(`Host ${GAMES.find(g=>g[0]===selected)[1]}`,()=>run('host',{game:selected}),'radio',busy));body.append(actions);
@@ -83,5 +89,5 @@ export function setupTabletop({root,request,parent=false,online=false}){
     }
   }
   function ocean(title,click,css,disabled){const panel=node('section');panel.append(node('h4',title));const grid=node('div','','tabletop-ocean');grid.setAttribute('aria-label',title);for(let r=0;r<10;r++)for(let c=0;c<10;c++){const style=css(r,c);const b=button(style.includes('hit')?'×':style.includes('miss')?'·':'',()=>click(r,c),null,disabled);b.className='tabletop-water '+style;b.setAttribute('aria-label',`${title} ${'ABCDEFGHIJ'[c]}${r+1} ${style}`);grid.append(b);}panel.append(grid);return panel;}
-  setState(state);return {setState};
+  setState(state);return {setState,setBlockedGames};
 }

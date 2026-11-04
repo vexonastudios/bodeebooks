@@ -153,7 +153,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       input.onchange=()=>{if(card.placement!=='blocked')card.previousPlacement=card.placement;card.placement=input.checked?card.previousPlacement||'anytime':'blocked';card.accessChanged=true;draft.dirty=true;};
       row.append(input,words);(common.has(card.module)?grid:extraGrid).append(row);
     }
-    body.append(grid,extras,node('p','Next, review the plan and choose which children receive it. Nothing here changes their access until you save.','setup-copy'));
+    body.append(grid,extras,node('p','Family Games has individual game choices, including Paintball and Critter County Hunting. After saving this plan, you can review and turn off games for each child on the next step.','setup-note'),node('p','Next, review the plan and choose which children receive it. Nothing here changes their access until you save.','setup-copy'));
     const advanced=node('details');advanced.append(node('summary','Goals, hours & individual plans'),button('Open Daily Plan',()=>section('daily-plan')),node('p','School means required work. Open after school means earned activities. Not allowed hides an activity.','setup-copy'));body.append(advanced);
     body.append(button('Discard activity changes',discardDraft));
   }
@@ -286,7 +286,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       for(const child of children())pending.push(inlineSchool({host:body,student:child,getSnapshot,mutate,refresh,searchSites:input=>request('find-school-sites',input),onChange:()=>{error.textContent='';},onError:failure=>{error.textContent=failure.message;}}));
       const optional=node('details');optional.append(node('summary','School hours and days off (optional)'),button('School calendar',()=>section('calendar')));body.append(optional);
     }else if(index===2){if(reviewing)reviewPlan();else activityPicker();}
-    else readiness();
+    else { readiness(); body.append(node('p','If you enabled Family Games, choose Access & game time next to a child, or Settings for all children, then review individual games. Games are allowed until you turn them off.','setup-note'),button('Choose games for each child',()=>section('family-games'))); }
     if(index===2||index===3&&!state.chores?.chosen&&!state.completed)choreOptions();
     body.scrollTop=0;decorateSetup(dialog);
   }

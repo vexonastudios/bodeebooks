@@ -33,5 +33,5 @@ export function setupOnlineTabletop({root,request,parent}) {
  const suspend=()=>{generation++;clearTimeout(timer);state={...state,connected:false,busy:true};ui.setState(state);};
  dialog.addEventListener('close',suspend);
  document.addEventListener('visibilitychange',()=>{suspend();if(!document.hidden&&active&&dialog.open)void refresh().catch(()=>{});});
- return {setActive(value){active=value;if(!active){suspend();if(dialog.open)dialog.close();}},clear(){suspend();if(dialog.open)dialog.close();role=null;state={supported:true,rooms:[],busy:true};}};
+ return {setBlockedGames(value){ui.setBlockedGames(value);},setActive(value){active=value;if(!active){suspend();if(dialog.open)dialog.close();}},clear(){suspend();if(dialog.open)dialog.close();role=null;state={supported:true,rooms:[],busy:true};}};
 }
