@@ -35,6 +35,10 @@ test('candidate URL is short-lived and signs only the fixed R2 path',()=>{
   const current = new URL(releasedCustomerR2Url('stable','1.2.342'));
   assert.equal(current.pathname,'/v1/installers/candidates/30e46acfc133853d52dfeabd4bc4e07d/BodeeGuard-Cloud-Child-Setup-1.2.342.exe');
   assert.equal(current.searchParams.get('signature'),createHmac('sha256','synthetic-secret').update(['bodeeguard-installer-download-v1','GET',current.pathname,current.searchParams.get('expires')].join('\n')).digest('hex'));
+  const next = new URL(releasedCustomerR2Url('stable','1.2.343'));
+  assert.equal(next.pathname,'/v1/installers/candidates/ee996b495394d8c95dda11fcf1223d87/BodeeGuard-Cloud-Child-Setup-1.2.343.exe');
+  assert.equal(next.searchParams.get('signature'),createHmac('sha256','synthetic-secret').update(['bodeeguard-installer-download-v1','GET',next.pathname,next.searchParams.get('expires')].join('\n')).digest('hex'));
+  assert.equal(releasedCustomerR2Url('beta','1.2.343'),null);
   assert.equal(releasedCustomerR2Url('beta','1.2.342'),null);
   assert.equal(releasedCustomerR2Url('beta','1.2.339'),null);assert.equal(releasedCustomerR2Url('stable','1.2.340'),null);
   process.env.BODEEGUARD_INTERNAL_PILOT_ASSET_ORIGIN='http://assets.example.test/';assert.equal(candidateDownloadUrl(),null);
