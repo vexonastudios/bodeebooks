@@ -1,5 +1,7 @@
 # Installer download handoff — November 3, 2026
 
+Published follow-up: this change is live in the [November 3 setup deployment](guard-release-1.2.341.md). The original preparation record below is historical.
+
 The install page previously rendered a valid download link below the code form
 without moving the viewport or focus. On shorter screens this made a successful
 code submission appear to do nothing.

@@ -1,5 +1,7 @@
 # Parent password and approval handoff — November 3, 2026
 
+Published follow-up: this change is live in the [November 3 setup deployment](guard-release-1.2.341.md). The original preparation record below is historical.
+
 Validated website source: `9e9367e` on `codex/launch-trial-policy`.
 Companion child source: `a69c2695` in `vexonastudios/bodee-guard`.
 Status: local source only, not pushed or deployed. The earlier `/install`
