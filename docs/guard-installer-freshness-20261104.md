@@ -27,3 +27,18 @@ checks; TypeScript and scoped ESLint pass. Tests include publication during an
 open session, stale initial pages, catalog convergence, hidden/back-forward
 navigation, late responses, failures and channel isolation. No Windows build or
 API deployment is required. Production publication is recorded below when done.
+
+## Production verification
+
+Source a6db033 was built and promoted as
+dpl_Fp9f7xj2Pso8auGQ7A24HyoXNgjK. At 2026-11-04T19:49:14Z both website
+aliases served that deployment; the Stable and Family Beta freshness endpoints
+returned 200 with version 1.2.344 and no-store headers. The candidate download
+route continued to require parent sign-in. The Family Beta recovery envelope
+retained SHA-256 be2aa455c8f539724da5419e5628182a711b9e3517cae01fd2d7ce31da886d81.
+
+The production Next build and TypeScript check passed. Browser behavior was
+verified with isolated event/timer fixtures and account rendering, not by
+changing or inspecting a real family's session. No installers or API services
+were rebuilt. Previous website deployment for rollback:
+dpl_gCekbrD2CPHQV6Ajij1j7sfWWdNZ.
