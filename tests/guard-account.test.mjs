@@ -16,17 +16,20 @@ const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
 }).outputText;
 
-async function render(account) {
+async function render(account, options = {}) {
   const previousFetch = globalThis.fetch;
   const previousApi = process.env.BODEEGUARD_COMMERCIAL_API_URL;
   process.env.BODEEGUARD_COMMERCIAL_API_URL = 'https://fixture.invalid/api';
-  globalThis.fetch = async () => ({ ok: Boolean(account), json: async () => account });
+  globalThis.fetch = async () => {
+    options.onFetch?.();
+    return { ok: Boolean(account), json: async () => account };
+  };
   const component = new Module(filename);
   component.filename = filename;
   component.require = name => {
     if (name === '@clerk/nextjs/server') return {
       auth: { protect: async () => ({ getToken: async () => 'fixture-session' }) },
-      currentUser: async () => ({ fullName: 'Jamie Test', publicMetadata: {}, unsafeMetadata: {}, externalAccounts: [], primaryEmailAddress: { emailAddress: 'parent@example.com' } }),
+      currentUser: options.currentUser || (async () => ({ fullName: 'Jamie Test', publicMetadata: {}, unsafeMetadata: {}, externalAccounts: [], primaryEmailAddress: { emailAddress: 'parent@example.com' } })),
     };
     if (name === 'next/headers') return { cookies: async () => ({get: () => undefined}) };
     if (name === 'next/navigation') return {useRouter: () => ({refresh(){}})};
@@ -67,6 +70,29 @@ test('account outage is explicit, not an empty household or not-subscribed claim
   const html = await render(null);
   assert.match(html, /family account is temporarily unavailable/);
   assert.doesNotMatch(html, /No child computers connected yet|Not subscribed/);
+});
+
+test('account loading starts while the greeting profile is still pending', async () => {
+  const profile = Promise.withResolvers();
+  let accountStarted = false;
+  const pending = render(fixture(), {
+    currentUser: () => profile.promise,
+    onFetch: () => { accountStarted = true; },
+  });
+  try {
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(accountStarted, true, 'account does not wait for the display-name request');
+  } finally { profile.resolve(null); }
+  assert.match(await pending, /Parent account/);
+});
+
+test('a profile lookup failure still renders the authenticated account and setup', async () => {
+  const html = await render(fixture({ entitlementStatus: 'trial', release: cloudReleaseFixture() }), {
+    currentUser: async () => { throw new Error('profile temporarily unavailable'); },
+  });
+  assert.match(html, /Welcome, Parent/);
+  assert.match(html, /Download child app for Windows/);
+  assert.doesNotMatch(html, /family account is temporarily unavailable/);
 });
 
 test('closed enrollment does not offer a ticking trial or an unusable download', async () => {

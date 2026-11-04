@@ -180,12 +180,16 @@ async function loadBodeeGuardAccount(token: string): Promise<BodeeGuardAccount |
 
 export default async function GuardAccountPage({ searchParams }: { searchParams: Promise<{ billingError?: string; checkout?: string; computerRemoved?: string; computerRenamed?: string; download?: string; subscription?: string; trial?: string; channel?: string; invitation?: string; setup?: string }> }) {
   const session = await auth.protect();
-  const user = await currentUser();
+  // The greeting, account and page preferences do not depend on one another.
+  // A missing profile must not prevent an authenticated parent opening setup.
+  const [user, account, params, cookieStore] = await Promise.all([
+    currentUser().catch(() => null),
+    session.getToken().then(token => token ? loadBodeeGuardAccount(token) : null),
+    searchParams,
+    cookies(),
+  ]);
   const name = parentDisplayName(user);
-  const token = await session.getToken();
-  const account = token ? await loadBodeeGuardAccount(token) : null;
-  const params = await searchParams;
-  const setupCollapsed = (await cookies()).get("bg_child_setup_collapsed")?.value === "1";
+  const setupCollapsed = cookieStore.get("bg_child_setup_collapsed")?.value === "1";
   if (!account) return (
     <div className={styles.portalPage}><div className={`container ${styles.narrowShell}`}>
       <section className={styles.activationCard}><ShieldCheck size={29} /><h1>Let’s reconnect.</h1>
