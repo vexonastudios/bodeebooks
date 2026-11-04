@@ -18,16 +18,16 @@ class Recorder{state='inactive';mimeType='audio/webm';static isTypeSupported(){r
 window.MediaRecorder=Recorder;const root=createRoot(document.getElementById('root'));root.render(location.pathname==='/children'?<main className={reportStyles.page}><StudentReports onForwarded={()=>{}}/></main>:location.pathname==='/staff'?<main className={adminStyles.page}><Staff/></main>:<ReportForm release="abcdef1234567"/>);`);
 let voiceCalls=0,submits=[],stored=null,events=[],updates=0,photos=[],photoReads=0,replies=[];const now=new Date().toISOString();
 const setup={capturedAt:now,students:[{id:'d76383e4-d6ce-4270-8e9e-005dc0f563ca',name:'Alex',grade:'5',schoolProvider:'abeka'},{id:'d76383e4-d6ce-4270-8e9e-005dc0f563cb',name:'Jamie',grade:'2',schoolProvider:'bju'}],devices:[{id:'synthetic-pc',name:'Study computer',studentId:'d76383e4-d6ce-4270-8e9e-005dc0f563ca',platform:'Windows',appVersion:'1.2.293',releaseChannel:'beta',lastSeenAt:now,settingsRevision:4,acknowledgedRevision:3,locked:false}],school:{timeZone:'America/Chicago',rulesRevision:7,scheduleEnabled:true},recentErrors:[]};
-let childEnabled=false,childState='pending';const reviews=[];const childReport={id:'f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1',reference:'BUG-CHILDREPORT',description:'The button is stuck. <b>This is plain text.</b>',origin:'child',reviewState:'pending',revision:1,status:'new',createdAt:now,updatedAt:now,context:setup};
+let childEnabled=false,childState='pending',cardMode=false,childDetailReads=0,holdChildList=false,releaseChildList,conflictNext=false;const reviews=[],cardReviews=[];const childReport={id:'f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1',reference:'BUG-CHILDREPORT',description:'The button is stuck. <b>This is plain text.</b>',origin:'child',reviewState:'pending',revision:1,status:'new',createdAt:now,updatedAt:now,context:setup};
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');res.setHeader('Cache-Control','no-store');
  if(url.pathname==='/bundle.js'){res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync(path.join(out,'bundle.js')));return;}
  if(req.method==='POST'){
   let raw='';for await(const chunk of req)raw+=chunk;const body=JSON.parse(raw);res.setHeader('Content-Type','application/json');
   let result={};let code=200;
-  if(body.action==='student-list')result={reports:childEnabled&&((body.reviewState||'pending')===childState)?[childReport]:[],hasMore:false};
-  else if(body.action==='review'){reviews.push(body);assert.equal(body.id,childReport.id);if(reviews.length===1){childState=body.decision;code=503;result={error:'Synthetic lost approval reply'};}else {assert.deepEqual(body,reviews[0]);result={report:{...childReport,reviewState:childState,revision:2}};}}
-  else if(body.action==='detail'&&body.id===childReport.id)result={report:childReport,events:[],photos:photos.slice(0,1).map(({data,...p})=>p)};
+  if(body.action==='student-list'){result={reports:childEnabled&&((body.reviewState||'pending')===childState)?[childReport]:[],hasMore:false};if(holdChildList){holdChildList=false;await new Promise(resolve=>{releaseChildList=resolve;});}}
+  else if(body.action==='review'){assert.equal(body.id,childReport.id);if(cardMode){cardReviews.push(body);if(conflictNext){conflictNext=false;code=409;result={error:'Synthetic revision changed. Refresh the report.'};}else if(body.decision==='dismissed'){childState='dismissed';result={report:{...childReport,reviewState:childState,revision:2}};}else if(cardReviews.length===2){childState='forwarded';code=503;result={error:'Synthetic lost card reply'};}else{assert.deepEqual(body,cardReviews[1]);result={report:{...childReport,reviewState:childState,revision:3}};}}else{reviews.push(body);if(reviews.length===1){childState=body.decision;code=503;result={error:'Synthetic lost approval reply'};}else {assert.deepEqual(body,reviews[0]);result={report:{...childReport,reviewState:childState,revision:2}};}}}
+  else if(body.action==='detail'&&body.id===childReport.id){childDetailReads++;result={report:childReport,events:[],photos:photos.slice(0,1).map(({data,...p})=>p)};}
   else if(body.action==='context')result={setup,voiceAvailable:true};
   else if(body.action==='list'||body.action==='bug-reports')result={reports:stored?[stored]:[],hasMore:false};
   else if(body.action==='voice'){assert.equal(body.consent,true);assert.ok(body.data);voiceCalls++;if(voiceCalls===1){code=503;result={error:'Synthetic transcription interruption. Try again.'};}else result={text:'The lesson restarted after opening Grades.'};}
@@ -112,13 +112,29 @@ let win;const watchdog=setTimeout(()=>{console.error('Bug reports UI fixture tim
  await tap('Save update');await until('document.body.textContent.includes("Report updated.")','staff saved');assert.equal(updates,1);assert.equal(stored.status,'resolved');
  win.setContentSize(1440,1000);await new Promise(r=>setTimeout(r,100));assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true);
  await fs.promises.writeFile(path.join(out,'staff-desktop.png'),(await win.webContents.capturePage()).toPNG());
- childEnabled=true;win.setContentSize(390,844);await win.loadURL(origin+'/children');await until('document.body.textContent.includes("button is stuck")','student inbox');assert.equal(reviews.length,0);
+ childEnabled=true;cardMode=true;win.setContentSize(390,844);await win.loadURL(origin+'/children');await until('document.body.textContent.includes("button is stuck")','student inbox');
+ assert.equal(await js('document.body.textContent.includes("Sending shares the child’s report, any screenshot, and app and computer details with support.")'),true);
+ for(const width of [320,390,768,1440]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'report card fits '+width);}
+ win.setContentSize(390,844);await new Promise(r=>setTimeout(r,100));await fs.promises.writeFile(path.join(out,'student-card-mobile.png'),(await win.webContents.capturePage()).toPNG());
+ assert.equal(reviews.length,0);assert.equal(childDetailReads,0);
+ holdChildList=true;await js('[...document.querySelectorAll("button")].find(b=>b.getAttribute("aria-label")==="Refresh student reports").click();true;');
+ for(let n=0;!releaseChildList&&n<100;n++)await new Promise(r=>setTimeout(r,20));assert.ok(releaseChildList);
+ await tap('Dismiss');await until('document.body.textContent.includes("Dismissed. You can find it under Dismissed")','direct dismissal');assert.equal(childState,'dismissed');assert.equal(childDetailReads,0,'dismissing does not open details');releaseChildList();await new Promise(r=>setTimeout(r,120));assert.equal(await js('document.body.textContent.includes("button is stuck")'),false,'a stale refresh cannot resurrect a dismissed report');
+ await tap('Dismissed');await until('document.body.textContent.includes("button is stuck")','dismissed card');
+ await tap('Send to BodeeGuard');await until('document.body.textContent.includes("Synthetic lost card reply")','direct send retry');
+ assert.equal(await js('[...document.querySelectorAll("button")].find(b=>b.getAttribute("aria-label")==="Refresh student reports").disabled'),true,'uncertain send keeps its retry visible');
+ await tap('Retry sending');await until('document.body.textContent.includes("Sent to BodeeGuard.")','direct send saved');
+ assert.equal(childDetailReads,0,'card send does not open the report');assert.equal(cardReviews.length,3);assert.deepEqual(cardReviews[1],cardReviews[2]);
+ childState='pending';win.setContentSize(390,844);await win.loadURL(origin+'/children');await until('document.body.textContent.includes("button is stuck")','conflict card');
+ conflictNext=true;await tap('Dismiss');await until('document.body.textContent.includes("Synthetic revision changed")','revision conflict');
+ assert.equal(await js('[...document.querySelectorAll("button")].find(b=>b.textContent.trim()==="Dismiss").disabled'),false,'conflict returns controls to the parent');assert.equal(childState,'pending');
+ cardMode=false;childState='pending';win.setContentSize(390,844);await win.loadURL(origin+'/children');await until('document.body.textContent.includes("button is stuck")','student inbox again');assert.equal(reviews.length,0);
  await js('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("button is stuck")).click();true;');await until('!!document.querySelector("textarea")','student review');await until('!!document.querySelector("button[aria-label="+JSON.stringify("Enlarge Attached photo 1")+"] img")','student screenshot');
  assert.equal(await js('document.querySelectorAll("b").length'),0,'child note remains plain text');
  for(const width of [320,390,768,1440]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'student inbox fits '+width);}
  win.setContentSize(390,844);await new Promise(r=>setTimeout(r,200));await fs.promises.writeFile(path.join(out,'student-review-mobile.png'),(await win.webContents.capturePage()).toPNG());
- await type('textarea','I saw this happen too.');await tap('Send to BodeeGuard');await until('document.body.textContent.includes("Synthetic lost approval reply")','approval retry');assert.equal(reviews.length,1);assert.equal(await js('document.querySelector("textarea").disabled'),true);
- await tap('Retry sending');await until('document.body.textContent.includes("Sent to BodeeGuard.")','parent approval saved');assert.equal(reviews.length,2);assert.deepEqual(reviews[0],reviews[1]);
+ await type('textarea','I saw this happen too.');await js('[...document.querySelectorAll("button")].filter(b=>b.textContent.trim()==="Send to BodeeGuard").at(-1).click();true;');await until('document.body.textContent.includes("Synthetic lost approval reply")','approval retry');assert.equal(reviews.length,1);assert.equal(await js('document.querySelector("textarea").disabled'),true);
+ await tap('Retry sending');await until('document.body.textContent.includes("Sent to BodeeGuard.")','parent approval saved');assert.equal(reviews.length,2);assert.deepEqual(reviews[0],reviews[1]);assert.equal(reviews[0].note,'I saw this happen too.');
  assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,widths:[320,390,768,1440],voiceConsent:true,deniedMicrophone:true,transcriptionRetry:true,lostSendRetry:true,staffTriage:true,photoCaptureAndGallery:true,photoRetryAndFollowup:true,privatePhotos:true,screenshots:out}));
  win.destroy();await new Promise(r=>server.close(r));clearTimeout(watchdog);app.quit();
 })().catch(error=>{console.error(error);if(win&&!win.isDestroyed())win.destroy();server.close();clearTimeout(watchdog);app.exit(1);});
