@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.345": {
+  "title": "Finish approved computer setup",
+  "sections": [
+    {
+      "heading": "Version 1.2.345",
+      "headline": "A clear way to finish setup on a previously used computer",
+      "summary": "Repairs setup getting stuck while connecting the parent password when Windows retains an earlier family enrollment.",
+      "highlights": [
+        "Setup shows which steps are complete and what to do next.",
+        "An earlier Windows enrollment can be connected to the approved family with Windows administrator approval.",
+        "Saved work stays in place; checking setup and connection help stay available."
+      ]
+    }
+  ]
+},
   "1.2.344": {
   "title": "Repair Windows startup",
   "sections": [
