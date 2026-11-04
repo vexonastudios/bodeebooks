@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.344": {
+  "title": "Repair Windows startup",
+  "sections": [
+    {
+      "heading": "Version 1.2.344",
+      "headline": "Fix the protection-service startup check",
+      "summary": "Repairs a Windows token-access error that prevented the app from connecting to its protection service during installation and startup.",
+      "highlights": [
+        "New installations can complete the local protection-service check.",
+        "The same repair applies when an existing installation starts.",
+        "Saved family profiles and parent-approved access remain protected."
+      ]
+    }
+  ]
+},
   "1.2.343": {
   "title": "Reliable school and family game choices",
   "sections": [

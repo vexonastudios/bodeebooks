@@ -5,6 +5,7 @@ import { createHmac } from "node:crypto";
 export const candidatePath = "/v1/installers/candidates/f7fad65465130af86e25e735d18196aa/BodeeGuard-Cloud-Child-Setup-1.2.339.exe";
 const release342Path = "/v1/installers/candidates/30e46acfc133853d52dfeabd4bc4e07d/BodeeGuard-Cloud-Child-Setup-1.2.342.exe";
 const release343Path = "/v1/installers/candidates/ee996b495394d8c95dda11fcf1223d87/BodeeGuard-Cloud-Child-Setup-1.2.343.exe";
+const release344Path = "/v1/installers/candidates/f9d13fc1cbc1e3455e7988152bed7007/BodeeGuard-Cloud-Child-Setup-1.2.344.exe";
 type CandidateUser = { primaryEmailAddress?: { emailAddress?: string; verification?: { status?: string } | null } | null } | null;
 export function canDownloadCandidate(user: CandidateUser) {
   const allowed = process.env.BODEEGUARD_CUSTOMER_CANDIDATE_EMAIL?.trim().toLowerCase();
@@ -31,5 +32,6 @@ export function releasedCustomerR2Url(channel: string, version: string) {
   if (channel !== "stable") return null;
   if (version === "1.2.339") return candidateDownloadUrl();
   if (version === "1.2.342") return signedCustomerUrl(release342Path);
-  return version === "1.2.343" ? signedCustomerUrl(release343Path) : null;
+  if (version === "1.2.343") return signedCustomerUrl(release343Path);
+  return version === "1.2.344" ? signedCustomerUrl(release344Path) : null;
 }
