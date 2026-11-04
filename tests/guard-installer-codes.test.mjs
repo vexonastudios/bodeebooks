@@ -83,12 +83,14 @@ test('the short address rewrites locally and the page does not demand parent log
 
 test('the real entry form accepts four characters, preserves older pasted codes and submits without parent credentials',async()=>{
  const filename=path.resolve('app/guard/install/InstallForm.tsx'),native=createRequire(filename),component=new Module(filename);
- let cursor=0,tree;const slots=[];
- component.require=name=>name==='react'?{...React,useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],value=>{slots[i]=value;}];}}
+ let cursor=0,tree;const slots=[],effects=[],focusCalls=[],scrollCalls=[];
+ const button={focus:options=>focusCalls.push(options),scrollIntoView:options=>scrollCalls.push(options)};
+ component.require=name=>name==='react'?{...React,useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],value=>{slots[i]=value;}];},useRef(initial){const i=cursor++;return slots[i]??(slots[i]={current:initial});},useEffect(effect,deps){const i=cursor++;if(!slots[i]||deps.some((value,index)=>!Object.is(value,slots[i][index]))){slots[i]=deps;effects.push(effect);}}}
+   :name==='__browser'?{matchMedia:()=>({matches:true})}
    :name==='../InstallerDownload'?{__esModule:true,default:()=>null}
    :name.endsWith('.module.css')?{__esModule:true,default:{}}:native(name);
- component._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,filename);
- const render=()=>{cursor=0;tree=component.exports.default();return renderToStaticMarkup(tree);};
+ component._compile('const window=require("__browser");'+ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,filename);
+ const render=()=>{cursor=0;tree=component.exports.default();const ready=tree.props.children.find(child=>child?.props?.ref);if(ready)ready.props.ref.current={querySelector:()=>button};while(effects.length)effects.shift()();return renderToStaticMarkup(tree);};
  const input=()=>tree.props.children.find(child=>child?.type==='input');
  const savedFetch=globalThis.fetch,calls=[];
  globalThis.fetch=async(url,options)=>{calls.push({url,options});return Response.json({url:'https://download.example.test/installer.exe',version:'1.2.339',expiresAt:null});};
@@ -102,6 +104,10 @@ test('the real entry form accepts four characters, preserves older pasted codes 
    const call=calls.at(-1);assert.equal(call.url,'/guard/install/redeem/');assert.equal(call.options.credentials,'omit');
    assert.deepEqual(JSON.parse(call.options.body),{code:code.toUpperCase()});
    assert.match(render(),/Your Windows download is ready/);
+   assert.deepEqual(focusCalls.at(-1),{preventScroll:true});
+   assert.deepEqual(scrollCalls.at(-1),{block:'center',behavior:'instant'});
+   assert.equal(focusCalls.length,calls.length,'each successful code brings the download into focus once');
+   render();assert.equal(focusCalls.length,calls.length,'ordinary renders must not steal focus again');
   }
  }finally{globalThis.fetch=savedFetch;}
 });

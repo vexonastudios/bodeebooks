@@ -203,6 +203,12 @@
 .installReady { margin-top:24px; padding:20px; border:1px solid #a9d9c7; border-radius:12px; background:#edfaf4; color:#126348; }
 .installReady p { margin:10px 0; font-size:.9rem; line-height:1.6; }
 .installReady a { margin:8px 0; }
+.installReadyHeading { display:flex; align-items:center; gap:9px; }
+.installReadyHeading svg { flex-shrink:0; }
+.installReady .installerDownload > a { min-height:52px; max-width:100%; padding:12px 20px; border:1px solid #096332; background:linear-gradient(135deg,#168348,#0e6b38); font-size:1rem; line-height:1.4; text-align:center; outline:3px solid #218849; outline-offset:4px; box-shadow:0 0 0 9px #2188491c,0 8px 24px #126d3938; animation:firstDownloadGlow 1.8s ease-in-out 2; scroll-margin-block:24px; }
+.installReady .installerDownload > a svg { flex-shrink:0; }
+.installReady .installerDownload > a:focus-visible { outline-color:#09572c; }
+@media (prefers-reduced-motion: reduce) { .installReady .installerDownload > a { animation:none; } }
 
 :global(body):has(.installPage) > :global(nav), :global(body):has(.installPage) > :global(footer) { display:none; }
 .installPage { min-height:100dvh; padding:clamp(24px,6vh,64px) 0; }
