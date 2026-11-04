@@ -2,6 +2,8 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { trialContextHeaders } from "../../shared/guard-trial-context";
 
 export type ActivationState = { status: "idle" | "error" | "success"; message: string };
 
@@ -23,6 +25,7 @@ async function callAccountApi(path: string, init: RequestInit = {}): Promise<Acc
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         ...init.headers,
+        ...(path === "/v1/account/trial" ? trialContextHeaders(await headers(), token) : {}),
       },
       cache: "no-store",
     });
