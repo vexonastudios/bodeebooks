@@ -109,6 +109,9 @@ async function run() {
   for (const width of [320,390,768]) {
     win.setContentSize(width,844); await new Promise(r=>setTimeout(r,100));
     const tools = await js(`[...document.querySelector('.mobile-overview-shortcuts').children].filter(el=>el.getClientRects().length).map(el=>({box:el.getBoundingClientRect().toJSON(),icon:!!el.querySelector('svg'),label:el.getAttribute('aria-label')}))`);
+    assert.equal(await visible('#cloud-student-preview'),false,'Preview is desktop only');
+    const [lock, plan] = await js('[...document.querySelectorAll("#cloud-lock-all, #overview-actions .cloud-daily-plan-shortcut")].map(button=>button.getBoundingClientRect().toJSON())');
+    assert.ok(lock.top===plan.top && plan.left>=lock.right && plan.height>=44,'Daily Plan sits beside Lock All Computers');
     assert.equal(tools.length,3,'all three parent tools share the mobile row');
     assert.ok(tools.every(tool=>tool.box.top===tools[0].box.top && tool.box.width>=44 && tool.box.height>=44 && tool.box.height<=100 && tool.icon && tool.label),'compact, labeled touch targets with Lucide icons');
     assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'no horizontal overflow');
@@ -129,6 +132,9 @@ async function run() {
     await js('document.querySelector(".mobile-card-toggle").click()');
   }
   win.setContentSize(390,844); await new Promise(r=>setTimeout(r,100));
+  await js('document.querySelector("#overview-actions .cloud-daily-plan-shortcut").click()');
+  assert.equal(await visible('#tab-daily-plan'),true,'mobile Daily Plan opens from Controls');
+  await js('document.querySelector("[data-mobile-tab=overview]").click()');
   fs.mkdirSync(path.join(site,'.tmp'),{recursive:true});
   fs.writeFileSync(path.join(site,'.tmp','mobile-overview-compact.png'),(await win.webContents.capturePage()).toPNG());
   await js('document.querySelector(".monitor-quick-unlock").click()');
@@ -151,6 +157,10 @@ async function run() {
   await js('window.dispatchEvent(new Event("cloud-chores-setting-saved"))');
   await wait('document.querySelectorAll(".chore-child-summary").length===9');
   win.setContentSize(1280,900); await new Promise(r=>setTimeout(r,100));
+  assert.equal(await visible('#cloud-student-preview'),true,'desktop retains Preview');
+  await js('document.querySelector("#cloud-student-preview").click()');
+  assert.equal(await visible('.cloud-preview-dialog[open]'),true,'desktop Preview opens');
+  await js('document.querySelector("[data-preview-close]").click()');
   assert.equal(await visible('.mobile-overview-shortcuts'),false,'mobile tool row disappears on desktop');
   assert.equal(await visible('.chore-summary'),true,'desktop keeps its chore summary');
   assert.equal(await visible('#cloud-abeka-parent-shortcut'),true,'desktop keeps Abeka access');

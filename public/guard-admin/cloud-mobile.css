@@ -17,7 +17,19 @@
 .cloud-mobile #tab-overview > .cloud-note { display: none; }
 .cloud-mobile #cloud-monitor-stats { display: none; }
 .cloud-mobile #cloud-abeka-assessments { display: none; }
-.cloud-mobile #tab-overview .cloud-overview-refresh { display: none; }
+.cloud-mobile #tab-overview :is(.cloud-overview-refresh, #cloud-student-preview) { display: none; }
+.cloud-mobile #tab-overview > .tab-header #overview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+.cloud-mobile #tab-overview > .tab-header #overview-actions > .btn {
+  min-height: 44px;
+  white-space: normal;
+  text-align: center;
+}
 .cloud-mobile #tab-overview[data-family-dashboard-active="true"] :is(#parent-start-guide, #overview-actions > a[href="/guard/activate/"], .parent-start-welcome) {
   display: none;
 }

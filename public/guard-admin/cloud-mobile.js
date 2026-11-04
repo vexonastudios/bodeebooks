@@ -239,8 +239,16 @@ export function setupCloudMobile({ navigate, refresh }) {
     coachDetails.append(summary, content); spellingCoach.append(coachDetails);
   }
   const heading = byId('tab-overview').querySelector('h1'); const desktopHeading = heading?.textContent;
+  const dailyPlanShortcut = root.querySelector('#overview-actions .cloud-daily-plan-shortcut');
+  const lockAll = byId('cloud-lock-all');
+  const dailyPlanAnchor = document.createComment('Desktop Daily Plan position');
+  dailyPlanShortcut?.before(dailyPlanAnchor);
   function resize() {
     document.body.classList.toggle('cloud-mobile', media.matches);
+    if (dailyPlanShortcut && lockAll) {
+      if (media.matches) lockAll.after(dailyPlanShortcut);
+      else dailyPlanAnchor.after(dailyPlanShortcut);
+    }
     for (const { control, anchor } of overviewTools) {
       if (media.matches) overviewShortcuts.append(control); else anchor.after(control);
     }

@@ -25,7 +25,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
-import { setupCloudMobile } from './cloud-mobile.js?v=20261104-daily-controls1';
+import { setupCloudMobile } from './cloud-mobile.js?v=20261104-mobile-preview1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
