@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import ChildSetup from "./ChildSetup";
 import InstallerShareLink from "./InstallerShareLink";
+import InstallerReleaseRefresh from "./InstallerReleaseRefresh";
 import InstallerDownload from "../InstallerDownload";
 import WindowsInstallerNotice from "../WindowsInstallerNotice";
 import PlanControls, {type AiAllowance} from "./PlanControls";
@@ -242,6 +243,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   return (
     <div className={`${styles.portalPage} ${accountStyles.page}`}>
       <div className={accountStyles.shell}>
+        <InstallerReleaseRefresh channel={isComplimentary && account.releaseChannel === "beta" ? "family-beta" : account.releaseChannel} version={release?.version || null} />
         <Link className={accountStyles.backLink} href="/guard/dashboard/"><ArrowLeft size={17} /> Back to dashboard</Link>
         <header className={accountStyles.header}>
           <span className={accountStyles.headerIcon}><ShieldCheck size={24} /></span>

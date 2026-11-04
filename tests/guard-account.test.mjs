@@ -40,6 +40,7 @@ async function render(account, options = {}) {
       child._compile(ts.transpileModule(fs.readFileSync(childPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,childPath);
       return child.exports;
     }
+    if (name === './InstallerReleaseRefresh') return { __esModule: true, default: props => { options.onReleaseWatch?.(props); return null; } };
     if (name === '../actions') return new Proxy({}, { get: () => async () => {} });
     if (name.endsWith('/guard-cloud-release')) return cloudReleaseModule;
     if (name.endsWith('/guard-customer-candidate')) return {canDownloadCandidate:()=>false};
@@ -250,4 +251,16 @@ test('billing failure keeps a free retry and directs setup to activation instead
   assert.match(html, /Activate access first, then add children/);
   assert.match(html, /Family access is not active yet/);
   assert.doesNotMatch(html, /Subscribe for \$19.99|Setup will be available here when family enrollment opens|access and family computers are unaffected/);
+});
+
+
+test('account freshness follows the authorized channel and the rendered release version', async () => {
+  for (const channel of ['stable','beta']) {
+    let watched;
+    await render(fixture({entitlementStatus:'trial',releaseChannel:channel,release:cloudReleaseFixture(channel,'1.2.344')}),{onReleaseWatch:props=>watched=props});
+    assert.deepEqual(watched,{channel,version:'1.2.344'});
+  }
+  let watched;
+  await render(fixture({billingMode:'complimentary',entitlementStatus:'active',releaseChannel:'beta'}),{onReleaseWatch:props=>watched=props});
+  assert.equal(watched.channel,'family-beta');
 });
