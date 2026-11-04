@@ -9,6 +9,22 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.343": {
+  "title": "Reliable school and family game choices",
+  "sections": [
+    {
+      "heading": "Version 1.2.343",
+      "headline": "More dependable school recovery and individual game choices",
+      "summary": "This update improves school and device recovery, lets parents choose individual Family Game Room titles, and makes message images easier to see.",
+      "highlights": [
+        "Choose games for each child in Family Game Room settings. Existing games stay available until you change them.",
+        "School recovery keeps parent exit and local device help available during connection problems.",
+        "Children can enlarge images sent in message notifications.",
+        "Dismiss or send a child report to BodeeGuard directly from its card."
+      ]
+    }
+  ]
+},
   "1.2.342": {
   "title": "Easier setup exit",
   "sections": [
