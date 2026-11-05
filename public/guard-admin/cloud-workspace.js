@@ -39,7 +39,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
-import { setupMonitoring } from './cloud-monitoring.js?v=20261030-game-unlock1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20261104-progress-details1';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20261007-family1';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20261005-multi1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js?v=20261005-multi1';

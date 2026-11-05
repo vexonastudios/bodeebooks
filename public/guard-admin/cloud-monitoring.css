@@ -9,6 +9,48 @@
 .cloud-workspace .cloud-monitor-card .monitor-name{font-size:17px;margin:0}
 .cloud-monitor-card .monitor-avatar{border:2px solid var(--child-color);background:color-mix(in srgb,var(--child-color) 16%,transparent);color:var(--child-color);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .cloud-monitor-card .monitor-completion-ring{flex-shrink:0}
+.cloud-monitor-card button.monitor-completion-ring {
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff05;
+  cursor: pointer;
+}
+.cloud-monitor-card button.monitor-completion-ring:hover { background: #a78bfa20; }
+.cloud-monitor-card button.monitor-completion-ring:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+.cloud-progress-dialog {
+  box-sizing: border-box;
+  margin: auto;
+  width: min(520px, calc(100% - 24px));
+  max-height: calc(100dvh - 28px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #514963;
+  border-radius: 20px;
+  background: #171827;
+  color: #eeeefa;
+  box-shadow: 0 24px 80px #000a;
+}
+.cloud-progress-dialog[open] { display: flex; flex-direction: column; }
+.cloud-progress-dialog::backdrop { background: #05060fc7; }
+.cloud-progress-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px; background: #242238; }
+.cloud-progress-header h2 { margin: 0 0 4px; font-size: 19px; overflow-wrap: anywhere; }
+.cloud-progress-header .cloud-quick-close { width: 44px; height: 44px; }
+.cloud-progress-summary, .cloud-progress-empty { margin: 0; color: #bcb9cc; font-size: 13px; line-height: 1.5; }
+.cloud-progress-body { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 16px; }
+.cloud-progress-goals { display: grid; gap: 12px; }
+.cloud-progress-goals section, .cloud-progress-lessons { padding: 12px; border: 1px solid #ffffff1c; border-radius: 12px; background: #ffffff04; }
+.cloud-progress-goals h3, .cloud-progress-lessons summary { margin: 0 0 6px; font-size: 14px; font-weight: 700; }
+.cloud-progress-lessons { margin-top: 12px; }
+.cloud-progress-lessons summary { margin: 0; min-height: 24px; cursor: pointer; }
+.cloud-progress-list { margin: 0; padding: 0; list-style: none; }
+.cloud-progress-list li { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; font-size: 14px; }
+.cloud-progress-list li + li { border-top: 1px solid #ffffff12; }
+.cloud-progress-list svg { width: 17px; height: 17px; flex-shrink: 0; color: #c4b5fd; }
+.cloud-progress-list .lucide-circle-check { color: #6ee7b7; }
+.cloud-progress-list span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cloud-progress-list small { max-width: 36%; color: #bcb9cc; font-size: 11px; text-align: right; }
+
 .cloud-workspace .cloud-monitor-card .monitor-timer-label{font-size:10px}
 .cloud-monitor-card .monitor-status-badge{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;margin:3px 0 0}
 .cloud-monitor-card .monitor-activity-list{max-height:190px;min-height:56px;overflow:auto}

@@ -79,7 +79,7 @@ export function monitoringChildren(snapshot, now=Date.parse(snapshot.serverTime)
         || quick.gamesPlanRevision===(snapshot.rules?.revision||0)&&quick.subjectIds?.includes(gameId));
     return {student,devices,device,online,connection,current,media,activity,goals,gamesUnlocked,color:colors[index%colors.length],
       total:todaySeconds(snapshot,student.id),currentSeconds:current?goals.find(g=>g.id===current.id)?.seconds:null,
-      done:required.filter(g=>g.complete).length,required:required.length,
+      done:required.filter(g=>g.complete).length,required:required.length,requiredGoals:required,
       portalChecks:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).map(p=>p.checked_at).filter(Boolean),
       checkIn:snapshot.schoolCheckIn?.concerns?.find(c=>c.studentId===student.id),
       courses:(snapshot.portalProgress||[]).filter(p=>p.student_id===student.id).flatMap(p=>p.courses)};
@@ -92,15 +92,23 @@ function icon(name){const el=node('i');el.dataset.lucide=/^[a-z][a-z0-9-]*$/.tes
 function button(label,glyph,callback,className='monitor-control'){
   const el=node('button',className);el.type='button';el.append(icon(glyph),node('span','',label));el.onclick=()=>{if(!el.disabled)callback(el);};return el;
 }
-function ring(model){
-  const box=node('div','monitor-completion-ring'),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 36 36');
+function ring(model, openProgress){
+  const box = node('button', 'monitor-completion-ring');
+  box.type = 'button';
+  box.title = 'View today’s progress';
+  box.setAttribute('aria-haspopup', 'dialog');
+  box.setAttribute('aria-label', `View progress for ${model.student.name}. ${model.done} of ${model.required} required activities complete.`);
+  box.onclick = () => openProgress(model);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 36 36');
+  svg.setAttribute('aria-hidden','true');
   const percent=model.required?Math.max(0,Math.min(100,100*model.done/model.required)):0;
   for(const [cls,dash]of [['ring-bg',null],['ring-fill',`${percent} ${100-percent}`]]){
     const circle=document.createElementNS(svg.namespaceURI,'circle');
     for(const [k,v]of Object.entries({cx:18,cy:18,r:15.9,pathLength:100,class:cls,...(dash?{'stroke-dasharray':dash,stroke:model.color,'stroke-opacity':percent?1:0}:{})}))circle.setAttribute(k,v);
     svg.append(circle);
   }
-  box.title=`${model.done} of ${model.required} subject goals completed`;box.append(svg,node('span','ring-label',`${model.done}/${model.required}`));return box;
+  box.append(svg,node('span','ring-label',`${model.done}/${model.required}`));return box;
 }
 export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editProfilePhoto,mobile,setControls=()=>{}}){
   const notices = parentActionFeedback();
@@ -119,6 +127,86 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
   let quickStudentId = null;
   const canScreenshot = studentId => { const state=getSnapshot()?.screenshotAvailability;return studentOnline(studentId)&&state?.known===true&&state.availableStudentIds?.includes(studentId)&&Date.now()-Date.parse(state.checkedAt)<75000; };
   const grid=document.getElementById('overview-grid');
+  let progressStudentId = null;
+  const progressDialog = node('dialog', 'cloud-progress-dialog');
+  progressDialog.setAttribute('aria-labelledby', 'cloud-progress-title');
+  const progressHeader = node('header', 'cloud-progress-header');
+  const progressHeading = node('div');
+  const progressTitle = node('h2');
+  progressTitle.id = 'cloud-progress-title';
+  const progressSummary = node('p', 'cloud-progress-summary');
+  progressHeading.append(progressTitle, progressSummary);
+  const progressClose = button('Close progress', 'x', () => progressDialog.close(), 'cloud-quick-close');
+  progressClose.setAttribute('aria-label', 'Close progress');
+  progressHeader.append(progressHeading, progressClose);
+  const progressBody = node('div', 'cloud-progress-body');
+  const progressGoals = node('div', 'cloud-progress-goals');
+  const progressLessons = node('details', 'cloud-progress-lessons');
+  const progressLessonList = node('ul', 'cloud-progress-list');
+  progressLessons.append(node('summary', '', 'Reported Abeka lessons'), progressLessonList);
+  progressBody.append(progressGoals, progressLessons);
+  progressDialog.append(progressHeader, progressBody);
+  document.getElementById('admin-dashboard').append(progressDialog);
+  progressDialog.addEventListener('close', () => {
+    const card = [...grid.children].find(child => child.dataset.studentId === progressStudentId);
+    card?.querySelector('.monitor-completion-ring')?.focus({ preventScroll: true });
+    progressStudentId = null;
+  });
+  progressDialog.addEventListener('click', event => {
+    if (event.target === progressDialog) progressDialog.close();
+  });
+
+  function progressGroup(label, goals, glyph, empty) {
+    const section = node('section');
+    section.append(node('h3', '', label + ' · ' + goals.length));
+    if (!goals.length) {
+      section.append(node('p', 'cloud-progress-empty', empty));
+      return section;
+    }
+    const list = node('ul', 'cloud-progress-list');
+    for (const goal of goals) {
+      const item = node('li');
+      item.append(icon(glyph), node('span', '', goal.label));
+      list.append(item);
+    }
+    section.append(list);
+    return section;
+  }
+
+  function renderProgress(model) {
+    progressTitle.textContent = model.student.name + '’s progress today';
+    progressSummary.textContent = model.done + ' of ' + model.required + ' required activities complete';
+    if (model.requiredGoals.length) {
+      progressGoals.replaceChildren(
+        progressGroup('Left to do', model.requiredGoals.filter(goal => !goal.complete), 'circle', 'All required activities are complete.'),
+        progressGroup('Completed', model.requiredGoals.filter(goal => goal.complete), 'circle-check', 'No completed activities reported yet.')
+      );
+    } else {
+      progressGoals.replaceChildren(node('p', 'cloud-progress-empty', 'No required activities are listed for today.'));
+    }
+    const lessons = model.courses.map(course => ({ course, status: abekaCourseStatus(course) }))
+      .filter(lesson => lesson.status !== 'upcoming');
+    progressLessons.hidden = !lessons.length;
+    progressLessonList.replaceChildren(...lessons.map(({ course, status }) => {
+      const item = node('li');
+      const completed = status === 'complete';
+      item.append(icon(completed ? 'circle-check' : status === 'refresh-needed' ? 'circle-help' : 'circle'),
+        node('span', '', abekaCourseLabel(course)),
+        node('small', '', completed ? 'Complete' : status === 'refresh-needed' ? 'Needs refresh' : 'Left to do'));
+      return item;
+    }));
+  }
+
+  function openProgress(model) {
+    progressStudentId = model.student.id;
+    progressLessons.open = false;
+    renderProgress(model);
+    progressDialog.showModal();
+    progressBody.scrollTop = 0;
+    progressClose.focus();
+    window.lucide?.createIcons();
+  }
+
   const quickDialog=node('dialog','cloud-quick-dialog');quickDialog.id='cloud-quick-unlock-dialog';quickDialog.setAttribute('aria-labelledby','cloud-quick-unlock-title');
   document.getElementById('admin-dashboard').append(quickDialog);
   quickDialog.addEventListener('close',()=>{quickStudentId=null;});
@@ -256,7 +344,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
       const card=node('article',`monitor-card cloud-monitor-card ${model.online?'monitor-card--active':'monitor-card--idle'}`);card.dataset.studentId=student.id;
       const top=node('div','monitor-card-top'),identity=node('div','monitor-card-identity'),avatar=editProfilePhoto?studentPhotoShortcut(student,()=>editProfilePhoto(student)):studentAvatar(student,'monitor-avatar');avatar.style.setProperty('--child-color',model.color);
       const names=node('div','monitor-name-status');names.append(node('h2','monitor-name',student.name),node('p',`monitor-status-badge ${model.online?'active':'idle'}`,!model.online?model.connection:device.locked?'Computer locked':model.current?.title||'BodeeGuard connected'));
-      identity.append(avatar,names);top.append(identity,ring(model));card.append(top);
+      identity.append(avatar,names);top.append(identity,ring(model,openProgress));card.append(top);
       const clocks=node('div','monitor-timer-row');
       for(const [label,time,cls]of [['Recorded today',model.total,''],['Current subject',model.currentSeconds,' monitor-timer-current']]){const box=node('div','monitor-timer-box');box.append(node('span','monitor-timer-label',label),node('span','monitor-timer-value'+cls,clockTime(time)));clocks.append(box);}
       clocks.title='Time reported by the child app, separate from verified lesson completion. Abeka playback-only timing requires the updated child app; older totals cannot distinguish idle time.';card.append(clocks);
@@ -330,6 +418,11 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
       if(detail)detail.open=true;
     }
     if(quickDialog.open){const model=models.find(item=>item.student.id===quickStudentId);if(model)renderQuickDialog(model);else quickDialog.close();}
+    if (progressDialog.open) {
+      const model = models.find(item => item.student.id === progressStudentId);
+      if (model) renderProgress(model);
+      else progressDialog.close();
+    }
     notices.render();window.lucide?.createIcons();
     if(connected.length){
       const nextExpiry=Math.min(...connected.map(connectionExpiresAt))-now;
