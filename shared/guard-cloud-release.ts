@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.346": {
+  "title": "Clear computer approval and today’s chore reminders",
+  "sections": [
+    {
+      "heading": "Version 1.2.346",
+      "headline": "A clear path back to approved school access",
+      "summary": "Computer setup shows approval steps instead of a connection dead end. Removed computers can request approval again from their original family without deleting saved work.",
+      "highlights": [
+        "The account download page points directly to computer approval.",
+        "Reapproval preserves child assignments and saved work, then restarts with the restored connection.",
+        "Chore reminders stop at the end of their scheduled day; unfinished chores remain available for review."
+      ]
+    }
+  ]
+},
   "1.2.345": {
   "title": "Finish approved computer setup",
   "sections": [

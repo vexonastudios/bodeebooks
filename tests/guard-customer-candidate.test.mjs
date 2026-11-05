@@ -44,6 +44,9 @@ test('candidate URL is short-lived and signs only the fixed R2 path',()=>{
   const setupRepair = new URL(releasedCustomerR2Url('stable','1.2.345'));
   assert.equal(setupRepair.pathname,'/v1/installers/candidates/7cd7022bc96f0a616a05af80c8e7cd68/BodeeGuard-Cloud-Child-Setup-1.2.345.exe');
   assert.equal(setupRepair.searchParams.get('signature'),createHmac('sha256','synthetic-secret').update(['bodeeguard-installer-download-v1','GET',setupRepair.pathname,setupRepair.searchParams.get('expires')].join('\n')).digest('hex'));
+  const approvalRecovery = new URL(releasedCustomerR2Url('stable','1.2.346'));
+  assert.equal(approvalRecovery.pathname,'/v1/installers/candidates/15708d54979ac5a30f0be9e598b45dfc/BodeeGuard-Cloud-Child-Setup-1.2.346.exe');
+  assert.equal(approvalRecovery.searchParams.get('signature'),createHmac('sha256','synthetic-secret').update(['bodeeguard-installer-download-v1','GET',approvalRecovery.pathname,approvalRecovery.searchParams.get('expires')].join('\n')).digest('hex'));
   assert.equal(releasedCustomerR2Url('beta','1.2.345'),null);
   assert.equal(releasedCustomerR2Url('beta','1.2.344'),null);
   assert.equal(releasedCustomerR2Url('beta','1.2.343'),null);
