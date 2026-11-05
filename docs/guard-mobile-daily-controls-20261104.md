@@ -36,3 +36,19 @@ dashboard checks and the hosted production build passed.
 Candidate and live assets matched the tested files. Both live domains
 served the new deployment at 2026-11-04T22:04:00.939Z and retained parent sign-in
 and the existing installer metadata.
+
+## Progress ring breakdown
+
+Production deployment dpl_FVwzeGE5B8BPXFi6LAiXe7d99qAe from website source
+1002c8ff023e9dd4fc8ac4b6c7ca617024703a99 and shared dashboard source
+6318fa3789bece4a377753abd6cbd94ac0aaf917. Previous deployment dpl_EboefjxhtDgxm5dHno4JGhdabhKZ.
+
+The child progress ring opens today's required activities in Left to do and
+Completed groups. Reported Abeka lessons appear in an expandable section.
+The monitoring fixture covered mobile and desktop layouts, matching counts,
+updates while open, focus on close, completed work, and no required work.
+Focused dashboard checks and the hosted production build passed.
+
+Both live domains served the new deployment and three matching assets at
+2026-11-05T04:37:37.306Z. Parent sign-in, installer version hints, and recovery
+metadata passed the live checks.
