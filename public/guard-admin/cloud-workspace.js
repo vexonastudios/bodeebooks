@@ -32,7 +32,7 @@ import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20261030-document-complete1';
 import { setupCloudGames } from './cloud-games-ui.js?v=20261030-game-unlock1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
-import { setupCloudAssistant } from './cloud-assistant.js?v=20261105-parent-guide1';
+import { setupCloudAssistant } from './cloud-assistant.js?v=20261105-settings-catalog1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
@@ -565,7 +565,14 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => { connectionRefresh.stop(); pushTicketController?.abort(); livePush.stop(); clearTimeout(timer); clearRecovery(); });
 window.addEventListener('pageshow', event => { if (event.persisted) { usable = false; setControls(); connectionRefresh.start(); refresh(); } });
-setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => { if (feature === 'math-coach') mathCoach.update(); if (feature === 'games') { void games.refresh(); void refresh(); } if (feature === 'music') { void refresh(); } } });
+setupCloudAssistant({ endpoint, navigate: selectTab, onChange: feature => {
+  void refresh();
+  if (feature === 'math-coach') mathCoach.update();
+  if (feature === 'games' || feature === 'family-games') void games.refresh();
+  if (feature === 'coloring-studio' && currentTab === 'coloring-studio') coloringStudio.setActive(true);
+  if (feature === 'chores') void chores.refresh(true);
+  window.dispatchEvent(new CustomEvent('cloud-parent-settings-saved',{detail:{feature}}));
+} });
 setupStudentPreview({getSnapshot:()=>snapshot,endpoint});
 mobile = setupCloudMobile({ navigate: selectTab, refresh });
 mobile.setActive('overview');

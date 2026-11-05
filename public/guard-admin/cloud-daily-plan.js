@@ -246,7 +246,7 @@ export function setupDailyPlan({ getSnapshot, mutate, navigate, editSubject, cho
   }
   function selectPlan(value) {
     if (changes.size && !confirm('Discard this plan’s unsaved changes?')) { child.value = loadedChild; return; }
-    child.value = value; changes.clear(); cards = []; openOptions.clear(); search.value = ''; differences.checked = false; void load();
+    child.value = value; changes.clear(); cards = []; openOptions.clear(); differences.checked = false; void load();
   }
   child.onchange = () => selectPlan(child.value);
   function reviewApply() {

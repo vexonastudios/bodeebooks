@@ -86,7 +86,6 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const summary = document.createElement('summary');
   summary.innerHTML = '<i data-lucide="shield-check" aria-hidden="true"></i>Options &amp; privacy<i data-lucide="chevron-down" aria-hidden="true"></i>';
   help.append(summary, drawer.querySelector('.parent-assistant-safety'));
-  content.append(help, thread, byId('parent-assistant-suggestions'));
   const composer = document.createElement('div'); composer.className = 'cloud-assistant-composer';
   composer.append(byId('parent-assistant-form'), drawer.querySelector('.parent-assistant-footnote'));
   drawer.append(content, composer);
@@ -97,6 +96,78 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const phoneLayout = () => document.body.classList.contains('cloud-mobile') || window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)').matches;
   let welcome = null, busy = false, generation = 0, topicId = null, retry = null, controller = null;
   let history = [], returnFocus = null;
+  const catalogPanel=document.createElement('details');catalogPanel.className='assistant-settings-catalog';
+  const catalogSummary=document.createElement('summary');catalogSummary.textContent='Browse settings';
+  const catalogBody=document.createElement('div');catalogBody.className='assistant-settings-body';
+  catalogPanel.append(catalogSummary,catalogBody);content.append(help,catalogPanel,thread,byId('parent-assistant-suggestions'));
+  let catalogLoading=false;
+  const element=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
+  async function loadCatalog() {
+    if(catalogLoading)return;
+    catalogLoading=true;const current=generation;catalogBody.replaceChildren(element('p','Loading current children and supported settings…'));
+    try {
+      const data=await request('assistant-settings-catalog');if(current!==generation)return;
+      const form=element('form');form.className='assistant-settings-form';
+      const label=(text,control)=>{const node=element('label',text);node.append(control);return node;};
+      const target=element('select');target.setAttribute('aria-label','Change settings for');
+      for(const [id,name] of [['family','Family settings'],['all','All current children'],...(data.students||[]).map(s=>[s.id,s.name+(s.grade?' · '+s.grade:'')])]) {const option=element('option',name);option.value=id;target.append(option);}
+      if(data.students?.length)target.value=data.students[0].id;
+      const search=element('input');search.type='search';search.placeholder='Find a setting or activity';search.setAttribute('aria-label','Find a setting');
+      const fieldSelect=element('select');fieldSelect.setAttribute('aria-label','Setting to change');
+      const valueRoot=element('div'),note=element('p');note.className='assistant-setting-note';
+      const review=element('button','Review change');review.type='submit';review.className='btn btn-primary';
+      const status=element('p');status.setAttribute('role','status');
+      let getValue=()=>undefined;
+      function valueControl() {
+        const f=data.fields.find(f=>f.id===fieldSelect.value);valueRoot.replaceChildren();review.disabled=!f;note.textContent=f?.note||'';
+        if(!f)return;
+        let control;
+        if(f.type==='boolean'||f.type==='enum') {
+          control=element('select');for(const [v,text] of Object.entries(f.type==='boolean'?{true:'On',false:'Off'}:f.options)){const o=element('option',text);o.value=v;control.append(o);}
+          getValue=()=>f.type==='boolean'?control.value==='true':control.value;
+        } else if(f.type==='days') {
+          control=element('fieldset');control.append(element('legend','Choose days'));
+          for(const [i,day] of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].entries()){const c=element('input');c.type='checkbox';c.value=String(i);control.append(label(day,c));}
+          getValue=()=>[...control.querySelectorAll('input:checked')].map(c=>Number(c.value));
+        } else if(f.type==='hours') {
+          control=element('div');control.className='assistant-setting-hours';const start=element('input'),end=element('input');start.type='time';end.type='text';end.placeholder='18:00 or 24:00';end.pattern='(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00';start.required=true;end.required=true;control.append(label('Start',start),label('End',end));getValue=()=>({start:start.value,end:end.value});
+        } else {
+          control=element('input');control.type=f.type==='integer'?'number':f.type==='time'?'time':'text';control.required=true;
+          if(f.type==='integer'){control.min=String(f.min);control.max=String(f.max);control.step='1';control.placeholder=f.min+'–'+f.max+(f.unit?' '+f.unit:'');}
+          if(f.maxLength)control.maxLength=f.maxLength;if(f.type==='timezone')control.placeholder='America/Chicago';
+          getValue=()=>f.type==='integer'?control.value===''?undefined:Number(control.value):control.value;
+        }
+        if(['days','hours'].includes(f.type))valueRoot.append(control);else valueRoot.append(label('New value'+(f.unit?' ('+f.unit+')':''),control));
+        if(f.nullable) {
+          const unlimited=element('input');unlimited.type='checkbox';const read=getValue;
+          getValue=()=>unlimited.checked?null:read();
+          unlimited.addEventListener('change',()=>{for(const input of [control,...control.querySelectorAll('input,select')])if('disabled' in input)input.disabled=unlimited.checked;});
+          valueRoot.append(label(f.type==='hours'?'All day':'No additional daily limit',unlimited));
+        }
+      }
+      function filter() {
+        const old=fieldSelect.value;fieldSelect.replaceChildren();const query=search.value.trim().toLowerCase();
+        for(const f of data.fields.filter(f=>(f.scope==='family')===(target.value==='family')&&f.label.toLowerCase().includes(query))) {const o=element('option',f.label);o.value=f.id;fieldSelect.append(o);}
+        if([...fieldSelect.options].some(o=>o.value===old))fieldSelect.value=old;valueControl();
+      }
+      target.addEventListener('change',filter);search.addEventListener('input',filter);fieldSelect.addEventListener('change',valueControl);
+      form.append(label('Change settings for',target),search,label('Setting',fieldSelect),valueRoot,note,review,status);filter();
+      form.addEventListener('submit',async event=>{
+        event.preventDefault();if(busy)return;cancelReview();busy=true;review.disabled=true;status.textContent='Checking the current value…';
+        try {
+          const response=await request('assistant-settings-review',{fieldId:fieldSelect.value,studentIds:target.value==='family'?[]:target.value==='all'?data.students.map(s=>s.id):[target.value],allChildren:target.value==='all',value:getValue()});
+          if(current!==generation)return;
+          const reply=message('assistant',response.message,'',response);sources(reply,response.sources);actionReview(reply,response.settingsReview,'settings');catalogPanel.open=false;status.textContent='Review prepared. Nothing saved yet.';
+        }catch(error){if(current===generation)status.textContent=error.message;}
+        finally{if(current===generation){busy=false;review.disabled=false;}}
+      });
+      const manual=element('details'),heading=element('summary','Open their editor');manual.append(heading,element('p','These tasks use their own forms and confirmation steps.'));
+      for(const item of data.manual||[]) {const row=element('div');sources(row,[{id:'manual-'+item.tab,title:item.label,tab:item.tab,navigation:{label:item.label}}]);manual.append(row);}
+      catalogBody.replaceChildren(element('p','Choose a field to prepare a change. You will see the current value before saving.'),form,manual);
+    }catch(error){if(current===generation)catalogBody.replaceChildren(element('p',error.message));}
+    finally{catalogLoading=false;}
+  }
+  catalogPanel.addEventListener('toggle',()=>{if(catalogPanel.open)void loadCatalog();});
   function message(role, text, className = '', info = {}) {
     const item = document.createElement('article');
     item.className = `assistant-message ${role} ${className}`;
@@ -254,16 +325,25 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     if(!review || !Number.isInteger(review.studentCount) || review.studentCount<1 || review.studentCount>50)return;
     const game=type==='game-time';
     if(game && (!Number.isInteger(review.minutes)||review.minutes<1||review.minutes>240))return;
-    if(!game && !['games-unlock','games-lock','math-enable'].includes(review.kind))return;
+    if(!game && !['games-unlock','games-lock','math-enable','drivers-daily-limit','catalog-settings'].includes(review.kind))return;
+    if(review.kind==='catalog-settings' && (typeof review.reviewToken!=='string'||!Array.isArray(review.rows)||!review.rows.length||review.rows.length>50))return;
+    if(review.kind==='drivers-daily-limit' && (review.studentCount!==1 || !Number.isInteger(review.minutes) || review.minutes<1 || review.minutes>480 || typeof review.targetLabel!=='string'))return;
     if(review.kind==='games-lock' && (!Array.isArray(review.targets)||!review.targets.length||review.targets.some(t=>!['family-games','bodeebooks-games'].includes(t))))return;
     cancelReview();
     const approval={prompt:review.prompt,studentCount:review.studentCount,reviewFingerprint:review.reviewFingerprint,requestId:crypto.randomUUID(),
-      ...(game?{minutes:review.minutes,studentId:review.studentId || 'all',activity:review.activity||'games'}:{kind:review.kind})};
+      ...(game?{minutes:review.minutes,studentId:review.studentId || 'all',activity:review.activity||'games'}:{kind:review.kind,...(review.kind==='catalog-settings'?{reviewToken:review.reviewToken}:{})})};
     const token={expires:Date.now()+10*60*1000};
     pendingReview=token;
     const approve=document.createElement('button');approve.type='button';approve.className='btn btn-primary';
     approve.textContent=game?'Yes, add '+review.minutes+' minutes of '+(review.activityLabel||'Family Games')+' for '+(review.targetLabel || 'all '+review.studentCount+' kids'):review.kind==='games-unlock'?'Yes, unlock games today':review.kind==='games-lock'?'Lock '+(review.targets.length===2?'both game areas':review.targets[0]==='family-games'?'Family Games':'BodeeBooks Games')+' for everyone':'Yes, enable Math Coach';
     const cancel=document.createElement('button');cancel.type='button';cancel.className='btn btn-secondary';cancel.textContent='Cancel';
+    if(review.kind==='drivers-daily-limit')approve.textContent='Set '+review.targetLabel+'’s daily limit to '+review.minutes+' minutes';
+    if(review.kind==='catalog-settings') {
+      approve.textContent='Confirm & save '+(review.scope==='family'?'family setting':review.studentCount===1?'for '+review.rows[0].child:'for '+review.studentCount+' children');
+      const rows=element('div');rows.className='assistant-setting-review';
+      for(const row of review.rows){const card=element('section');card.append(element('h4',row.child+' · '+row.field),element('p','Current: '+row.before),element('p','Change to: '+row.after));rows.append(card);}
+      item.append(rows);
+    }
     const status=document.createElement('p');status.setAttribute('role','status');
     const actions=document.createElement('div');actions.className='assistant-message-actions assistant-confirmation';
     token.cancel=()=>{approve.disabled=true;cancel.disabled=true;status.textContent='Review dismissed. Ask again to prepare a new change.';};
@@ -334,6 +414,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       if (response.mode === 'music-review') musicReview(reply, response.musicReview);
       if (response.mode === 'game-time-review') actionReview(reply, response.gameTimeReview, 'game-time');
       if (response.mode === 'settings-review') actionReview(reply, response.settingsReview, 'settings');
+      if (response.showSettingsCatalog) {catalogPanel.open=true;}
       if (response.mode === 'action' && response.change?.changedCount > 0) onChange?.(response.change.feature);
       if (response.notice) message('assistant', response.notice, 'cloud-assistant-notice');
       topicId = response.sources?.[0]?.id || topicId;
@@ -358,7 +439,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   drawer.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); }
     if (event.key === 'Tab') {
-      const controls = [...drawer.querySelectorAll('button, textarea, input, a[href], iframe, summary')].filter(control => !control.disabled && !control.hidden && control.checkVisibility());
+      const controls = [...drawer.querySelectorAll('button, textarea, input, select, a[href], iframe, summary')].filter(control => !control.disabled && !control.hidden && control.checkVisibility());
       if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1)?.focus(); }
       else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0]?.focus(); }
     }

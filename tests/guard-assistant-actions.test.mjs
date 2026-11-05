@@ -19,4 +19,9 @@ test('review approvals use authenticated same-origin bridge and strip arbitrary 
  input.action='assistant-ask';input.prompt='I cannot find it on my phone';input.surface='mobile';input.topicId='workflow-learning-video-access';input.contextTab='overview';input.ai=false;
  assert.equal((await mod.exports.POST(req())).status,200);assert.equal(calls[2][0],'/assistant/ask');
  assert.deepEqual(JSON.parse(calls[2][1].body),{prompt:input.prompt,requestId:input.requestId,ai:false,topicId:input.topicId,contextTab:'overview',surface:'mobile'});
+ input.action='assistant-settings-catalog';assert.equal((await mod.exports.POST(req())).status,200);assert.equal(calls[3][0],'/assistant/settings/catalog');assert.deepEqual(JSON.parse(calls[3][1].body),{});
+ input.action='assistant-settings-review';input.fieldId='math.questions';input.value=9;input.studentIds=['22222222-2222-4222-8222-222222222222'];input.allChildren=false;
+ assert.equal((await mod.exports.POST(req())).status,200);assert.equal(calls[4][0],'/assistant/settings/review');assert.deepEqual(JSON.parse(calls[4][1].body),{fieldId:'math.questions',value:9,studentIds:input.studentIds,allChildren:false});
+ input.action='assistant-settings-approve';input.kind='catalog-settings';input.reviewToken='signed-review';
+ assert.equal((await mod.exports.POST(req())).status,200);const approval=JSON.parse(calls[5][1].body);assert.equal(approval.reviewToken,'signed-review');assert.equal(approval.kind,'catalog-settings');assert.equal(approval.householdId,undefined);assert.equal(approval.value,undefined);assert.equal(approval.studentIds,undefined);assert.equal(approval.fieldId,undefined);
 });
