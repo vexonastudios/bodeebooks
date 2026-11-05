@@ -225,3 +225,5 @@
 .downloadFeedback .downloadNext { display:flex; gap:10px; align-items:flex-start; }
 .downloadFeedback .downloadRetryHelp { font-size:.83rem; color:#446478; }
 @media(max-width:700px){.installerDownload > a{width:100%;padding:12px 14px;text-align:center}.downloadFeedback{padding:16px}.downloadShortcut{align-items:flex-start}}
+
+.installerApproval{margin-top:20px;padding-top:18px;border-top:1px solid #cbdcdf}.installerApproval .portalButton{margin-top:14px;min-height:44px;padding:10px 17px;text-align:center}.installerApproval a:focus-visible{outline:3px solid #159cb4;outline-offset:3px}@media(max-width:480px){.installerApproval .portalButton{display:flex;width:100%;box-sizing:border-box}}

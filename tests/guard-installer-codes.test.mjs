@@ -111,3 +111,26 @@ test('the real entry form accepts four characters, preserves older pasted codes 
   }
  }finally{globalThis.fetch=savedFetch;}
 });
+
+
+test('parent download handoff offers approval before issuance, after download and after code expiry',async()=>{
+ const filename=path.resolve('app/guard/account/InstallerShareLink.tsx'),native=createRequire(filename),component=new Module(filename);
+ let cursor=0,tree,expire;const slots=[],effects=[];
+ component.require=name=>name==='react'?{...React,
+  useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],value=>{slots[i]=value;}];},
+  useEffect(effect){effects.push(effect);}}
+  :name==='__clock'?{setTimeout:callback=>{expire=callback;return 1;},clearTimeout(){}}
+  :name.endsWith('.module.css')?{__esModule:true,default:{}}:native(name);
+ component._compile('const {setTimeout,clearTimeout}=require("__clock");'+ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,filename);
+ const render=()=>{cursor=0;tree=component.exports.default();while(effects.length)effects.shift()();return renderToStaticMarkup(tree);};
+ const check=()=>{const html=render();assert.match(html,/href="\/guard\/activate\/"[^>]*>Approve child computer/);assert.match(html,/different pairing code|pairing code/);assert.match(html,/download code does not approve a computer/);return html;};
+ const previous=globalThis.fetch;
+ globalThis.fetch=async()=>Response.json({code:'MKR7',version:'1.2.345',expiresAt:new Date(Date.now()+1800000).toISOString()});
+ try{
+  assert.doesNotMatch(check(),/MKR7/);
+  await tree.props.children.find(child=>child?.type==='button').props.onClick();
+  assert.match(check(),/MKR7/);
+  expire();assert.doesNotMatch(check(),/MKR7/);
+  assert.match(render(),/That code expired/);
+ }finally{globalThis.fetch=previous;}
+});

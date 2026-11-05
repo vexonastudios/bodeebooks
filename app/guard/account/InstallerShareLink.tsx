@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { KeyRound, LoaderCircle, MonitorDown, Smartphone } from "lucide-react";
+import { KeyRound, LoaderCircle, MonitorDown, ShieldCheck, Smartphone } from "lucide-react";
 import styles from "../portal.module.css";
 type DownloadCode = {code:string;version:string;expiresAt:string};
 export default function InstallerShareLink() {
@@ -33,9 +33,15 @@ export default function InstallerShareLink() {
       <p>Then enter this download code:</p>
       <strong className={styles.installCode}>{grant.code}</strong>
       <p>Valid until {new Date(grant.expiresAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})} (30 minutes). Use the same code on your other children’s computers before it expires.</p>
-      <p>Once installed, approve each computer’s <strong>pairing code</strong> from your phone.</p>
+      <p>This code downloads the installer. The app will show a different pairing code to connect the computer to your family.</p>
     </div>}
     <p role="status" aria-live="polite">{message}</p>
+    <div className={styles.installerApproval}>
+      <h3><ShieldCheck size={20} aria-hidden="true" /> App installed? Approve the child’s computer next</h3>
+      <p>Open BodeeGuard on the child’s computer and keep its setup screen open. It shows a <strong>pairing code</strong>. Use the button below on this parent device and enter that code.</p>
+      <a className={styles.portalButton} href="/guard/activate/">Approve child computer</a>
+      <p>Then choose which child uses it. BodeeGuard checks automatically and continues setup. Your download code does not approve a computer.</p>
+    </div>
     <details className={styles.installHelp}><summary>Using a USB drive instead?</summary><p>Download the Windows app once, then copy that installer to your children’s computers. Approve each computer from your phone after installing.</p></details>
   </section>;
 }
