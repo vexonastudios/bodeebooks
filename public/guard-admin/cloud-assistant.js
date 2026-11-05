@@ -19,6 +19,12 @@ const ASSISTANT_AREAS = {
   'daily-plan': ['Daily plan', 'calendar-check', 'school'],
   calendar: ['Schedule', 'calendar-days', 'school'],
   overview: ['Family controls', 'sliders-horizontal', 'general'],
+  documents: ['Documents', 'files', 'learning'],
+  'coloring-studio': ['Coloring Studio', 'palette', 'learning'],
+  subjects: ['Activities', 'book-open', 'school'],
+  reports: ['Reports', 'chart-no-axes-combined', 'general'],
+  report: ['Report a bug', 'bug', 'general'],
+  settings: ['Settings', 'settings', 'general'],
 };
 const ASSISTANT_TOPIC_AREAS = { 'workflow-media-lock': ['Entertainment rules', 'lock-keyhole', 'videos'] };
 const ASSISTANT_CONTROLS = /\*\*[^*\n]+\*\*|\x60[^\x60\n]+\x60|\b(?:Quick Unlock|Add chore|Mark complete|Mark as done|Daily Plan|Daily plan|Family setup|Game Hub|Music Library|Math Coach|Your day|Open Store|Earn coins|Needs approval|Save settings|Start trial|Spelling|Vocabulary|Audiobooks|Videos|Chores|Save)\b/g;
@@ -88,7 +94,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const closeButton = byId('parent-assistant-close');
   closeButton.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>';
   closeButton.setAttribute('aria-label', 'Close Ask BodeeGuard');
-  const phoneLayout = () => document.body.classList.contains('cloud-mobile') || window.matchMedia('(max-width: 600px)').matches;
+  const phoneLayout = () => document.body.classList.contains('cloud-mobile') || window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)').matches;
   let welcome = null, busy = false, generation = 0, topicId = null, retry = null, controller = null;
   let history = [], returnFocus = null;
   function message(role, text, className = '', info = {}) {
@@ -125,7 +131,12 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     window.lucide?.createIcons?.();
     // Bound long sessions without retaining hidden conversation copies.
     while (thread.children.length > 40) thread.firstElementChild.remove();
-    requestAnimationFrame(() => { content.scrollTop = content.scrollHeight; });
+    requestAnimationFrame(() => {
+      // Start at the answer, not its footer: long instructions otherwise hide
+      // their first steps below the top of a phone's viewport.
+      if (role === 'assistant' && !className && drawer.classList.contains('open')) item.scrollIntoView({block:'start'});
+      else content.scrollTop = content.scrollHeight;
+    });
     return item;
   }
   async function request(action, data = {}) {
@@ -165,17 +176,27 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     for (const source of (entries || []).slice(0, 3)) {
       if(seen.has(source.tab))continue;
       if (!/^[a-z-]+$/.test(source.tab || '')) continue;
-      const target = source.tab === 'account' ? null : byId(`tab-${source.tab}`);
-      if (!target && source.tab !== 'account') continue;
+      const external = source.tab === 'account' ? '/guard/account/' : source.tab === 'report' ? '/guard/report/' : null;
+      const target = external ? null : byId(`tab-${source.tab}`);
+      if (!target && !external) continue;
       seen.add(source.tab);
       if (source.status === 'pending' || source.status === 'partial') {
         const details=document.createElement('span');details.className='cloud-assistant-source';details.textContent=source.status==='pending'?'Still being transferred':'Partly connected';actions.append(details);
       }
-      if (source.tab === 'account') {
-        const link = document.createElement('a'); link.href = '/guard/account/'; link.target = '_top'; link.textContent = 'Open Account & billing'; actions.append(link);
+      const label = typeof source.navigation?.label === 'string' ? source.navigation.label.slice(0,80) : Object.hasOwn(ASSISTANT_AREAS,source.tab) ? ASSISTANT_AREAS[source.tab][0] : source.title || 'this page';
+      if (external) {
+        const link = document.createElement('a'); link.href = external; link.target = '_top'; link.textContent = 'Open '+label; actions.append(link);
       } else {
-        const button = document.createElement('button'); button.type = 'button'; button.textContent = Object.hasOwn(ASSISTANT_AREAS,source.tab) ? 'Open '+ASSISTANT_AREAS[source.tab][0] : 'Open this page';
-        button.addEventListener('click', () => { close(); navigate(source.tab); }); actions.append(button);
+        const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Open '+label;
+        button.addEventListener('click', () => {
+          close(); navigate(source.tab);
+          requestAnimationFrame(() => {
+            // A fixed, read-only shortcut: never accept model selectors or setting values.
+            const search = source.id === 'workflow-learning-video-access' && source.tab === 'daily-plan' ? target.querySelector('input[type="search"]') : null;
+            if (search) { search.value = 'Learning Videos'; search.dispatchEvent(new Event('input', {bubbles:true})); search.focus({preventScroll:true}); search.scrollIntoView({block:'center'}); }
+            else { const heading = target.querySelector('h1, h2, h3'); if (heading) { heading.setAttribute('tabindex','-1'); heading.focus({preventScroll:true}); heading.scrollIntoView({block:'start'}); } }
+          });
+        }); actions.append(button);
       }
     }
     item.append(actions);
@@ -295,8 +316,9 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     if (current !== generation) return;
     const prompt = input.value.trim().slice(0, 1500);
     const aiRequested = ai.checked && !ai.disabled;
-    const body = retry?.prompt === prompt && retry.ai === aiRequested ? retry : {
-      prompt, ai: aiRequested, requestId: crypto.randomUUID(), topicId,
+    const surface = phoneLayout() ? 'mobile' : 'desktop';
+    const body = retry?.prompt === prompt && retry.ai === aiRequested && retry.surface === surface ? retry : {
+      prompt, ai: aiRequested, requestId: crypto.randomUUID(), topicId, surface,
       contextTab: document.querySelector('.nav-item.active')?.dataset.tab || 'overview', history: history.slice(-4)
     };
     retry = body;

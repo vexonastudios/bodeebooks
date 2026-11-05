@@ -16,4 +16,7 @@ test('review approvals use authenticated same-origin bridge and strip arbitrary 
  input.action='assistant-game-time-approve';input.minutes=20;input.studentId='22222222-2222-4222-8222-222222222222';
  assert.equal((await mod.exports.POST(req())).status,200);assert.equal(calls[1][0],'/assistant/game-time/approve');
  const body=JSON.parse(calls[1][1].body);assert.equal(body.studentId,input.studentId);assert.equal(body.minutes,20);assert.equal(body.householdId,undefined);assert.equal(body.studentIds,undefined);assert.equal(body.tools,undefined);
+ input.action='assistant-ask';input.prompt='I cannot find it on my phone';input.surface='mobile';input.topicId='workflow-learning-video-access';input.contextTab='overview';input.ai=false;
+ assert.equal((await mod.exports.POST(req())).status,200);assert.equal(calls[2][0],'/assistant/ask');
+ assert.deepEqual(JSON.parse(calls[2][1].body),{prompt:input.prompt,requestId:input.requestId,ai:false,topicId:input.topicId,contextTab:'overview',surface:'mobile'});
 });

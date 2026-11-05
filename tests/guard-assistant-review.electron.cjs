@@ -11,7 +11,7 @@ const calls=[];let loseReply=true,saves=0,locks=0,driving=0,loseLockReply=true;c
 const {createCloudParentAssistant}=require(path.join(cloud,'services/commercial-api/cloudParentAssistant'));
 const principal={householdId:'synthetic-family',userId:'synthetic-parent'};
 const assistant=createCloudParentAssistant({cloudFamilyService:{overview:async()=>({serverTime:'2026-10-04T17:00:00Z',rules:{revision:1,subjects:[{id:'33333333-3333-4333-8333-333333333333',kind:'website',url:'https://games.bodeebooks.com/'}],schedule:{timeZone:'America/Chicago'}},students:[{id:'11111111-1111-4111-8111-111111111111',name:'Mia'},{id:'22222222-2222-4222-8222-222222222222',name:'Zoe'}]}),assistantActions:{lockGames:async(_who,body)=>{if(receipts.has(body.requestId))return{...receipts.get(body.requestId),replayed:true,changedCount:0};locks++;const result={studentCount:2,changedCount:2};receipts.set(body.requestId,result);return result;},addDriverTime:async(_who,body)=>{driving++;assert.equal(body.studentId,'11111111-1111-4111-8111-111111111111');return {changedCount:1,studentCount:1};}},games:{addTime:async(_who,body)=>{if(receipts.has(body.requestId))return{...receipts.get(body.requestId),replayed:true,changedCount:0};saves++;const result={studentCount:body.studentId==='all'?2:1,changedCount:1};receipts.set(body.requestId,result);return result;}}}});
-const html='<html><head><link rel="stylesheet" href="/base.css"><link rel="stylesheet" href="/assistant.css"><link rel="stylesheet" href="/cloud-assistant.css"></head><body><div id="admin-dashboard"><div id="tab-overview"></div><div id="tab-students"></div><div id="tab-family-games"></div></div>'+shell+'<script src="/lucide.min.js"></script><script type="module">import {setupCloudAssistant} from "/cloud-assistant.js";setupCloudAssistant({endpoint:"/bridge",navigate:tab=>window.navigation=tab,onChange:feature=>window.changed=feature});window.ready=true;</script></body></html>';
+const html='<html><head><link rel="stylesheet" href="/base.css"><link rel="stylesheet" href="/assistant.css"><link rel="stylesheet" href="/cloud-assistant.css"></head><body><div id="admin-dashboard"><div id="tab-overview"></div><div id="tab-students"></div><div id="tab-family-games"></div><div id="tab-daily-plan"><h1>Daily plan</h1><select id="fixture-child"><option>Zoe</option></select><input type="search" oninput="window.filtered=this.value"><input id="fixture-draft" value="unsaved plan"></div><div id="tab-coloring-studio"><h1>Coloring Studio</h1></div></div>'+shell+'<script src="/lucide.min.js"></script><script type="module">import {setupCloudAssistant} from "/cloud-assistant.js";setupCloudAssistant({endpoint:"/bridge",navigate:tab=>window.navigation=tab,onChange:feature=>window.changed=feature});window.ready=true;</script></body></html>';
 const server=http.createServer(async(req,res)=>{
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
  if(req.url==='/bridge'){try{let text='';for await(const chunk of req)text+=chunk;const body=JSON.parse(text);calls.push(body);let result;
@@ -49,6 +49,26 @@ async function run(){
  assert.equal(await js('document.querySelectorAll(".assistant-confirmation")[3].querySelector("button").textContent.includes("Driver’s Education")'),true);
  assert.equal(driving,0);await js('document.querySelectorAll(".assistant-confirmation")[3].querySelector("button").click()');
  await wait('document.querySelectorAll(".assistant-confirmation")[3].textContent.includes("Added 15 extra minutes")');assert.equal(driving,1);
- console.log('Assistant reviews passed: combined game-lock recognition, one-click confirmation, no pre-confirmation writes, game-lock lost reply/exact retry,  real API, named recipient, lost reply/exact retry, double-click suppression, cancellation and 1200/390/320 widths');win.destroy();server.close();app.exit(0);
+ const ask=async prompt=>{await js('document.getElementById("parent-assistant-input").value='+JSON.stringify(prompt)+';document.getElementById("parent-assistant-form").requestSubmit()');await wait('!document.getElementById("parent-assistant-send").disabled');};
+ const mutations=calls.filter(c=>c.action.endsWith('-approve')).length;
+ for(const width of [1200,390,320]){
+  win.setSize(width,844);await delay(100);
+  await ask('Restrict Learning Videos during school');
+  assert.equal(calls.at(-1).surface,width===1200?'desktop':'mobile');
+  const reply=await js('document.querySelector("#parent-assistant-thread").lastElementChild.textContent');
+  assert.match(reply,width===1200?/Daily plan in the sidebar/:/Controls → Daily plan near the top/);
+  const overflow=await js('document.querySelector(".cloud-assistant-content").scrollWidth>document.querySelector(".cloud-assistant-content").clientWidth+1');assert.equal(overflow,false,'guide overflow '+width);
+ }
+ await ask('On mobile I did not see that setting');
+ assert.equal(calls.at(-1).topicId,'workflow-learning-video-access');
+ await js('document.querySelector("#parent-assistant-thread").lastElementChild.querySelector(".assistant-message-actions button").click()');await wait('window.filtered==="Learning Videos"');
+ assert.equal(await js('window.navigation'),'daily-plan');assert.equal(await js('document.activeElement.type'),'search');
+ assert.equal(await js('document.getElementById("fixture-child").value'),'Zoe');assert.equal(await js('document.getElementById("fixture-draft").value'),'unsaved plan');
+ await js('document.getElementById("parent-assistant-launcher").click()');await ask('Why can’t my child create coloring pages?');
+ assert.match(await js('document.querySelector("#parent-assistant-thread").lastElementChild.textContent'),/Ideas to approve/);
+ win.setSize(390,844);await delay(200);fs.writeFileSync(path.join(root,'.tmp/assistant-review/guide-phone.png'),(await win.webContents.capturePage()).toPNG());
+ await ask('Open Report a bug');assert.equal(await js('document.querySelector("#parent-assistant-thread").lastElementChild.querySelector("a").getAttribute("href")'),'/guard/report/');
+ assert.equal(calls.filter(c=>c.action.endsWith('-approve')).length,mutations,'navigation/guidance did not save settings');
+ console.log('Assistant passed: action reviews/retries, mobile/desktop guidance, topic follow-ups, read-only Daily plan search, preserved child/draft, fixed support link and 1200/390/320 layouts');win.destroy();server.close();app.exit(0);
 }
 run().catch(error=>{console.error(error);server.close();app.exit(1);});
