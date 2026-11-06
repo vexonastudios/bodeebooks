@@ -7,7 +7,8 @@ export const FAMILY_GAME_DOWNLOADS = Object.freeze({
   'rally-rascals': { repository: 'vexonastudios/rally-rascals-releases', asset: 'RallyRascals-Setup.exe' },
   'conquering-canaan': { repository: 'vexonastudios/conquering-canaan-releases', asset: 'ConqueringOfCanaan-Setup.exe' },
   'mountain-rush': { repository: 'vexonastudios/atv-racing-releases', asset: 'MountainRush-Windows.zip' },
-  'marshland-hunt': { repository: 'vexonastudios/huntinggame-releases', asset: 'MarshlandHunt-Setup.exe', available: true }
+  'marshland-hunt': { repository: 'vexonastudios/huntinggame-releases', asset: 'MarshlandHunt-Setup.exe', available: true },
+  'tank-battle': { repository: 'vexonastudios/tank-battle-releases', asset: 'TankBattleLAN-Setup.exe' }
 });
 export function familyGameDownloadUrl(key) {
   const game = FAMILY_GAME_DOWNLOADS[key];
@@ -20,4 +21,18 @@ export const FAMILY_GAME_PREVIEWS = Object.freeze([
   { id: 'conquering-canaan', playLabel: '1–4 players · Home Wi-Fi', coverTitle: {"style":"canaan","lines":["Conquering of","Canaan"]}, name: 'Conquering of Canaan', genre: 'Biblical strategy', icon: 'shield', color: '#6bcfff', image: 'canaan.webp', alt: 'Conquering of Canaan: a settlement in the Valley of Elah', description: 'Build a settlement, gather resources and lead your people in a Biblical strategy game.', players: 'Up to 4 players · home network' },
   { id: 'mountain-rush', playLabel: '1–6 players · Home Wi-Fi', coverTitle: {"style":"mountain","lines":["Mountain","Rush"]}, name: 'Mountain Rush', genre: 'Downhill ATV racing', icon: 'mountain', color: '#d7f778', image: 'mountain-rush.webp', alt: 'Mountain Rush: ATV riders racing down a muddy mountain trail', images: [{ image: 'mountain-rush.webp', alt: 'ATV racers on a mountain trail' }, { image: 'mountain-rush-wildfall.webp', alt: 'Wildfall: roadless descent with short race and full descent options' }], description: 'Race down six mountains on an ATV, hit jumps, slide through mud, and race your family over LAN. Choose quick 2–3 minute races, full descents, or roadless Wildfall.', players: '1–6 players · home network · keyboard or controller' },
   { id: 'marshland-hunt', playLabel: 'Solo or family · Home Wi-Fi', coverTitle: {"style":"hunting","lines":["Critter","County","Hunting"]}, name: 'Critter County Hunting', genre: 'Hunting & clay practice', icon: 'crosshair', color: '#a8cc86', image: 'marshland-hunt.webp', alt: 'Critter County Hunting: reeds and water in the marsh', images: [{ image: 'marshland-hunt.webp', alt: 'The marsh in Critter County Hunting' }, { image: 'marshland-woods.webp', alt: 'Squirrel hunting in the Missouri woods' }, { image: 'marshland-clay.webp', alt: 'Solo clay-target practice at the range' }], description: 'Explore the marsh, Missouri woods and a farm with your family. Choose duck, squirrel or hog hunting, or practice your accuracy at the clay range.', players: 'Solo or up to 12 players · home network; clay practice: solo or 1v1 LAN', details: 'Windows x64 · Gameplay and recorded voices work offline. Includes stylized animal hunting and a clay-target activity.', help: 'One player hosts and the others join on the same home network, using matching game versions. Esc opens the exit menu; F11 toggles full screen; Alt+F4 exits. Ctrl+Shift+G returns to BodeeGuard. Saves, settings and camp progress are shared on the same Windows account; clay records use the entered shooter name.', availability: 'Available for Windows · Play solo or with your family on the same home network.' },
+  {
+    id: 'tank-battle', name: 'Tank Battle LAN', genre: 'Armored team action', icon: 'crosshair', color: '#ffce72',
+    playLabel: 'Solo or family · Home network', coverTitle: { style: 'tank', lines: ['Tank', 'Battle', 'LAN'] },
+    image: 'tank-battle.webp', alt: 'Tank Battle LAN cover art with two tanks below a hilltop fort',
+    images: [
+      { image: 'tank-battle.webp', alt: 'Tank Battle LAN cover art with two tanks below a hilltop fort' },
+      { image: 'tank-battle-garage.webp', alt: 'The in-game garage with the M4 Sherman selected' }
+    ],
+    description: 'Choose a tank, practice against bots, or team up for battles with your family.',
+    players: 'Solo or up to 12 players · home network',
+    details: 'Windows x64 · Tank combat with keyboard and mouse or a controller.',
+    help: 'One player chooses Host a Game. Everyone else chooses Find a LAN Match on the same home network. Use the same game version on each PC. Ctrl+Shift+G returns to BodeeGuard. Each child has their own commander profile. Graphics and controls are shared on the Windows account.',
+    availability: 'Family Game Hub play requires Tank Battle LAN 1.3.3 or later.'
+  },
 ]);

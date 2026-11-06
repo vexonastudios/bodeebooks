@@ -28,8 +28,14 @@ let window;async function run(){
  await new Promise(resolve=>setTimeout(resolve,200));
  const picture=await new Promise((resolve,reject)=>{const paint=(_event,_rect,image)=>{if(image.isEmpty()||image.getSize().width!==390)return;clearTimeout(timeout);window.webContents.removeListener('paint',paint);resolve(image);};const timeout=setTimeout(()=>{window.webContents.removeListener('paint',paint);reject(Error('Gallery screenshot did not paint'));},3000);window.webContents.on('paint',paint);window.webContents.invalidate();});
  fs.mkdirSync(path.join(root,'.tmp/marshland'),{recursive:true});const screenshot=picture.toPNG();assert.ok(screenshot.length>10000,'screenshot must contain the visible gallery');fs.writeFileSync(path.join(root,'.tmp/marshland/parent-mobile.png'),screenshot);
+ assert.equal(await evaluate('document.querySelector("a[href*=tank-battle-releases]").href'),'https://github.com/vexonastudios/tank-battle-releases/releases/latest/download/TankBattleLAN-Setup.exe');
+ await evaluate('[...document.querySelectorAll(".cloud-game-banner")].find(b=>b.getAttribute("aria-label")==="Preview Tank Battle LAN").click()');
+ await wait('document.querySelector("dialog[open] img")?.src.endsWith("tank-battle.webp") && document.querySelector("dialog[open] img").naturalWidth>0');
+ await evaluate('[...document.querySelectorAll("dialog[open] button")].find(b=>b.textContent==="Next picture").click()');
+ await wait('document.querySelector("dialog[open] img")?.src.endsWith("tank-battle-garage.webp") && document.querySelector("dialog[open] img").naturalWidth>0');
+ await evaluate('document.querySelector("dialog[open]").close()');
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'app/guard/dashboard/generated/workspace.json'),'utf8'));
- for(const name of ['cloud-games-catalog.js','cloud-games-ui.js'])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(assets,name))).digest('hex'),manifest.hashes['renderer/js/'+name]);
+ for(const name of ['cloud-games-catalog.js','cloud-games-ui.js'])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(assets,name),'utf8').replace(/\r\n/g,'\n')).digest('hex'),manifest.hashes['renderer/js/'+name]);
  await evaluate('window.gameTest.setActive(false)');console.log('Parent Critter County Hunting gallery passed: verified official download enabled, three real screenshots, content/saves guidance, 390/320px layout, exact export hashes.');
 }
 function cleanup(){window?.destroy();server.close();}
