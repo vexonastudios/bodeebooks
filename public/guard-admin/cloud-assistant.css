@@ -148,3 +148,4 @@
 .assistant-setting-review section { min-width: 0; padding: 12px; border: 1px solid var(--border-color, #55506c); border-radius: 10px; overflow-wrap: anywhere; }
 .assistant-setting-review h4 { margin: 0 0 8px; }
 .assistant-setting-review p { margin: 4px 0; }
+.cloud-assistant-content .assistant-quick-choices button { flex: 0 1 auto; min-width: 72px; text-align: center; }

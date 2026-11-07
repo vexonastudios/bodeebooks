@@ -64,7 +64,7 @@ function assistantReplyModel(text, {sources=[],mode=''} = {}) {
     if (current?.kind===kind && current.label===label) current.text+=' '+value;
     else {current={kind,text:value,label};blocks.push(current);}
   }
-  const state=mode==='guide'?['Guide only · Nothing changed','guide']:mode==='ai'?['AI guidance · Nothing changed','guide']:['settings-review','game-time-review','music-review'].includes(mode)?['Review before saving','review']:mode==='action'?['Request saved','saved']:mode==='status'?['Latest reported check-ins','status']:null;
+  const state=mode==='settings-status'?['Current saved settings','status']:mode==='clarification'?['One more detail · Nothing changed','guide']:mode==='guide'?['Guide only · Nothing changed','guide']:mode==='ai'?['AI guidance · Nothing changed','guide']:['settings-review','game-time-review','music-review'].includes(mode)?['Review before saving','review']:mode==='action'?['Request saved','saved']:mode==='status'?['Latest reported check-ins','status']:null;
   return {area,blocks,state};
 }
 
@@ -95,7 +95,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   closeButton.setAttribute('aria-label', 'Close Ask BodeeGuard');
   const phoneLayout = () => document.body.classList.contains('cloud-mobile') || window.matchMedia('(max-width: 900px), (pointer: coarse) and (max-width: 1180px)').matches;
   let welcome = null, busy = false, generation = 0, topicId = null, retry = null, controller = null;
-  let history = [], returnFocus = null;
+  let history = [], returnFocus = null, clarification = null;
   const catalogPanel=document.createElement('details');catalogPanel.className='assistant-settings-catalog';
   const catalogSummary=document.createElement('summary');catalogSummary.textContent='Browse settings';
   const catalogBody=document.createElement('div');catalogBody.className='assistant-settings-body';
@@ -230,10 +230,12 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   }
   function suggestions(items) {
     const root = byId('parent-assistant-suggestions'); root.replaceChildren();
-    for (const text of (items || []).slice(0, 4)) {
+    root.classList.toggle('assistant-quick-choices',Boolean(clarification));
+    for (const text of (items || []).slice(0, clarification?51:4)) {
       const button = document.createElement('button'); button.type = 'button'; button.textContent = text;
       button.addEventListener('click', () => { if (!busy) { input.value = text; submit(); } }); root.append(button);
     }
+    if(clarification&&root.childElementCount)root.scrollIntoView({block:'nearest'});
   }
   function close() {
     cancelReview();
@@ -399,7 +401,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     const surface = phoneLayout() ? 'mobile' : 'desktop';
     const body = retry?.prompt === prompt && retry.ai === aiRequested && retry.surface === surface ? retry : {
       prompt, ai: aiRequested, requestId: crypto.randomUUID(), topicId, surface,
-      contextTab: document.querySelector('.nav-item.active')?.dataset.tab || 'overview', history: history.slice(-4)
+      contextTab: document.querySelector('.nav-item.active')?.dataset.tab || 'overview', history: history.slice(-4), ...(clarification?{clarification}:{})
     };
     retry = body;
     message('user', prompt);
@@ -414,7 +416,12 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       if (response.mode === 'music-review') musicReview(reply, response.musicReview);
       if (response.mode === 'game-time-review') actionReview(reply, response.gameTimeReview, 'game-time');
       if (response.mode === 'settings-review') actionReview(reply, response.settingsReview, 'settings');
-      if (response.showSettingsCatalog) {catalogPanel.open=true;}
+      clarification = response.clarification || null;
+      if (response.showSettingsCatalog) {
+        const choose=element('button','Browse supported settings');choose.type='button';choose.className='btn btn-secondary';
+        choose.addEventListener('click',()=>{catalogPanel.open=true;catalogPanel.scrollIntoView({block:'start'});});
+        const actions=element('div');actions.className='assistant-message-actions';actions.append(choose);reply.append(actions);
+      }
       if (response.mode === 'action' && response.change?.changedCount > 0) onChange?.(response.change.feature);
       if (response.notice) message('assistant', response.notice, 'cloud-assistant-notice');
       topicId = response.sources?.[0]?.id || topicId;
@@ -447,10 +454,10 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submit(); } });
   const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cloud-assistant-reset'; reset.textContent = 'Clear conversation';
   reset.addEventListener('click', () => {
-    cancelReview(); generation++; controller?.abort(); welcome = null; history = []; retry = null; topicId = null; pendingReview = null; busy = false;
+    cancelReview(); generation++; controller?.abort(); welcome = null; history = []; clarification = null; retry = null; topicId = null; pendingReview = null; busy = false;
     input.value = ''; input.readOnly = false; byId('parent-assistant-send').disabled = false; thread.replaceChildren(); loadWelcome();
   });
   help.append(reset);
   window.lucide?.createIcons?.();
-  window.addEventListener('pagehide', () => { cancelReview(); generation++; controller?.abort(); history = []; retry = null; thread.replaceChildren(); });
+  window.addEventListener('pagehide', () => { cancelReview(); generation++; controller?.abort(); history = []; clarification = null; retry = null; thread.replaceChildren(); });
 }
