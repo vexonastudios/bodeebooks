@@ -32,7 +32,7 @@ import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20261030-document-complete1';
 import { setupCloudGames } from './cloud-games-ui.js?v=20261030-game-unlock1';
 import { setupCloudLearningVideos } from './cloud-learning-videos-ui.js';
-import { setupCloudAssistant } from './cloud-assistant.js?v=20261105-settings-catalog1';
+import { setupCloudAssistant } from './cloud-assistant.js?v=20261106-assistant-conversation1';
 import { setupCloudDailyQuestions } from './cloud-daily-questions.js';
 import { setupCloudPractice } from './cloud-practice.js';
 import { setupCloudGeography } from './cloud-geography.js';
