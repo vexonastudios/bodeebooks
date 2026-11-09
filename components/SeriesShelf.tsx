@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import BookCard from "./BookCard";
 import styles from "./SeriesShelf.module.css";
@@ -19,18 +18,20 @@ interface SeriesShelfProps {
   title: string;
   seriesSlug?: string;
   books: Book[];
+  href?: string;
+  linkLabel?: string;
 }
 
-export default function SeriesShelf({ title, seriesSlug, books }: SeriesShelfProps) {
+export default function SeriesShelf({ title, seriesSlug, books, href, linkLabel = "View all" }: SeriesShelfProps) {
   if (books.length === 0) return null;
 
   return (
     <section className={styles.shelf}>
       <div className="section-header">
         <h2 className="section-title">{title}</h2>
-        {seriesSlug && (
-          <Link href={`/series/${seriesSlug}`} className={`section-link ${styles.viewAll}`}>
-            View all <ChevronRight size={14} />
+        {(href || seriesSlug) && (
+          <Link href={href || `/series/${seriesSlug}`} className={`section-link ${styles.viewAll}`}>
+            {linkLabel} <ChevronRight size={14} />
           </Link>
         )}
       </div>

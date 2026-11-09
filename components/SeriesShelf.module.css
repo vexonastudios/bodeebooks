@@ -16,6 +16,11 @@
 }
 
 @media (max-width: 640px) {
+  .shelf :global(.section-header) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
   .grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;

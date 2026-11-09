@@ -21,11 +21,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://bodeebooks.com"),
   title: {
-    default: "Bodee Books – Free Multi-voice Classic Audiobooks",
-    template: "%s | Bodee Books – Free Multi-voice Audiobooks",
+    default: "BodeeBooks — Books and tools for your homeschool family",
+    template: "%s | BodeeBooks",
   },
   description:
-    "Listen free to multi-voice classic audiobooks — Hardy Boys, Ted Scott Flying Stories, Penny Parker, Mercer Boys, and more. Dramatized with full cast, streamed directly in your browser.",
+    "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.",
   keywords: [
     "free audiobooks",
     "multi-voice audiobooks",
@@ -54,9 +54,9 @@ export const metadata: Metadata = {
     siteName: "Bodee Books",
     type: "website",
     url: "https://bodeebooks.com",
-    title: "Bodee Books – Free Multi-voice Classic Audiobooks",
+    title: "BodeeBooks — Books and tools for your homeschool family",
     description:
-      "Listen free to dramatized, multi-voice classic audiobooks — Hardy Boys, Ted Scott, Penny Parker, and more. No account needed, stream right in your browser.",
+      "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.",
     images: [
       {
         url: "/og-image.png",
@@ -68,9 +68,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bodee Books – Free Multi-voice Classic Audiobooks",
+    title: "BodeeBooks — Books and tools for your homeschool family",
     description:
-      "Dramatized multi-voice audiobooks of Hardy Boys, Ted Scott, Penny Parker & more. Free to stream.",
+      "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.",
   },
   alternates: {
     canonical: "https://bodeebooks.com",

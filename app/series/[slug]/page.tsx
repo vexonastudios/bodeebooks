@@ -56,7 +56,7 @@ export default async function SeriesPage({ params }: PageProps) {
       <div className={`container ${styles.inner}`}>
 
         {/* Back */}
-        <Link href="/" className={styles.back}>
+        <Link href="/books" className={styles.back}>
           <ChevronLeft size={16} />
           All Audiobooks
         </Link>

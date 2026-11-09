@@ -152,8 +152,11 @@
   font-weight: 600;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1000px) {
   .logoTagline { display: none; }
+}
+
+@media (max-width: 760px) {
   .links { display: none; }
   .mobileToggle { display: flex; align-items: center; }
   .mobileMenu { display: flex; }

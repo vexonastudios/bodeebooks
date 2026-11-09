@@ -2,120 +2,57 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ExternalLink, Menu, X, Gamepad2, Activity, MessageSquarePlus, ShieldCheck } from "lucide-react";
+import { BookOpen, Menu, X, Gamepad2, Activity, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import styles from "./Navbar.module.css";
+
+const links = [
+  { href: "/books", label: "Books", icon: BookOpen },
+  { href: "https://games.bodeebooks.com/", label: "Games", icon: Gamepad2 },
+  { href: "https://fit.bodeebooks.com/", label: "Fitness", icon: Activity },
+  { href: "/guard", label: "BodeeGuard", icon: ShieldCheck },
+];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const links = [
-    { href: "/", label: "Audiobooks", icon: BookOpen },
-    { href: "https://games.bodeebooks.com/", label: "Games Hub", icon: Gamepad2, external: true },
-    { href: "https://fit.bodeebooks.com/", label: "Fitness", icon: Activity, external: true },
-    { href: "/guard", label: "BodeeGuard", icon: ShieldCheck, external: false },
-    { href: "/feedback", label: "Feedback", icon: MessageSquarePlus, external: false },
-  ];
+  const isActive = (href: string) => href === "/books"
+    ? ["/books", "/listen/", "/series/"].some((path) => pathname.startsWith(path))
+    : pathname.startsWith(href);
 
   return (
-    <nav className={styles.nav} data-public-site-header>
+    <nav className={styles.nav} data-public-site-header aria-label="Main navigation">
       <div className={`container ${styles.inner}`}>
-        {/* Logo */}
         <Link href="/" className={styles.logo}>
           <BookOpen size={22} strokeWidth={2} className={styles.logoIcon} />
           <span className={styles.logoText}>
             Bodee<span className={styles.logoAccent}>Books</span>
-            <span className={styles.logoTagline}>Free Multi-voice Audiobooks</span>
+            <span className={styles.logoTagline}>For your homeschool family</span>
           </span>
         </Link>
 
-        {/* Desktop nav links */}
         <ul className={styles.links}>
-          {links.map(({ href, label, icon: Icon, external }) => (
+          {links.map(({ href, label, icon: Icon }) => (
             <li key={href}>
-              {external ? (
-                <a
-                  href={href}
-                  className={`${styles.link} ${pathname === href ? styles.active : ""}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Icon size={15} strokeWidth={2} />
-                  {label}
-                </a>
-              ) : (
-                <Link
-                  href={href}
-                  className={`${styles.link} ${pathname === href ? styles.active : ""}`}
-                >
-                  <Icon size={15} strokeWidth={2} />
-                  {label}
-                </Link>
-              )}
+              <Link href={href} className={`${styles.link} ${isActive(href) ? styles.active : ""}`} aria-current={isActive(href) ? "page" : undefined}>
+                <Icon size={15} strokeWidth={2} />{label}
+              </Link>
             </li>
           ))}
-          <li>
-            <a
-              href="https://www.youtube.com/@bodeebooks"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.ytLink}
-            >
-              <ExternalLink size={14} strokeWidth={2} />
-              YouTube
-            </a>
-          </li>
         </ul>
 
-        {/* Mobile toggle */}
-        <button
-          className={styles.mobileToggle}
-          onClick={() => setMobileOpen((o) => !o)}
-          aria-label="Toggle menu"
-        >
+        <button className={styles.mobileToggle} onClick={() => setMobileOpen((open) => !open)} aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* Mobile drawer */}
       {mobileOpen && (
-        <div className={styles.mobileMenu}>
-          {links.map(({ href, label, icon: Icon, external }) => (
-            external ? (
-              <a
-                key={href}
-                href={href}
-                className={`${styles.mobileLink} ${pathname === href ? styles.mobileActive : ""}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileOpen(false)}
-              >
-                <Icon size={16} />
-                {label}
-              </a>
-            ) : (
-              <Link
-                key={href}
-                href={href}
-                className={`${styles.mobileLink} ${pathname === href ? styles.mobileActive : ""}`}
-                onClick={() => setMobileOpen(false)}
-              >
-                <Icon size={16} />
-                {label}
-              </Link>
-            )
+        <div id="mobile-navigation" className={styles.mobileMenu}>
+          {links.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className={`${styles.mobileLink} ${isActive(href) ? styles.mobileActive : ""}`} aria-current={isActive(href) ? "page" : undefined} onClick={() => setMobileOpen(false)}>
+              <Icon size={16} />{label}
+            </Link>
           ))}
-          <a
-            href="https://www.youtube.com/@bodeebooks"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.mobileLink}
-            onClick={() => setMobileOpen(false)}
-          >
-            <ExternalLink size={16} />
-            YouTube Channel
-          </a>
         </div>
       )}
     </nav>

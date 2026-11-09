@@ -1,198 +1,99 @@
-import { Fragment } from "react";
 import type { Metadata } from "next";
-import { BookOpen, Headphones, ExternalLink, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, BookOpen, Gamepad2, Activity, ShieldCheck } from "lucide-react";
 import SeriesShelf from "@/components/SeriesShelf";
-import GamesBanner from "@/components/GamesBanner";
-import seriesData from "@/data/series.json";
-import booksData from "@/data/books.json";
+import { newestBooks } from "@/data/newest-books";
 import styles from "./page.module.css";
 
+const description = "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.";
+
 export const metadata: Metadata = {
-  title: "Bodee Books – Free Multi-voice Classic Audiobooks",
-  description:
-    "Listen free to dramatized, multi-voice classic audiobooks. Hardy Boys mysteries, Ted Scott flying adventures, Penny Parker detective stories, Mercer Boys, and more — all free, no app needed, stream right in your browser.",
-  keywords: [
-    "free multi-voice audiobooks",
-    "Hardy Boys audiobook free",
-    "Ted Scott Flying Stories audiobook",
-    "Penny Parker audiobook free",
-    "Mercer Boys audiobook",
-    "classic children's audiobooks",
-    "dramatized audiobooks free",
-    "listen to audiobooks online free",
-    "full cast audiobooks",
-  ],
-  alternates: {
-    canonical: "https://bodeebooks.com",
-  },
+  title: { absolute: "BodeeBooks — Books and tools for your homeschool family" },
+  description,
+  alternates: { canonical: "https://www.bodeebooks.com/" },
   openGraph: {
-    title: "Bodee Books – Free Multi-voice Classic Audiobooks",
-    description:
-      "Hardy Boys, Ted Scott, Penny Parker, and more — dramatized multi-voice audiobooks, free to stream.",
-    url: "https://bodeebooks.com",
+    title: "BodeeBooks — Books and tools for your homeschool family",
+    description,
+    url: "https://www.bodeebooks.com/",
     type: "website",
   },
+  twitter: { card: "summary_large_image", title: "BodeeBooks — Books and tools for your homeschool family", description },
 };
 
-type Book = (typeof booksData)[number];
-
-function getBooksForSeries(seriesSlug: string): Book[] {
-  return booksData.filter((b) => b.seriesSlug === seriesSlug);
-}
-
-function getStandaloneBooks(): Book[] {
-  return booksData.filter((b) => b.seriesSlug === null);
-}
-
 export default function HomePage() {
-  const featuredSeries = seriesData.filter((s) => s.featured);
-  const allSeries = seriesData.filter((s) => !s.featured);
-  const standaloneBooks = getStandaloneBooks();
-
   return (
     <>
-      {/* Hero */}
-      <section className={styles.hero}>
-        <div className={`container ${styles.heroInner}`}>
-          
-          {/* Left Column: Text & Stats */}
-          <div className={styles.heroLeft}>
-            <div className={styles.heroContent}>
-              <div className={styles.heroLabel}>
-                <Headphones size={14} />
-                Free Audiobooks
-              </div>
-              <h1 className={styles.heroTitle}>
-                Classic Stories,<br />
-                <span className={styles.heroAccent}>Free to Listen</span>
-              </h1>
-              <p className={styles.heroDesc}>
-                Explore beloved series — Hardy Boys, Ted Scott, Penny Parker, and more.
-                Experience these classic stories brought to life as fully dramatized, multi-voice audiobooks.
-              </p>
-              <div className={styles.heroActions}>
-                <a href="#audiobooks" className={styles.heroCta}>
-                  <BookOpen size={16} />
-                  Browse Audiobooks
-                </a>
-                <a
-                  href="https://www.youtube.com/@bodeebooks"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.heroYt}
-                >
-                  <ExternalLink size={16} />
-                  YouTube Channel
-                </a>
-              </div>
-            </div>
-
-            <div className={styles.heroStats}>
-              <div className={styles.stat}>
-                <span className={styles.statNum}>{seriesData.length}</span>
-                <span className={styles.statLabel}>Series</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.stat}>
-                <span className={styles.statNum}>{booksData.length}+</span>
-                <span className={styles.statLabel}>Audiobooks</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.stat}>
-                <span className={styles.statNum}>Free</span>
-                <span className={styles.statLabel}>Always</span>
-              </div>
-            </div>
+      <section className={styles.hero} aria-labelledby="home-title">
+        <div className="container">
+          <div className={styles.intro}>
+            <p className={styles.eyebrow}>Welcome to BodeeBooks</p>
+            <h1 id="home-title">Books and tools for<br /><span>your homeschool family.</span></h1>
+            <p className={styles.description}>{description}</p>
           </div>
 
-          {/* Right Column: Visual Collage */}
-          <div className={styles.heroRight}>
-            <div className={styles.collage}>
-              <img 
-                src="https://img.youtube.com/vi/xA60LcdimSg/maxresdefault.jpg" 
-                alt="Hardy Boys - The Tower Treasure" 
-                className={`${styles.collageImg} ${styles.img1}`} 
-              />
-              <img 
-                src="https://img.youtube.com/vi/THhmwhmE4bQ/maxresdefault.jpg" 
-                alt="Ted Scott - Daring Long-Distance Flight" 
-                className={`${styles.collageImg} ${styles.img2}`} 
-              />
-              <img 
-                src="https://img.youtube.com/vi/CS5DShYwHVI/maxresdefault.jpg" 
-                alt="Penny Parker - Danger at the Drawbridge" 
-                className={`${styles.collageImg} ${styles.img3}`} 
-              />
-            </div>
-          </div>
+          <div className={styles.destinations}>
+            <Link href="/books" className={styles.destination}>
+              <div className={`${styles.art} ${styles.bookArt}`}>
+                <Image src="/home/hardy-boys.jpg" alt="The Hardy Boys: The Tower Treasure" width={320} height={180} className={styles.firstBook} preload />
+                <Image src="/home/first-stop-honolulu.jpg" alt="Ted Scott: First Stop Honolulu" width={320} height={180} className={styles.secondBook} />
+                <span className={styles.artLabel}><BookOpen size={13} /> Listen free. Read in print.</span>
+              </div>
+              <div className={styles.cardBody}>
+                <p className={styles.cardLabel}>The book library</p>
+                <h2>Audiobooks &amp; printed books</h2>
+                <p className={styles.cardDescription}>Classic stories brought to life with multiple voices, plus books to enjoy in print.</p>
+                <span className={styles.cardAction}>Browse books <ArrowRight size={17} /></span>
+              </div>
+            </Link>
 
+            <a href="https://games.bodeebooks.com/" className={styles.destination}>
+              <div className={`${styles.art} ${styles.gamesArt}`}>
+                <Image src="/home/games.webp" alt="Sailing ships in the Broadside Bay game" fill sizes="(max-width: 1000px) 50vw, 300px" className={styles.coverImage} />
+                <span className={styles.artLabel}><Gamepad2 size={14} /> A little adventure awaits</span>
+              </div>
+              <div className={styles.cardBody}>
+                <p className={styles.cardLabel}>Games Hub</p>
+                <h2>Educational games</h2>
+                <p className={styles.cardDescription}>Spelling, strategy, racing, and adventures for curious minds and family fun.</p>
+                <span className={styles.cardAction}>Find a game <ArrowRight size={17} /></span>
+              </div>
+            </a>
+
+            <a href="https://fit.bodeebooks.com/" className={styles.destination}>
+              <div className={`${styles.art} ${styles.fitnessArt}`}>
+                <Image src="/home/homeschool-fitness.webp" alt="Two children stretching outdoors" fill sizes="(max-width: 1000px) 50vw, 300px" className={styles.coverImage} />
+                <span className={styles.artLabel}><Activity size={14} /> Make movement part of the day</span>
+              </div>
+              <div className={styles.cardBody}>
+                <p className={styles.cardLabel}>BodeeFit</p>
+                <h2>Homeschool fitness</h2>
+                <p className={styles.cardDescription}>Guided routines and movement games that make homeschool P.E. easy to include.</p>
+                <span className={styles.cardAction}>Get moving <ArrowRight size={17} /></span>
+              </div>
+            </a>
+
+            <Link href="/guard" className={styles.destination}>
+              <div className={`${styles.art} ${styles.guardArt}`}>
+                <div className={styles.guardScreen}>
+                  <Image src="/guard-tour/parent.webp" alt="BodeeGuard parent dashboard" width={2000} height={993} sizes="(max-width: 1000px) 50vw, 300px" />
+                </div>
+                <Image src="/guard-icons/bodeeguard-parent-192.png" alt="" width={48} height={48} className={styles.guardIcon} />
+                <span className={styles.artLabel}><ShieldCheck size={14} /> Help learning stay on track</span>
+              </div>
+              <div className={styles.cardBody}>
+                <p className={styles.cardLabel}>A focused school day</p>
+                <h2>BodeeGuard</h2>
+                <p className={styles.cardDescription}>A bodyguard against distractions. Choose what opens on your children’s computers and stay connected.</p>
+                <span className={styles.cardAction}>Meet BodeeGuard <ArrowRight size={17} /></span>
+              </div>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Audiobook Shelves */}
-      <div className={`container ${styles.content}`}>
-        <div className={styles.notificationBox}>
-          <div className={styles.notificationContent}>
-            <span className={styles.notificationBadge}>New</span>
-            <span>Check out <strong>BodeeFit</strong> — our new fitness and P.E. platform for kids!</span>
-          </div>
-          <a href="https://fit.bodeebooks.com/" target="_blank" rel="noopener noreferrer" className={styles.notificationLink}>
-            Visit BodeeFit <ArrowRight size={16} />
-          </a>
-        </div>
-
-        <GamesBanner />
-
-        {/* Anchor for browse audiobooks button to skip the games banner */}
-        <div id="audiobooks" style={{ scrollMarginTop: "80px" }}></div>
-
-        {/* Newest Audiobooks */}
-        <SeriesShelf
-          title="Newest Audiobooks"
-          books={[
-            "ted-scott-first-stop-honolulu",
-            "lazy-robert",
-            "falsely-accused-out-of-the-depths",
-            "alone-in-london",
-            "toby-tyler",
-          ].map(slug => booksData.find(b => b.slug === slug)).filter(Boolean) as Book[]}
-        />
-
-        {/* Featured series */}
-        {featuredSeries.map((series) => {
-          const books = getBooksForSeries(series.slug);
-          if (books.length === 0) return null;
-          return (
-            <SeriesShelf
-              key={series.slug}
-              title={series.title}
-              seriesSlug={series.slug}
-              books={books}
-            />
-          );
-        })}
-
-        {/* Other series */}
-        {allSeries.map((series) => {
-          const books = getBooksForSeries(series.slug);
-          if (books.length === 0) return null;
-          return (
-            <SeriesShelf
-              key={series.slug}
-              title={series.title}
-              seriesSlug={series.slug}
-              books={books}
-            />
-          );
-        })}
-
-        {/* Standalone books */}
-        {standaloneBooks.length > 0 && (
-          <SeriesShelf
-            title="Classic Single Titles"
-            books={standaloneBooks}
-          />
-        )}
+      <div id="audiobooks" className={`container ${styles.latest}`}>
+        <SeriesShelf title="Newest Audiobooks" books={newestBooks} href="/books" linkLabel="Browse all books" />
       </div>
     </>
   );

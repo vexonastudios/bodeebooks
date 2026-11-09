@@ -48,7 +48,7 @@ export default function ListenClient({ book, prevBook, nextBook }: ListenClientP
 
         {/* Breadcrumb */}
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-          <Link href="/" className={styles.breadLink}>Audiobooks</Link>
+          <Link href="/books" className={styles.breadLink}>Audiobooks</Link>
           {book.seriesSlug && book.seriesTitle && (
             <>
               <ChevronRight size={14} className={styles.breadSep} />
