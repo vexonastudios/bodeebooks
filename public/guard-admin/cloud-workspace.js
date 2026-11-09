@@ -2,6 +2,7 @@ import { setupParentExitControls } from './cloud-parent-exit-controls.js?v=20261
 import {setupAbekaAssessments} from './cloud-abeka-assessments.js';
 import { setupQuizletReview } from './cloud-quizlet-review.js?v=20261103-overview1';
 import { setupCloudBible } from './cloud-bible-family.js';
+import { setupWhiteNoise } from './cloud-white-noise.js?v=20261109-white-noise1';
 import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
 import { schoolHoursForm } from './cloud-school-hours-form.js';
@@ -25,7 +26,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
-import { setupCloudMobile } from './cloud-mobile.js?v=20261104-mobile-preview1';
+import { setupCloudMobile } from './cloud-mobile.js?v=20261109-white-noise1';
 import { setupCloudCalendar } from './cloud-calendar.js';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
@@ -110,6 +111,7 @@ function selectTab(id) {
   records.setActive(id);
   reading.setActive(id === 'reports'); dailyQuestions.setActive(id === 'reports'); practice.setActive(id === 'reports'); geography.setActive(id === 'reports'); spanish.setActive(id === 'reports'); spelling.setActive(id === 'spelling');
   coloringStudio.setActive(id === 'coloring-studio');
+  whiteNoise.setActive(id === 'white-noise');
   screenshots.setActive(id === 'screenshots');
   mathCoach.setActive(id === 'math-coach');
   vocabulary.setActive(id === 'vocabulary');
@@ -471,6 +473,7 @@ const spelling = setupCloudSpelling({ endpoint });
 const vocabulary = setupCloudVocabulary();
 const poems = setupCloudPoems();
 const bibleFamily = setupCloudBible();
+const whiteNoise = setupWhiteNoise({ endpoint });
 const quizzes = setupCloudQuizzes();
 const worksheets = setupCloudWorksheets();
 const reading = setupCloudReading({ endpoint, getSnapshot: () => snapshot });

@@ -77,7 +77,7 @@ export function setupCloudMobile({ navigate, refresh }) {
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshStudentReports();});
   void refreshStudentReports();
 
-  const addTabs = ['music', 'videos', 'audiobooks', 'learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
+  const addTabs = ['music', 'videos', 'audiobooks', 'white-noise', 'learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
   for (const nav of root.querySelectorAll('.sidebar .nav-item[data-tab]')) {
     const id = nav.dataset.tab;
     if ((nav.hidden && id !== 'chores') || nav.style.display === 'none' || id.startsWith('mobile-')) continue;
@@ -110,9 +110,9 @@ export function setupCloudMobile({ navigate, refresh }) {
     open.setAttribute('aria-label', 'Open ' + title.toLowerCase());
     card.append(open); menus['mobile-add'].append(card);
   }
-  const mediaHeading = make('h2', 'mobile-section-heading mobile-media-heading', 'Videos, music & audiobooks');
+  const mediaHeading = make('h2', 'mobile-section-heading mobile-media-heading', 'Videos, music, audiobooks & sounds');
   menus['mobile-add'].after(mediaHeading);
-  const mediaIntro = make('p', 'mobile-media-intro', 'Find something on YouTube, review it, then choose who can see it.');
+  const mediaIntro = make('p', 'mobile-media-intro', 'Review and manage your children’s media, or choose calm sounds for school.');
   mediaHeading.after(mediaIntro);
   const mediaChoices = make('div', 'mobile-media-choices');
   mediaIntro.after(mediaChoices);
@@ -157,6 +157,17 @@ export function setupCloudMobile({ navigate, refresh }) {
       navigate(id);
       window.lucide?.createIcons();
     }
+  }
+  if (byId('tab-white-noise')) {
+    const card = make('div', 'mobile-media-choice'); card.dataset.mediaKind = 'white-noise';
+    const open = button('', () => navigate('white-noise'), 'mobile-media-open');
+    const symbol = make('span', 'mobile-media-symbol'); symbol.append(icon('waves'));
+    const copy = make('span', 'mobile-media-copy');
+    copy.append(make('strong', '', 'White Noise'), make('small', '', 'Choose who can listen and add calm MP3 sounds'));
+    open.append(symbol, copy, icon('chevron-right')); open.setAttribute('aria-label', 'Open White Noise');
+    card.append(open); mediaChoices.append(card);
+    const back = button('', () => navigate('mobile-add'), 'text-button cloud-mobile-only');
+    back.append(icon('arrow-left'), document.createTextNode('Add media')); byId('tab-white-noise').prepend(back);
   }
   const install = button('', () => window.parent.postMessage({ type: 'bodeeguard-install' }, window.location.origin), 'cloud-parent-mobile-install');
   styleMoreRow(install, 'install', 'smartphone', 'Add to Home Screen');

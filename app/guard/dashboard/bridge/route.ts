@@ -56,6 +56,10 @@ async function handleDashboardPost(request: Request, uploadOnly = false) {
     case "approved-apps": path = "/apps"; method = "POST"; body = { action: input.operation, id: input.id, deviceId: input.deviceId, studentId: input.studentId, sha256: input.sha256, revision: input.revision, approved: input.approved }; break;
     case "push-ticket": path = "/push-ticket"; method = "POST"; body = {}; break;
     case "media": path="/media"; method="POST"; body={path:input.path,method:input.method,body:input.body,requestId:input.requestId,ifNoneMatch:input.ifNoneMatch}; break;
+    case "white-noise":
+      if (!["list", "enabled", "begin", "finish", "preview", "remove"].includes(String(input.operation))) return response({ error: "Choose a White Noise action." }, 400);
+      path = "/white-noise"; method = "POST";
+      body = { action: input.operation, studentId: input.studentId, enabled: input.enabled, id: input.id, title: input.title, scope: input.scope, size: input.size, sha256: input.sha256 }; break;
     case "find-school-sites":
       if (typeof input.query !== "string" || input.query.trim().length < 2 || input.query.length > 100) return response({ error: "Enter a school or curriculum name (2–100 characters)." }, 400);
       path = "/setup/school-search"; method = "POST"; body = { query: input.query }; break;

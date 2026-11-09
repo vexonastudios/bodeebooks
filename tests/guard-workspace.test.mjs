@@ -9,6 +9,38 @@ import vm from 'node:vm';
 class CloudApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
 const origin = 'https://www.bodeebooks.com';
 const deviceId = '10000000-0000-4000-8000-000000000001';
+
+test('White Noise bridge restores every parent operation without forwarding caller authority', async () => {
+  const calls = [], route = load('bridge/route.ts', { api: async (path, init) => { calls.push({path, body: JSON.parse(init.body)}); return {saved: true}; } });
+  for (const operation of ['list', 'enabled', 'begin', 'finish', 'preview', 'remove']) {
+    const input = {action: 'white-noise', operation, studentId: deviceId, enabled: false, id: deviceId, title: 'Quiet rain', scope: 'family', size: 1234, sha256: 'a'.repeat(64), householdId: 'forged', isReleaseOperator: true, object_key: 'forged', url: 'https://foreign.example', password: 'never-forward'};
+    assert.equal((await route.POST(request(input))).status, 200);
+    assert.deepEqual(calls.at(-1), {path: '/white-noise', body: {action: operation, studentId: deviceId, enabled: false, id: deviceId, title: 'Quiet rain', scope: 'family', size: 1234, sha256: 'a'.repeat(64)}});
+  }
+  const input = {action: 'white-noise', operation: 'list'};
+  assert.equal((await load('bridge/route.ts', {authenticated: false}).POST(request(input))).status, 401);
+  assert.equal((await route.POST(request(input, {requestOrigin: 'https://foreign.example'}))).status, 403);
+  assert.equal((await route.POST(request({...input, operation: '../../settings'}))).status, 400);
+  assert.equal(calls.length, 6);
+});
+
+test('served parent workspace includes White Noise, its maintained assets and bounded upload origin', async () => {
+  const result = await load('workspace/route.ts').GET(new Request(`${origin}/guard/dashboard/workspace/`));
+  const html = await result.text();
+  assert.equal(result.status, 200);
+  assert.equal((html.match(/data-tab="white-noise"/g) || []).length, 1);
+  assert.equal((html.match(/id="cloud-white-noise"/g) || []).length, 1);
+  assert.match(html, /cloud-white-noise\.css\?v=20261109-white-noise1/);
+  assert.match(html, /cloud-workspace\.js\?v=20261109-white-noise1/);
+  const connect = result.headers.get('content-security-policy').split(';').find(part => part.trim().startsWith('connect-src')).trim().split(/\s+/);
+  assert.ok(connect.includes('https://bodeeguard-cloud-assets.james-7f8.workers.dev'));
+  assert.ok(!connect.includes('*') && !connect.includes('https:'));
+  const module = fs.readFileSync('public/guard-admin/cloud-workspace.js', 'utf8');
+  assert.match(module, /import \{ setupWhiteNoise \} from '\.\/cloud-white-noise\.js\?v=20261109-white-noise1'/);
+  assert.match(module, /const whiteNoise = setupWhiteNoise\(\{ endpoint \}\)/);
+  assert.match(module, /whiteNoise\.setActive\(id === 'white-noise'\)/);
+  for (const name of ['cloud-white-noise.js', 'cloud-white-noise.css']) assert.ok(fs.statSync(`public/guard-admin/${name}`).size > 100);
+});
 test('Quizlet review uses authenticated fixed routes and never accepts child text or household authority from the parent bridge',async()=>{
   const calls=[],route=load('bridge/route.ts',{api:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return{saved:true};}});
   const settings={action:'quizlet-review-settings',studentId:deviceId,enabled:true,householdId:'forged',question:'never-forward'};
@@ -388,7 +420,7 @@ test('workspace escapes identity, inherits real navigation, restricts scripts an
   assert.equal(result.headers.get('x-frame-options'), 'SAMEORIGIN');
   const html = await result.text();
   assert.match(html, /&lt;script&gt;attack&lt;\/script&gt;/);
-  assert.match(html, /cloud-workspace\.js\?v=20261109-microphone/, 'current controls replace an already-versioned generated bundle');
+  assert.match(html, /cloud-workspace\.js\?v=20261109-white-noise1/, 'current controls replace an already-versioned generated bundle');
   assert.doesNotMatch(html, /<script>attack|admin123|admin-password|kioskAPI/);
   for (const label of ['Live Monitoring', 'Student Management', 'Activity library', 'Learning Videos', 'Calendar / Schedule', 'Family Games', 'Account &amp; billing']) assert.ok(html.includes(label), label);
 });

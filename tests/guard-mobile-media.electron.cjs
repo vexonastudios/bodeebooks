@@ -64,7 +64,7 @@ const server = http.createServer(async (req, res) => {
     const wait = async code => { for (let i = 0; i < 160; i++) { if (await evalJs(code)) return; await new Promise(resolve => setTimeout(resolve, 50)); } throw Error('Timed out: ' + code); };
     const waitWrite = async predicate => { for (let i = 0; i < 160; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 50)); } throw Error('Timed out waiting for media save'); };
     await win.loadURL(origin);
-    await wait('document.querySelectorAll(".mobile-media-choice").length===3');
+    await wait('document.querySelectorAll(".mobile-media-choice").length===4');
     await evalJs("window.fixtureNavigate('music');document.getElementById('mreq-badge').textContent='5';document.getElementById('mreq-badge').style.display='inline-block'");
     const musicTabs = await evalJs("(() => { const tabs=[...document.querySelectorAll('#tab-music .music-subnav .music-stab')]; const rows=tabs.map(tab=>Math.round(tab.getBoundingClientRect().top)); const nav=document.querySelector('#tab-music .music-subnav'); return { count:tabs.length, rows, height:nav.getBoundingClientRect().height, scrollWidth:document.getElementById('tab-music').scrollWidth, clientWidth:document.querySelector('.main-content').clientWidth }; })()");
     assert.equal(musicTabs.count, 6);
@@ -94,7 +94,7 @@ const server = http.createServer(async (req, res) => {
       await evalJs("window.fixtureNavigate('mobile-add')");
     }
     assert.equal(await evalJs('document.getElementById("tab-mobile-add").scrollWidth<=document.querySelector(".main-content").clientWidth+1'), true);
-    assert.deepEqual(await evalJs('[...document.querySelectorAll(".mobile-media-copy strong")].map(el=>el.textContent)'), ['Videos', 'Music', 'Audiobooks']);
+    assert.deepEqual(await evalJs('[...document.querySelectorAll(".mobile-media-copy strong")].map(el=>el.textContent)'), ['Videos', 'Music', 'Audiobooks', 'White Noise']);
     for (const [kind, input, audience] of [['videos', 'video-yt-url', 'video-global-input'], ['music', 'music-yt-url', 'music-all-students-input'], ['audiobooks', 'ab-youtube-url', 'ab-global']]) {
       await evalJs(`document.querySelector('[data-media-kind="${kind}"] .mobile-media-open').click()`);
       await wait(`document.getElementById('tab-${kind}').classList.contains('mobile-media-add')&&document.getElementById('tab-${kind}').classList.contains('active')`);

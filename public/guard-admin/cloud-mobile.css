@@ -138,6 +138,8 @@
 .cloud-mobile [data-schoolwork-kind="learning-videos"] .mobile-schoolwork-symbol { background: #6553b840; color: #c4b5fd; }
 .cloud-mobile [data-media-kind="videos"] .mobile-media-symbol { background: #2b79b940; color: #91d3ff; }
 .cloud-mobile [data-media-kind="audiobooks"] .mobile-media-symbol { background: #168f7440; color: #76e5c5; }
+.cloud-mobile [data-media-kind="white-noise"] .mobile-media-symbol { background: #168f7440; color: #76e5c5; }
+.cloud-mobile #tab-mobile-more [data-more-item="white-noise"] { --more-icon: #76e5c5; --more-tint: #168f7440; }
 .cloud-mobile :is(.mobile-schoolwork-symbol, .mobile-media-symbol) svg { width: 22px; height: 22px; }
 .cloud-mobile :is(.mobile-schoolwork-copy, .mobile-media-copy) { flex: 1; min-width: 0; }
 .cloud-mobile :is(.mobile-schoolwork-copy, .mobile-media-copy) strong { display: block; font-size: 17px; }
