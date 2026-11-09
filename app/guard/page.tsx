@@ -129,6 +129,21 @@ export default function GuardPage() {
     <section id="get-started" className={`${styles.section} ${styles.setupSection}`}>
       <div className={styles.container}><p className={styles.eyebrow}>From your phone to their computer</p><h2>Start with your family.<br />Build a day that fits.</h2>
         <ol className={styles.steps}><li><span>01</span><h3>Create your parent account</h3><p>Add your children and choose their school websites and activities.</p></li><li><span>02</span><h3>Connect their Windows PC</h3><p>Install the child app, approve its pairing code and assign the computer to a child.</p></li><li><span>03</span><h3>Set the daily rhythm</h3><p>Choose schoolwork, schedules and time limits. Adjust things as your family goes.</p></li></ol>
+        <div className={styles.setupVideo}>
+          <h3>Watch the BodeeGuard setup tutorial</h3>
+          <p>See how to get started, then follow the steps for your own family.</p>
+          <div className={styles.videoFrame}>
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/tlMNlJ5eBwE"
+              title="Bodee Guard Setup Tutorial"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+          <a className={styles.textLink} href="https://youtu.be/tlMNlJ5eBwE" target="_blank" rel="noopener noreferrer">Watch on YouTube <ArrowRight size={17} /></a>
+        </div>
         <div className={styles.startCta}><div><h3>Ready to take a closer look?</h3><p>Your parent account walks you through the setup.</p></div><GuardAuthActions /></div>
       </div>
     </section>

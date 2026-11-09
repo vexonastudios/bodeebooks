@@ -96,6 +96,12 @@
 .steps li{border-top:1px solid #bcccbb;padding-top:25px}
 .steps span{display:block;color:#4c7a50;font-family:var(--font-lora),Georgia,serif;font-size:1.6rem;margin-bottom:15px}
 .steps p{color:#586f5d;font-size:.85rem;margin-top:10px}
+.setupVideo{max-width:900px;margin:0 auto 44px;text-align:center}
+.setupVideo h3{font-size:1.4rem}
+.setupVideo>p{color:var(--guard-muted);font-size:.9rem;margin:8px 0 20px!important}
+.videoFrame{aspect-ratio:16/9;overflow:hidden;border:1px solid #bcccbb;border-radius:14px;background:#10121e;box-shadow:0 12px 32px #173f3020}
+.videoFrame iframe{display:block;width:100%;height:100%;border:0}
+.setupVideo>.textLink{margin-top:14px}
 .startCta{display:grid;grid-template-columns:1fr 1.3fr;gap:70px;align-items:center;padding:32px;background:#fffefb;border:1px solid #cfddc8;border-radius:15px}
 .startCta .authActions{margin:0}
 .startCta>div>p{font-size:.85rem;color:#63725f;margin-top:7px}
