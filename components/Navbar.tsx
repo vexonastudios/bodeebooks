@@ -8,9 +8,9 @@ import styles from "./Navbar.module.css";
 
 const links = [
   { href: "/books", label: "Books", icon: BookOpen },
-  { href: "https://games.bodeebooks.com/", label: "Games", icon: Gamepad2 },
-  { href: "https://fit.bodeebooks.com/", label: "Fitness", icon: Activity },
   { href: "/guard", label: "BodeeGuard", icon: ShieldCheck },
+  { href: "https://fit.bodeebooks.com/", label: "Fitness", icon: Activity },
+  { href: "https://games.bodeebooks.com/", label: "Family games", icon: Gamepad2 },
 ];
 
 export default function Navbar() {

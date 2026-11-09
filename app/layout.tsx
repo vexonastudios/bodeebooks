@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | BodeeBooks",
   },
   description:
-    "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.",
+    "Free audiobooks and printed classics, BodeeGuard homeschool software, fitness, and family games.",
   keywords: [
     "free audiobooks",
     "multi-voice audiobooks",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     url: "https://bodeebooks.com",
     title: "BodeeBooks — Books and tools for your homeschool family",
     description:
-      "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.",
+      "Free audiobooks and printed classics, BodeeGuard homeschool software, fitness, and family games.",
     images: [
       {
         url: "/og-image.png",
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "BodeeBooks — Books and tools for your homeschool family",
     description:
-      "Free audiobooks, printed classics, educational games, homeschool fitness, and BodeeGuard to help children stay focused.",
+      "Free audiobooks and printed classics, BodeeGuard homeschool software, fitness, and family games.",
   },
   alternates: {
     canonical: "https://bodeebooks.com",

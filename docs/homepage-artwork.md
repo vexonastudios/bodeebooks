@@ -4,8 +4,8 @@ The homepage retains the site's Lora/Inter typography, green accents, cream back
 
 ## Assets
 
-- `public/home/hardy-boys.jpg`: existing BodeeBooks YouTube cover, `https://img.youtube.com/vi/xA60LcdimSg/mqdefault.jpg`.
-- `public/home/first-stop-honolulu.jpg`: existing BodeeBooks YouTube cover, `https://img.youtube.com/vi/yolRzjLm-mU/mqdefault.jpg`.
+- `public/home/hardy-boys.jpg`: existing BodeeBooks YouTube cover, `https://img.youtube.com/vi/xA60LcdimSg/maxresdefault.jpg`, resized to 768 pixels wide for the banner.
+- `public/home/first-stop-honolulu.jpg`: existing BodeeBooks YouTube cover, `https://img.youtube.com/vi/yolRzjLm-mU/maxresdefault.jpg`, resized to 768 pixels wide for the banner.
 - `public/home/games.webp`: actual Broadside Bay artwork from `https://games.bodeebooks.com/images/broadside-bay-gameplay.webp`.
 - `public/guard-tour/parent.webp` and `public/guard-icons/bodeeguard-parent-192.png`: existing BodeeGuard screenshot and app icon.
 - `public/home/homeschool-fitness.webp`: generated with the built-in image-generation tool, resized to 960 pixels wide and saved as WebP for the homepage.

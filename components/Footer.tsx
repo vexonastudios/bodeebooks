@@ -14,9 +14,9 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkHeading}>Explore</h4>
             <Link href="/books" className={styles.link}>Audiobooks &amp; printed books</Link>
-            <a href="https://games.bodeebooks.com/" className={styles.link}>Games Hub</a>
-            <a href="https://fit.bodeebooks.com/" className={styles.link}>Homeschool fitness</a>
             <Link href="/guard" className={styles.link}>BodeeGuard</Link>
+            <a href="https://fit.bodeebooks.com/" className={styles.link}>Homeschool fitness</a>
+            <a href="https://games.bodeebooks.com/" className={styles.link}>Family games</a>
           </div>
           <div className={styles.linkGroup}>
             <h4 className={styles.linkHeading}>More from BodeeBooks</h4>
