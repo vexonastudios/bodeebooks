@@ -39,6 +39,14 @@
 .screenEyebrow>span:first-child{width:7px;height:7px;background:#318161;border-radius:100%}
 .sampleBadge{margin-left:auto;border:1px solid #cddbcc;border-radius:20px;padding:3px 10px;font-size:.61rem;letter-spacing:.025em}
 .heroVisual .screenButton{box-shadow:0 24px 60px #1a3d3428;border:7px solid #214239;border-radius:14px}
+.heroVideo{aspect-ratio:16/9;overflow:hidden;border:7px solid #214239;border-radius:14px;background:#10121e;box-shadow:0 24px 60px #1a3d3428}
+.heroVideo:focus-within{outline:3px solid #b87418;outline-offset:4px}
+.heroVideoButton{display:block;position:relative;width:100%;height:100%;padding:0;border:0;background:#10121e}
+.heroVideoPoster{display:block;width:100%;height:100%;object-fit:cover;transition:filter .16s}
+.heroVideoButton:hover .heroVideoPoster{filter:brightness(.84)}
+.heroVideoPlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:72px;height:52px;border-radius:14px;background:#e62117;color:#fff;box-shadow:0 8px 28px #0008;pointer-events:none;transition:background .16s}
+.heroVideoButton:hover .heroVideoPlay{background:#c00}
+.heroVideoPlayer{display:block;width:100%;height:100%;border:0}
 .heroCaption{display:flex;align-items:center;gap:12px;margin:24px 0 0 15px;color:#4e685d;font-size:.76rem}
 .heroCaption svg{flex-shrink:0;color:#367959}
 .heroCaption strong{font-size:.88rem;color:#224d3b;font-weight:650}
@@ -96,12 +104,6 @@
 .steps li{border-top:1px solid #bcccbb;padding-top:25px}
 .steps span{display:block;color:#4c7a50;font-family:var(--font-lora),Georgia,serif;font-size:1.6rem;margin-bottom:15px}
 .steps p{color:#586f5d;font-size:.85rem;margin-top:10px}
-.setupVideo{max-width:900px;margin:0 auto 44px;text-align:center}
-.setupVideo h3{font-size:1.4rem}
-.setupVideo>p{color:var(--guard-muted);font-size:.9rem;margin:8px 0 20px!important}
-.videoFrame{aspect-ratio:16/9;overflow:hidden;border:1px solid #bcccbb;border-radius:14px;background:#10121e;box-shadow:0 12px 32px #173f3020}
-.videoFrame iframe{display:block;width:100%;height:100%;border:0}
-.setupVideo>.textLink{margin-top:14px}
 .startCta{display:grid;grid-template-columns:1fr 1.3fr;gap:70px;align-items:center;padding:32px;background:#fffefb;border:1px solid #cfddc8;border-radius:15px}
 .startCta .authActions{margin:0}
 .startCta>div>p{font-size:.85rem;color:#63725f;margin-top:7px}

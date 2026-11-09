@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, CalendarCheck, Check, Gamepad2, GraduationCap, Laptop, MessageCircle, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 import GuardAuthActions from "@/components/GuardAuthActions";
+import GuardSetupVideo from "./GuardSetupVideo";
 import TourScreenshot from "./TourScreenshot";
 import styles from "./guard.module.css";
 
@@ -44,9 +45,9 @@ export default function GuardPage() {
             <div className={styles.platforms}><span><Laptop size={17} /> Child app for Windows</span><span><Smartphone size={17} /> Parents on phone or browser</span></div>
           </div>
           <div className={styles.heroVisual}>
-            <div className={styles.screenEyebrow}><span /> Your family, at a glance <span className={styles.sampleBadge}>Sample family</span></div>
-            <TourScreenshot image="parent" title="Parent dashboard" priority alt="Parent dashboard showing Alex, Emma and Noah, their lesson progress, recorded activity and access controls." />
-            <div className={styles.heroCaption}><ShieldCheck size={21} /><p><strong>Involved, without hovering.</strong><br />Check progress, adjust time and send encouragement.</p></div>
+            <div className={styles.screenEyebrow}><span /> See how BodeeGuard works <span className={styles.sampleBadge}>Setup tutorial</span></div>
+            <GuardSetupVideo />
+            <div className={styles.heroCaption}><ShieldCheck size={21} /><p><strong>Get started, step by step.</strong><br />Play the setup tutorial when you’re ready.</p></div>
           </div>
         </div>
       </div>
@@ -129,21 +130,6 @@ export default function GuardPage() {
     <section id="get-started" className={`${styles.section} ${styles.setupSection}`}>
       <div className={styles.container}><p className={styles.eyebrow}>From your phone to their computer</p><h2>Start with your family.<br />Build a day that fits.</h2>
         <ol className={styles.steps}><li><span>01</span><h3>Create your parent account</h3><p>Add your children and choose their school websites and activities.</p></li><li><span>02</span><h3>Connect their Windows PC</h3><p>Install the child app, approve its pairing code and assign the computer to a child.</p></li><li><span>03</span><h3>Set the daily rhythm</h3><p>Choose schoolwork, schedules and time limits. Adjust things as your family goes.</p></li></ol>
-        <div className={styles.setupVideo}>
-          <h3>Watch the BodeeGuard setup tutorial</h3>
-          <p>See how to get started, then follow the steps for your own family.</p>
-          <div className={styles.videoFrame}>
-            <iframe
-              src="https://www.youtube-nocookie.com/embed/tlMNlJ5eBwE"
-              title="Bodee Guard Setup Tutorial"
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </div>
-          <a className={styles.textLink} href="https://youtu.be/tlMNlJ5eBwE" target="_blank" rel="noopener noreferrer">Watch on YouTube <ArrowRight size={17} /></a>
-        </div>
         <div className={styles.startCta}><div><h3>Ready to take a closer look?</h3><p>Your parent account walks you through the setup.</p></div><GuardAuthActions /></div>
       </div>
     </section>
