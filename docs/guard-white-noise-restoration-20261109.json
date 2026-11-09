@@ -1,0 +1,25 @@
+{
+  "change": "Restore parent White Noise controls on desktop and mobile",
+  "sourceCommit": "daa89ee89ac61f3b6e52be301f1906874d1b0c8a",
+  "deploymentId": "dpl_5ikDitdAMns1BaCRzHKrxQeWtZ2J",
+  "previousDeploymentId": "dpl_29cRGFQxMuVcnNsXXe5iH9QoGDFU",
+  "verifiedUtc": "2026-11-09T17:22:32.0901238Z",
+  "aliases": [
+    "guard.bodeebooks.com",
+    "www.bodeebooks.com"
+  ],
+  "checks": [
+    "85 account/workspace source tests passed",
+    "Whole-page Electron White Noise: per-child save, failure rollback, signed preview playback, upload retry, real XHR CSP, 390/320 mobile navigation, no polling",
+    "Existing Add media search/review/save regression passed",
+    "Vercel production TypeScript/build passed",
+    "Candidate and both live domains match seven committed asset hashes; authentication gates preserved",
+    "Stable 1.2.346, Family Beta 1.2.347 and signed recovery manifest unchanged",
+    "Live Johnson account: seven shared tracks, audio playback, Billy toggle persisted and restored, desktop and mobile navigation verified"
+  ],
+  "limitations": [
+    "Family upload and failed-save cases exercised with isolated API fixtures; no live family MP3 uploaded",
+    "Existing settings allow per-child feature enable/disable; there are no individual shared-track hiding controls"
+  ],
+  "apiDeployment": "Not needed; existing commercial API supports these operations"
+}
