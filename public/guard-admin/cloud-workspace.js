@@ -13,7 +13,7 @@ import { createControlQueue, isIndependentControl, applyControlResult } from './
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js';
 import { setupDailyPlan } from './cloud-daily-plan.js';
-import { setupParentStart } from './cloud-parent-start.js?v=20261104-daily-controls1';
+import { setupParentStart } from './cloud-parent-start.js?v=20261109-microphone';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { setupCloudChores } from './cloud-chores.js?v=20261104-more-icons1';

@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{
   window.clickText=text=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.includes(text));if(!b)throw Error('Missing button '+text);b.click();};
   window.settle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
   </script></body></html>`);return;}
-  const name=req.url.split('?')[0].slice(1);if(['cloud-family-prompt.js','cloud-setup-controls.js','cloud-parent-setup.css','lucide.min.js'].includes(name)){res.setHeader('Content-Type',name.endsWith('.css')?'text/css':'text/javascript');res.end(fs.readFileSync(path.join(root,'public/guard-admin',name)));return;}res.writeHead(404);res.end();
+  const name=req.url.split('?')[0].slice(1);if(['cloud-family-prompt.js','cloud-setup-controls.js','cloud-school-picker.js','cloud-school-directory.js','cloud-parent-setup.css','lucide.min.js'].includes(name)){res.setHeader('Content-Type',name.endsWith('.css')?'text/css':'text/javascript');res.end(fs.readFileSync(path.join(root,'public/guard-admin',name)));return;}res.writeHead(404);res.end();
 });
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
@@ -39,12 +39,12 @@ async function run(){
   await js("rejectSave=true;clickText('Confirm & add children');await settle()");const first=await js('calls.at(-1).input');assert.equal(first.children.length,2);assert.equal(first.rulesRevision,2);
   assert.equal(await js("document.querySelector('textarea').disabled"),true,'uncertain save keeps immutable receipt');
   await js("rejectSave=false;clickText('Retry same save');await settle()");assert.deepEqual(await js('calls.at(-1).input'),first);assert.equal(await js('component.flush().then(()=>true,()=>false)'),true);
-  await js("clickText('Add more children');clickText('Speak instead');voice.onresult({results:[[{transcript:'June is in kindergarten'}]]});");assert.equal(await js("document.querySelector('textarea').value"),'June is in kindergarten');
+  await js("clickText('Add more children');clickText('Use microphone');voice.onresult({results:[[{transcript:'June is in kindergarten'}]]});");assert.equal(await js("document.querySelector('textarea').value"),'June is in kindergarten');
   await js("voice.onresult({results:[[{transcript:'June is in kindergarten'}]]});");assert.equal(await js("document.querySelector('textarea').value"),'June is in kindergarten','interim result replaces, never duplicates');
   await js("voice.onerror({error:'not-allowed'})");assert.equal(await js("document.querySelector('textarea').readOnly"),false);assert.match(await js("document.querySelector('.family-prompt-status').textContent"),/denied/);
-  await js("clickText('Speak instead');component.unmount()");assert.equal(await js('aborted>=2'),true,'closing releases speech service');
-  await js("Object.defineProperty(window,'SpeechRecognition',{value:undefined,configurable:true});Object.defineProperty(window,'webkitSpeechRecognition',{value:undefined,configurable:true});component.mount(document.getElementById('host'));clickText('Speak instead')");assert.match(await js("document.querySelector('.family-prompt-status').textContent"),/keyboard microphone/);
-  await js("clickText('Create family draft');await settle();Object.defineProperty(window,'SpeechRecognition',{value:class{start(){window.voice=this;}abort(){}},configurable:true});clickText('Speak instead');voice.onresult({results:[[{transcript:'June is in grade one'}]]});");assert.equal(await js('document.querySelector(".family-prompt-review")'),null,'dictated edits also discard stale review');
+  await js("clickText('Use microphone');component.unmount()");assert.equal(await js('aborted>=2'),true,'closing releases speech service');
+  await js("Object.defineProperty(window,'SpeechRecognition',{value:undefined,configurable:true});Object.defineProperty(window,'webkitSpeechRecognition',{value:undefined,configurable:true});component.mount(document.getElementById('host'));clickText('Use microphone')");assert.match(await js("document.querySelector('.family-prompt-status').textContent"),/keyboard microphone/);
+  await js("clickText('Create family draft');await settle();Object.defineProperty(window,'SpeechRecognition',{value:class{start(){window.voice=this;}abort(){}},configurable:true});clickText('Use microphone');voice.onresult({results:[[{transcript:'June is in grade one'}]]});");assert.equal(await js('document.querySelector(".family-prompt-review")'),null,'dictated edits also discard stale review');
   console.log('Family prompt: server draft, editable review, duplicate defaults, retries, 4 responsive widths and dictation lifecycle passed');win.destroy();server.close();app.exit(0);
 }
 run().catch(error=>{console.error(error);server.close();app.exit(1);});

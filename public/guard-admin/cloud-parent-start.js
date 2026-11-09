@@ -3,7 +3,7 @@ import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } f
 import { showPlanPreview } from './cloud-daily-plan.js';
 import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } from './cloud-parent-readiness.js?v=20261104-daily-controls1';
 import { setupPassword } from './cloud-setup-password.js?v=20261103-password1';
-import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261103-quick2';
+import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261109-microphone';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
