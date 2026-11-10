@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.349": {
+    "title": "Type your poem from memory",
+    "sections": [
+      {
+        "heading": "Version 1.2.349",
+        "headline": "Choose how each child practices a poem",
+        "summary": "Children can type a poem from memory or recite it aloud. Written practice checks words, capitalization and punctuation.",
+        "highlights": [
+          "Set a preferred practice method when you assign or edit a poem.",
+          "Children can switch between oral and written practice.",
+          "Existing poems and progress carry over."
+        ]
+      }
+    ]
+  },
   "1.2.348": {
   "title": "Parent help with YouTube verification",
   "sections": [
