@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   let body: Record<string, unknown>;
   if (input.action === "list") body = pick(input, ["studentId", "offset"]);
   else if (input.action === "recording") { if (!["manifest", "part"].includes(String(input.view))) return reply({ error: "Choose a received recitation." }, 400); body = pick(input, ["view", "studentId", "recordingId", "position"]); }
-  else if (input.kind === "assignment") body = pick(input, ["id", "kind", "studentId", "assignmentId", "revision", "title", "author", "poem_text", "start_date", "due_date", "status", "required_daily", "daily_new_lines"]);
+  else if (input.kind === "assignment") body = pick(input, ["id", "kind", "studentId", "assignmentId", "revision", "title", "author", "poem_text", "start_date", "due_date", "status", "required_daily", "daily_new_lines", "preferred_practice"]);
   else if (input.kind === "review") body = pick(input, ["id", "kind", "studentId", "recitationId", "revision", "approved", "notes"]);
   else return reply({ error: "Choose a parent assignment or recitation review." }, 400);
   try { return reply(await cloudApi(`/poems/${input.action}`, { method: "POST", body: JSON.stringify(body) })); }

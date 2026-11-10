@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       .replace(/(<div id="admin-badge-name"[^>]*>)[\s\S]*?(<\/div>)/, (_match, start, end) => `${start}${escapeHtml(name)}${end}`)
       .replace(/<section class="tab-content" id="tab-coloring-studio"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-coloring-studio" aria-label="Coloring Studio"><div id="cloud-coloring-studio"></div></section>')
       .replace(/<section class="tab-content" id="tab-math-coach"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-math-coach" aria-label="Math Coach"><div id="cloud-math-coach"></div></section>')
-      .replace(/<script type="module" src="\/guard-admin\/cloud-workspace\.js(?:\?[^"]*)?"><\/script>/, '<script type="module" src="/guard-admin/cloud-workspace.js?v=20261109-white-noise1"></script>')
+      .replace(/<script type="module" src="\/guard-admin\/cloud-workspace\.js(?:\?[^"]*)?"><\/script>/, '<script type="module" src="/guard-admin/cloud-workspace.js?v=20261110-written1"></script>')
       .replace('href="/guard-admin/cloud-workspace.css"', 'href="/guard-admin/cloud-workspace.css?v=20261103-overview1"')
       .replace('href="/guard-admin/cloud-assistant.css"', 'href="/guard-admin/cloud-assistant.css?v=20261106-assistant-conversation1"')
       .replace('href="/guard-admin/cloud-monitoring.css"', 'href="/guard-admin/cloud-monitoring.css?v=20261104-progress-details1"')
