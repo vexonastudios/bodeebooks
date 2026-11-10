@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.348": {
+  "title": "Parent help with YouTube verification",
+  "sections": [
+    {
+      "heading": "Version 1.2.348",
+      "headline": "Help with YouTube verification without opening unrestricted browsing",
+      "summary": "A parent can open a password-protected YouTube verification window when approved playback needs help. Verification errors no longer remove approved videos from the library.",
+      "highlights": [
+        "The helper keeps the child’s approved video and account session together.",
+        "Google decides whether sign-in and playback are allowed; this update does not guarantee verification succeeds.",
+        "Approved-video restrictions and your family’s time limits stay in effect."
+      ]
+    }
+  ]
+},
   "1.2.346": {
   "title": "Clear computer approval and today’s chore reminders",
   "sections": [

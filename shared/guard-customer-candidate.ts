@@ -6,6 +6,7 @@ export const candidatePath = "/v1/installers/candidates/f7fad65465130af86e25e735
 const release342Path = "/v1/installers/candidates/30e46acfc133853d52dfeabd4bc4e07d/BodeeGuard-Cloud-Child-Setup-1.2.342.exe";
 const release343Path = "/v1/installers/candidates/ee996b495394d8c95dda11fcf1223d87/BodeeGuard-Cloud-Child-Setup-1.2.343.exe";
 const release346Path = "/v1/installers/candidates/15708d54979ac5a30f0be9e598b45dfc/BodeeGuard-Cloud-Child-Setup-1.2.346.exe";
+const release348Path = "/v1/installers/candidates/20e7f93dddf9c51b28ee6f78adf3b402/BodeeGuard-Cloud-Child-Setup-1.2.348.exe";
 const release345Path = "/v1/installers/candidates/7cd7022bc96f0a616a05af80c8e7cd68/BodeeGuard-Cloud-Child-Setup-1.2.345.exe";
 const release344Path = "/v1/installers/candidates/f9d13fc1cbc1e3455e7988152bed7007/BodeeGuard-Cloud-Child-Setup-1.2.344.exe";
 type CandidateUser = { primaryEmailAddress?: { emailAddress?: string; verification?: { status?: string } | null } | null } | null;
@@ -37,5 +38,6 @@ export function releasedCustomerR2Url(channel: string, version: string) {
   if (version === "1.2.343") return signedCustomerUrl(release343Path);
   if (version === "1.2.344") return signedCustomerUrl(release344Path);
   if (version === "1.2.346") return signedCustomerUrl(release346Path);
+  if (version === "1.2.348") return signedCustomerUrl(release348Path);
   return version === "1.2.345" ? signedCustomerUrl(release345Path) : null;
 }
