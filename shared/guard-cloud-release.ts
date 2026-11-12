@@ -9,6 +9,21 @@ export type GuardAccountRelease = {
 
 // Version-specific parent notes mirror the reviewed child release notes.
 const familyBetaNotes: Record<string, NonNullable<GuardAccountRelease["notes"]>> = {
+  "1.2.350": {
+    "title": "Learning Videos, Bible audio and Art Studio fixes",
+    "sections": [
+      {
+        "heading": "Version 1.2.350",
+        "headline": "Easier recovery for videos and artwork, plus continuous Bible audio",
+        "summary": "Learning Videos recovers from a failed opening, Bible audio continues to the next chapter, and Art Studio gives clearer choices when a drawing has not saved.",
+        "highlights": [
+          "Learning Videos retries a failed opening and lets the child start fresh if it still cannot open.",
+          "In Bible, audio continues into the next available chapter without another click.",
+          "Art Studio retries a failed save when closing and lets the child return to the drawing if the save still needs attention."
+        ]
+      }
+    ]
+  },
   "1.2.349": {
     "title": "Type your poem from memory",
     "sections": [
