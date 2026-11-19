@@ -12,7 +12,7 @@ import { setupRecoveryBackups } from './cloud-retention.js';
 import { parentActionFeedback } from './cloud-action-feedback.js';
 import { createControlQueue, isIndependentControl, applyControlResult } from './cloud-control-queue.js?v=20261030-game-unlock1';
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
-import { createConnectionRefresh } from './cloud-connection-refresh.js';
+import { createConnectionRefresh } from './cloud-connection-refresh.js?v=20261119-visible1';
 import { setupDailyPlan } from './cloud-daily-plan.js';
 import { setupParentStart } from './cloud-parent-start.js?v=20261109-microphone';
 import { setupMainSchool } from './cloud-school-setup.js';
@@ -101,6 +101,7 @@ function selectTab(id) {
   if (!item || !byId(`tab-${id}`)) return;
   if (id === 'messages' && currentTab !== 'messages') messageReturnTab = currentTab;
   currentTab = id;
+  connectionRefresh.setView(id);
   document.querySelectorAll('.nav-item').forEach(nav => {
     nav.classList.toggle('active', nav === item);
     if (nav === item) nav.setAttribute('aria-current', 'page'); else nav.removeAttribute('aria-current');

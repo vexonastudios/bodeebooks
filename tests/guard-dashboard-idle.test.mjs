@@ -42,6 +42,41 @@ test('active use checks every 30 seconds without fetching on each input event', 
   assert.equal(f.requests.length, 20); assert.equal(f.timers.size, 2); f.poll.stop();
 });
 
+test('a mobile library skips presence checks while controls and screenshots refresh on return', async () => {
+  const f = fixture();
+  f.poll.setView('music'); f.poll.start();
+  for (let n = 0; n < 40; n++) { await f.advance(30000); await f.interact('keydown'); }
+  assert.equal(f.requests.length, 0);
+  await f.advance(180000);
+  assert.equal(f.host.document.documentElement.dataset.parentIdle, 'true');
+  await f.interact('touchstart');
+  assert.equal(f.host.document.documentElement.dataset.parentIdle, 'false');
+  assert.equal(f.requests.length, 0);
+  f.poll.setView('overview'); await f.advance(0);
+  assert.equal(f.requests.length, 1);
+  f.poll.setView('messages'); f.poll.setView('screenshots'); await f.advance(29999);
+  assert.equal(f.requests.length, 1);
+  await f.advance(1); assert.equal(f.requests.length, 2);
+  f.poll.stop();
+});
+
+test('the visible desktop computer sidebar keeps fresh status on any tab', async () => {
+  const f = fixture(), sidebar = {};
+  let show, disconnected = false;
+  f.doc.querySelector = () => sidebar;
+  f.win.IntersectionObserver = class {
+    constructor(callback) { show = value => callback([{ isIntersecting: value }], this); }
+    observe(element) { assert.equal(element, sidebar); }
+    disconnect() { disconnected = true; }
+  };
+  f.poll.setView('music'); f.poll.start(); show(true);
+  await f.advance(30000); assert.equal(f.requests.length, 1);
+  show(false); await f.advance(60000); assert.equal(f.requests.length, 1);
+  show(true); await f.advance(0); assert.equal(f.requests.length, 2);
+  f.poll.stop(); assert.equal(disconnected, true);
+  show(true); await f.advance(60000); assert.equal(f.requests.length, 2);
+});
+
 test('after three minutes idle, an overnight dashboard makes no connection checks', async () => {
   const f = fixture(); f.poll.start(); await f.advance(180000);
   assert.deepEqual(f.requests.map(item => item.at), [30000, 60000, 90000, 120000, 150000]);

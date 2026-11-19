@@ -6,12 +6,25 @@ export function createConnectionRefresh({ refresh, onError = () => {}, onIdleCha
   const activeInterval = 30000, idleAfter = 3 * 60000;
   const events = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
   let active = false, timer = null, pending = null, failures = 0;
+  let tab = 'overview', sidebarVisible = false, sidebarObserver = null;
   let lastInteraction = 0, lastFinished = 0, idleTimer = null, documents = [], windows = [];
+  const showsStatus = () => sidebarVisible || tab === 'overview' || tab === 'screenshots';
   const idle = () => active && now() - lastInteraction >= idleAfter;
   const interval = () => Math.min(120000, activeInterval * 2 ** Math.min(failures, 2));
   function schedule() {
     clearTimer(timer); timer = null;
-    if (active && !doc.hidden && !idle() && !pending) timer = setTimer(() => run(), Math.max(0, interval() - (now() - lastFinished)));
+    if (active && showsStatus() && !doc.hidden && !idle() && !pending) timer = setTimer(() => run(), Math.max(0, interval() - (now() - lastFinished)));
+  }
+  function observeSidebar() {
+    const sidebar = doc.querySelector?.('.sidebar-clients');
+    sidebarVisible = Boolean(sidebar);
+    if (!sidebar || !win?.IntersectionObserver) return;
+    sidebarObserver = new win.IntersectionObserver((entries, observer) => {
+      if (sidebarObserver !== observer || !entries.length) return;
+      sidebarVisible = entries.at(-1).isIntersecting;
+      schedule();
+    });
+    sidebarObserver.observe(sidebar);
   }
   function publishIdle(value) {
     for (const target of documents) {
@@ -48,6 +61,7 @@ export function createConnectionRefresh({ refresh, onError = () => {}, onIdleCha
   }
   function stop() {
     active = false; clearTimer(timer); clearTimer(idleTimer); timer = idleTimer = null;
+    sidebarObserver?.disconnect(); sidebarObserver = null;
     publishIdle(true);
     for (const target of documents) for (const event of events) target.removeEventListener(event, interact, true);
     for (const target of windows) target.removeEventListener('focus', interact);
@@ -55,7 +69,7 @@ export function createConnectionRefresh({ refresh, onError = () => {}, onIdleCha
     const old = pending; pending = null; old?.abort();
   }
   function run(immediate = false) {
-    if (!active || doc.hidden || pending) return;
+    if (!active || !showsStatus() || doc.hidden || pending) return;
     if (!immediate && idle()) { clearTimer(timer); timer = null; return; }
     // Preserve error backoff while the parent is actively using the dashboard.
     if (!immediate && now() - lastFinished < interval()) { schedule(); return; }
@@ -72,8 +86,9 @@ export function createConnectionRefresh({ refresh, onError = () => {}, onIdleCha
   return {
     start() {
       if (active || doc.hidden) return;
-      active = true; lastInteraction = lastFinished = now(); listen(); publishIdle(false); waitForIdle(); schedule();
+      active = true; lastInteraction = lastFinished = now(); listen(); observeSidebar(); publishIdle(false); waitForIdle(); schedule();
     },
+    setView(id) { if (id !== tab) { tab = id; schedule(); } },
     stop,
     isIdle: idle,
   };
