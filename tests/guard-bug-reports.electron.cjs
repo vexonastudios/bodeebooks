@@ -19,7 +19,7 @@ window.MediaRecorder=Recorder;const root=createRoot(document.getElementById('roo
 let acknowledgments=0,voiceCalls=0,submits=[],stored=null,events=[],updates=0,photos=[],photoReads=0,replies=[];const now=new Date().toISOString();
 const setup={capturedAt:now,students:[{id:'d76383e4-d6ce-4270-8e9e-005dc0f563ca',name:'Alex',grade:'5',schoolProvider:'abeka'},{id:'d76383e4-d6ce-4270-8e9e-005dc0f563cb',name:'Jamie',grade:'2',schoolProvider:'bju'}],devices:[{id:'synthetic-pc',name:'Study computer',studentId:'d76383e4-d6ce-4270-8e9e-005dc0f563ca',platform:'Windows',appVersion:'1.2.293',releaseChannel:'beta',lastSeenAt:now,settingsRevision:4,acknowledgedRevision:3,locked:false}],school:{timeZone:'America/Chicago',rulesRevision:7,scheduleEnabled:true},recentErrors:[]};
 let forwarding={enabled:false,revision:0};
-let childEnabled=false,childState='pending',cardMode=false,childDetailReads=0,holdChildList=false,releaseChildList,conflictNext=false;const reviews=[],cardReviews=[];const childReport={id:'f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1',reference:'BUG-CHILDREPORT',description:'The button is stuck. <b>This is plain text.</b>',origin:'child',reviewState:'pending',revision:1,status:'new',createdAt:now,updatedAt:now,context:setup};
+let childEnabled=false,childState='pending',cardMode=false,childDetailReads=0,holdChildList=false,releaseChildList,conflictNext=false;const reviews=[],cardReviews=[];const childReport={id:'f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1',reference:'BUG-CHILDREPORT',description:'The play button is stuck. I can’t start my math lesson.',studentId:setup.students[0].id,origin:'child',reviewState:'pending',revision:1,status:'new',createdAt:now,updatedAt:now,context:setup};
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');res.setHeader('Cache-Control','no-store');
  if(url.pathname==='/bundle.js'){res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync(path.join(out,'bundle.js')));return;}
@@ -32,7 +32,10 @@ const server=http.createServer(async(req,res)=>{
   else if(body.action==='review'){assert.equal(body.id,childReport.id);if(cardMode){cardReviews.push(body);if(conflictNext){conflictNext=false;code=409;result={error:'Synthetic revision changed. Refresh the report.'};}else if(body.decision==='dismissed'){childState='dismissed';result={report:{...childReport,reviewState:childState,revision:2}};}else if(cardReviews.length===2){childState='forwarded';code=503;result={error:'Synthetic lost card reply'};}else{assert.deepEqual(body,cardReviews[1]);result={report:{...childReport,reviewState:childState,revision:3}};}}else{reviews.push(body);if(reviews.length===1){childState=body.decision;code=503;result={error:'Synthetic lost approval reply'};}else {assert.deepEqual(body,reviews[0]);result={report:{...childReport,reviewState:childState,revision:2}};}}}
   else if(body.action==='detail'&&body.id===childReport.id){childDetailReads++;result={report:childReport,events:[],photos:photos.slice(0,1).map(({data,...p})=>p)};}
   else if(body.action==='context')result={setup,voiceAvailable:true};
-  else if(body.action==='list'||body.action==='bug-reports')result={reports:stored?[stored]:[],hasMore:false};
+  else if(body.action==='list'||body.action==='bug-reports'){
+   const sent=childEnabled&&childState==='forwarded'?[{...childReport,reviewState:'forwarded'}]:[];
+   result={reports:[...sent,...(stored?[stored]:[])],hasMore:false};
+  }
   else if(body.action==='voice'){assert.equal(body.consent,true);assert.ok(body.data);voiceCalls++;if(voiceCalls===1){code=503;result={error:'Synthetic transcription interruption. Try again.'};}else result={text:'The lesson restarted after opening Grades.'};}
   else if(body.action==='submit'){
    submits.push(body);if(!stored)stored={...body,householdId:'d76383e4-d6ce-4270-8e9e-005dc0f563cc',context:setup,reference:'BUG-TEST12345678',createdAt:now,updatedAt:now,status:'new',revision:1};
@@ -68,6 +71,24 @@ let win;const watchdog=setTimeout(()=>{console.error('Bug reports UI fixture tim
  assert.equal(await js('!!document.querySelector("input[type=datetime-local]")'),false,'no date entry on the usual path');
  await until('document.body.textContent.includes("No child reports need your review.")','clear empty inbox');
  assert.equal(await js('!!document.querySelector("button[aria-pressed]")'),false);
+ const optionalSummaries='form fieldset > details > summary';
+ for(let index=0;index<3;index++){
+  const selector=JSON.stringify(optionalSummaries);
+  await js('document.querySelectorAll('+selector+')['+index+'].focus();true;');
+  const state=()=>js('(()=>{const s=document.activeElement;return {open:s.parentElement.open, height:s.getBoundingClientRect().height, arrow:getComputedStyle(s,"::after").transform, border:getComputedStyle(s).borderTopStyle};})()');
+  const closed=await state();assert.equal(closed.open,false);assert.ok(closed.height>=44);assert.equal(closed.border,'solid');assert.notEqual(closed.arrow,'none');
+  for(const keyCode of ['Enter','Space']){
+   win.webContents.sendInputEvent({type:'keyDown',keyCode});
+   win.webContents.sendInputEvent({type:'char',keyCode:keyCode==='Enter'?'\r':' '});
+   win.webContents.sendInputEvent({type:'keyUp',keyCode});
+   await until('document.activeElement.parentElement.open==='+String(keyCode==='Enter'),keyCode+' toggles optional section '+index);
+   if(keyCode==='Enter')assert.notEqual((await state()).arrow,closed.arrow);
+  }
+ }
+ childEnabled=true;await win.loadURL(origin);await until('document.body.textContent.includes("View report")','child report beside form');
+ win.setContentSize(1200,900);await new Promise(r=>setTimeout(r,100));
+ await fs.promises.writeFile(path.join(out,'family-report-desktop.png'),(await win.webContents.capturePage()).toPNG());
+ childEnabled=false;win.setContentSize(390,844);await win.loadURL(origin);await until('document.body.textContent.includes("No child reports need your review.")','empty again');
  await js('document.querySelector("[role=switch]").click();true;');await until('document.body.textContent.includes("Future child reports will go directly to support.")','opt in');
  await js('document.querySelector("[role=switch]").click();true;');await until('document.body.textContent.includes("Future child reports will wait for your review.")','opt out');
  await js('[...document.querySelectorAll("summary")].find(s=>s.textContent.includes("Area, child and time")).click();true;');
@@ -140,13 +161,20 @@ let win;const watchdog=setTimeout(()=>{console.error('Bug reports UI fixture tim
  childState='pending';win.setContentSize(390,844);await win.loadURL(origin+'/children');await until('document.body.textContent.includes("button is stuck")','conflict card');
  conflictNext=true;await tap('Dismiss');await until('document.body.textContent.includes("Synthetic revision changed")','revision conflict');
  assert.equal(await js('[...document.querySelectorAll("button")].find(b=>b.textContent.trim()==="Dismiss").disabled'),false,'conflict returns controls to the parent');assert.equal(childState,'pending');
+ childReport.description+=' <b>Try again</b>';
  cardMode=false;childState='pending';win.setContentSize(390,844);await win.loadURL(origin+'/children');await until('document.body.textContent.includes("button is stuck")','student inbox again');assert.equal(reviews.length,0);
  await js('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("button is stuck")).click();true;');await until('!!document.querySelector("textarea")','student review');await until('!!document.querySelector("button[aria-label="+JSON.stringify("Enlarge Attached photo 1")+"] img")','student screenshot');
  assert.equal(await js('document.querySelectorAll("b").length'),0,'child note remains plain text');
  for(const width of [320,390,768,1440]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'student inbox fits '+width);}
  win.setContentSize(390,844);await new Promise(r=>setTimeout(r,200));await fs.promises.writeFile(path.join(out,'student-review-mobile.png'),(await win.webContents.capturePage()).toPNG());
- await type('textarea','I saw this happen too.');await js('[...document.querySelectorAll("button")].filter(b=>b.textContent.trim()==="Send to BodeeGuard").at(-1).click();true;');await until('document.body.textContent.includes("Synthetic lost approval reply")','approval retry');assert.equal(reviews.length,1);assert.equal(await js('document.querySelector("textarea").disabled'),true);
+ await type('textarea','I saw this happen too.');
+ await js('document.querySelector("button[aria-expanded=true]").click();true;');await until('!document.querySelector("textarea")','inline review collapsed');
+ await js('document.querySelector("button[aria-expanded=false]").click();true;');await until('document.querySelector("textarea")?.value==="I saw this happen too."','note retained on reopen');
+ assert.equal(await js('document.querySelector("textarea").closest("article").querySelectorAll("button[aria-label^=Send]").length'),1,'one send action belongs to the selected card');
+ await js('[...document.querySelectorAll("button")].filter(b=>b.textContent.trim()==="Send to BodeeGuard").at(-1).click();true;');await until('document.body.textContent.includes("Synthetic lost approval reply")','approval retry');assert.equal(reviews.length,1);assert.equal(await js('document.querySelector("textarea").disabled'),true);
  await tap('Retry sending');await until('document.body.textContent.includes("Sent to BodeeGuard.")','parent approval saved');assert.equal(reviews.length,2);assert.deepEqual(reviews[0],reviews[1]);assert.equal(reviews[0].note,'I saw this happen too.');
+ childReport.autoForwarded=true;await win.loadURL(origin);await until('document.body.textContent.includes("Automatically sent from Alex")','automatically forwarded child report in family history');
+ assert.equal(await js('!!document.querySelector("#student-reports button[aria-label^=Dismiss]")'),false,'sent reports have no review action');
  assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,widths:[320,390,768,1440],voiceConsent:true,deniedMicrophone:true,transcriptionRetry:true,lostSendRetry:true,staffTriage:true,photoCaptureAndGallery:true,photoRetryAndFollowup:true,privatePhotos:true,screenshots:out}));
  win.destroy();await new Promise(r=>server.close(r));clearTimeout(watchdog);app.quit();
 })().catch(error=>{console.error(error);if(win&&!win.isDestroyed())win.destroy();server.close();clearTimeout(watchdog);app.exit(1);});

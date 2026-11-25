@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {useAuth} from '@clerk/nextjs';
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {ArrowLeft,Bug,CheckCircle2,ChevronRight,Clock,Mic,RefreshCw,Send,ShieldCheck,Square,Trash2} from 'lucide-react';
+import {ArrowLeft,Bug,CheckCircle2,ChevronRight,Clock,ImagePlus,ListFilter,Mic,RefreshCw,Send,ShieldCheck,Square,Trash2} from 'lucide-react';
 import {areas,statuses,type BugReport,type ReportDetail,type Setup} from './types';
 import SetupDetails from './SetupDetails';
 import {PhotoPicker,SavedReportPhotos,type DraftPhoto} from './ReportPhotos';
@@ -115,8 +115,8 @@ export default function ReportForm({release}:{release:string}){
         {clip&&<div className={styles.clip}><audio controls src={clipUrl}/><p>This sends your recording to OpenAI to create an editable transcript. BodeeGuard saves your final report text, not the audio.</p><div className={styles.actions}><button type="button" disabled={busy||!!pending} onClick={()=>void transcribe()}><Mic size={18}/> Transcribe with OpenAI</button><button type="button" disabled={busy} onClick={()=>setClip(null)}><Trash2 size={18}/> Discard</button></div></div>}
         <fieldset disabled={busy||photoBusy||!!pending||recording}>
 
-          <details className={styles.details}><summary>Add photos{photos.length ? ` (${photos.length})` : ' (optional)'}</summary><PhotoPicker photos={photos} onChange={setPhotos} disabled={busy||photoBusy||!!pending||recording} onBusy={setPhotoBusy}/></details>
-          <details className={styles.details}><summary>Area, child and time (optional)</summary>
+          <details className={styles.details}><summary><ImagePlus size={19} aria-hidden="true"/><span>Add photos</span><small className={styles.summaryMeta}>{photos.length ? photos.length+' attached' : 'Optional'}</small></summary><PhotoPicker photos={photos} onChange={setPhotos} disabled={busy||photoBusy||!!pending||recording} onBusy={setPhotoBusy}/></details>
+          <details className={styles.details}><summary><ListFilter size={19} aria-hidden="true"/><span>Add report details<small className={styles.summaryHint}>Area, child and time</small></span><small className={styles.summaryMeta}>Optional</small></summary>
           <label className={styles.field}>Which area?<select value={draft.area} onChange={e=>change({area:e.target.value})}>{areas.map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
           <div className={styles.when}><Clock size={17}/><span>Date and time are recorded automatically when you send.</span><button type="button" aria-expanded={showEarlier} onClick={()=>{setShowEarlier(value=>!value);if(showEarlier)change({occurredAt:''});}}>{showEarlier?'Use submission time':'Happened earlier?'}</button></div>
           {showEarlier&&<label className={styles.field}>When did it happen? <small>Your local date and time</small><input type="datetime-local" value={draft.occurredAt} onChange={e=>change({occurredAt:e.target.value})} required/></label>}
@@ -135,7 +135,7 @@ export default function ReportForm({release}:{release:string}){
         if(opened.report.unreadResolutionId){
           await request({action:'read-resolution',id:r.id,eventId:opened.report.unreadResolutionId});
           setReports(rows=>rows.map(row=>row.id===r.id&&row.unreadResolutionId===opened.report.unreadResolutionId?{...row,unreadResolutionId:null}:row));
-        }})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{r.unreadResolutionId?'New · Resolved':statuses[r.status]}</span>{r.autoForwarded&&<small>Automatically sent from your child</small>}</span><ChevronRight size={18}/></button>))}
+        }})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{r.unreadResolutionId?'New · Resolved':statuses[r.status]}</span>{r.origin==='child'&&<small>{r.autoForwarded?'Automatically sent from ':'From '}{r.context.students.find(s=>s.id===r.studentId)?.name||'your child'}</small>}</span><ChevronRight size={18}/></button>))}
       {!detail&&hasMore&&<button disabled={busy} onClick={()=>void work(async()=>{const page=await request<{reports:BugReport[];hasMore:boolean}>({action:'list',offset:reports.length});setReports(value=>[...value,...page.reports]);setHasMore(page.hasMore);})}>Load earlier reports</button>}
       {detail&&<section className={styles.detail}><button type="button" disabled={busy||photoBusy||replyFrozen} onClick={()=>{setDetail(null);void load();}}>Back to reports</button><h3>{detail.report.reference}</h3><p className={styles.description}>{detail.report.description}</p><span className={styles.badge}>{detail.report.status==='resolved'?'Resolved by BodeeGuard support':statuses[detail.report.status]}</span>
         <SavedReportPhotos photos={detail.photos?.filter(p=>!p.eventId)}/>
