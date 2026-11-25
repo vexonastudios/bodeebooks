@@ -7,12 +7,13 @@ app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'bg-school-picker-')
 const root=path.resolve(__dirname,'..'),schoolWrites=[],searches=[],planWrites=[];
 let snapshot={parentPassword:{configured:true,revision:1},students:[{id:'bob',name:'Bob'},{id:'betty',name:'Betty'},{id:'billy',name:'Billy'}],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
 let state={revision:0,step:1,completed:false,features:{},contentChoices:{},catalog:{version:1}},failSearch=false,loseReply=false,failChild=null;
-let failPlanRead=false,failProgress=false;
+let failPlanRead=false,failPlanSave=false,failProgress=false;
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');
  if(url.pathname==='/'){
   res.setHeader('Content-Type','text/html');return res.end(`<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/guard-admin/base.css"><style>body{font:16px Arial,sans-serif}button,input{font:inherit}</style></head><body><section id="tab-overview"><div class="tab-header"></div></section><script src="/guard-admin/lucide.min.js"></script><script type="module">
   document.body.append(Object.assign(document.createElement('section'),{id:'tab-calendar'}));
+  document.body.append(Object.assign(document.createElement('section'),{id:'tab-family-games'}));
   import {setupParentStart} from '/guard-admin/cloud-parent-start.js';let snapshot=await fetch('/snapshot').then(r=>r.json());
   const refresh=async()=>{snapshot=await fetch('/snapshot').then(r=>r.json());};
   const mutate=async(action,data)=>{const r=await fetch('/bridge',{method:'POST',body:JSON.stringify({action,...data})}),value=await r.json();if(!r.ok)throw Error(value.error);await refresh();return value;};
@@ -32,6 +33,7 @@ const server=http.createServer(async(req,res)=>{
    return res.end(JSON.stringify({rulesRevision:snapshot.rules.revision,features:{},media:{},requirements:[]}));
   }
   if(input.action==='save-subjects'){
+   if(failPlanSave){failPlanSave=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not save activities.'}));}
    assert.equal(input.revision,snapshot.rules.revision);
    planWrites.push(input);snapshot.rules.subjects=input.subjects;snapshot.rules.revision++;
    if(Object.hasOwn(input,'dailyPlanTemplate'))snapshot.rules.dailyPlanTemplate=input.dailyPlanTemplate;
@@ -149,7 +151,7 @@ async function main(){
  await wait('!document.querySelector("[data-student-id=betty] .setup-school-list").textContent.includes("Family science")');
  assert.equal(await js('document.querySelector("[data-student-id=billy] .setup-school-list").textContent.includes("Family science")'),true);
  console.log('School onboarding passed: family Abeka, search, custom address, partial retry, existing assignments, individual edit/removal, calendar return, skip and responsive layout.');
- snapshot.schoolActivities=['typing','spelling','music'].map(module=>({module,url:'app://'+module,ready:true}));
+ snapshot.schoolActivities=['typing','spelling','music','games'].map(module=>({module,url:'app://'+module,ready:true}));
  await win.loadURL(origin);await wait('!!document.querySelector(".setup-school-family")');
  await click('Continue');await wait('!!document.querySelector("#setup-activity-audience")');
  const scopeValue=()=>js('document.querySelector("#setup-activity-audience").value');
@@ -162,56 +164,78 @@ async function main(){
  assert.equal(await scopeValue(),'all');assert.match(await scopeNote(),/Bob, Betty, Billy/);
  assert.doesNotMatch(await scopeNote(),/Archived/);assert.equal(await activity('Typing School','checked'),false);
  await activity('Typing School','click()');
+ await activity('Games','click()');
  await choose('selected');await click('Review choices');await wait('document.querySelector(".setup-error").textContent.includes("at least one child")');
  await choose('all');assert.equal(await activity('Typing School','checked'),true);
  const portals=structuredClone(snapshot.rules.subjects);
  await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
  assert.match(await js('document.querySelector(".setup-activity-audience h3").textContent'),/Bob, Betty, Billy/);
  assert.equal(planWrites.length,0);
- failProgress=true;await click('Apply to all children');
- await wait('document.querySelector(".setup-error").textContent.includes("Could not save setup progress")');
- await click('Continue');await wait('!!document.querySelector(".setup-readiness-summary")');
+ const overview=async()=>{
+  await wait('!!document.querySelector("dialog[open] .setup-activity-overview") && !document.querySelector(".setup-body").inert');
+  assert.equal(await js('document.querySelector(".setup-progress").textContent'),'Step 3 of 4');
+  assert.equal(await js('!!document.querySelector(".setup-readiness-summary")'),false);
+  assert.equal(state.step,4,'the saved wizard position still points to activities');
+ };
+ await click('Apply to all children');await overview();
+ assert.deepEqual(await js('[...document.querySelectorAll("[data-activity-child]")].map(b=>b.dataset.activityChild)'),['bob','betty','billy']);
  assert.equal(planWrites.length,1);const originalDefault=structuredClone(snapshot.rules.dailyPlanTemplate);
  const typing=()=>snapshot.rules.subjects.find(s=>s.url==='app://typing');
  assert.deepEqual(typing().assignments.filter(a=>a.active).map(a=>a.studentId),['bob','betty','billy']);
  assert.deepEqual(snapshot.rules.subjects.filter(s=>s.isSchoolPortal),portals);
- // Turn an activity off for just Betty, then reload to check the persisted exception.
- const editBetty=async()=>{
-  await js(`[...document.querySelectorAll('.parent-start-readiness')].find(s=>s.querySelector('h3').textContent==='Betty').querySelectorAll('button').forEach(b=>{if(b.textContent==='Edit activity choices')b.click()})`);
-  await wait('document.querySelector("#setup-activity-audience")?.value==="betty" && !document.querySelector(".setup-body").inert');
+ await click('Choose games for each child');await wait('document.querySelector("dialog").dataset.setupSection==="family-games"');
+ await click('Back to setup');await overview();
+ const editChild=async name=>{
+  await click('Edit '+name+'’s activities');
+  await wait(`document.querySelector('.setup-child-activities-title')?.textContent===${JSON.stringify(name+'’s activities')} && !document.querySelector('.setup-body').inert`);
  };
- await editBetty();assert.equal(await activity('Typing School','checked'),true);
+ failPlanRead=true;await click('Edit Betty’s activities');
+ await wait('document.querySelector(".setup-error").textContent.includes("Could not load activities")');
+ await overview();assert.equal(planWrites.length,1);
  for(const width of [1280,390,320]){
   win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));
-  assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1 && document.querySelector("#setup-activity-audience").getBoundingClientRect().right<=innerWidth'));
+  assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1 && [...document.querySelectorAll("[data-activity-child]")].every(b=>b.getBoundingClientRect().right<=innerWidth)'));
  }
+ await editChild('Betty');assert.equal(await activity('Typing School','checked'),true);
  const others=()=>typing().assignments.filter(a=>a.studentId!=='betty');
  const oldOthers=structuredClone(others());
  await activity('Typing School','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
  assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Betty');assert.equal(planWrites.length,1);
- await click('Save for Betty');await wait('!!document.querySelector(".setup-readiness-summary")');
+ assert.match(await js('document.querySelector(".parent-start-plan-summary").textContent'),/Turn off.*Typing School/);
+ failPlanSave=true;await click('Save for Betty');await wait('document.querySelector(".setup-error").textContent.includes("Could not save activities")');
+ assert.equal(planWrites.length,1);await click('Save for Betty');await overview();
  assert.equal(planWrites.length,2);assert.ok(!Object.hasOwn(planWrites[1],'dailyPlanTemplate'));
  assert.deepEqual(snapshot.rules.dailyPlanTemplate,originalDefault);assert.deepEqual(others(),oldOthers);
  assert.equal(typing().assignments.find(a=>a.studentId==='betty').active,false);
- await editBetty();assert.equal(await activity('Typing School','checked'),false);
- failPlanRead=true;await js(`{const select=document.querySelector('#setup-activity-audience');select.value='bob';select.dispatchEvent(new Event('change'));}`);
- await wait('document.querySelector(".setup-error").textContent.includes("Could not load activities")');
- assert.equal(await scopeValue(),'betty');assert.equal(await activity('Typing School','checked'),false);
- await choose('bob');assert.equal(await activity('Typing School','checked'),true);
+ await click('Save and close');await wait('!document.querySelector("dialog[open]")');
+ await js('guide.open()');await overview();
+ await editChild('Betty');assert.equal(await activity('Typing School','checked'),false);
+ await activity('Typing School','click()');await click('Cancel edits');await overview();
+ await editChild('Bob');assert.equal(await activity('Typing School','checked'),true);
+ await activity('Spelling','click()');await activity('Spelling','click()');
+ await click('Done');await overview();assert.equal(planWrites.length,2);
+ await click('Edit activities for everyone');assert.equal(await scopeValue(),'all');
  await choose('selected');
  await js(`for(const input of [...document.querySelectorAll('.setup-audience-children input')].slice(0,2))input.click()`);
  await activity('Spelling','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
  assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Bob, Betty');
- await click('Apply to 2 children');await wait('!!document.querySelector(".setup-readiness-summary")');
+ await click('Apply to 2 children');await overview();
  assert.deepEqual(snapshot.rules.subjects.find(s=>s.url==='app://spelling').assignments.filter(a=>a.active).map(a=>a.studentId),['bob','betty']);
  assert.deepEqual(snapshot.rules.dailyPlanTemplate,originalDefault);
  const allAssignments=structuredClone(snapshot.rules.subjects);
- await click('Back');await wait('!!document.querySelector("#setup-activity-audience")');assert.equal(await scopeValue(),'default');
+ await click('Edit activities for everyone');await choose('default');
  await activity('Spelling','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
- await click('Save family default');await wait('!!document.querySelector(".setup-readiness-summary")');
+ await click('Save family default');await overview();
  assert.deepEqual(snapshot.rules.subjects,allAssignments);
  assert.equal(snapshot.rules.dailyPlanTemplate.activities.find(a=>a.key==='module:spelling').enabled,true);
- console.log('Activity scope passed: family-wide save, individual override, selected siblings, template only, archived children, review before save and responsive layouts.');
+ const savedCount=planWrites.length;
+ failProgress=true;await click('Continue to computer setup');
+ await wait('document.querySelector(".setup-error").textContent.includes("Could not save setup progress")');await overview();
+ await click('Continue to computer setup');await wait('!!document.querySelector(".setup-readiness-summary")');
+ assert.equal(state.step,7);assert.equal(planWrites.length,savedCount);
+ await js(`[...document.querySelectorAll('.parent-start-readiness')].find(s=>s.querySelector('h3').textContent==='Betty').querySelectorAll('button').forEach(b=>{if(b.textContent==='Edit activity choices')b.click()})`);
+ await wait('document.querySelector(".setup-child-activities-title")?.textContent==="Betty’s activities"');
+ console.log('Activity setup passed: apply to all, personalize on step three, cancel, resume, save retries, subset and default scopes, responsive layouts and explicit transition to computer setup.');
  win.destroy();server.close();app.exit(0);
 }
 main().catch(error=>{console.error(error);server.close();app.exit(1);});
