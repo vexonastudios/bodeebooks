@@ -42,4 +42,7 @@
 .setup-school-review{display:grid;gap:12px;border:1px solid #a78bfa55;background:#a78bfa09;border-radius:12px;padding:14px}
 .setup-school-preview,.setup-school-web-search{color:#c4b5fd;font-size:.86rem;overflow-wrap:anywhere}
 .setup-school-form>[data-error=true]{color:#fda4af}
+.setup-child-entry-actions{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.setup-child-entry-actions .btn{max-width:100%;min-height:44px;white-space:normal}
+.setup-child-entry-actions .btn span,.setup-manual-children .setup-child{min-width:0;overflow-wrap:anywhere}
 @media(max-width:700px){.setup-school-results{grid-template-columns:1fr}.setup-school-site{align-items:flex-start;flex-direction:column}.setup-school-actions .btn{min-height:44px}.setup-school-form{padding:14px}.setup-school-search>.btn{width:100%}.setup-school-result{flex-wrap:wrap}}

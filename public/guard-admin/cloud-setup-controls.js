@@ -28,32 +28,70 @@ export function lockControls(root) {
   controls.forEach(([element])=>{element.disabled=true;});
   return ()=>controls.forEach(([element,disabled])=>{element.disabled=disabled;});
 }
-export function inlineChildren({ host, getSnapshot, mutate, onError }) {
-  const list = node('div'), editor = node('div', '', 'setup-inline-fields');
+export function inlineChildren({ host, getSnapshot, mutate, onError, onDraftChange }) {
+  const savedHeading = node('h3', 'Saved children'), list = node('div');
+  const entry = node('section'), editor = node('div', '', 'setup-inline-fields');
   const name = setupField('Child’s first name or nickname', 'childName'), grade = setupField('Grade (optional)', 'childGrade');
   const nameHint = node('p', 'This name appears on your child’s BodeeGuard profile.', 'setup-copy');
   nameHint.id = 'child-name-hint-' + crypto.randomUUID();
   name.input.setAttribute('aria-describedby', nameHint.id);
   name.input.placeholder = 'e.g., Bob';
   name.input.maxLength = 80; grade.input.maxLength = 30;
-  const add = node('button', 'Add child', 'btn btn-primary'); add.type = 'button';
+  const openButton = node('button', '', 'btn btn-secondary'), openLabel = node('span');
+  const saveButton = node('button', '', 'btn btn-primary'), saveLabel = node('span', 'Save child');
+  const cancelButton = node('button', 'Cancel entry', 'btn btn-secondary');
+  const cancelIcon = node('i', '', 'setup-icon'); cancelIcon.dataset.lucide = 'x'; cancelIcon.setAttribute('aria-hidden', 'true');
+  cancelButton.prepend(cancelIcon);
+  openButton.append(openLabel); saveButton.append(saveLabel);
+  for (const button of [openButton, saveButton, cancelButton]) button.type = 'button';
   let pending = null;
-  const renderList = () => { list.replaceChildren(); for (const child of getSnapshot().students.filter(s => !s.archived_at)) list.append(node('p', `${child.name}${child.grade ? ` · Grade ${child.grade}` : ''}`, 'setup-child')); };
+  function renderList() {
+    const children = getSnapshot().students.filter(child => !child.archived_at);
+    savedHeading.hidden = children.length === 0;
+    openLabel.textContent = children.length ? 'Add another child' : 'Add a child';
+    list.replaceChildren(...children.map(child => node('p', `${child.name}${child.grade ? ` · Grade ${child.grade}` : ''}`, 'setup-child')));
+  }
+  function updateDraft() {
+    const childName = name.input.value.trim();
+    saveLabel.textContent = childName ? 'Save ' + childName : 'Save child';
+    saveButton.disabled = !childName;
+    onDraftChange?.();
+  }
+  function showEntry() {
+    openButton.hidden = true; entry.hidden = false; updateDraft(); name.input.focus();
+  }
+  function closeEntry() {
+    name.input.value = ''; grade.input.value = '';
+    entry.hidden = true; openButton.hidden = false;
+    updateDraft();
+  }
+  function hasDraft() { return Boolean(name.input.value.trim() || grade.input.value.trim()); }
   function save() {
     if (pending) return pending;
-    if (!name.input.value.trim() && !grade.input.value.trim()) return Promise.resolve();
-    name.input.required = true;
-    if (!name.input.reportValidity()) return Promise.reject(Error('Enter your child’s first name or nickname.'));
-    add.disabled = true; name.input.disabled=true; grade.input.disabled=true;
+    if (!hasDraft()) return Promise.resolve();
+    const child = { name: name.input.value.trim(), grade: grade.input.value.trim() };
+    if (!child.name) return Promise.reject(Error('Enter a first name or nickname, or choose Cancel entry.'));
+    const unlock = lockControls(entry);
     pending = (async () => {
-      await mutate('add-student', { name: name.input.value.trim(), grade: grade.input.value.trim() });
-      name.input.value = ''; grade.input.value = ''; name.input.required = false; renderList();
-    })().finally(() => { pending = null; add.disabled = false; name.input.disabled=false; grade.input.disabled=false; });
+      await mutate('add-student', child);
+      renderList(); closeEntry();
+    })().finally(() => { pending = null; unlock(); });
     return pending;
   }
-  add.onclick = () => { if (!name.input.value.trim()) { name.input.required = true; name.input.reportValidity(); return; } void save().catch(onError); };
-  editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); add.click(); } });
-  editor.append(name.label, grade.label, add); renderList(); host.append(list, nameHint, editor); save.refresh = renderList; return save;
+  openButton.onclick = showEntry;
+  cancelButton.onclick = () => { closeEntry(); openButton.focus(); };
+  saveButton.onclick = () => { void save().then(() => openButton.focus()).catch(onError); };
+  editor.addEventListener('input', updateDraft);
+  editor.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.isComposing && event.target.tagName === 'INPUT') { event.preventDefault(); saveButton.click(); }
+  });
+  const actions = node('div', '', 'setup-child-entry-actions'); actions.append(saveButton, cancelButton);
+  editor.append(name.label, grade.label, actions);
+  entry.append(node('h3', 'New child'), nameHint, editor);
+  host.append(savedHeading, list, openButton, entry); renderList();
+  entry.hidden = list.childElementCount > 0; openButton.hidden = !entry.hidden; saveButton.disabled = true;
+  save.refresh = renderList; save.open = showEntry; save.hasDraft = hasDraft;
+  return save;
 }
 export {inlineSchool} from './cloud-school-picker.js?v=20261103-schools1';
 // Reuse working dashboard controls in a guide substep; keep the guide and its

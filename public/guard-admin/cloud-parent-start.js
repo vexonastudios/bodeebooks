@@ -20,18 +20,20 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
   const later=button('Save and close',()=>save(true)),back=button('Back',()=>move(-1)),next=button('Continue',()=>move(1),true);
+  const nextLabel=next.firstChild;
   const dismiss=button('Close',()=>{if(!busy&&!promptBusy)dialog.close();});dismiss.classList.add('setup-dismiss');
   dismiss.setAttribute('aria-label','Close setup without saving');dismiss.title='Saved changes are kept. Unsaved edits will be discarded.';
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{draft=null;render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null,reviewing=false;
   let choreChoice=null,choreRequest=null,promptBusy=false,unlockPrompt=null,manualChildren=null,passwordControl=null,unlockPassword=null;
+  let manualEditor=null;
   const familyPrompt=createFamilyPrompt({getSnapshot,
     previewDraft:input=>request('preview-family-prompt',input),
     confirmDraft:async input=>{const result=await request('confirm-family-prompt',input);await refresh();return result;},
     onBusy:value=>{promptBusy=value;if(value){unlockPrompt=lockControls(footer);dismiss.disabled=true;body.querySelector('.setup-parent-password')?.setAttribute('inert','');if(manualChildren)manualChildren.inert=true;}else{unlockPrompt?.();unlockPrompt=null;dismiss.disabled=false;body.querySelector('.setup-parent-password')?.removeAttribute('inert');if(manualChildren)manualChildren.inert=false;status();}},
-    onSaved:()=>{manualChildren?.refresh?.();updateWelcome();},
-    onManualEntry:()=>{if(manualChildren){manualChildren.open=true;manualChildren.querySelector('[name=childName]')?.focus();}}
+    onSaved:()=>{manualEditor?.refresh();updateWelcome();},
+    onManualEntry:()=>{if(manualChildren){manualChildren.open=true;manualEditor?.open();}}
   });
   const children=()=>getSnapshot()?.students.filter(child=>!child.archived_at)||[];
   const overview = document.getElementById('tab-overview');
@@ -63,10 +65,12 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   function status() {
     progress.textContent=`Step ${index+1} of ${steps.length}`;back.disabled=index===0;
     if (index === 3) {
-      next.textContent = canFinish() ? 'Finish setup & hide reminder'
+      nextLabel.textContent = canFinish() ? 'Finish setup & hide reminder'
         : hasWorkingComputer(getSnapshot(), state) ? 'Done for now' : 'Save & finish later';
+    } else if (index === 0 && manualEditor?.hasDraft()) {
+      nextLabel.textContent = 'Save child & continue';
     } else {
-      next.textContent = index === 2 ? (reviewing ? 'Save plan & continue' : 'Review choices') : 'Continue';
+      nextLabel.textContent = index === 2 ? (reviewing ? 'Save plan & continue' : 'Review choices') : 'Continue';
     }
   }
   async function open(startAt) {
@@ -285,7 +289,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(section);
   }
   function render() {
-    passwordControl?.clear();passwordControl=null;familyPrompt.unmount();manualChildren=null;footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
+    passwordControl?.clear();passwordControl=null;familyPrompt.unmount();manualChildren=null;manualEditor=null;footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
     if(index===0){
       passwordControl=setupPassword({host:body,getSnapshot,mutate,refresh,
         onBusy:value=>{busy=value;if(value){unlockPassword=lockControls(footer);dismiss.disabled=true;body.querySelector('.family-prompt')?.setAttribute('inert','');if(manualChildren)manualChildren.inert=true;}else{unlockPassword?.();unlockPassword=null;dismiss.disabled=false;body.querySelector('.family-prompt')?.removeAttribute('inert');if(manualChildren)manualChildren.inert=false;status();}},
@@ -294,8 +298,9 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       familyPrompt.mount(body);pending.push(()=>familyPrompt.flush());
       manualChildren=node('details','','setup-manual-children');manualChildren.append(node('summary','Add children one at a time'));
       const manualHost=node('div');manualChildren.append(manualHost);body.append(manualChildren);
-      const saveChild=inlineChildren({host:manualHost,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;}});
-      manualChildren.refresh=saveChild.refresh;pending.push(saveChild);
+      manualEditor=inlineChildren({host:manualHost,getSnapshot,mutate,onError:failure=>{error.textContent=failure.message;},
+        onDraftChange:()=>{if(!busy&&!promptBusy){error.textContent='';status();}}});
+      pending.push(manualEditor);
     }
     else if(index===1){
       body.append(node('p','Add as many websites as each child needs: math on one site, grammar on another. Not ready, or using books? Continue without adding websites and come back later.','setup-copy'));

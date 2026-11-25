@@ -6,6 +6,7 @@ app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'bg-quick-setup-')))
 const root=path.resolve(__dirname,'..');
 let snapshot={parentPassword:{configured:true,revision:1},students:[],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
 let state={revision:0,step:0,completed:false,features:{},contentChoices:{},catalog:{version:1}},previews=0,confirms=[],lostReply=true;
+let failNextManualSave=false;
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');
  if(url.pathname==='/'){
@@ -29,7 +30,10 @@ const server=http.createServer(async(req,res)=>{
    if(lostReply){lostReply=false;res.writeHead(503);res.end(JSON.stringify({error:'Connection lost'}));return;}
    res.end(JSON.stringify({createdCount:1,replayed:true}));return;
   }
-  if(input.action==='add-student'){snapshot.students.push({id:'manual',name:input.name,grade:input.grade});res.end('{}');return;}
+  if(input.action==='add-student'){
+   if(failNextManualSave){failNextManualSave=false;res.writeHead(503);res.end('{}');return;}
+   snapshot.students.push({id:'manual-'+snapshot.students.length,name:input.name,grade:input.grade});res.end('{}');return;
+  }
   res.end('{}');return;
  }
  if(/^\/guard-admin\/[a-z0-9.-]+$/.test(url.pathname)){const file=path.join(root,'public',url.pathname);if(fs.existsSync(file)){res.setHeader('Content-Type',file.endsWith('.css')?'text/css':'text/javascript');res.end(fs.readFileSync(file));return;}}
@@ -43,23 +47,25 @@ async function main(){
  const js=async s=>{try{return await win.webContents.executeJavaScript(s,true);}catch(e){throw Error("At: "+s+" / "+e.message);}};
  const wait=async expr=>{for(let i=0;i<100;i++){if(await js(expr))return;await new Promise(r=>setTimeout(r,30));}throw Error('Timed out '+expr);};
  const click=text=>js(`[...document.querySelectorAll('dialog[open] button')].find(b=>b.textContent.trim()===${JSON.stringify(text)}&&!b.disabled).click()`);
+ const typeField=(field,value)=>js(`{const input=document.querySelector('[name="'+${JSON.stringify(field)}+'"]');input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('input',{bubbles:true}));}`);
  await win.loadURL(origin);await wait('document.querySelector(".family-prompt textarea")');
  assert.equal(await js('document.querySelector(".setup-progress").textContent'),'Step 1 of 4');
  assert.equal(await js('document.querySelector(".setup-manual-children").open'),false);
- await js(`document.querySelector('.setup-manual-children').open=true;document.querySelector('[name=childName]').value='Manual draft';document.querySelector('textarea').value='Mia is in grade 3 with Abeka';document.querySelector('textarea').dispatchEvent(new Event('input'));`);
+ await js("document.querySelector('.setup-manual-children').open=true");await typeField('childName','Manual draft');
+ await js(`document.querySelector('textarea').value='Mia is in grade 3 with Abeka';document.querySelector('textarea').dispatchEvent(new Event('input'));`);
  await click('Create family draft');
  assert.equal(await js('document.querySelector(".setup-dismiss").disabled'),true);
  await js('document.querySelector("dialog").dispatchEvent(new Event("cancel",{cancelable:true}))');assert.equal(await js('document.querySelector("dialog").open'),true);
  assert.equal(await js('[...document.querySelectorAll("footer button")].every(b=>b.disabled)'),true);
  await wait('document.querySelector(".family-prompt-review")');
  assert.equal(confirms.length,0);assert.equal(previews,1);
- await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Confirm your family draft")');
+ await click('Save child & continue');await wait('document.querySelector(".setup-error").textContent.includes("Confirm your family draft")');
  await click('Confirm & add children');await wait('document.querySelector(".family-prompt-status").textContent.includes("Retry")');
  await click('Retry same save');await wait('document.querySelector(".family-prompt-status").textContent.includes("already saved")');
  assert.deepEqual(confirms[0],confirms[1]);assert.equal(snapshot.students.length,1);
  assert.equal(await js('document.querySelector("[name=childName]").value'),'Manual draft','quick save preserves manual draft');
  assert.match(await js('document.querySelector(".setup-manual-children").textContent'),/Mia/);
- await js('document.querySelector("[name=childName]").value=""');
+ await typeField('childName','');
  for(const width of [1200,390,320]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,50));assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1'));}
  await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Add school websites (optional)"');
  assert.match(await js('document.querySelector(".setup-school-form").textContent'),/Mia/);assert.equal(await js('document.querySelector(".setup-school-editor").hidden'),true);
@@ -77,11 +83,25 @@ async function main(){
  assert.equal(await js('document.querySelector("textarea").value'),'');assert.equal(confirms.length,2,'manual fallback never confirms a draft');
  assert.equal(await js('document.querySelector("[name=childName]").labels[0].textContent'),'Child’s first name or nickname');
  assert.match(await js('document.getElementById(document.querySelector("[name=childName]").getAttribute("aria-describedby")).textContent'),/BodeeGuard profile/);
- await js('document.querySelector("[name=childName]").value="Bob"');await click('Add child');
- await wait('document.querySelector(".setup-manual-children .setup-child:last-child")?.textContent==="Bob"');
- assert.equal(snapshot.students.at(-1).name,'Bob');
+ for (const [name,grade] of [['Bob','4'],['Ann','10']]) {
+  await typeField('childName',name);await typeField('childGrade',grade);await click('Save '+name);
+  await wait(`document.querySelector('.setup-manual-children .setup-child:last-child')?.textContent===${JSON.stringify(name+' · Grade '+grade)}`);
+  assert.equal(await js('document.querySelector("[name=childName]").checkVisibility()'),false);
+  await click('Add another child');
+ }
+ await typeField('childName','Tom');await typeField('childGrade','5');await typeField('childName','');
+ await click('Save and close');await wait('document.querySelector(".setup-error").textContent.includes("Cancel entry")');
+ await click('Cancel entry');assert.equal(await js('document.querySelector("[name=childName]").checkVisibility()'),false);
+ assert.deepEqual(snapshot.students.map(s=>s.name),['Mia','Bob','Ann']);
+ await click('Add another child');assert.equal(await js('document.querySelector("[name=childGrade]").value'),'');
+ await typeField('childName','Tom');await typeField('childGrade','5');
  await new Promise(r=>setTimeout(r,150));
  fs.mkdirSync(path.join(root,'.tmp/quick-setup'),{recursive:true});fs.writeFileSync(path.join(root,'.tmp/quick-setup/phone.png'),(await win.webContents.capturePage()).toPNG());
+ failNextManualSave=true;
+ await click('Save child & continue');await wait('document.querySelector(".setup-error").textContent.includes("Save failed")');
+ assert.equal(await js('document.querySelector("[name=childName]").value'),'Tom');
+ await click('Save child & continue');await wait('document.querySelector("#parent-start-title").textContent==="Add school websites (optional)"');
+ assert.deepEqual(snapshot.students.map(s=>[s.name,s.grade]),[['Mia','3'],['Bob','4'],['Ann','10'],['Tom','5']]);
  console.log('Active quick setup passed: first-step mount, server draft, review, guarded navigation, safe retry, manual preservation, school handoff, widths and microphone cleanup.');
  win.destroy();server.close();app.exit(0);
 }
