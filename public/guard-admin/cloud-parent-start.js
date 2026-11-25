@@ -1,4 +1,4 @@
-import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261103-schools1';
+import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261124-family-schools';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
 import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } from './cloud-parent-readiness.js?v=20261104-daily-controls1';
@@ -15,7 +15,7 @@ const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${p
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261124-password-fields';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261124-family-schools';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -303,10 +303,21 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       pending.push(manualEditor);
     }
     else if(index===1){
-      body.append(node('p','Add as many websites as each child needs: math on one site, grammar on another. Not ready, or using books? Continue without adding websites and come back later.','setup-copy'));
-      body.append(node('p','Added websites start as weekday schoolwork. You can adjust their days and requirements in Daily Plan. Sign into each school later on the child’s computer.','setup-note'));
-      for(const child of children())pending.push(inlineSchool({host:body,student:child,getSnapshot,mutate,refresh,searchSites:input=>request('find-school-sites',input),onChange:()=>{error.textContent='';},onError:failure=>{error.textContent=failure.message;}}));
-      const optional=node('details');optional.append(node('summary','School hours and days off (optional)'),button('School calendar',()=>section('calendar')));body.append(optional);
+      const roster=children(),pickers=[];
+      const options={host:body,getSnapshot,mutate,refresh,searchSites:input=>request('find-school-sites',input),
+        onChange:()=>{error.textContent='';},onError:failure=>{error.textContent=failure.message;},
+        onWrite:(writing,active)=>{
+          busy=writing;footer.inert=writing;dismiss.disabled=writing;
+          for(const item of body.children)if(item!==active)item.inert=writing;
+        },
+        afterWrite:()=>pickers.forEach(picker=>picker.refreshList())
+      };
+      if(roster.length>1)pickers.push(inlineSchool({...options,students:roster}));
+      for(const student of roster)pickers.push(inlineSchool({...options,student,quickAbeka:roster.length===1}));
+      pending.push(...pickers);
+      const calendar=button('Set school calendar',()=>section('calendar'));
+      const icon=node('i','','setup-icon');icon.dataset.lucide='calendar-days';icon.setAttribute('aria-hidden','true');calendar.prepend(icon);
+      body.append(calendar);
     }else if(index===2){if(reviewing)reviewPlan();else activityPicker();}
     else { readiness(); body.append(node('p','If you enabled Family Games, choose Access & game time next to a child, or Settings for all children, then review individual games. Games are allowed until you turn them off.','setup-note'),button('Choose games for each child',()=>section('family-games'))); }
     if(index===2||index===3&&!state.chores?.chosen&&!state.completed)choreOptions();

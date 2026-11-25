@@ -41,7 +41,12 @@
 .setup-school-heading,.setup-school-actions,.setup-school-search{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .setup-school-heading{justify-content:space-between;margin-bottom:12px}
 .setup-school-heading h3{margin:0}
-.setup-school-count{font-size:.8rem;color:#b6aed1;border:1px solid #ffffff18;padding:4px 9px;border-radius:99px}
+.setup-school-family{border-color:#459e83;background:#34d39909}
+.setup-school-form>.setup-school-heading{margin:0}
+.setup-school-form>.setup-school-heading h3{margin:0}
+.setup-school-form>.setup-school-list:not([hidden]),.setup-school-form>.setup-school-editor:not([hidden]){margin-top:12px}
+.setup-school-form>.setup-note:empty{display:none}
+.setup-school-family .btn:disabled{opacity:.75}
 .setup-school-list{display:grid;gap:10px;margin-bottom:12px}
 .setup-school-site,.setup-school-result{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #ffffff16;border-radius:12px;background:#ffffff04;min-width:0}
 .setup-school-site>div:first-child,.setup-school-result>div:first-child{min-width:0}
