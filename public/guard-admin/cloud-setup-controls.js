@@ -30,7 +30,11 @@ export function lockControls(root) {
 }
 export function inlineChildren({ host, getSnapshot, mutate, onError }) {
   const list = node('div'), editor = node('div', '', 'setup-inline-fields');
-  const name = setupField('Child’s name', 'childName'), grade = setupField('Grade (optional)', 'childGrade');
+  const name = setupField('Child’s first name or nickname', 'childName'), grade = setupField('Grade (optional)', 'childGrade');
+  const nameHint = node('p', 'This name appears on your child’s BodeeGuard profile.', 'setup-copy');
+  nameHint.id = 'child-name-hint-' + crypto.randomUUID();
+  name.input.setAttribute('aria-describedby', nameHint.id);
+  name.input.placeholder = 'e.g., Bob';
   name.input.maxLength = 80; grade.input.maxLength = 30;
   const add = node('button', 'Add child', 'btn btn-primary'); add.type = 'button';
   let pending = null;
@@ -39,7 +43,7 @@ export function inlineChildren({ host, getSnapshot, mutate, onError }) {
     if (pending) return pending;
     if (!name.input.value.trim() && !grade.input.value.trim()) return Promise.resolve();
     name.input.required = true;
-    if (!name.input.reportValidity()) return Promise.reject(Error('Enter your child’s name.'));
+    if (!name.input.reportValidity()) return Promise.reject(Error('Enter your child’s first name or nickname.'));
     add.disabled = true; name.input.disabled=true; grade.input.disabled=true;
     pending = (async () => {
       await mutate('add-student', { name: name.input.value.trim(), grade: grade.input.value.trim() });
@@ -49,7 +53,7 @@ export function inlineChildren({ host, getSnapshot, mutate, onError }) {
   }
   add.onclick = () => { if (!name.input.value.trim()) { name.input.required = true; name.input.reportValidity(); return; } void save().catch(onError); };
   editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); add.click(); } });
-  editor.append(name.label, grade.label, add); renderList(); host.append(list, editor); save.refresh = renderList; return save;
+  editor.append(name.label, grade.label, add); renderList(); host.append(list, nameHint, editor); save.refresh = renderList; return save;
 }
 export {inlineSchool} from './cloud-school-picker.js?v=20261103-schools1';
 // Reuse working dashboard controls in a guide substep; keep the guide and its

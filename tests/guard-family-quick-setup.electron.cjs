@@ -63,7 +63,7 @@ async function main(){
  for(const width of [1200,390,320]){win.setContentSize(width,900);await new Promise(r=>setTimeout(r,50));assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1'));}
  await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Add school websites (optional)"');
  assert.match(await js('document.querySelector(".setup-school-form").textContent'),/Mia/);assert.equal(await js('document.querySelector(".setup-school-editor").hidden'),true);
- await click('Back');await wait('document.querySelector(".family-prompt")');await click('Add more children');await click('Speak instead');
+ await click('Back');await wait('document.querySelector(".family-prompt")');await click('Add more children');await click('Use microphone');
  await js('voice.onresult({results:[[{transcript:"June is in kindergarten"}]]})');await click('Close');await wait('!document.querySelector("dialog[open]")');
  await wait('window.aborts>0');await js('guide.open(0)');await wait('document.querySelector("dialog[open] textarea")');
  assert.equal(await js('document.querySelector("textarea").value'),'June is in kindergarten');
@@ -75,6 +75,11 @@ async function main(){
  await click('Add children one at a time');
  assert.equal(await js('document.querySelector(".setup-manual-children").open'),true);assert.equal(await js('document.activeElement.name'),'childName');
  assert.equal(await js('document.querySelector("textarea").value'),'');assert.equal(confirms.length,2,'manual fallback never confirms a draft');
+ assert.equal(await js('document.querySelector("[name=childName]").labels[0].textContent'),'Child’s first name or nickname');
+ assert.match(await js('document.getElementById(document.querySelector("[name=childName]").getAttribute("aria-describedby")).textContent'),/BodeeGuard profile/);
+ await js('document.querySelector("[name=childName]").value="Bob"');await click('Add child');
+ await wait('document.querySelector(".setup-manual-children .setup-child:last-child")?.textContent==="Bob"');
+ assert.equal(snapshot.students.at(-1).name,'Bob');
  await new Promise(r=>setTimeout(r,150));
  fs.mkdirSync(path.join(root,'.tmp/quick-setup'),{recursive:true});fs.writeFileSync(path.join(root,'.tmp/quick-setup/phone.png'),(await win.webContents.capturePage()).toPNG());
  console.log('Active quick setup passed: first-step mount, server draft, review, guarded navigation, safe retry, manual preservation, school handoff, widths and microphone cleanup.');
