@@ -48,13 +48,13 @@ export function PhotoPicker({photos,onChange,disabled,onBusy,followup=false}:{ph
   }
   const blocked=disabled||working||photos.length>=3;
   return <section className={styles.picker} aria-label={followup?'Add photos to your reply':'Attach photos'}>
-    <h3><Camera size={20}/>{followup?'Add a photo':'Show us what happened'}</h3>
-    <p>{followup?'A photo can help us understand the details.':'Take a photo of your child’s screen, especially the error message, or attach a screenshot.'}</p>
+    {followup&&<h3><Camera size={20}/> Add a photo</h3>}
+
     <div className={styles.choices}>
       <label htmlFor={camera} className={styles.choice} aria-disabled={blocked}><Camera size={19}/> Take a photo<input id={camera} className={styles.file} type="file" accept="image/*" capture="environment" disabled={blocked} onChange={e=>void choose(e.currentTarget)}/></label>
       <label htmlFor={gallery} className={styles.choice} aria-disabled={blocked}><ImagePlus size={19}/> Choose photos<input id={gallery} className={styles.file} type="file" accept="image/*" multiple disabled={blocked} onChange={e=>void choose(e.currentTarget)}/></label>
     </div>
-    <small>Optional · up to 3 photos. Keep the screen readable and leave out passwords or other private information.</small>
+    <small>Up to 3 photos. Leave out passwords and private details.</small>
     {working&&<p role="status"><LoaderCircle size={16}/> Preparing photos…</p>}
     {error&&<p role="alert" className={styles.error}>{error}</p>}
     {!!photos.length&&<div className={styles.grid}>{photos.map((photo,index)=><Preview key={photo.id} src={'data:image/jpeg;base64,'+photo.data} label={'Photo '+(index+1)}><button type="button" className={styles.remove} disabled={disabled||working} aria-label={'Remove photo '+(index+1)} onClick={()=>onChange(photos.filter(p=>p.id!==photo.id))}><Trash2 size={15}/> Remove</button></Preview>)}</div>}

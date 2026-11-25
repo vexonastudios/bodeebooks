@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       .replace(/(<div id="admin-badge-name"[^>]*>)[\s\S]*?(<\/div>)/, (_match, start, end) => `${start}${escapeHtml(name)}${end}`)
       .replace(/<section class="tab-content" id="tab-coloring-studio"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-coloring-studio" aria-label="Coloring Studio"><div id="cloud-coloring-studio"></div></section>')
       .replace(/<section class="tab-content" id="tab-math-coach"[\s\S]*?<\/section>/, '<section class="tab-content" id="tab-math-coach" aria-label="Math Coach"><div id="cloud-math-coach"></div></section>')
-      .replace(/<script type="module" src="\/guard-admin\/cloud-workspace\.js(?:\?[^"]*)?"><\/script>/, '<script type="module" src="/guard-admin/cloud-workspace.js?v=20261125-parent-questions"></script>')
+      .replace(/<script type="module" src="\/guard-admin\/cloud-workspace\.js(?:\?[^"]*)?"><\/script>/, '<script type="module" src="/guard-admin/cloud-workspace.js?v=20261125-report-inbox"></script>')
       .replace('href="/guard-admin/cloud-abeka-assessments.css"', 'href="/guard-admin/cloud-abeka-assessments.css?v=20261125-report-locks"')
       .replace('src="/guard-admin/cloud-school-schedule.js"', 'src="/guard-admin/cloud-school-schedule.js?v=20261125-term"')
       .replace('href="/guard-admin/cloud-school-hours.css"', 'href="/guard-admin/cloud-school-hours.css?v=20261124-calendar"')

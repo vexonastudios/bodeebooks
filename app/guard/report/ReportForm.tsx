@@ -100,38 +100,44 @@ export default function ReportForm({release}:{release:string}){
   const selectedSetup=setup?{...setup,students:setup.students.filter(s=>!draft.studentIds.length||draft.studentIds.includes(s.id)),devices:setup.devices?.filter(d=>!draft.studentIds.length||!!d.studentId&&draft.studentIds.includes(d.studentId)),recentErrors:setup.recentErrors?.filter(e=>!draft.studentIds.length||setup.devices?.some(d=>d.id===e.deviceId&&d.studentId&&draft.studentIds.includes(d.studentId)))}:null;
   return <main className={styles.page}><div className={styles.shell}>
     <Link href="/guard/dashboard/" className={styles.back}><ArrowLeft size={18}/> Dashboard</Link>
-    <header className={styles.header}><span className={styles.mark}><Bug size={28}/></span><div><h1>Report a bug</h1><p>Tell us what went wrong. We’ll keep the details together.</p></div></header>
+    <header className={styles.header}><span className={styles.mark}><Bug size={28}/></span><div><h1>Report a bug</h1></div></header>
     {error&&<div role="alert" className={styles.error}>{error} <Link href="/guard/sign-in/?redirect_url=%2Fguard%2Freport%2F">Sign in</Link></div>}
     {storageLimited&&<p role="status" className={styles.hint}>This browser could not save a temporary draft. Keep this page open until your report is received.</p>}
     {notice&&<div role="status" className={styles.success}><CheckCircle2 size={20}/>{notice}</div>}
-    <StudentReports onForwarded={()=>void load()}/>
     <div className={styles.layout}><section className={styles.card}>
       <form onSubmit={e=>{e.preventDefault();void submit();}}>
-        <h2>What happened?</h2>
+        <h2><label htmlFor="bug-description">What happened?</label></h2>
+        <textarea id="bug-description" rows={4} disabled={busy||photoBusy||!!pending||recording} value={draft.description} onChange={e=>change({description:e.target.value})} placeholder="What were you doing when the problem occurred?" required minLength={10} maxLength={6000}/>
         <div className={styles.voice}>
           {recording?<button type="button" className={styles.recording} onClick={stop}><Square size={18}/> Stop · {seconds}s / 90s</button>:<button type="button" disabled={busy||photoBusy||!!pending||!!clip||!voiceAvailable} onClick={()=>void record()}><Mic size={18}/> Record instead</button>}
-          <small>{voiceAvailable?'Record up to 90 seconds, then turn it into text.':'You can type below. Voice recording is available when transcription is connected.'}</small>
+          {voiceAvailable&&<small>Up to 90 seconds</small>}
         </div>
         {clip&&<div className={styles.clip}><audio controls src={clipUrl}/><p>This sends your recording to OpenAI to create an editable transcript. BodeeGuard saves your final report text, not the audio.</p><div className={styles.actions}><button type="button" disabled={busy||!!pending} onClick={()=>void transcribe()}><Mic size={18}/> Transcribe with OpenAI</button><button type="button" disabled={busy} onClick={()=>setClip(null)}><Trash2 size={18}/> Discard</button></div></div>}
         <fieldset disabled={busy||photoBusy||!!pending||recording}>
-          <label className={styles.field}>Describe the problem<textarea rows={6} value={draft.description} onChange={e=>change({description:e.target.value})} placeholder="My child was… Then they tapped… We expected… Instead…" required minLength={10} maxLength={12000}/><small>{draft.description.length.toLocaleString()} / 6,000 characters</small></label>
-          <PhotoPicker photos={photos} onChange={setPhotos} disabled={busy||photoBusy||!!pending||recording} onBusy={setPhotoBusy}/>
+
+          <details className={styles.details}><summary>Add photos{photos.length ? ` (${photos.length})` : ' (optional)'}</summary><PhotoPicker photos={photos} onChange={setPhotos} disabled={busy||photoBusy||!!pending||recording} onBusy={setPhotoBusy}/></details>
+          <details className={styles.details}><summary>Area, child and time (optional)</summary>
           <label className={styles.field}>Which area?<select value={draft.area} onChange={e=>change({area:e.target.value})}>{areas.map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
           <div className={styles.when}><Clock size={17}/><span>Date and time are recorded automatically when you send.</span><button type="button" aria-expanded={showEarlier} onClick={()=>{setShowEarlier(value=>!value);if(showEarlier)change({occurredAt:''});}}>{showEarlier?'Use submission time':'Happened earlier?'}</button></div>
           {showEarlier&&<label className={styles.field}>When did it happen? <small>Your local date and time</small><input type="datetime-local" value={draft.occurredAt} onChange={e=>change({occurredAt:e.target.value})} required/></label>}
-          {!!setup?.students.length&&<div className={styles.children}><span>Who was affected?</span><small>Leave blank for a general family report.</small><div>{setup.students.map(s=><label key={s.id}><input type="checkbox" checked={draft.studentIds.includes(s.id)} onChange={e=>change({studentIds:e.target.checked?[...draft.studentIds,s.id]:draft.studentIds.filter(id=>id!==s.id)})}/>{s.name}</label>)}</div></div>}
-          <label className={styles.consent}><input type="checkbox" checked={draft.includeSetup} onChange={e=>change({includeSetup:e.target.checked})}/><span><strong>Include setup details</strong><small>App versions, linked computers, school provider and recent error references. No passwords, messages, school files or browsing history.</small></span></label>
+          {!!setup?.students.length&&<div className={styles.children}><span>Who was affected?</span><div>{setup.students.map(s=><label key={s.id}><input type="checkbox" checked={draft.studentIds.includes(s.id)} onChange={e=>change({studentIds:e.target.checked?[...draft.studentIds,s.id]:draft.studentIds.filter(id=>id!==s.id)})}/>{s.name}</label>)}</div></div>}
+          </details>
+          <label className={styles.consent}><input type="checkbox" checked={draft.includeSetup} onChange={e=>change({includeSetup:e.target.checked})}/><span><strong>Include setup details</strong><small>App versions, computers, school provider and recent errors.</small></span></label>
           {draft.includeSetup&&<details className={styles.details}><summary><ShieldCheck size={17}/> Preview attached setup</summary>{selectedSetup?<SetupDetails setup={selectedSetup}/>:<p>{loading?'Loading setup…':'Setup preview unavailable. Retry loading, or uncheck setup details to send text only.'}</p>}<small>Parent browser, screen size, time zone and website version are included when you send.</small></details>}
         </fieldset>
         {pending&&<p className={styles.hint}>This report is ready to retry. We’ll reuse its reference to prevent a duplicate.</p>}
         <button className={styles.primary} type="submit" disabled={busy||photoBusy||recording||!!clip||!pending&&(draft.description.trim().length<10||draft.description.length>6000||draft.includeSetup&&!setup)}><Send size={18}/>{busy?'Working…':pending?'Retry sending':'Send report'}</button>
-        <p className={styles.footnote}>Visible to your family and BodeeGuard support. Please leave out passwords.</p>
+        <p className={styles.footnote}>Support will post updates in Your reports. Leave out passwords.</p>
       </form>
     </section>
-    <aside className={styles.history}><div className={styles.sectionTitle}><h2>Your reports</h2><button aria-label="Refresh reports" disabled={busy||loading} onClick={()=>void load()}><RefreshCw size={18}/></button></div>
-      {loading&&!reports.length?<p>Loading reports…</p>:!reports.length?<div className={styles.empty}><Bug size={25}/><p>Your reports and their progress will appear here.</p></div>:reports.map(r=><button className={styles.reportRow} key={r.id} disabled={busy||photoBusy} onClick={()=>void work(async()=>{setDetail(await request<ReportDetail>({action:'detail',id:r.id}));replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{statuses[r.status]}</span></span><ChevronRight size={18}/></button>)}
-      {hasMore&&<button disabled={busy} onClick={()=>void work(async()=>{const page=await request<{reports:BugReport[];hasMore:boolean}>({action:'list',offset:reports.length});setReports(value=>[...value,...page.reports]);setHasMore(page.hasMore);})}>Load earlier reports</button>}
-      {detail&&<section className={styles.detail}><h3>{detail.report.reference}</h3><p className={styles.description}>{detail.report.description}</p><span className={styles.badge}>{statuses[detail.report.status]}</span>
+    <aside className={styles.history}><StudentReports onForwarded={()=>void load()}/><div id="your-reports" className={styles.sectionTitle}><h2>Your reports</h2><button aria-label="Refresh reports" disabled={busy||loading} onClick={()=>void load()}><RefreshCw size={18}/></button></div>
+      {!detail&&(loading&&!reports.length?<p>Loading reports…</p>:!reports.length?<div className={styles.empty}><Bug size={25}/><p>No reports sent yet.</p></div>:reports.map(r=><button className={styles.reportRow} key={r.id} disabled={busy||photoBusy} onClick={()=>void work(async()=>{const opened=await request<ReportDetail>({action:'detail',id:r.id});setDetail(opened);replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);
+        if(opened.report.unreadResolutionId){
+          await request({action:'read-resolution',id:r.id,eventId:opened.report.unreadResolutionId});
+          setReports(rows=>rows.map(row=>row.id===r.id&&row.unreadResolutionId===opened.report.unreadResolutionId?{...row,unreadResolutionId:null}:row));
+        }})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{r.unreadResolutionId?'New · Resolved':statuses[r.status]}</span>{r.autoForwarded&&<small>Automatically sent from your child</small>}</span><ChevronRight size={18}/></button>))}
+      {!detail&&hasMore&&<button disabled={busy} onClick={()=>void work(async()=>{const page=await request<{reports:BugReport[];hasMore:boolean}>({action:'list',offset:reports.length});setReports(value=>[...value,...page.reports]);setHasMore(page.hasMore);})}>Load earlier reports</button>}
+      {detail&&<section className={styles.detail}><button type="button" disabled={busy||photoBusy||replyFrozen} onClick={()=>{setDetail(null);void load();}}>Back to reports</button><h3>{detail.report.reference}</h3><p className={styles.description}>{detail.report.description}</p><span className={styles.badge}>{detail.report.status==='resolved'?'Resolved by BodeeGuard support':statuses[detail.report.status]}</span>
         <SavedReportPhotos photos={detail.photos?.filter(p=>!p.eventId)}/>
         {detail.events.filter(e=>e.note||detail.photos?.some(p=>p.eventId===e.id)).map(e=><article key={e.id}><small>{e.role==='staff'?'BodeeGuard support':'Your family'} · {new Date(e.createdAt).toLocaleString()}</small><p className={styles.description}>{e.note}</p><SavedReportPhotos photos={detail.photos?.filter(p=>p.eventId===e.id)}/></article>)}
         <label className={styles.field}>Add more details<textarea rows={3} maxLength={3000} disabled={busy||replyFrozen} value={reply} onChange={e=>setReply(e.target.value)}/></label>

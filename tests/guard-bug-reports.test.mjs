@@ -61,3 +61,11 @@ test('student report review proxy keeps identity and staff approval out of clien
  await f.POST(req({action:'student-count'}));assert.equal(f.calls[1].p,'/bug-reports/pending-count');
  await f.POST(req({action:'review',id,eventId:id,revision:1,decision:'forwarded',note:'I saw it too.',householdId:'foreign',status:'resolved',actor:'staff'}));assert.deepEqual(f.calls[2],{p:'/bug-reports/'+id+'/review',body:{eventId:id,revision:1,decision:'forwarded',note:'I saw it too.'}});
 });
+test('parent report settings and resolution acknowledgments discard supplied family or staff identity',async()=>{
+ const f=route(),id='f6b2096f-62a6-4d2f-bf6e-0e7fe36020a1';
+ await f.POST(req({action:'set-forwarding',enabled:true,revision:0,householdId:'other',actor:'staff'}));
+ assert.deepEqual(f.calls[0],{p:'/bug-reports/forwarding',body:{enabled:true,revision:0}});
+ await f.POST(req({action:'read-resolution',id,eventId:id,householdId:'other'}));
+ assert.deepEqual(f.calls[1],{p:'/bug-reports/'+id+'/read',body:{eventId:id}});
+ assert.equal((await f.POST(req({action:'read-resolution',id:'../other'}))).status,400);
+});

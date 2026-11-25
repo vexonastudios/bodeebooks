@@ -68,13 +68,33 @@ export function setupCloudMobile({ navigate, refresh }) {
   const reportNotice=make('a','cloud-student-report-banner');reportNotice.href='/guard/report/#student-reports';reportNotice.target='_top';reportNotice.hidden=true;main.prepend(reportNotice);
   const reportNoticeText=make('span','cloud-student-report-copy');
   reportNotice.append(icon('triangle-alert'),reportNoticeText,icon('chevron-right'));
-  let reportCountBusy=false;
+  let reportCountBusy=false, reportRefreshQueued=false;
   async function refreshStudentReports(){
-    if(reportCountBusy||document.hidden)return;reportCountBusy=true;
-    try{const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});if(!response.ok)return;const data=await response.json(),count=Math.max(0,Math.min(999,Number(data.count)||0));reportNotice.hidden=!count;reportNoticeText.textContent=count===1?'Your child reported a problem · Review report':count+' student problem reports · Review';reportDetail.textContent=count?count+' student '+(count===1?'report needs':'reports need')+' your review.':'Tell us what happened, or review a child’s report.';desktopReport.setAttribute('aria-label',count?'Report a bug · '+count+' student reports to review':'Report a bug');}catch{/* Leave the saved inbox available if this badge cannot refresh. */}finally{reportCountBusy=false;}
+    if(document.hidden)return;
+    if(reportCountBusy){reportRefreshQueued=true;return;}
+    reportCountBusy=true;
+    try {
+      const response=await fetch('/guard/report/api/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'student-count'}),signal:AbortSignal.timeout(10000)});
+      if(!response.ok)return;
+      const data=await response.json();
+      const pending=Number(data.count)||0, resolved=Number(data.resolvedCount)||0;
+      const notices=[];
+      if(pending) notices.push(pending===1?'Your child reported a problem · Review report':pending+' student problem reports · Review');
+      if(resolved) notices.push(resolved===1?'Support resolved a bug report · View update':'Support resolved '+resolved+' bug reports · View updates');
+      reportNotice.hidden=!notices.length;
+      reportNotice.href=resolved?'/guard/report/#your-reports':'/guard/report/#student-reports';
+      reportNoticeText.textContent=notices.join(' · ');
+      reportDetail.textContent=notices.join(' · ')||'Send or follow a report.';
+      desktopReport.setAttribute('aria-label',notices.length?'Report a bug · '+notices.join(' · '):'Report a bug');
+    } catch { /* The report page remains available after a failed refresh. */ }
+    finally {
+      reportCountBusy=false;
+      if(reportRefreshQueued){reportRefreshQueued=false;void refreshStudentReports();}
+    }
   }
   window.addEventListener('cloud-student-report-refresh',()=>void refreshStudentReports());
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshStudentReports();});
+  window.addEventListener('pageshow',event=>{if(event.persisted)void refreshStudentReports();});
   void refreshStudentReports();
 
   const addTabs = ['music', 'videos', 'audiobooks', 'white-noise', 'learning-videos', 'spelling', 'vocabulary', 'poems', 'worksheets'];
