@@ -1,5 +1,5 @@
 import { setupParentExitControls } from './cloud-parent-exit-controls.js?v=20261103-overview1';
-import {setupAbekaAssessments} from './cloud-abeka-assessments.js';
+import {setupAbekaAssessments} from './cloud-abeka-assessments.js?v=20261125-saved-assessments';
 import { setupQuizletReview } from './cloud-quizlet-review.js?v=20261103-overview1';
 import { setupCloudBible } from './cloud-bible-family.js';
 import { setupWhiteNoise } from './cloud-white-noise.js?v=20261109-white-noise1';
