@@ -46,3 +46,25 @@
 .school-hours-options{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:700px){.school-hours-options{grid-template-columns:1fr 1fr}}
 @media(max-width:400px){.school-hours-options{grid-template-columns:1fr}}
+
+#tab-calendar .cloud-calendar-settings{padding:18px 20px;margin:0 0 16px;border:1px solid #575174;border-radius:14px;background:#1b192e}
+#tab-calendar .cloud-calendar-settings h2{font-size:20px;margin:0}
+#tab-calendar .cloud-calendar-settings>p{margin:6px 0 14px;color:var(--calendar-muted)}
+#tab-calendar .cloud-calendar-settings [hidden],.school-hours-form [hidden]{display:none!important}
+#tab-calendar.setup-embedded-panel>.cloud-calendar-header{display:none}
+.cloud-calendar-settings .setup-field{display:flex;flex-direction:column;gap:5px}
+.cloud-calendar-settings .cloud-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.cloud-calendar-settings .setup-error{color:#ffc2cb}
+.cloud-calendar-settings .setup-error:empty{display:none}
+.cloud-calendar-save-status{margin-inline-start:10px;color:#9be7c9;font-size:14px}
+.school-hours-dates{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
+.school-hours-dates p{grid-column:1/-1}
+.school-hours-first-date{display:flex;align-items:flex-end;gap:8px;min-width:0}
+.school-hours-first-date .setup-field{flex:1;min-width:0}
+.school-hours-first-date button{margin-bottom:7px;flex-shrink:0}
+@media(max-width:700px){
+  .school-hours-dates{grid-template-columns:minmax(0,1fr)}
+  #tab-calendar .cloud-calendar-settings{padding:14px}
+  .cloud-calendar-settings .school-hours-form{grid-template-columns:minmax(0,1fr)}
+  .cloud-calendar-settings .school-hours-days{grid-template-columns:repeat(auto-fit,minmax(44px,1fr))}
+}

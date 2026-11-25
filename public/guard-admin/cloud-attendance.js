@@ -25,7 +25,7 @@ export function setupCloudAttendance() {
       const result = await request('attendance-list', { date });
       if (token !== generation || !host.isConnected) return;
       host.replaceChildren(node('h3', `School check-ins · ${date}`));
-      if (!result.rows.length) host.append(node('p', result.enabled ? 'No check-ins for this day. Newly enabled coin rules start tomorrow; days off are not charged.' : 'Late coins are off. Open School start time & late coins above to set them up.', 'cloud-note'));
+      if (!result.rows.length) host.append(node('p', result.enabled ? 'No check-ins for this day. Newly enabled coin rules start tomorrow. Days off are never charged.' : 'Attendance coins are off. You can turn them on when you edit your school dates and hours.', 'cloud-note'));
       for (const record of result.rows) {
         const row = node('div', '', 'cloud-day-subject'), copy = node('div', '', 'cloud-day-subject-copy');
         const status = { excused: 'Excused', 'on-time': 'On time', late: 'Started late', 'waiting-late': 'Waiting for schoolwork', waiting: 'Waiting for schoolwork' }[record.status] || 'Not checked in';

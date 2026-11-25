@@ -1,4 +1,5 @@
-import { setupCloudAttendance } from './cloud-attendance.js';
+import { setupCloudAttendance } from './cloud-attendance.js?v=20261124-calendar';
+import { setupCalendarSettings } from './cloud-calendar-settings.js?v=20261124-calendar';
 // The preview uses the same calendar decisions as the API and child app.
 const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts } = globalThis.BODEE_CLOUD_SCHEDULE;
 const byId = id => document.getElementById(id);
@@ -21,8 +22,17 @@ function dayLabel(state) {
   return { outside_term: 'Outside school year', day_exception: 'No school · exception', day_off: 'Day off' }[state.reason];
 }
 
-export function setupCloudCalendar({ getSnapshot, editException, editBreak, setControls }) {
+export function setupCloudCalendar({ getSnapshot, editException, editBreak, setControls, saveSchedule }) {
   const attendance = setupCloudAttendance();
+  const settings = setupCalendarSettings({ getSnapshot, saveSchedule: async (captured, schedule) => {
+    await saveSchedule(captured, schedule);
+    if (schedule.enabled && schedule.termStart && schedule.termStart !== captured.rules.schedule?.termStart) {
+      const currentDate = today();
+      selectedDate = currentDate < schedule.termStart || currentDate > schedule.termEnd ? schedule.termStart : currentDate;
+      month = selectedDate.slice(0, 7);
+      render(true);
+    }
+  } });
   let month = null;
   let selectedDate = null;
   let renderedKey = null;
@@ -42,10 +52,11 @@ export function setupCloudCalendar({ getSnapshot, editException, editBreak, setC
     if (host && byId('tab-calendar')?.classList.contains('active')) void attendance.render(host, selectedDate, snapshot);
     if (!force && key === renderedKey) return;
     renderedKey = key;
+    settings.render();
     const focusedDate = byId('cloud-calendar-days').contains(document.activeElement) ? document.activeElement.dataset.date : null;
     byId('cloud-calendar-enabled-note').textContent = schedule.enabled
       ? `School dates use ${schedule.timeZone.replaceAll('_', ' ')}. Select a date to change that day.`
-      : `Calendar is off. Enable it in School start time & late coins to use your saved school days and breaks. Activity schedules still use ${schedule.timeZone.replaceAll('_', ' ')}.`;
+      : 'Choose Set school dates & hours above to turn on your calendar.';
     byId('cloud-calendar-month').textContent = formatDate(`${month}-01`, { month: 'long', year: 'numeric' });
     const first = new Date(`${month}-01T00:00:00Z`);
     const offset = first.getUTCDay();

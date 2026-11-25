@@ -99,16 +99,21 @@ export {inlineSchool} from './cloud-school-picker.js?v=20261124-address-first';
 export function setupSections({ dialog, body, footer, navigate, onReturn }) {
   let restore = null;
   dialog.addEventListener('cancel', event => { if (restore) { event.preventDefault(); event.stopImmediatePropagation(); restore(); } }, true);
+  dialog.addEventListener('close', () => { if (!dialog.open) restore?.(); });
   return { active: () => !!restore, open(tab, callback) {
     if (restore) return;
     const panel=document.getElementById(`tab-${tab}`); if(!panel)throw Error('This setup section is unavailable.');
     const previousTab=document.querySelector('.nav-item[aria-current="page"]')?.dataset.tab || 'overview';
     const placeholder=document.createComment('setup section location'); panel.before(placeholder);
     const saved=document.createDocumentFragment(),scroll=body.scrollTop; while(body.firstChild)saved.append(body.firstChild);
+    const heading = tab === 'calendar' && document.getElementById(dialog.getAttribute('aria-labelledby'));
+    const originalHeading = heading && [...heading.childNodes];
+    if (heading) heading.textContent = 'Family school calendar';
     const controls=node('footer','','setup-subfooter'),back=node('button','Back to setup','btn btn-primary'); back.type='button'; controls.append(back);
     footer.hidden=true; footer.after(controls); dialog.classList.add('setup-section-open'); dialog.dataset.setupSection=tab;
     restore=()=>{
       placeholder.replaceWith(panel); body.replaceChildren(saved); controls.remove(); footer.hidden=false; dialog.classList.remove('setup-section-open'); delete dialog.dataset.setupSection; restore=null;
+      if (heading) heading.replaceChildren(...originalHeading);
       navigate(previousTab); onReturn?.(); body.scrollTop=scroll; footer.querySelector('button:not(:disabled)')?.focus();
     };
     back.onclick=restore;

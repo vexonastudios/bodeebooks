@@ -5,7 +5,6 @@ import { setupCloudBible } from './cloud-bible-family.js';
 import { setupWhiteNoise } from './cloud-white-noise.js?v=20261109-white-noise1';
 import { setupStudentPreview } from './cloud-student-preview.js?v=20261007-preview1';
 import './cloud-push-client.js';
-import { schoolHoursForm } from './cloud-school-hours-form.js';
 import { createParentSessionRecovery, createParentSessionNotice } from './cloud-parent-session.js';
 import { createStudentAssignment, createAssignmentConfirmation } from './cloud-student-assignment.js';
 import { setupRecoveryBackups } from './cloud-retention.js';
@@ -14,7 +13,7 @@ import { createControlQueue, isIndependentControl, applyControlResult } from './
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js?v=20261119-visible1';
 import { setupDailyPlan } from './cloud-daily-plan.js';
-import { setupParentStart } from './cloud-parent-start.js?v=20261109-microphone';
+import { setupParentStart } from './cloud-parent-start.js?v=20261124-calendar';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { setupCloudChores } from './cloud-chores.js?v=20261104-more-icons1';
@@ -27,7 +26,7 @@ import { connectionState, applyConnectionStatus, deliveryState, editSchedule } f
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
 import { setupCloudMobile } from './cloud-mobile.js?v=20261109-white-noise1';
-import { setupCloudCalendar } from './cloud-calendar.js';
+import { setupCloudCalendar } from './cloud-calendar.js?v=20261124-calendar';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20261030-document-complete1';
@@ -371,12 +370,6 @@ function selectField(label, name, choices, value) {
   for (const choice of choices) { const option = node('option', '', choice.label); option.value = choice.value; select.append(option); }
   select.value = value; wrapper.append(select); return wrapper;
 }
-function editSchoolSchedule() {
-  const captured = structuredClone(snapshot);
-  const fields = schoolHoursForm(captured.rules.schedule);
-  editor('School start time & late coins', [fields.form], () => mutate('save-subjects', editSchedule(captured, fields.read())));
-  byId('cloud-editor').classList.add('cloud-hours-editor');
-}
 function addSchoolBreak(existing = null) {
   const captured = structuredClone(snapshot); const current = scheduleValue(captured.rules.schedule);
   editor(existing ? 'Edit Vacation or Holiday' : 'Add Vacation or Holiday', [field('Name', 'label', existing?.label || ''),
@@ -455,7 +448,8 @@ const monitoring = setupMonitoring({
 });
 const approvedApps = setupApprovedApps({ endpoint });
 const chores = setupCloudChores({endpoint,navigate:selectTab});
-const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editBreak: addSchoolBreak, setControls });
+const calendar = setupCloudCalendar({ getSnapshot: () => snapshot, editException: addDayException, editBreak: addSchoolBreak, setControls,
+  saveSchedule: (captured, schedule) => mutate('save-subjects', editSchedule(captured, schedule)) });
 const records = setupCloudRecords({ endpoint, getSnapshot: () => snapshot, mutate, editor, field, selectField, node, button, setControls, onStudentChange: id => files.setStudent(id), onGradeSaved: () => files.refresh() });
 const activityLibrary = setupActivityLibrary({ getSnapshot: () => snapshot, editSubject, canEdit: () => usable && !mutating });
 const schoolReview = setupCloudSchoolReview({ before: byId('activity-library-review-anchor'), endpoint, getSnapshot: () => snapshot, onApplied: refresh });
@@ -512,7 +506,6 @@ const assignmentConfirmation = createAssignmentConfirmation({ refresh, hasPendin
 byId('cloud-refresh').addEventListener('click', refresh);
 byId('add-student-btn').addEventListener('click', () => editor('Add Student', [field('Name', 'name'), field('Grade level (optional)', 'grade', '', { required: false, maxLength: 30 })], form => mutate('add-student', { name: form.get('name'), grade: form.get('grade') })));
 
-byId('edit-school-schedule').addEventListener('click', editSchoolSchedule);
 byId('add-school-break').addEventListener('click', () => addSchoolBreak());
 byId('add-day-exception').addEventListener('click', () => addDayException());
 byId('cloud-editor-cancel').addEventListener('click', () => byId('cloud-editor').close());

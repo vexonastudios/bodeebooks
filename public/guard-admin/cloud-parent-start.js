@@ -1,4 +1,4 @@
-import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261124-address-first';
+import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261124-calendar';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards, planCardKey, saveDailyPlan } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
 import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } from './cloud-parent-readiness.js?v=20261104-daily-controls1';

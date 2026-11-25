@@ -4,23 +4,33 @@ const {app,BrowserWindow,session}=require('electron');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),assert=require('node:assert/strict');
 if(app.isPackaged)throw Error('Development fixture only');
 app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'bg-school-picker-')));
-const root=path.resolve(__dirname,'..'),schoolWrites=[],searches=[],planWrites=[];
+const root=path.resolve(__dirname,'..'),schoolWrites=[],searches=[],rulesWrites=[];
 let snapshot={parentPassword:{configured:true,revision:1},students:[{id:'bob',name:'Bob'},{id:'betty',name:'Betty'},{id:'billy',name:'Billy'}],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
 let state={revision:0,step:1,completed:false,features:{},contentChoices:{},catalog:{version:1}},failSearch=false,loseReply=false,failChild=null;
 let failPlanRead=false,failPlanSave=false,failProgress=false;
+const calendarHtml=require('../app/guard/dashboard/generated/workspace.json').html.split('<section class="tab-content" id="tab-calendar"')[1].split('<section class="tab-content" id="tab-spelling"')[0];
+const dayOff={date:'2027-01-15',school:false};
+snapshot.rules.schedule={enabled:false,days:[1,2,3,4,5],timeZone:'America/Chicago',start:'08:00',end:'15:00',exceptions:[dayOff]};
+snapshot.serverTime='2026-11-24T14:00:00Z';
+
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');
  if(url.pathname==='/'){
   res.setHeader('Content-Type','text/html');return res.end(`<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/guard-admin/base.css"><style>body{font:16px Arial,sans-serif}button,input{font:inherit}</style></head><body><section id="tab-overview"><div class="tab-header"></div></section><script src="/guard-admin/lucide.min.js"></script><script type="module">
-  document.body.append(Object.assign(document.createElement('section'),{id:'tab-calendar'}));
+  document.body.insertAdjacentHTML('beforeend',${JSON.stringify('<section class="tab-content" id="tab-calendar"'+calendarHtml)});
   document.body.append(Object.assign(document.createElement('section'),{id:'tab-family-games'}));
   import {setupParentStart} from '/guard-admin/cloud-parent-start.js';let snapshot=await fetch('/snapshot').then(r=>r.json());
   const refresh=async()=>{snapshot=await fetch('/snapshot').then(r=>r.json());};
   const mutate=async(action,data)=>{const r=await fetch('/bridge',{method:'POST',body:JSON.stringify({action,...data})}),value=await r.json();if(!r.ok)throw Error(value.error);await refresh();return value;};
-  window.guide=setupParentStart({endpoint:'/bridge',getSnapshot:()=>snapshot,refresh,mutate,navigate:()=>{}});guide.open(1);
-  </script></body></html>`);
+  import {setupCloudCalendar} from '/guard-admin/cloud-calendar.js';
+  import {editSchedule} from '/guard-admin/cloud-workspace-model.js';
+  const calendar=setupCloudCalendar({getSnapshot:()=>snapshot,editException:()=>{},editBreak:()=>{},setControls:()=>{},saveSchedule:async(c,s)=>{await mutate('save-subjects',editSchedule(c,s));calendar.render();}});
+  window.navigate=tab=>{document.getElementById('tab-calendar').classList.toggle('active',tab==='calendar');if(tab==='calendar')calendar.render(true);};
+  window.guide=setupParentStart({endpoint:'/bridge',getSnapshot:()=>snapshot,refresh,mutate,navigate});guide.open(1);
+  </script><script src="/guard-admin/cloud-school-schedule.js"></script></body></html>`);
  }
  if(url.pathname==='/snapshot'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(snapshot));}
+ if(url.pathname==='/guard/dashboard/bridge/'){res.setHeader('Content-Type','application/json');return res.end('{"rows":[],"enabled":false}');}
  if(url.pathname==='/bridge'){
   const chunks=[];for await(const chunk of req)chunks.push(chunk);const input=JSON.parse(Buffer.concat(chunks));res.setHeader('Content-Type','application/json');
   if(input.action==='get-setup')return res.end(JSON.stringify(state));
@@ -35,7 +45,10 @@ const server=http.createServer(async(req,res)=>{
   if(input.action==='save-subjects'){
    if(failPlanSave){failPlanSave=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not save activities.'}));}
    assert.equal(input.revision,snapshot.rules.revision);
-   planWrites.push(input);snapshot.rules.subjects=input.subjects;snapshot.rules.revision++;
+   // Calendar and activities both write the same family rules. Count each
+   // scenario's saves separately so the later checks start at zero.
+   rulesWrites.push(input);if(Object.hasOwn(input,'schedule'))snapshot.rules.schedule=input.schedule;
+   snapshot.rules.subjects=input.subjects;snapshot.rules.revision++;
    if(Object.hasOwn(input,'dailyPlanTemplate'))snapshot.rules.dailyPlanTemplate=input.dailyPlanTemplate;
    return res.end('{}');
   }
@@ -75,7 +88,40 @@ async function main(){
  const count=()=>snapshot.rules.subjects.filter(s=>s.assignments.some(a=>a.studentId==='bob'&&a.active)).length;
  await win.loadURL(origin);await wait('document.querySelector("dialog[open] .setup-school-form")');
  await click('Set school calendar');await wait('document.querySelector("dialog").dataset.setupSection==="calendar"');
+ assert.equal(await js('document.getElementById("parent-start-title").textContent'),'Family school calendar');
+ await click('Set school dates & hours');assert.equal(await js('document.activeElement.name'),'termStart');
+ assert.equal(rulesWrites.length,0);
+  await js(`window.originalNow=Date.now;Date.now=()=>Date.parse('2026-11-25T02:00:00Z');void 0;`);await click('Use today');
+  await js('Date.now=window.originalNow;void 0;');
+ assert.equal(await js('document.querySelector("[name=termStart]").value'),'2026-11-24','Use today follows the school time zone');
+ await click('Save & turn on calendar');assert.equal(rulesWrites.length,0,'incomplete term cannot be saved');
+ await fill('termEnd','2027-05-31','.school-hours-form');
+ for(const width of [1280,390,320]){
+  win.setContentSize(width,900);await new Promise(resolve=>setTimeout(resolve,50));
+  assert.ok(await js('document.querySelector(".cloud-calendar-settings").scrollWidth<=document.querySelector(".cloud-calendar-settings").clientWidth+1'),'calendar fits '+width);
+ }
+ win.setContentSize(1280,1000);
+ await click('Save & turn on calendar');await wait('document.querySelector(".cloud-calendar-save-status").textContent==="Calendar saved."');
+ assert.equal(rulesWrites[0].schedule.termStart,'2026-11-24');assert.equal(rulesWrites[0].schedule.enabled,true);
+ assert.equal(rulesWrites[0].schedule.attendance.enabled,false);assert.deepEqual(rulesWrites[0].schedule.exceptions,[dayOff]);
  await click('Back to setup');await wait('!!document.querySelector(".setup-school-family")');
+ assert.equal(await js('document.getElementById("parent-start-title").textContent'),'Add school websites (optional)');
+ await click('Close');await js("navigate('calendar')");await click('Edit dates, hours & coins','#tab-calendar');
+ assert.equal(await js('document.querySelector("[name=termEnd]").value'),'2027-05-31');
+ await fill('termStart','2027-01-05','.school-hours-form');await js('document.querySelector("[name=attendanceEnabled]").click()');
+ assert.equal(await js('document.querySelector(".school-hours-options").checkVisibility()'),true);
+ await click('Cancel','#tab-calendar');assert.equal(rulesWrites.length,1);
+ await click('Edit dates, hours & coins','#tab-calendar');await fill('termStart','2027-01-05','.school-hours-form');
+ await click('Save calendar','#tab-calendar');await wait('document.querySelector(".cloud-calendar-save-status").textContent==="Calendar saved."');
+ assert.equal(rulesWrites[1].schedule.termStart,'2027-01-05');assert.equal(rulesWrites[1].schedule.attendance.enabled,false);
+ assert.equal(await js("document.getElementById('cloud-calendar-month').textContent"),'January 2027');
+ await click('Edit dates, hours & coins','#tab-calendar');
+ await fill('termStart','','.school-hours-form');await fill('termEnd','','.school-hours-form');
+ await js('document.querySelector("[name=attendanceEnabled]").click()');await click('Save calendar','#tab-calendar');
+ await wait('document.querySelector(".cloud-calendar-save-status").textContent==="Calendar saved."');
+ assert.equal(rulesWrites[2].schedule.termStart,null);assert.equal(rulesWrites[2].schedule.termEnd,null);
+ assert.equal(rulesWrites[2].schedule.attendance.enabled,true);assert.deepEqual(rulesWrites[2].schedule.exceptions,[dayOff]);
+ rulesWrites.length=0;await js("navigate('overview');guide.open(1)");await wait('!!document.querySelector("dialog[open] .setup-school-family")');
  await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Choose their activities"');assert.equal(schoolWrites.length,0,'skip creates no false school choice');
  await click('Close');await js('guide.open(1)');await wait('document.querySelector("dialog[open] .setup-school-form")');
  await click('Add school website',bob);
@@ -170,7 +216,7 @@ async function main(){
  const portals=structuredClone(snapshot.rules.subjects);
  await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
  assert.match(await js('document.querySelector(".setup-activity-audience h3").textContent'),/Bob, Betty, Billy/);
- assert.equal(planWrites.length,0);
+ assert.equal(rulesWrites.length,0);
  const overview=async()=>{
   await wait('!!document.querySelector("dialog[open] .setup-activity-overview") && !document.querySelector(".setup-body").inert');
   assert.equal(await js('document.querySelector(".setup-progress").textContent'),'Step 3 of 4');
@@ -179,7 +225,7 @@ async function main(){
  };
  await click('Apply to all children');await overview();
  assert.deepEqual(await js('[...document.querySelectorAll("[data-activity-child]")].map(b=>b.dataset.activityChild)'),['bob','betty','billy']);
- assert.equal(planWrites.length,1);const originalDefault=structuredClone(snapshot.rules.dailyPlanTemplate);
+ assert.equal(rulesWrites.length,1);const originalDefault=structuredClone(snapshot.rules.dailyPlanTemplate);
  const typing=()=>snapshot.rules.subjects.find(s=>s.url==='app://typing');
  assert.deepEqual(typing().assignments.filter(a=>a.active).map(a=>a.studentId),['bob','betty','billy']);
  assert.deepEqual(snapshot.rules.subjects.filter(s=>s.isSchoolPortal),portals);
@@ -191,7 +237,7 @@ async function main(){
  };
  failPlanRead=true;await click('Edit Betty’s activities');
  await wait('document.querySelector(".setup-error").textContent.includes("Could not load activities")');
- await overview();assert.equal(planWrites.length,1);
+ await overview();assert.equal(rulesWrites.length,1);
  for(const width of [1280,390,320]){
   win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));
   assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1 && [...document.querySelectorAll("[data-activity-child]")].every(b=>b.getBoundingClientRect().right<=innerWidth)'));
@@ -200,11 +246,11 @@ async function main(){
  const others=()=>typing().assignments.filter(a=>a.studentId!=='betty');
  const oldOthers=structuredClone(others());
  await activity('Typing School','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
- assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Betty');assert.equal(planWrites.length,1);
+ assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Betty');assert.equal(rulesWrites.length,1);
  assert.match(await js('document.querySelector(".parent-start-plan-summary").textContent'),/Turn off.*Typing School/);
  failPlanSave=true;await click('Save for Betty');await wait('document.querySelector(".setup-error").textContent.includes("Could not save activities")');
- assert.equal(planWrites.length,1);await click('Save for Betty');await overview();
- assert.equal(planWrites.length,2);assert.ok(!Object.hasOwn(planWrites[1],'dailyPlanTemplate'));
+ assert.equal(rulesWrites.length,1);await click('Save for Betty');await overview();
+ assert.equal(rulesWrites.length,2);assert.ok(!Object.hasOwn(rulesWrites[1],'dailyPlanTemplate'));
  assert.deepEqual(snapshot.rules.dailyPlanTemplate,originalDefault);assert.deepEqual(others(),oldOthers);
  assert.equal(typing().assignments.find(a=>a.studentId==='betty').active,false);
  await click('Save and close');await wait('!document.querySelector("dialog[open]")');
@@ -213,7 +259,7 @@ async function main(){
  await activity('Typing School','click()');await click('Cancel edits');await overview();
  await editChild('Bob');assert.equal(await activity('Typing School','checked'),true);
  await activity('Spelling','click()');await activity('Spelling','click()');
- await click('Done');await overview();assert.equal(planWrites.length,2);
+ await click('Done');await overview();assert.equal(rulesWrites.length,2);
  await click('Edit activities for everyone');assert.equal(await scopeValue(),'all');
  await choose('selected');
  await js(`for(const input of [...document.querySelectorAll('.setup-audience-children input')].slice(0,2))input.click()`);
@@ -228,11 +274,11 @@ async function main(){
  await click('Save family default');await overview();
  assert.deepEqual(snapshot.rules.subjects,allAssignments);
  assert.equal(snapshot.rules.dailyPlanTemplate.activities.find(a=>a.key==='module:spelling').enabled,true);
- const savedCount=planWrites.length;
+ const savedCount=rulesWrites.length;
  failProgress=true;await click('Continue to computer setup');
  await wait('document.querySelector(".setup-error").textContent.includes("Could not save setup progress")');await overview();
  await click('Continue to computer setup');await wait('!!document.querySelector(".setup-readiness-summary")');
- assert.equal(state.step,7);assert.equal(planWrites.length,savedCount);
+ assert.equal(state.step,7);assert.equal(rulesWrites.length,savedCount);
  await js(`[...document.querySelectorAll('.parent-start-readiness')].find(s=>s.querySelector('h3').textContent==='Betty').querySelectorAll('button').forEach(b=>{if(b.textContent==='Edit activity choices')b.click()})`);
  await wait('document.querySelector(".setup-child-activities-title")?.textContent==="Betty’s activities"');
  console.log('Activity setup passed: apply to all, personalize on step three, cancel, resume, save retries, subset and default scopes, responsive layouts and explicit transition to computer setup.');
