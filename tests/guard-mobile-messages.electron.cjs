@@ -112,7 +112,7 @@ async function run() {
     assert.equal(await visible('#cloud-student-preview'),false,'Preview is desktop only');
     const [lock, plan] = await js('[...document.querySelectorAll("#cloud-lock-all, #overview-actions .cloud-daily-plan-shortcut")].map(button=>button.getBoundingClientRect().toJSON())');
     assert.ok(lock.top===plan.top && plan.left>=lock.right && plan.height>=44,'Daily Plan sits beside Lock All Computers');
-    assert.equal(tools.length,3,'all three parent tools share the mobile row');
+    assert.equal(tools.length,2,'Chores and Papers share the mobile row');
     assert.ok(tools.every(tool=>tool.box.top===tools[0].box.top && tool.box.width>=44 && tool.box.height>=44 && tool.box.height<=100 && tool.icon && tool.label),'compact, labeled touch targets with Lucide icons');
     assert.equal(await js('document.documentElement.scrollWidth<=innerWidth'),true,'no horizontal overflow');
     assert.equal(await visible('.monitor-card .monitor-quick-unlock'),true,'Quick Unlock is available without expanding');
@@ -163,7 +163,10 @@ async function run() {
   await js('document.querySelector("[data-preview-close]").click()');
   assert.equal(await visible('.mobile-overview-shortcuts'),false,'mobile tool row disappears on desktop');
   assert.equal(await visible('.chore-summary'),true,'desktop keeps its chore summary');
-  assert.equal(await visible('#cloud-abeka-parent-shortcut'),true,'desktop keeps Abeka access');
+  assert.equal(await visible('#cloud-abeka-parent-shortcut'),false,'Overview has no standing Abeka shortcut');
+  await js('document.querySelector("[data-tab=reports]").click()');
+  assert.equal(await visible('#tab-reports #cloud-abeka-parent-shortcut'),true,'desktop keeps Abeka access in Reports');
+  await js('document.querySelector("[data-tab=overview]").click()');
   assert.equal(await visible('.monitor-card .chore-child-summary'),true,'desktop card details remain visible');
   assert.equal(await js('document.querySelector(".monitor-quick-unlock").parentElement.classList.contains("monitor-primary-actions")'),true,'desktop restores the full Quick Unlock button');
   win.setContentSize(390,844); await new Promise(r=>setTimeout(r,100));

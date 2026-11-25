@@ -1,4 +1,4 @@
-import { setupAbekaParent } from './cloud-abeka-parent.js';
+import { setupAbekaParent } from './cloud-abeka-parent.js?v=20261125-report-locks';
 import { parentActionFeedback } from './cloud-action-feedback.js';
 import { connectionState, connectionExpiresAt, todaySeconds, subjectProgress, assignmentFor, abekaCourseLabel, abekaCourseStatus, abekaRefreshMessage } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { studentAvatar, studentPhotoShortcut } from './cloud-student-profile.js?v=20261007-avatar1';
@@ -225,7 +225,7 @@ export function setupMonitoring({getSnapshot,mutate,navigate,openMessages,editPr
   const input=node('input');input.placeholder='Ask about settings, activities or your dashboard…';input.setAttribute('aria-label','Ask BodeeGuard');input.maxLength=1500;
   const title=node('div','cloud-overview-assistant-title');title.append(icon('sparkles'),node('strong','','Ask BodeeGuard'));
   const ask=node('button','btn btn-primary','Ask');ask.type='submit';assistant.append(title,input,ask);stats.before(assistant);
-  const abekaParent=setupAbekaParent({before:stats,getSnapshot});
+  const abekaParent=setupAbekaParent({getSnapshot});
   assistant.onsubmit=event=>{event.preventDefault();document.getElementById('parent-assistant-launcher').click();const target=document.getElementById('parent-assistant-input');target.value=input.value;target.dispatchEvent(new Event('input',{bubbles:true}));target.focus();if(input.value.trim())document.getElementById('parent-assistant-form').requestSubmit();};
   async function run(control,callback,notice) {
     const key=control.dataset.actionFeedbackControl, hadFocus=document.activeElement===control;

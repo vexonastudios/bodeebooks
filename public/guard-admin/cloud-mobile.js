@@ -203,15 +203,9 @@ export function setupCloudMobile({ navigate, refresh }) {
   byId('overview-grid').before(shortcut);
   const overviewShortcuts = make('nav', 'mobile-overview-shortcuts cloud-mobile-only');
   overviewShortcuts.setAttribute('aria-label', 'Parent tools');
-  const abekaShortcut = byId('cloud-abeka-parent-shortcut');
-  if (abekaShortcut) {
-    abekaShortcut.append(make('span', 'mobile-overview-shortcut-label cloud-mobile-only', 'Abeka unlocks'));
-    abekaShortcut.setAttribute('aria-label', 'Abeka test unlocks — Assessment permissions');
-    abekaShortcut.title = 'Abeka test unlocks — Parent sign-in';
-  }
   // Move the existing controls, so their handlers and optional visibility stay intact.
   // Anchors return them to their original desktop positions when the viewport grows.
-  const overviewTools = [abekaShortcut, root.querySelector('.chore-summary'), shortcut].filter(Boolean).map(control => {
+  const overviewTools = [root.querySelector('.chore-summary'), shortcut].filter(Boolean).map(control => {
     const anchor = document.createComment('Parent tool position'); control.before(anchor);
     return { control, anchor };
   });

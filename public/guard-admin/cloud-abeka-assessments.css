@@ -1,4 +1,4 @@
-/* Desktop overview: one compact row until the parent asks for the report. */
+/* The assessment history opens on demand in Reports. */
 #cloud-abeka-assessments.cloud-panel { padding: 0; }
 #cloud-abeka-assessments { border: 1px solid var(--border, #2b2d40); border-radius: 16px; background: var(--bg-card, #151522); overflow: hidden; }
 #cloud-abeka-assessments summary { cursor: pointer; font-weight: 600; }
@@ -47,6 +47,12 @@
   #cloud-abeka-assessments .cloud-assessment-controls { grid-template-columns: repeat(2,minmax(0,1fr)); }
   #cloud-abeka-assessments .cloud-assessment-controls > .btn { justify-self: start; }
 }
-/* Match the existing phone/tablet shell, including before its JS initializes. */
-.cloud-mobile #cloud-abeka-assessments { display: none; }
-@media (max-width: 900px), (pointer: coarse) and (max-width: 1180px) { #cloud-abeka-assessments { display: none; } }
+
+#cloud-abeka-lock-alert[hidden],#cloud-abeka-assessments[hidden]{display:none}
+#cloud-abeka-lock-alert h2{font-size:1rem;margin:0 0 8px}
+#cloud-abeka-lock-alert .btn{max-width:100%;white-space:normal;text-align:start;margin:4px}
+@media(max-width:900px),(pointer:coarse) and (max-width:1180px){
+  #tab-reports #cloud-abeka-assessments:not([hidden]){display:block}
+  #cloud-abeka-assessments .cloud-assessment-controls{grid-template-columns:1fr}
+  #cloud-abeka-assessments .cloud-assessment-toggle{flex-wrap:wrap}
+}

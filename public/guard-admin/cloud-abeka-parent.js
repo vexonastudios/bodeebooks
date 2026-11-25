@@ -20,7 +20,7 @@ export function familyUsesAbeka(snapshot) {
   });
 }
 
-export function setupAbekaParent({ before, getSnapshot }) {
+export function setupAbekaParent({ getSnapshot }) {
   const node = (tag, className, text = '') => {
     const element = document.createElement(tag); element.className = className;
     element.textContent = text; return element;
@@ -40,7 +40,7 @@ export function setupAbekaParent({ before, getSnapshot }) {
   const symbol = node('span','cloud-abeka-parent-symbol'); symbol.append(icon('key-round'));
   const copy = node('span','cloud-abeka-parent-copy');
   copy.append(node('strong','','Abeka test unlocks'),node('small','','Assessment permissions · Parent sign-in'));
-  shortcut.append(symbol,copy,icon('arrow-up-right')); before.before(shortcut);
+  shortcut.append(symbol,copy,icon('arrow-up-right')); document.getElementById('cloud-abeka-assessments')?.before(shortcut);
 
   const settings = node('section','cloud-panel cloud-abeka-parent-settings'); settings.id = 'cloud-abeka-parent-settings';
   settings.setAttribute('aria-labelledby','cloud-abeka-parent-title');
@@ -49,7 +49,7 @@ export function setupAbekaParent({ before, getSnapshot }) {
   const open = link('Open Assessment Permissions','btn btn-secondary cloud-abeka-parent-open'); open.append(icon('arrow-up-right'));
   const label = node('label','cloud-abeka-parent-preference');
   const checkbox = node('input',''); checkbox.type = 'checkbox'; checkbox.checked = showShortcut;
-  label.append(checkbox,document.createTextNode('Show Abeka test unlocks on this device’s dashboard'));
+  label.append(checkbox,document.createTextNode('Show the Abeka permissions shortcut in Reports on this device'));
   settings.append(title,description,open,label,node('p','cloud-note','Opens Abeka in your browser. Use Back to return to BodeeGuard.'));
   document.querySelector('#tab-students .tab-header')?.after(settings);
   checkbox.addEventListener('change',()=>{

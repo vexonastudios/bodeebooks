@@ -1,5 +1,5 @@
 import { setupParentExitControls } from './cloud-parent-exit-controls.js?v=20261103-overview1';
-import {setupAbekaAssessments} from './cloud-abeka-assessments.js?v=20261125-saved-assessments';
+import {setupAbekaAssessments} from './cloud-abeka-assessments.js?v=20261125-report-locks';
 import { setupQuizletReview } from './cloud-quizlet-review.js?v=20261103-overview1';
 import { setupCloudBible } from './cloud-bible-family.js';
 import { setupWhiteNoise } from './cloud-white-noise.js?v=20261109-white-noise1';
@@ -25,7 +25,7 @@ import { setupSidebarGroups, activateSidebarGroupForItem } from './navigation-gr
 import { connectionState, applyConnectionStatus, deliveryState, editSchedule } from './cloud-workspace-model.js?v=20261007-abeka-day1';
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
-import { setupCloudMobile } from './cloud-mobile.js?v=20261109-white-noise1';
+import { setupCloudMobile } from './cloud-mobile.js?v=20261125-report-locks';
 import { setupCloudCalendar } from './cloud-calendar.js?v=20261125-first-day';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
@@ -39,7 +39,7 @@ import { setupCloudGeography } from './cloud-geography.js';
 import { setupCloudSpanish } from './cloud-spanish.js';
 import { setupCloudColoringStudio } from './cloud-coloring-studio.js';
 import { setupCloudScreenshots } from './cloud-screenshots.js';
-import { setupMonitoring } from './cloud-monitoring.js?v=20261104-progress-details1';
+import { setupMonitoring } from './cloud-monitoring.js?v=20261125-report-locks';
 import { setupCloudMathCoach } from './cloud-math-coach.js?v=20261007-family1';
 import { setupCloudSpelling } from './cloud-spelling.js?v=20261005-multi1';
 import { setupCloudVocabulary } from './cloud-vocabulary.js?v=20261005-multi1';
@@ -90,7 +90,7 @@ function feedback(text, error = false) {
 }
 function selectTab(id) {
   quizletReview.update(id);
-  abekaAssessments.update(id==='overview');
+  abekaAssessments.update(id);
   chores.setActive(id === 'chores');
   weeklyActivity.setActive(id === 'overview');
   approvedApps.setActive(id === 'apps');
@@ -144,7 +144,7 @@ function showSnapshot() {
   renderComputers();
   parentExitControls.render();
   quizletReview.update(currentTab);
-  abekaAssessments.update(currentTab==='overview');
+  abekaAssessments.update(currentTab);
   renderStudents();
   renderSubjects();
   dailyPlan.update();
@@ -164,7 +164,7 @@ function showSnapshot() {
   setControls();
 }
 const parentExitControls=setupParentExitControls({getSnapshot:()=>snapshot,mutate,node,button});
-const abekaAssessments=setupAbekaAssessments({getSnapshot:()=>snapshot,endpoint,node,button});
+const abekaAssessments=setupAbekaAssessments({getSnapshot:()=>snapshot,endpoint,node,button,navigate:selectTab,refreshOverview:refresh});
 const quizletReview=setupQuizletReview({getSnapshot:()=>snapshot,endpoint,node,button});
 async function refresh() {
   if (inFlight || document.hidden) return inFlight;
