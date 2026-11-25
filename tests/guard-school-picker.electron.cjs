@@ -4,9 +4,10 @@ const {app,BrowserWindow,session}=require('electron');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http'),assert=require('node:assert/strict');
 if(app.isPackaged)throw Error('Development fixture only');
 app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'bg-school-picker-')));
-const root=path.resolve(__dirname,'..'),schoolWrites=[],searches=[];
+const root=path.resolve(__dirname,'..'),schoolWrites=[],searches=[],planWrites=[];
 let snapshot={parentPassword:{configured:true,revision:1},students:[{id:'bob',name:'Bob'},{id:'betty',name:'Betty'},{id:'billy',name:'Billy'}],devices:[],rules:{revision:0,subjects:[],schedule:{}},schoolActivities:[]};
 let state={revision:0,step:1,completed:false,features:{},contentChoices:{},catalog:{version:1}},failSearch=false,loseReply=false,failChild=null;
+let failPlanRead=false,failProgress=false;
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture');
  if(url.pathname==='/'){
@@ -22,7 +23,20 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/bridge'){
   const chunks=[];for await(const chunk of req)chunks.push(chunk);const input=JSON.parse(Buffer.concat(chunks));res.setHeader('Content-Type','application/json');
   if(input.action==='get-setup')return res.end(JSON.stringify(state));
-  if(input.action==='save-setup'){state={...state,...input,revision:state.revision+1};return res.end(JSON.stringify(state));}
+  if(input.action==='save-setup'){
+   if(failProgress){failProgress=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not save setup progress.'}));}
+   state={...state,...input,revision:state.revision+1};return res.end(JSON.stringify(state));
+  }
+  if(input.action==='daily-plan'){
+   if(failPlanRead){failPlanRead=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not load activities.'}));}
+   return res.end(JSON.stringify({rulesRevision:snapshot.rules.revision,features:{},media:{},requirements:[]}));
+  }
+  if(input.action==='save-subjects'){
+   assert.equal(input.revision,snapshot.rules.revision);
+   planWrites.push(input);snapshot.rules.subjects=input.subjects;snapshot.rules.revision++;
+   if(Object.hasOwn(input,'dailyPlanTemplate'))snapshot.rules.dailyPlanTemplate=input.dailyPlanTemplate;
+   return res.end('{}');
+  }
   if(input.action==='find-school-sites'){
    searches.push(input);await new Promise(r=>setTimeout(r,90));
    if(failSearch){res.statusCode=503;return res.end(JSON.stringify({error:'Online lookup is unavailable. Choose a common site or paste a website.'}));}
@@ -135,6 +149,69 @@ async function main(){
  await wait('!document.querySelector("[data-student-id=betty] .setup-school-list").textContent.includes("Family science")');
  assert.equal(await js('document.querySelector("[data-student-id=billy] .setup-school-list").textContent.includes("Family science")'),true);
  console.log('School onboarding passed: family Abeka, search, custom address, partial retry, existing assignments, individual edit/removal, calendar return, skip and responsive layout.');
+ snapshot.schoolActivities=['typing','spelling','music'].map(module=>({module,url:'app://'+module,ready:true}));
+ await win.loadURL(origin);await wait('!!document.querySelector(".setup-school-family")');
+ await click('Continue');await wait('!!document.querySelector("#setup-activity-audience")');
+ const scopeValue=()=>js('document.querySelector("#setup-activity-audience").value');
+ const scopeNote=()=>js('document.querySelector(".setup-audience-note").textContent');
+ const choose=async value=>{
+  await js(`{const select=document.querySelector('#setup-activity-audience');select.value=${JSON.stringify(value)};select.dispatchEvent(new Event('change'));}`);
+  await wait(`!document.querySelector('.setup-body').inert && document.querySelector('#setup-activity-audience').value===${JSON.stringify(value)}`);
+ };
+ const activity=(name,operation)=>js(`[...document.querySelectorAll('.parent-start-activity')].find(row=>row.querySelector('strong').textContent===${JSON.stringify(name)}).querySelector('input').${operation}`);
+ assert.equal(await scopeValue(),'all');assert.match(await scopeNote(),/Bob, Betty, Billy/);
+ assert.doesNotMatch(await scopeNote(),/Archived/);assert.equal(await activity('Typing School','checked'),false);
+ await activity('Typing School','click()');
+ await choose('selected');await click('Review choices');await wait('document.querySelector(".setup-error").textContent.includes("at least one child")');
+ await choose('all');assert.equal(await activity('Typing School','checked'),true);
+ const portals=structuredClone(snapshot.rules.subjects);
+ await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
+ assert.match(await js('document.querySelector(".setup-activity-audience h3").textContent'),/Bob, Betty, Billy/);
+ assert.equal(planWrites.length,0);
+ failProgress=true;await click('Apply to all children');
+ await wait('document.querySelector(".setup-error").textContent.includes("Could not save setup progress")');
+ await click('Continue');await wait('!!document.querySelector(".setup-readiness-summary")');
+ assert.equal(planWrites.length,1);const originalDefault=structuredClone(snapshot.rules.dailyPlanTemplate);
+ const typing=()=>snapshot.rules.subjects.find(s=>s.url==='app://typing');
+ assert.deepEqual(typing().assignments.filter(a=>a.active).map(a=>a.studentId),['bob','betty','billy']);
+ assert.deepEqual(snapshot.rules.subjects.filter(s=>s.isSchoolPortal),portals);
+ // Turn an activity off for just Betty, then reload to check the persisted exception.
+ const editBetty=async()=>{
+  await js(`[...document.querySelectorAll('.parent-start-readiness')].find(s=>s.querySelector('h3').textContent==='Betty').querySelectorAll('button').forEach(b=>{if(b.textContent==='Edit activity choices')b.click()})`);
+  await wait('document.querySelector("#setup-activity-audience")?.value==="betty" && !document.querySelector(".setup-body").inert');
+ };
+ await editBetty();assert.equal(await activity('Typing School','checked'),true);
+ for(const width of [1280,390,320]){
+  win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));
+  assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1 && document.querySelector("#setup-activity-audience").getBoundingClientRect().right<=innerWidth'));
+ }
+ const others=()=>typing().assignments.filter(a=>a.studentId!=='betty');
+ const oldOthers=structuredClone(others());
+ await activity('Typing School','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
+ assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Betty');assert.equal(planWrites.length,1);
+ await click('Save for Betty');await wait('!!document.querySelector(".setup-readiness-summary")');
+ assert.equal(planWrites.length,2);assert.ok(!Object.hasOwn(planWrites[1],'dailyPlanTemplate'));
+ assert.deepEqual(snapshot.rules.dailyPlanTemplate,originalDefault);assert.deepEqual(others(),oldOthers);
+ assert.equal(typing().assignments.find(a=>a.studentId==='betty').active,false);
+ await editBetty();assert.equal(await activity('Typing School','checked'),false);
+ failPlanRead=true;await js(`{const select=document.querySelector('#setup-activity-audience');select.value='bob';select.dispatchEvent(new Event('change'));}`);
+ await wait('document.querySelector(".setup-error").textContent.includes("Could not load activities")');
+ assert.equal(await scopeValue(),'betty');assert.equal(await activity('Typing School','checked'),false);
+ await choose('bob');assert.equal(await activity('Typing School','checked'),true);
+ await choose('selected');
+ await js(`for(const input of [...document.querySelectorAll('.setup-audience-children input')].slice(0,2))input.click()`);
+ await activity('Spelling','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
+ assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Bob, Betty');
+ await click('Apply to 2 children');await wait('!!document.querySelector(".setup-readiness-summary")');
+ assert.deepEqual(snapshot.rules.subjects.find(s=>s.url==='app://spelling').assignments.filter(a=>a.active).map(a=>a.studentId),['bob','betty']);
+ assert.deepEqual(snapshot.rules.dailyPlanTemplate,originalDefault);
+ const allAssignments=structuredClone(snapshot.rules.subjects);
+ await click('Back');await wait('!!document.querySelector("#setup-activity-audience")');assert.equal(await scopeValue(),'default');
+ await activity('Spelling','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
+ await click('Save family default');await wait('!!document.querySelector(".setup-readiness-summary")');
+ assert.deepEqual(snapshot.rules.subjects,allAssignments);
+ assert.equal(snapshot.rules.dailyPlanTemplate.activities.find(a=>a.key==='module:spelling').enabled,true);
+ console.log('Activity scope passed: family-wide save, individual override, selected siblings, template only, archived children, review before save and responsive layouts.');
  win.destroy();server.close();app.exit(0);
 }
 main().catch(error=>{console.error(error);server.close();app.exit(1);});

@@ -66,6 +66,13 @@
 .setup-school-lookup>.setup-note:not(:empty){margin:8px 0}
 .setup-school-preview,.setup-school-web-search{color:#c4b5fd;font-size:.86rem;overflow-wrap:anywhere}
 .setup-school-form>[data-error=true]{color:#fda4af}
+.setup-activity-audience{padding:16px;margin-bottom:18px;border:1px solid #76659c;border-radius:12px;background:#a78bfa0a;overflow-wrap:anywhere}
+.setup-activity-audience>label,.setup-activity-audience>h3{display:block;margin:0 0 8px;font-size:1.05rem;font-weight:650}
+.setup-activity-audience>select{display:block;width:100%;min-height:44px;padding:8px 12px;box-sizing:border-box;border:1px solid #827695;border-radius:8px;background:#202034;color:#f1edff;color-scheme:dark;font:inherit}
+.setup-activity-audience>p{margin:8px 0 0;color:#ccc4df;line-height:1.45}
+.setup-activity-audience>.btn{margin-top:10px}
+.setup-audience-children{display:flex;flex-wrap:wrap;gap:6px;min-width:0;padding:0;margin:12px 0 0;border:0}
+.setup-audience-children legend{margin-bottom:6px}.setup-audience-children .setup-choice{align-items:center;margin:0;min-height:44px;padding:6px 12px}
 .setup-child-entry-actions{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .setup-child-entry-actions .btn{max-width:100%;min-height:44px;white-space:normal}
 .setup-child-entry-actions .btn span,.setup-manual-children .setup-child{min-width:0;overflow-wrap:anywhere}
