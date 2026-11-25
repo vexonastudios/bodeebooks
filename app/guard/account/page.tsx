@@ -40,6 +40,7 @@ type BodeeGuardAccount = {
   release?: GuardAccountRelease | null;
   deviceLimits?: { parent: number; child: number };
   familyPlan?: {canChange:boolean};
+  familySetup?: { parentPasswordSet: boolean; hasChildren: boolean; atComputerStep: boolean };
   aiAllowance?: AiAllowance|null;
   enrollment?: {
     customerLaunchOpen: boolean;
@@ -205,6 +206,15 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const canConnectComputers = Boolean(isComplimentary || isSubscribed);
   const activeDevices = account?.devices.filter(device => !device.revokedAt) || [];
   const childDevices = activeDevices.filter(device => device.deviceRole === "child");
+  const setup = account.familySetup;
+  const openingInstaller = params.setup === "connect";
+  // A bookmarked installer link can resume setup once the password and a child exist.
+  // Older API responses still support the dashboard's explicit installer handoff.
+  const setupEssentialsReady = setup ? setup.parentPasswordSet && setup.hasChildren : childDevices.length > 0 || openingInstaller;
+  const needsFamilySetup = canConnectComputers && (!setupEssentialsReady ||
+    (childDevices.length === 0 && !setup?.atComputerStep && !openingInstaller));
+  const hasSetupProgress = setup?.parentPasswordSet || setup?.hasChildren;
+  const firstComputerReady = canConnectComputers && !needsFamilySetup && childDevices.length === 0;
   const billing = account?.billing || null;
   const trialEligible = account.trialEligible === true;
   const paidSubscription = billing?.subscription || null;
@@ -338,7 +348,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
     <div className={`${styles.portalPage} ${accountStyles.page}`}>
       <div className={accountStyles.shell}>
         <InstallerReleaseRefresh channel={isComplimentary && account.releaseChannel === "beta" ? "family-beta" : account.releaseChannel} version={release?.version || null} />
-        <Link className={accountStyles.backLink} href="/guard/dashboard/"><ArrowLeft size={17} /> Back to dashboard</Link>
+        {!needsFamilySetup && <Link className={accountStyles.backLink} href="/guard/dashboard/"><ArrowLeft size={17} /> Back to dashboard</Link>}
         <header className={accountStyles.header}>
           <span className={accountStyles.headerIcon}><ShieldCheck size={24} /></span>
           <div><h1>Parent account</h1><p>Welcome, {name}.</p></div>
@@ -381,23 +391,34 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
         </section>}
         {!isComplimentary && account.entitlementStatus === "grace" && <aside className={styles.errorNotice} role="status"><strong>Payment needs attention.</strong> Review <a href="#account-billing">Plan &amp; billing</a>{statusDate ? ` before ${statusDate}` : ""} to keep family access.</aside>}
         {!isComplimentary && isTrial && <p className={accountStyles.trialNotice} role="status"><CalendarClock size={16} aria-hidden="true" /><span>{params.trial === "started" && "Your free trial has started. "}Trial ends {readableDate(trialEnd) || "date temporarily unavailable"} · No automatic charge</span></p>}
-        <nav className={accountStyles.quickActions} aria-label="Account shortcuts">
-          <Link className={showTrialOffer ? accountStyles.setupAction : accountStyles.dashboardAction} href="/guard/dashboard/" aria-label="Open family dashboard"><Monitor size={23} /><span><strong>Open dashboard</strong><small>Manage your family</small></span><ArrowRight size={18} /></Link>
-          {!showTrialOffer && <Link className={accountStyles.setupAction} href={canConnectComputers ? "/guard/account/?setup=connect#child-setup" : "#account-billing"}><Laptop size={23} /><span><strong>{canConnectComputers ? "Add a computer" : "Set up your family"}</strong><small>{canConnectComputers ? "Install & approve its code" : "Activate access first, then add children"}</small></span><ArrowRight size={18} /></Link>}
-        </nav>
-        {!showTrialOffer && <dl className={accountStyles.snapshot} aria-label="Family account summary">
+        {needsFamilySetup ? <section className={accountStyles.familySetup} aria-labelledby="family-setup-heading">
+          <h2 id="family-setup-heading">{hasSetupProgress ? "Continue your family setup" : "Set up your family"}</h2>
+          <p>{!setup?.parentPasswordSet
+            ? "Create the parent password you’ll use to exit BodeeGuard on your child’s PC."
+            : !setup.hasChildren ? "Your parent password is saved. Add your first child next." : "Pick up where you left off with school and activity choices."}
+            {!setup?.parentPasswordSet && !setup?.hasChildren && " Then add your children and choose their school activities."}
+            {childDevices.length === 0 && " You’ll connect a Windows computer at the end."}</p>
+          <Link className={accountStyles.startTrialButton} href="/guard/dashboard/?setup=1">
+            {hasSetupProgress ? "Continue family setup" : "Start family setup"} <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </section> : <nav className={accountStyles.quickActions} aria-label="Account shortcuts">
+          {firstComputerReady && <Link className={accountStyles.dashboardAction} href="/guard/account/?setup=connect#child-setup"><Laptop size={23} /><span><strong>Connect your first computer</strong><small>Install BodeeGuard on your child’s Windows PC</small></span><ArrowRight size={18} /></Link>}
+          <Link className={showTrialOffer || firstComputerReady ? accountStyles.setupAction : accountStyles.dashboardAction} href="/guard/dashboard/" aria-label="Open family dashboard"><Monitor size={23} /><span><strong>Open dashboard</strong><small>Manage your family</small></span><ArrowRight size={18} /></Link>
+          {!showTrialOffer && !firstComputerReady && <Link className={accountStyles.setupAction} href={canConnectComputers ? "/guard/account/?setup=connect#child-setup" : "#account-billing"}><Laptop size={23} /><span><strong>{canConnectComputers ? "Add a computer" : "Set up your family"}</strong><small>{canConnectComputers ? "Install & approve its code" : "Activate access first, then add children"}</small></span><ArrowRight size={18} /></Link>}
+        </nav>}
+        {!showTrialOffer && !needsFamilySetup && <dl className={accountStyles.snapshot} aria-label="Family account summary">
           <div><dt><CreditCard size={15} /> Plan</dt><dd>{planSummary}</dd></div>
           <div><dt><Laptop size={15} /> Computers</dt><dd>{childDevices.length} <span>/ {computerLimit}</span></dd></div>
           <div><dt><Download size={15} /> Child app</dt><dd>{installerAvailable && release ? <a className={accountStyles.versionDownload} href="/guard/download/windows" target="_blank" rel="noopener noreferrer" aria-label={`Download latest child app for Windows, version ${release.version}`}>{release.version}<Download size={15} aria-hidden="true" /></a> : release ? release.version : "Coming soon"}</dd></div>
         </dl>}
         <div className={accountStyles.sections}>
           {billingFirst && billingSection}
-          <details id="account-computers" className={accountStyles.section} open={params.computerRemoved === "1" || params.computerRenamed === "1"}>
+          {(!needsFamilySetup || childDevices.length > 0) && <details id="account-computers" className={accountStyles.section} open={params.computerRemoved === "1" || params.computerRenamed === "1"}>
             <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><Laptop size={20} /></span><span className={accountStyles.sectionLabel}><strong>Child computers</strong><small>{childDevices.length} connected · Names & device access</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
             <div className={accountStyles.panelBody}>
           <div className={styles.computersHeading}>
             <div><span className={styles.kicker}><Laptop size={15} /> Child computers</span><h2>{childDevices.length} of {account.deviceLimits?.child || 10} computers connected</h2><p className={styles.channelExplanation}>Manage school activity in your <Link href="/guard/dashboard/">family dashboard</Link>.</p></div>
-            {canConnectComputers && <Link className={styles.secondaryPortalButton} href="/guard/activate">Approve pairing code</Link>}
+            {canConnectComputers && !needsFamilySetup && <Link className={styles.secondaryPortalButton} href="/guard/activate">Approve pairing code</Link>}
           </div>
           <PlanControls limit={account.deviceLimits?.child || 10} connected={childDevices.length} canChange={account.familyPlan?.canChange === true} complimentary={isComplimentary} allowance={account.aiAllowance || null}/>
           {childDevices.length ? (
@@ -424,8 +445,8 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           ) : (
             <div className={styles.emptyComputers}><CheckCircle2 size={21} /><span>{canConnectComputers ? "Approve a computer’s pairing code, then assign it to a child in your dashboard." : "Activate family access to connect your children’s computers."}</span></div>
           )}</div>
-          </details>
-        <ChildSetup key={params.setup === "connect" ? "connect" : "account"} initiallyCollapsed={params.setup !== "connect" && (setupCollapsed || childDevices.length > 0 || !canConnectComputers)} highlightDownload={childDevices.length === 0 && installerAvailable}>
+          </details>}
+        {!needsFamilySetup && <ChildSetup key={openingInstaller ? "connect" : "account"} initiallyCollapsed={!openingInstaller && (setupCollapsed || childDevices.length > 0 || !canConnectComputers)} highlightDownload={childDevices.length === 0 && installerAvailable}>
           {canConnectComputers ? <>
             <p className={styles.channelExplanation}>Family setup: children → school → activities → connect a computer. <Link href="/guard/dashboard/?setup=1">Continue your saved family setup</Link>. </p>
             {installerAvailable && <InstallerShareLink />}
@@ -455,7 +476,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               </li>
             </ol>
           </> : <p className={styles.channelExplanation}>{showTrialOffer ? <>First, <a href="#start-trial">activate your free trial</a>. Then you can add children and connect their computers.</> : canSubscribe ? <>Open <a href="#account-billing">Plan &amp; billing</a> to restore your family access. Your current installations and saved work are kept.</> : account.enrollment?.reason || "Setup will be available here when family enrollment opens."}</p>}
-        </ChildSetup>
+        </ChildSetup>}
 
           {!billingFirst && billingSection}
           <details id="account-updates" className={accountStyles.section} open={Boolean(params.channel)}>

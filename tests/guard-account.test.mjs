@@ -67,6 +67,8 @@ function fixture(overrides = {}) {
     ...overrides };
 }
 
+const connectReady = { parentPasswordSet: true, hasChildren: true, atComputerStep: true };
+
 test('account outage is explicit, not an empty household or not-subscribed claim', async () => {
   const html = await render(null);
   assert.match(html, /family account is temporarily unavailable/);
@@ -92,7 +94,7 @@ test('a profile lookup failure still renders the authenticated account and setup
     currentUser: async () => { throw new Error('profile temporarily unavailable'); },
   });
   assert.match(html, /Welcome, Parent/);
-  assert.match(html, /Download child app for Windows/);
+  assert.match(html, /Start family setup/);
   assert.doesNotMatch(html, /family account is temporarily unavailable/);
 });
 
@@ -113,7 +115,7 @@ test('public customer setup offers a deliberate trial, then a cloud download wit
   assert.match(ready, /href="#start-trial"/);
   assert.doesNotMatch(ready, /Windows installer notice|Payment history|class="billingMetric"|id="account-billing"[^>]* open/);
   assert.doesNotMatch(ready, /Download child app for Windows|PRIVATE.VALIDATION/);
-  const active = await render(fixture({ entitlementStatus: 'trial', trialEndsAt: '2030-10-01T00:00:00Z', release: cloudReleaseFixture(),
+  const active = await render(fixture({ familySetup:connectReady, entitlementStatus: 'trial', trialEndsAt: '2030-10-01T00:00:00Z', release: cloudReleaseFixture(),
     trialEligible: false, enrollment: { customerLaunchOpen: true, canStartTrial: false, canSubscribe: false } }));
   assert.match(active, /href="\/guard\/download\/windows"/);
   assert.match(active, /No automatic charge/);
@@ -182,13 +184,13 @@ test('all account states describe cloud setup without parent installation or net
     { entitlementStatus: 'trial' }, { entitlementStatus: 'active' }, { entitlementStatus: 'grace' }]) {
     const html = await render(fixture(overrides));
     assert.match(html, /nothing for parents to install/);
-    assert.match(html, /Open family dashboard/);
+    assert.match(html, /href="\/guard\/dashboard\/(?:\?setup=1)?"/);
     assert.doesNotMatch(html, /Install the parent computer|Pair the parent computer|\bLAN\b|home network|Auto-Scan|3737|parent\/admin computers|First computer/);
   }
 });
 
 test('an old installer neither enables cloud downloads nor appears as a cloud update', async () => {
-  const html = await render(fixture({ billingMode: 'complimentary', entitlementStatus: 'active', release: legacyReleaseFixture }));
+  const html = await render(fixture({ familySetup:connectReady, billingMode: 'complimentary', entitlementStatus: 'active', release: legacyReleaseFixture }));
   assert.match(html, /Cloud installer not released yet/);
   assert.match(html, /href="\/guard\/activate\/?"/);
   assert.doesNotMatch(html, /href="\/guard\/download\/windows"|What changed in 1\.2\.157|Version 1\.2\.157/);
@@ -201,7 +203,7 @@ test('legacy release eligibility cannot start a trial from the cloud page', asyn
 });
 
 test('the verified account catalog must select a cloud artifact before enabling download', async () => {
-  const html = await render(fixture({ entitlementStatus: 'trial', release: cloudReleaseFixture() }));
+  const html = await render(fixture({ familySetup:connectReady, entitlementStatus: 'trial', release: cloudReleaseFixture() }));
   assert.match(html, /href="\/guard\/download\/windows"/);
   assert.match(html, /Download child app for Windows/);
   assert.match(html, /Assign this computer to the child’s existing profile/);
@@ -258,15 +260,13 @@ test('billing failure keeps a free retry and directs setup to activation instead
   assert.doesNotMatch(html, /Subscribe for \$19.99|Setup will be available here when family enrollment opens|access and family computers are unaffected/);
 });
 
-test('first trial visit prioritizes computers and setup; billing details return in the final 15 days or for an invoice', async () => {
+test('first trial visit prioritizes family setup; billing details return in the final 15 days or for an invoice', async () => {
   const trial = { entitlementStatus:'trial', trialEligible:false, hasBillingAccount:true, release:cloudReleaseFixture() };
   const endIn = days => new Date(Date.now() + days * 86400000).toISOString();
   const zero = { number:'TRIAL', status:'paid', amountPaid:0, amountDue:0, currency:'usd', createdAt:null };
   const html = await render(fixture({ ...trial, trialEndsAt:endIn(35), billing:{available:true,invoices:[zero]} }), {params:{trial:'started'}});
   assert.match(html,/Your free trial has started/);
-  for (const id of ['account-computers','child-setup']) {
-    assert.ok(html.includes('id="'+id+'"') && html.indexOf('id="'+id+'"') < html.indexOf('id="account-billing"'));
-  }
+  assert.ok(html.includes('id="family-setup-heading"') && html.indexOf('id="family-setup-heading"') < html.indexOf('id="account-billing"'));
   assert.doesNotMatch(html,/id="account-billing"[^>]* open|Payment history|class="billingMetric"|Not collected|Start extended free trial/);
   const later = await render(fixture({ ...trial, trialEndsAt:endIn(15) }));
   assert.match(later,/class="billingMetric"/);
@@ -276,7 +276,35 @@ test('first trial visit prioritizes computers and setup; billing details return 
   assert.match(receipt,/https:\/\/invoice\.example\.test\/receipt/);
   const grace = await render(fixture({ entitlementStatus:'grace', hasBillingAccount:true }));
   assert.match(grace,/id="account-billing"[^>]* open/);
-  assert.ok(grace.indexOf('id="account-billing"') < grace.indexOf('id="child-setup"'));
+  assert.doesNotMatch(grace,/id="child-setup"/);
+});
+
+test('new households have one setup action, including when an old installer bookmark is opened', async () => {
+  for (const [password, child, action] of [[false,false,'Start family setup'],[true,false,'Continue family setup'],[false,true,'Continue family setup']]) {
+    const account = fixture({ entitlementStatus:'trial', release:cloudReleaseFixture(), familySetup:{parentPasswordSet:password,hasChildren:child,atComputerStep:true} });
+    for (const params of [{}, {setup:'connect'}]) {
+      const html = await render(account, {params});
+      assert.match(html, new RegExp('href="/guard/dashboard/\\?setup=1">'+action));
+      assert.doesNotMatch(html,/Back to dashboard|Open dashboard|Add a computer|id="account-computers"|id="child-setup"|Create download code|href="\/guard\/download\/windows"|Approve pairing code/);
+    }
+  }
+});
+
+test('families can resume the guide, install from its connect step and manage an established computer', async () => {
+  const base = { entitlementStatus:'trial', release:cloudReleaseFixture(), familySetup:{...connectReady, atComputerStep:false} };
+  const midway = await render(fixture(base));
+  assert.match(midway,/Continue family setup/);
+  assert.doesNotMatch(midway,/Create download code/);
+  for (const html of [await render(fixture(base),{params:{setup:'connect'}}), await render(fixture({...base,familySetup:connectReady}))]) {
+    assert.match(html,/Connect your first computer/);
+    assert.match(html,/Create download code/);
+    assert.match(html,/href="\/guard\/download\/windows"/);
+  }
+  const devices = [{ id:'child-pc', deviceRole:'child', computerName:'School PC', platform:'win32', appVersion:'1.2.350', lastSeenAt:'2026-11-24T13:00:00Z', revokedAt:null }];
+  const established = await render(fixture({...base,devices}));
+  assert.match(established,/Open dashboard/);
+  assert.match(established,/Add a computer/);
+  assert.match(established,/School PC/);
 });
 
 test('account freshness follows the authorized channel and the rendered release version', async () => {

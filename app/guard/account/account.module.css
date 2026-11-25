@@ -18,6 +18,9 @@
 .trialOffer time { white-space:nowrap; }
 .startTrialButton { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:11px 20px; border:0; border-radius:10px; background:#13633e; color:#fff; font:700 1rem/1.3 var(--font-sans); cursor:pointer; }
 .startTrialButton:hover { background:#0c4e30; }
+.familySetup { margin:16px 0 22px; padding:clamp(18px,3vw,28px); border:1px solid #9bc8ae; border-radius:16px; background:#e8f5ec; }
+.familySetup h2 { color:#163e2b; font:750 1.3rem/1.3 var(--font-sans); }
+.familySetup p { max-width:64ch; margin:6px 0 16px; color:#365b46; line-height:1.5; }
 .startTrialButton:disabled { opacity:.75; cursor:wait; }
 .trialOffer + .quickActions { display:flex; margin:8px 0; }
 .trialOffer + .quickActions .setupAction { min-height:44px; padding:8px 0; background:transparent; border:0; }

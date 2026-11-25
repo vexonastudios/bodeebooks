@@ -12,7 +12,7 @@ async function accountPage(params={}) {
   const filename=path.resolve('app/guard/account/page.tsx'),localRequire=createRequire(filename),component=new Module(filename);
   const beforeFetch=globalThis.fetch,beforeApi=process.env.BODEEGUARD_COMMERCIAL_API_URL;
   process.env.BODEEGUARD_COMMERCIAL_API_URL='https://fixture.invalid';
-  globalThis.fetch=async()=>({ok:true,json:async()=>({billingMode:'complimentary',entitlementStatus:'active',releaseChannel:'beta',release:cloudReleaseFixture('beta'),devices:[]})});
+  globalThis.fetch=async()=>({ok:true,json:async()=>({billingMode:'complimentary',entitlementStatus:'active',releaseChannel:'beta',release:cloudReleaseFixture('beta'),devices:[],familySetup:{parentPasswordSet:true,hasChildren:true,atComputerStep:true}})});
   component.require=name=>{
     if(name==='@clerk/nextjs/server')return {auth:{protect:async()=>({getToken:async()=>'synthetic'})},currentUser:async()=>({fullName:'Test Parent',publicMetadata:{},unsafeMetadata:{},externalAccounts:[]})};
     if(name==='next/headers')return {cookies:async()=>({get:()=>({value:'1'})})};
