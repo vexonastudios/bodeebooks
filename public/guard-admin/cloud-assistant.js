@@ -89,7 +89,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   const composer = document.createElement('div'); composer.className = 'cloud-assistant-composer';
   composer.append(byId('parent-assistant-form'), drawer.querySelector('.parent-assistant-footnote'));
   drawer.append(content, composer);
-  input.placeholder = 'Ask BodeeGuard…';
+  input.placeholder = 'Ask a question…';
   const closeButton = byId('parent-assistant-close');
   closeButton.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>';
   closeButton.setAttribute('aria-label', 'Close Ask BodeeGuard');
@@ -97,21 +97,24 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   let welcome = null, busy = false, generation = 0, topicId = null, retry = null, controller = null;
   let history = [], returnFocus = null, clarification = null;
   const catalogPanel=document.createElement('details');catalogPanel.className='assistant-settings-catalog';
-  const catalogSummary=document.createElement('summary');catalogSummary.textContent='Browse settings';
+  const catalogSummary=document.createElement('summary');catalogSummary.textContent='Browse settings manually';
   const catalogBody=document.createElement('div');catalogBody.className='assistant-settings-body';
-  catalogPanel.append(catalogSummary,catalogBody);content.append(help,catalogPanel,thread,byId('parent-assistant-suggestions'));
-  let catalogLoading=false;
+  catalogPanel.append(catalogSummary,catalogBody);help.append(catalogPanel);
+  content.append(thread,byId('parent-assistant-suggestions'),help);
+  let catalogVersion=0;
+  function closeOptions() {
+    help.open=false;catalogPanel.open=false;catalogVersion++;catalogBody.replaceChildren();
+  }
   const element=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
   async function loadCatalog() {
-    if(catalogLoading)return;
-    catalogLoading=true;const current=generation;catalogBody.replaceChildren(element('p','Loading current children and supported settings…'));
+    const version=++catalogVersion,current=generation;catalogBody.replaceChildren(element('p','Loading current children and supported settings…'));
     try {
-      const data=await request('assistant-settings-catalog');if(current!==generation)return;
+      const data=await request('assistant-settings-catalog');if(current!==generation||version!==catalogVersion||!catalogPanel.open)return;
       const form=element('form');form.className='assistant-settings-form';
       const label=(text,control)=>{const node=element('label',text);node.append(control);return node;};
       const target=element('select');target.setAttribute('aria-label','Change settings for');
-      for(const [id,name] of [['family','Family settings'],['all','All current children'],...(data.students||[]).map(s=>[s.id,s.name+(s.grade?' · '+s.grade:'')])]) {const option=element('option',name);option.value=id;target.append(option);}
-      if(data.students?.length)target.value=data.students[0].id;
+      for(const [id,name] of [['','Choose who this is for'],['family','Family settings'],['all','All current children'],...(data.students||[]).map(s=>[s.id,s.name+(s.grade?' · '+s.grade:'')])]) {const option=element('option',name);option.value=id;target.append(option);}
+      target.required=true;
       const search=element('input');search.type='search';search.placeholder='Find a setting or activity';search.setAttribute('aria-label','Find a setting');
       const fieldSelect=element('select');fieldSelect.setAttribute('aria-label','Setting to change');
       const valueRoot=element('div'),note=element('p');note.className='assistant-setting-note';
@@ -147,7 +150,9 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       }
       function filter() {
         const old=fieldSelect.value;fieldSelect.replaceChildren();const query=search.value.trim().toLowerCase();
-        for(const f of data.fields.filter(f=>(f.scope==='family')===(target.value==='family')&&f.label.toLowerCase().includes(query))) {const o=element('option',f.label);o.value=f.id;fieldSelect.append(o);}
+        const placeholder=element('option','Choose a setting');placeholder.value='';fieldSelect.append(placeholder);
+        search.disabled=fieldSelect.disabled=!target.value;
+        for(const f of data.fields.filter(f=>target.value&&(f.scope==='family')===(target.value==='family')&&f.label.toLowerCase().includes(query))) {const o=element('option',f.label);o.value=f.id;fieldSelect.append(o);}
         if([...fieldSelect.options].some(o=>o.value===old))fieldSelect.value=old;valueControl();
       }
       target.addEventListener('change',filter);search.addEventListener('input',filter);fieldSelect.addEventListener('change',valueControl);
@@ -156,18 +161,18 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
         event.preventDefault();if(busy)return;cancelReview();busy=true;review.disabled=true;status.textContent='Checking the current value…';
         try {
           const response=await request('assistant-settings-review',{fieldId:fieldSelect.value,studentIds:target.value==='family'?[]:target.value==='all'?data.students.map(s=>s.id):[target.value],allChildren:target.value==='all',value:getValue()});
-          if(current!==generation)return;
-          const reply=message('assistant',response.message,'',response);sources(reply,response.sources);actionReview(reply,response.settingsReview,'settings');catalogPanel.open=false;status.textContent='Review prepared. Nothing saved yet.';
+          if(current!==generation||version!==catalogVersion||!catalogPanel.open)return;
+          const reply=message('assistant',response.message,'',response);sources(reply,response.sources);actionReview(reply,response.settingsReview,'settings');closeOptions();
         }catch(error){if(current===generation)status.textContent=error.message;}
         finally{if(current===generation){busy=false;review.disabled=false;}}
       });
-      const manual=element('details'),heading=element('summary','Open their editor');manual.append(heading,element('p','These tasks use their own forms and confirmation steps.'));
+      const manual=element('details'),heading=element('summary','Other settings pages');manual.append(heading,element('p','These tasks use their own forms and confirmation steps.'));
       for(const item of data.manual||[]) {const row=element('div');sources(row,[{id:'manual-'+item.tab,title:item.label,tab:item.tab,navigation:{label:item.label}}]);manual.append(row);}
-      catalogBody.replaceChildren(element('p','Choose a field to prepare a change. You will see the current value before saving.'),form,manual);
-    }catch(error){if(current===generation)catalogBody.replaceChildren(element('p',error.message));}
-    finally{catalogLoading=false;}
+      catalogBody.replaceChildren(form,manual);
+    }catch(error){if(current===generation&&version===catalogVersion&&catalogPanel.open)catalogBody.replaceChildren(element('p',error.message));}
   }
-  catalogPanel.addEventListener('toggle',()=>{if(catalogPanel.open)void loadCatalog();});
+  catalogPanel.addEventListener('toggle',()=>{if(catalogPanel.open&&help.open)void loadCatalog();else catalogVersion++;});
+  help.addEventListener('toggle',()=>{if(!help.open)catalogPanel.open=false;});
   function message(role, text, className = '', info = {}) {
     const item = document.createElement('article');
     item.className = `assistant-message ${role} ${className}`;
@@ -238,7 +243,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     if(clarification&&root.childElementCount)root.scrollIntoView({block:'nearest'});
   }
   function close() {
-    cancelReview();
+    closeOptions();cancelReview();
     drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); drawer.inert = true;
     background.inert = false; launcher.setAttribute('aria-expanded', 'false'); byId('parent-assistant-backdrop').hidden = true;
     (returnFocus?.isConnected ? returnFocus : launcher).focus();
@@ -327,7 +332,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     if(!review || !Number.isInteger(review.studentCount) || review.studentCount<1 || review.studentCount>50)return;
     const game=type==='game-time';
     if(game && (!Number.isInteger(review.minutes)||review.minutes<1||review.minutes>240))return;
-    if(!game && !['games-unlock','games-lock','math-enable','drivers-daily-limit','catalog-settings'].includes(review.kind))return;
+    if(!game && !['games-unlock','games-lock','math-enable','music-unlock','drivers-daily-limit','catalog-settings'].includes(review.kind))return;
     if(review.kind==='catalog-settings' && (typeof review.reviewToken!=='string'||!Array.isArray(review.rows)||!review.rows.length||review.rows.length>50))return;
     if(review.kind==='drivers-daily-limit' && (review.studentCount!==1 || !Number.isInteger(review.minutes) || review.minutes<1 || review.minutes>480 || typeof review.targetLabel!=='string'))return;
     if(review.kind==='games-lock' && (!Array.isArray(review.targets)||!review.targets.length||review.targets.some(t=>!['family-games','bodeebooks-games'].includes(t))))return;
@@ -339,6 +344,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
     const approve=document.createElement('button');approve.type='button';approve.className='btn btn-primary';
     approve.textContent=game?'Yes, add '+review.minutes+' minutes of '+(review.activityLabel||'Family Games')+' for '+(review.targetLabel || 'all '+review.studentCount+' kids'):review.kind==='games-unlock'?'Yes, unlock games today':review.kind==='games-lock'?'Lock '+(review.targets.length===2?'both game areas':review.targets[0]==='family-games'?'Family Games':'BodeeBooks Games')+' for everyone':'Yes, enable Math Coach';
     const cancel=document.createElement('button');cancel.type='button';cancel.className='btn btn-secondary';cancel.textContent='Cancel';
+    if(review.kind==='music-unlock')approve.textContent='Unlock music for all my kids';
     if(review.kind==='drivers-daily-limit')approve.textContent='Set '+review.targetLabel+'’s daily limit to '+review.minutes+' minutes';
     if(review.kind==='catalog-settings') {
       approve.textContent='Confirm & save '+(review.scope==='family'?'family setting':review.studentCount===1?'for '+review.rows[0].child:'for '+review.studentCount+' children');
@@ -419,7 +425,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
       clarification = response.clarification || null;
       if (response.showSettingsCatalog) {
         const choose=element('button','Browse supported settings');choose.type='button';choose.className='btn btn-secondary';
-        choose.addEventListener('click',()=>{catalogPanel.open=true;catalogPanel.scrollIntoView({block:'start'});});
+        choose.addEventListener('click',()=>{help.open=true;catalogPanel.open=true;catalogSummary.focus({preventScroll:true});catalogPanel.scrollIntoView({block:'start'});});
         const actions=element('div');actions.className='assistant-message-actions';actions.append(choose);reply.append(actions);
       }
       if (response.mode === 'action' && response.change?.changedCount > 0) onChange?.(response.change.feature);
@@ -454,7 +460,7 @@ export function setupCloudAssistant({ endpoint, navigate, onChange }) {
   input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submit(); } });
   const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cloud-assistant-reset'; reset.textContent = 'Clear conversation';
   reset.addEventListener('click', () => {
-    cancelReview(); generation++; controller?.abort(); welcome = null; history = []; clarification = null; retry = null; topicId = null; pendingReview = null; busy = false;
+    closeOptions();cancelReview(); generation++; controller?.abort(); welcome = null; history = []; clarification = null; retry = null; topicId = null; pendingReview = null; busy = false;
     input.value = ''; input.readOnly = false; byId('parent-assistant-send').disabled = false; thread.replaceChildren(); loadWelcome();
   });
   help.append(reset);

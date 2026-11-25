@@ -16,6 +16,7 @@ const server=http.createServer(async(req,res)=>{
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
  if(req.url==='/bridge'){try{let text='';for await(const chunk of req)text+=chunk;const body=JSON.parse(text);calls.push(body);let result;
  if(body.action==='assistant-welcome')result=await assistant.welcome(principal);
+ else if(body.action==='assistant-settings-catalog')result={students:[{id:'sample-child',name:'Mia'}],fields:[{id:'math',label:'Math Coach access',scope:'child',type:'boolean'}],manual:[]};
  else if(body.action==='assistant-ask')result=await assistant.ask(principal,body);
  else if(body.action==='assistant-game-time-approve'){result=await assistant.approveGameTime(principal,body);if(loseReply){loseReply=false;throw Error('Synthetic lost reply; retry confirmation');}}
  else if(body.action==='assistant-settings-approve'){result=await assistant.approveSettings(principal,body);if(loseLockReply){loseLockReply=false;throw Error('Synthetic lost lock reply');}}
@@ -29,7 +30,24 @@ async function run(){
  session.defaultSession.webRequest.onBeforeRequest((details,callback)=>callback({cancel:!details.url.startsWith(origin)}));
  const win=new BrowserWindow({show:false,width:1200,height:920,webPreferences:{offscreen:true,sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}}),js=text=>win.webContents.executeJavaScript(text,true);
  const wait=async text=>{for(let i=0;i<100;i++){if(await js(text))return;await delay(30);}throw Error('Timed out '+text);};
- await win.loadURL(origin);await wait('window.ready===true');await js('document.getElementById("parent-assistant-launcher").click()');await wait('document.getElementById("parent-assistant-thread").textContent.includes("Tell me what")');
+ await win.loadURL(origin);await wait('window.ready===true');await js('document.getElementById("parent-assistant-launcher").click()');await wait('document.getElementById("parent-assistant-thread").textContent.includes("What would you like help with?")');
+ const settingsForm='.assistant-settings-form';
+ for(const width of [1200,390]){
+   win.setSize(width,844);await delay(120);
+   assert.equal(await js('document.querySelector(".cloud-assistant-content").firstElementChild.id'),'parent-assistant-thread');
+   assert.equal(await js('document.querySelector(".cloud-assistant-help").open'),false);
+   assert.equal(await js('!!document.querySelector(".assistant-settings-form")?.checkVisibility()'),false);
+ }
+ assert.equal(calls.filter(c=>c.action==='assistant-settings-catalog').length,0);
+ await js('document.querySelector(".cloud-assistant-help summary").click();document.querySelector(".assistant-settings-catalog summary").click()');
+ await wait('!!document.querySelector("'+settingsForm+'")');
+ assert.equal(await js('document.querySelector(".assistant-settings-form select").value'),'');
+ assert.equal(await js('document.querySelector(".assistant-settings-form button").disabled'),true);
+ await js('document.getElementById("parent-assistant-close").click();document.getElementById("parent-assistant-launcher").click()');
+ assert.equal(await js('document.querySelector(".cloud-assistant-help").open || document.querySelector(".assistant-settings-catalog").open'),false);
+ assert.equal(calls.filter(c=>c.action==='assistant-settings-catalog').length,1);
+ fs.mkdirSync(path.join(root,'.tmp/assistant-review'),{recursive:true});
+ await delay(150);fs.writeFileSync(path.join(root,'.tmp/assistant-review/ask-first-phone.png'),(await win.webContents.capturePage()).toPNG());
  await js('document.getElementById("parent-assistant-input").value="Give Mia 20 extra minutes of game time";document.getElementById("parent-assistant-form").requestSubmit()');await wait('document.querySelector(".assistant-confirmation")!==null');assert.equal(saves,0);
  for(const width of [1200,390,320]){win.setSize(width,920);await delay(70);const geometry=await js('({overflow:document.querySelector(".cloud-assistant-content").scrollWidth>document.querySelector(".cloud-assistant-content").clientWidth+1,heights:[...document.querySelectorAll(".assistant-confirmation button")].map(b=>b.getBoundingClientRect().height)})');assert.equal(geometry.overflow,false,'overflow '+width);assert.ok(geometry.heights.every(h=>h>=44));}
  await js('document.querySelector(".assistant-confirmation button").click();document.querySelector(".assistant-confirmation button").click()');await wait('document.querySelector(".assistant-confirmation").textContent.includes("Retry confirmation")');assert.equal(saves,1);assert.equal(calls.filter(c=>c.action==='assistant-game-time-approve').length,1);
@@ -75,6 +93,16 @@ async function run(){
  await js('document.getElementById("parent-assistant-launcher").click()');await ask('Why can’t my child create coloring pages?');
  assert.match(await js('document.querySelector("#parent-assistant-thread").lastElementChild.textContent'),/Ideas to approve/);
  win.setSize(390,844);await delay(200);fs.writeFileSync(path.join(root,'.tmp/assistant-review/guide-phone.png'),(await win.webContents.capturePage()).toPNG());
+ await ask('Which settings can you change?');
+ await js('document.querySelector("#parent-assistant-thread .assistant-message:last-child .assistant-message-actions button").click()');
+ await wait('!!document.querySelector(".assistant-settings-form")?.checkVisibility()');
+ assert.equal(await js('document.querySelector(".cloud-assistant-help").open'),true);
+ await js('document.querySelector(".assistant-settings-form select").value="sample-child";document.querySelector(".assistant-settings-form select").dispatchEvent(new Event("change"));');
+ assert.equal(await js('document.querySelector(".assistant-settings-form button").disabled'),true);
+ await js('document.querySelectorAll(".assistant-settings-form select")[1].value="math";document.querySelectorAll(".assistant-settings-form select")[1].dispatchEvent(new Event("change"));');
+ assert.equal(await js('document.querySelector(".assistant-settings-form button").disabled'),false);
+ await js('document.querySelector(".cloud-assistant-reset").click()');await wait('document.querySelector("#parent-assistant-thread").textContent.includes("What would you like help with?")');
+ assert.equal(await js('document.querySelector(".cloud-assistant-help").open'),false);
  await ask('Open Report a bug');assert.equal(await js('document.querySelector("#parent-assistant-thread").lastElementChild.querySelector("a").getAttribute("href")'),'/guard/report/');
  assert.equal(calls.filter(c=>c.action.endsWith('-approve')).length,mutations,'navigation/guidance did not save settings');
  console.log('Assistant passed: action reviews/retries, mobile/desktop guidance, topic follow-ups, read-only Daily plan search, preserved child/draft, fixed support link and 1200/390/320 layouts');win.destroy();server.close();app.exit(0);
