@@ -131,13 +131,27 @@ else {
   assert.equal(await js('document.querySelector("#parent-start-title").textContent'),'Parent password & children');
   assert.equal(await js('[...document.querySelectorAll("dialog[open] a")].some(a=>a.textContent==="Get Windows installer")'),false);
   await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Save your parent password")');
+  const passwordFields=()=>js(`Array.from(document.querySelectorAll('.setup-password-fields input'), input => [input.type, input.autocomplete, input.labels[0].textContent])`);
+  assert.deepEqual(await passwordFields(),[['password','new-password','Parent password'],['password','new-password','Confirm parent password']]);
   await js('document.querySelector("[name=setupParentPassword]").value="Fictional-parent-42";document.querySelector("[name=setupParentPasswordConfirm]").value="different"');
+  await js('document.querySelector("[aria-controls=setupParentPassword]").click()');
+  assert.deepEqual((await passwordFields()).map(field=>field[0]),['text','password']);
+  await js('document.querySelector("[aria-controls=setupParentPasswordConfirm]").click();document.querySelector("[aria-controls=setupParentPassword]").click()');
+  assert.deepEqual((await passwordFields()).map(field=>field[0]),['password','text']);
+  assert.equal(await js('document.querySelector("[aria-controls=setupParentPasswordConfirm]").getAttribute("aria-label")'),'Hide password confirmation');
+  assert.equal(passwordWrites,0,'showing either field never saves');
   await click('Save parent password');assert.equal(passwordWrites,0,'mismatched passwords do not reach the server');
-  await js('document.querySelector("[name=setupParentPasswordConfirm]").value="Fictional-parent-42"');
-  failPassword=true;await click('Save parent password');await wait('document.querySelector(".setup-password-status").textContent.includes("Try again")');
+  assert.equal(await js('document.querySelector("#setup-password-match").textContent'),'Passwords don’t match.');
+  await js('document.querySelector("[name=setupParentPasswordConfirm]").value="Fictional-parent-42";document.querySelector("[name=setupParentPasswordConfirm]").dispatchEvent(new Event("input",{bubbles:true}))');
+  assert.equal(await js('document.querySelector("#setup-password-match").textContent'),'Passwords match.');
+  failPassword=true;
+  await js('document.querySelector("[name=setupParentPasswordConfirm]").focus()');
+  for(const type of ['keyDown','char','keyUp'])win.webContents.sendInputEvent({type,keyCode:'Enter'});
+  await wait('document.querySelector(".setup-password-status").textContent.includes("Try again")');
   assert.equal(await js('document.querySelector("[name=setupParentPassword]").value'),'Fictional-parent-42');
   delayPasswordSnapshot=true;await click('Save parent password');await wait('document.querySelector(".setup-password-status").textContent.includes("was saved")');
   assert.equal(await js('document.querySelector("[name=setupParentPassword]").value'),'', 'confirmed password plaintext is cleared even if the snapshot is delayed');
+  assert.deepEqual((await passwordFields()).map(field=>field[0]),['password','password']);
   assert.equal(passwordWrites,2);snapshot.parentPassword={configured:true,revision:1};
   await click('Check saved password');await wait('document.querySelector(".setup-parent-password").dataset.ready==="true"');
   assert.equal(passwordWrites,2,'checking a saved password never submits it again');
@@ -148,12 +162,17 @@ else {
   for(const [name,width,height]of [['phone',390,844],['desktop',1280,900]]){
    win.setContentSize(width,height);await new Promise(resolve=>setTimeout(resolve,120));
    assert.ok(await js('{const d=document.querySelector("dialog[open]"),r=d.getBoundingClientRect();r.left>=0&&r.right<=innerWidth&&d.scrollWidth<=d.clientWidth+1}'));
+   assert.ok(await js(`[...document.querySelectorAll('.setup-password-control')].every(control=>{
+     const input=control.querySelector('input').getBoundingClientRect(),button=control.querySelector('button').getBoundingClientRect();
+     return input.width>=90&&button.width>=44&&button.height>=44&&input.right<=button.left+1&&button.right<=innerWidth;
+   })`),'both fields have room to type and a separate touch target');
    fs.writeFileSync(path.join(site,'.tmp','setup-password-'+name+'.png'),(await win.webContents.capturePage()).toPNG());
   }
-  await js('document.querySelector("[name=setupParentPassword]").value="Unsaved-fictional-password"');
+  await js('document.querySelector("[name=setupParentPassword]").value="Unsaved-fictional-password";document.querySelector("[aria-controls=setupParentPassword]").click()');
   await click('Close');await wait('!document.querySelector("dialog[open]")');
   await wait('document.querySelector("[name=setupParentPassword]").value===""');
   assert.equal(await js('document.querySelector("[name=setupParentPassword]").value'),'','closing clears unsaved passwords');
+  assert.equal(await js('document.querySelector("[name=setupParentPassword]").type'),'password','closing also resets visibility');
   assert.equal(JSON.stringify(setup).includes('password'),false,'passwords never enter the setup draft');
   win.destroy();
   console.log('Connect readiness passed: direct step, named computer, draft/save/retry, matching student, real acknowledgement check, missing prerequisites preserved and phone/desktop fit.');
