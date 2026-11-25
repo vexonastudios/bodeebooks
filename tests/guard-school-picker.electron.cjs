@@ -292,6 +292,9 @@ async function main(){
  assert.equal(subject('drivers-education').assignments[0].dailyPlan.placement,'anytime');
  await click('Save & continue');await wait('!!document.querySelector(".setup-readiness-summary")');
  assert.equal(state.step,7);assert.equal(rulesWrites.length,1,'retry after progress failure does not write the plan again');
+ assert.equal(await js('document.querySelector(".setup-body").firstElementChild.classList.contains("setup-connection-guide")'),true);
+ assert.equal(await js('document.querySelector(".setup-device-steps li:first-child strong").textContent'),'Start on the child’s Windows computer');
+ await js('document.querySelector(".setup-connection-status summary").click();document.querySelector(".setup-extra-options summary").click()');
  await click('Choose games for each child');await wait('document.querySelector("dialog").dataset.setupSection==="family-games"');
  await click('Back to setup');await wait('!!document.querySelector(".setup-readiness-summary")');
  await click('Close');await wait('!document.querySelector("dialog[open]")');

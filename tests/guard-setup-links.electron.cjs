@@ -8,7 +8,7 @@ const sandbox=fs.readFileSync(path.join(site,'app/guard/dashboard/ParentWorkspac
 const studentId='11111111-1111-4111-8111-111111111111';
 const snapshot={parentPassword:{configured:true,revision:1},students:[{id:studentId,name:'Sample Child'}],devices:[],rules:{revision:1,subjects:[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}}]}],schedule:{enabled:false}}};
 const setup={revision:1,step:7,completed:false,features:{},contentChoices:{},chores:{chosen:true,enabled:false,revision:1},catalog:{version:1}};
-let writes=0;
+let writes=0, issued=0, failCode=false, expiresIn=60000;
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://localhost');
  res.setHeader('Content-Type','text/html');
@@ -21,6 +21,12 @@ const server=http.createServer(async(req,res)=>{
   let raw='';for await(const part of req)raw+=part;
   const input=JSON.parse(raw);if(input.action==='save-setup'){writes++;setup.revision++;res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(setup));}if(input.action!=='get-setup'){writes++;res.statusCode=400;return res.end('{}');}
   res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(setup));
+ }
+ if(url.pathname==='/guard/install/code/'){
+  assert.equal(req.method,'POST');issued++;
+  res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');
+  if(failCode){failCode=false;res.statusCode=503;return res.end(JSON.stringify({error:'Downloads temporarily unavailable.'}));}
+  return res.end(JSON.stringify({code:'MKR7',expiresAt:new Date(Date.now()+expiresIn).toISOString()}));
  }
  if(url.pathname==='/guard/account/'||url.pathname==='/guard/activate/')return res.end(`<h1>${url.pathname.includes('account')?'Windows installer':'Enter pairing code'}</h1><a href="/?setup=connect">Continue setup</a>`);
  if(/^\/guard-admin\/[a-z0-9.-]+$/.test(url.pathname)){
@@ -42,38 +48,50 @@ async function main(){
  for(const width of [1280,390,320]){
   win.setContentSize(width,900);
   await win.loadURL(origin+'/?setup=connect');await wait(`!!document.querySelector('iframe')?.contentDocument?.querySelector('dialog[open]')`);
-  assert.deepEqual(await inside(`return [...document.querySelectorAll('.setup-device-steps li>strong')].map(el=>el.textContent);`),['On your phone','On your child’s Windows computer','Back on your phone']);
-  assert.ok(await inside(`const pc=document.querySelectorAll('.setup-device-steps li')[1];return pc.textContent.includes('guard.bodeebooks.com/install') && pc.textContent.includes('download code from your phone') && pc.textContent.includes('pairing code') && !pc.querySelector('a');`));
-  assert.equal(await inside(`return document.querySelectorAll('.setup-body a').length;`),2,'one parent action per code across the entire step');
-  await inside(`document.querySelector('.setup-connection-guide').open=false;document.querySelector('.setup-next-action button').click();`);
-  assert.ok(await inside(`return document.querySelector('.setup-connection-guide').open && document.activeElement===document.querySelector('.setup-connection-guide summary');`));
+  const headings=await inside(`return [...document.querySelectorAll('.setup-device-steps li>strong:first-child')].map(el=>el.textContent);`);
+  assert.deepEqual(headings,['Start on the child’s Windows computer','Get the download code on your phone','Back on your phone']);
+  assert.ok(await inside(`const pc=document.querySelector('.setup-device-steps li');return pc.textContent.includes('guard.bodeebooks.com/install')&&pc.textContent.includes('Already installed')&&!pc.querySelector('a');`));
+  assert.equal(await inside(`return document.querySelector('.setup-connection-status').open;`),false);
   assert.ok(await inside(`const d=document.querySelector('dialog');return d.scrollWidth<=d.clientWidth+1;`));
   fs.mkdirSync(path.join(site,'.tmp','setup-links'),{recursive:true});
-  await new Promise(resolve=>setTimeout(resolve,150));
-  fs.writeFileSync(path.join(site,'.tmp','setup-links',width+'.png'),(await win.webContents.capturePage()).toPNG());
-  // Click the actual anchor with a browser user gesture. Attributes alone would
-  // not catch sandbox-blocked navigation or PWA nesting.
-  await inside(`document.querySelector('.setup-device-steps li:first-child a').click();`);
-  await wait(`document.querySelector('h1')?.textContent==='Windows installer'`);
-  assert.equal(new URL(win.webContents.getURL()).search,'?setup=connect');
-  assert.equal(new URL(win.webContents.getURL()).hash,'#parent-download-code');
-  await js(`document.querySelector('a').click()`);await wait(`!!document.querySelector('iframe')?.contentDocument?.querySelector('dialog[open]')`);
-  await inside(`document.querySelector('.setup-device-steps li:last-child a').click();`);
+  await new Promise(resolve=>setTimeout(resolve,90));
+  fs.writeFileSync(path.join(site,'.tmp','setup-links','connect-first-'+width+'.png'),(await win.webContents.capturePage()).toPNG());
+  const create=()=>inside(`document.querySelector('.setup-device-steps button').click();`);
+  const handoffWait=s=>wait("document.querySelector('iframe')?.contentDocument?.querySelector("+JSON.stringify(s)+")");
+  const before=issued;
+  if(width!==320){
+   if(width===1280){
+    failCode=true;await create();await wait(`document.querySelector('iframe').contentDocument.querySelector('.setup-code-result').textContent.includes('temporarily unavailable')`);
+    expiresIn=500;
+   }
+   await inside(`const b=document.querySelector('.setup-device-steps button');b.click();b.click();`);await handoffWait('.setup-download-code');
+   assert.ok(await inside(`const code=document.querySelector('.setup-download-code');return code.textContent==='MKR7'&&code.parentElement.parentElement.innerText.includes('Run the installer');`));
+   if(width===1280){
+    await wait(`document.querySelector('iframe').contentDocument.querySelector('.setup-code-result').textContent.includes('expired')`);
+    assert.ok(await inside(`return !document.querySelector('.setup-download-code')&&!document.querySelector('.setup-device-steps button').hidden;`));
+    expiresIn=60000;await create();await handoffWait('.setup-download-code');
+   }
+   assert.equal(issued,before+(width===1280?3:1),'one issue per deliberate request, including retry after failure and expiry');
+  }
+  // An already-installed family can approve immediately, before issuing any code.
+  await inside(`document.querySelector('.setup-device-steps a').click();`);
   await wait(`document.querySelector('h1')?.textContent==='Enter pairing code'`);
   assert.equal(new URL(win.webContents.getURL()).search,'?setup=1');
+  if(width===320)assert.equal(issued,before);
  }
  snapshot.devices.push({id:'sample-device',computer_name:'Study laptop',student_id:null,revision:1});
  await win.loadURL(origin+'/?setup=connect');await wait(`!!document.querySelector('iframe')?.contentDocument?.querySelector('dialog[open]')`);
- await inside(`document.querySelector('.setup-next-action button').click();`);
+ assert.equal(await inside(`return document.querySelector('.setup-body').firstElementChild.classList.contains('setup-computer-assignment');`),true,'return directly to the child assignment after approval');
+ await inside(`document.querySelector('.setup-connection-status').open=true;document.querySelector('.setup-next-action button').click();`);
  assert.equal(await inside(`return document.activeElement===document.querySelector('.setup-computer-assignment select');`),true);
  assert.equal(writes,0);assert.equal(popups,0);
- assert.equal(await inside(`return document.body.textContent.includes('Paintball') || document.body.textContent.includes('individual games');`),true,'setup explains individual game choices');
+ await inside(`document.querySelector('.setup-extra-options').open=true;`);
  await inside(`[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Choose games for each child').click();`);
  await wait(`document.querySelector('iframe')?.contentDocument?.querySelector('dialog[data-setup-section="family-games"]')`);
  assert.equal(await inside(`return document.querySelector('dialog').textContent.includes('Game permissions panel');`),true);
  await inside(`[...document.querySelectorAll('dialog button')].find(b=>b.textContent==='Back to setup').click();`);
  assert.equal(await inside(`return !!document.querySelector('dialog[open]')&&!document.querySelector('dialog').dataset.setupSection;`),true);
- win.destroy();console.log('Setup links passed: production iframe sandbox, desktop/phone download and pairing navigation, saved step return, real assignment control and zero mutations/popups.');
+ win.destroy();console.log('Computer handoff passed: child-PC first, inline code issuance, failure, expiry, direct pairing, assignment, and desktop/phone layouts.');
 }
 const timer=setTimeout(()=>{console.error('Setup link fixture timed out');app.exit(1);},30000);
 main().then(()=>{clearTimeout(timer);server.close(()=>app.exit(0));}).catch(error=>{console.error(error);clearTimeout(timer);server.close(()=>app.exit(1));});

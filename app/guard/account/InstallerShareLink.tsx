@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { KeyRound, LoaderCircle, MonitorDown, ShieldCheck, Smartphone } from "lucide-react";
+import { requestInstallerCode } from "../../../public/guard-admin/cloud-installer-code.js";
 import styles from "../portal.module.css";
 type DownloadCode = {code:string;version:string;expiresAt:string};
 export default function InstallerShareLink() {
@@ -16,9 +17,7 @@ export default function InstallerShareLink() {
     if (busy) return;
     setBusy(true);setGrant(null);setMessage("");
     try {
-      const response=await fetch("/guard/install/code/",{method:"POST",credentials:"same-origin",cache:"no-store",redirect:"error",signal:AbortSignal.timeout(15000)});
-      const result=await response.json();
-      if (!response.ok) throw Error(result.error || "Could not create a code. Try again.");
+      const result=await requestInstallerCode();
       setGrant(result);
     } catch(error){setMessage(error instanceof Error ? error.message : "Could not create a code. Try again.");}
     finally{setBusy(false);}

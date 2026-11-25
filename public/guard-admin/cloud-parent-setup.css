@@ -76,13 +76,18 @@
 .setup-chores small{display:block;margin-top:3px;color:#c3bbd7}
 .setup-chores input{width:22px;height:22px;flex-shrink:0;accent-color:#74d8af}
 @media(max-width:480px){.setup-activity-group .parent-start-activities{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.setup-device-steps{padding-left:1.8rem;margin:4px 0 14px}
-.setup-device-steps li{padding:10px 0 12px 4px;border-bottom:1px solid #ffffff19}
-.setup-device-steps li::marker{color:#c4b5fd;font-weight:700}
-.setup-device-steps li>strong{display:inline-flex;align-items:center;gap:7px}
-.setup-device-steps li>strong .setup-icon{width:18px;height:18px;color:#c4b5fd}
-.setup-device-steps p{margin:6px 0;color:#ccc4df;line-height:1.45;overflow-wrap:anywhere}
-.setup-device-steps a{margin-top:5px;max-width:100%;min-height:44px}
+.setup-device-steps{padding:0;list-style:none;counter-reset:connect-step;margin:0 0 16px;display:grid;gap:8px}
+.setup-device-steps li{counter-increment:connect-step;position:relative;min-width:0;padding:13px 14px 13px 48px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff04}
+.setup-device-steps li::before{content:counter(connect-step);position:absolute;left:12px;top:12px;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#322c4d;color:#dfd3ff;font-weight:700}
+.setup-device-steps li>strong:first-child{font-size:1rem}
+.setup-device-steps p{margin:5px 0 0;color:#ccc4df;line-height:1.4}
+.setup-device-steps .btn,.setup-extra-options .btn{margin:9px 6px 0 0;max-width:100%;min-height:44px;white-space:normal}
+.setup-device-steps .setup-install-address{display:block;margin:2px 0 4px;color:#98e6d1;overflow-wrap:anywhere}
+.setup-code-result:not(:empty){margin:10px 0;padding:10px 12px;border-left:3px solid #70dfbb;background:#75e3b20b;overflow-wrap:anywhere}
+.setup-code-result span,.setup-code-result small{display:block;color:#cec8da}
+.setup-download-code{display:block;letter-spacing:.14em;font:700 1.6rem/1.4 ui-monospace,monospace;color:#a0efd2}
+.setup-connection-status>summary,.setup-extra-options>summary,.setup-connection-guide>summary{padding:10px 0;cursor:pointer}
+.parent-start-dialog .btn[hidden]{display:none}
 .setup-child-entry-actions{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .setup-child-entry-actions .btn{max-width:100%;min-height:44px;white-space:normal}
 .setup-child-entry-actions .btn span,.setup-manual-children .setup-child{min-width:0;overflow-wrap:anywhere}

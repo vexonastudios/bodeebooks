@@ -12,7 +12,7 @@ export default function InstallPage() {
       <p>Enter the download code shown on your parent’s phone. You don’t need email or a parent sign-in on this computer.</p>
       <InstallForm />
       <p className={styles.approvalNote}><ShieldCheck size={18} aria-hidden="true" /> After installing, BodeeGuard shows a <strong>pairing code</strong>. Approve that new code from the parent’s phone, then choose the child’s existing profile.</p>
-      <details className={styles.installHelp}><summary>Where does the download code come from?</summary><p>On your phone, open Family setup. In step four, choose <strong>Get a download code</strong>, then <strong>Create download code</strong>. Keep it on your phone while you type it here.</p></details>
+      <details className={styles.installHelp}><summary>Where does the download code come from?</summary><p>On your phone, open step four of Family Setup and tap <strong>Create download code</strong>. Type the code shown on your phone into this page.</p></details>
     </section>
   </div></div>;
 }

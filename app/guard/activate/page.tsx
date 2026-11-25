@@ -7,20 +7,21 @@ import styles from "../portal.module.css";
 
 export const metadata: Metadata = { title: "Approve a BodeeGuard Computer" };
 
-export default async function ActivatePage({ searchParams }: { searchParams: Promise<{ code?: string | string[] }> }) {
+export default async function ActivatePage({ searchParams }: { searchParams: Promise<{ code?: string | string[]; setup?: string }> }) {
   await auth.protect();
-  const rawCode = (await searchParams).code;
+  const {code:rawCode, setup} = await searchParams;
+  const fromSetup = setup === "1";
   const initialCode = (Array.isArray(rawCode) ? rawCode[0] : rawCode || "").toUpperCase();
   return (
     <div className={styles.portalPage}>
       <div className={`container ${styles.narrowShell}`}>
-        <Link className={styles.backLink} href="/guard/account"><ArrowLeft size={15} /> Parent account</Link>
+        <Link className={styles.backLink} href={fromSetup ? "/guard/dashboard/?setup=connect" : "/guard/account"}><ArrowLeft size={15} /> {fromSetup ? "Back to computer setup" : "Parent account"}</Link>
         <section className={styles.activationCard}>
           <div className={styles.largeIcon}><ShieldCheck size={29} /></div>
           <span className={styles.kicker}>On your phone or parent computer</span>
           <h1>Approve your child’s computer.</h1>
-          <p>On <strong>the child’s computer you’re setting up</strong>, open BodeeGuard. Type the <strong>pairing code shown on its setup screen</strong> below.</p>
-          <p className={styles.approvalNote}>Keep BodeeGuard open on the child’s computer. Approving here connects that computer to your family.</p>
+          <p>Leave BodeeGuard open on the child’s computer. On this parent device, enter the <strong>pairing code from the child app</strong> below.</p>
+          <p className={styles.approvalNote}>After approval, choose which child uses this computer.</p>
           <ActivationForm initialCode={initialCode} />
         </section>
       </div>

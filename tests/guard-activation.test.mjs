@@ -45,8 +45,11 @@ test('approval page identifies the child computer, with current setup steps and 
   });
   const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
   assert.equal(protectedRoute, 1);
-  assert.match(html, /Approve your child/); assert.match(html, /the child’s computer you’re setting up/);
-  assert.match(html, /pairing code shown on its setup screen/); assert.match(html, /Keep BodeeGuard open on the child’s computer/);
+  assert.match(html, /Approve your child/); assert.match(html, /Leave BodeeGuard open on the child’s computer/);
+  assert.match(html, /On this parent device, enter the <strong>pairing code from the child app/);
+  assert.match(html, /After approval, choose which child/); assert.match(html, /href="\/guard\/account"/);
+  const setupHtml = renderToStaticMarkup(await Page({searchParams:Promise.resolve({setup:'1'})}));
+  assert.ok(setupHtml.includes('href="/guard/dashboard/?setup=connect"')); assert.match(setupHtml, /Back to computer setup/);
   assert.doesNotMatch(html, /BodeeGuard Settings|Connect this computer to|Copy code|Paste/);
 });
 test('empty form identifies the child computer code and only offers approval, without submitting its placeholder', () => {
