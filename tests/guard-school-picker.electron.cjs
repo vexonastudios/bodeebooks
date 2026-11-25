@@ -52,25 +52,42 @@ async function main(){
  const click=(text,scope='dialog[open]')=>js(`[...document.querySelectorAll(${JSON.stringify(scope+' button')})].find(b=>b.textContent.trim()===${JSON.stringify(text)}&&!b.disabled).click()`);
  const bob='[data-student-id=bob]',family='.setup-school-family';
  const fill=(name,value,scope=bob)=>js(`{const input=document.querySelector(${JSON.stringify(scope+' [name='+name+']')});input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('input'));}`);
+ const openLookup=async(scope=bob)=>{
+  await js(`document.querySelector('${scope} .setup-school-lookup summary').click()`);
+  await wait(`document.querySelector('${scope} [name=schoolSearch]').getBoundingClientRect().height>0`);
+ };
  const count=()=>snapshot.rules.subjects.filter(s=>s.assignments.some(a=>a.studentId==='bob'&&a.active)).length;
  await win.loadURL(origin);await wait('document.querySelector("dialog[open] .setup-school-form")');
  await click('Set school calendar');await wait('document.querySelector("dialog").dataset.setupSection==="calendar"');
  await click('Back to setup');await wait('!!document.querySelector(".setup-school-family")');
  await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Choose their activities"');assert.equal(schoolWrites.length,0,'skip creates no false school choice');
  await click('Close');await js('guide.open(1)');await wait('document.querySelector("dialog[open] .setup-school-form")');
- await click('Add school website',bob);await fill('schoolSearch','IXL');assert.equal(searches.length,0,'typing common sites does not hit the cloud');
+ await click('Add school website',bob);
+ assert.equal(await js('document.activeElement.name'),'schoolUrl','the first field accepts an address immediately');
+ assert.equal(await js(`document.querySelector('${bob} .setup-school-lookup').open`),false);
+ await fill('schoolUrl','IXL');await click('Add website',bob);
+ await wait('document.querySelector(".setup-error").textContent.includes("Look up by school name")');
+ assert.equal(schoolWrites.length,0);
+ await openLookup();await fill('schoolSearch','IXL');assert.equal(searches.length,0,'typing common sites does not hit the cloud');
  await js(`document.querySelector('${bob} [aria-label="Use IXL"]').click()`);assert.equal(schoolWrites.length,0,'selection is a draft');
+ assert.equal(await js('document.activeElement.name'),'schoolUrl');
+ assert.equal(await js('document.activeElement.value'),'https://www.ixl.com/');
+ assert.equal(await js(`document.querySelector('${bob} .setup-school-lookup').open`),false);
  await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Choose Add website")');
  await fill('schoolTitle','Math');await click('Add website',bob);await wait('document.querySelector(".setup-school-list").textContent.includes("Math")');assert.equal(count(),1);
- await click('Add another school website',bob);await fill('schoolSearch','grammar');await js(`document.querySelector('${bob} [aria-label="Use Quill"]').click()`);await fill('schoolTitle','Grammar');await click('Add website',bob);await wait('document.querySelector(".setup-school-list").textContent.includes("Grammar")');assert.equal(count(),2);assert.equal(snapshot.rules.subjects.some(s=>s.assignments.some(a=>a.studentId==='betty')),false);
- await click('Add another school website',bob);await fill('schoolSearch','Test School');await click('Look up online',bob);await wait('document.querySelector("[data-student-id=bob] .setup-school-results").textContent.includes("Test School")');
+ await click('Add another school website',bob);await fill('schoolTitle','Grammar');await openLookup();await fill('schoolSearch','grammar');await js(`document.querySelector('${bob} [aria-label="Use Quill"]').click()`);await click('Add website',bob);await wait('document.querySelector(".setup-school-list").textContent.includes("Grammar")');assert.equal(count(),2);assert.equal(snapshot.rules.subjects.some(s=>s.assignments.some(a=>a.studentId==='betty')),false);
+ await click('Add another school website',bob);await openLookup();await fill('schoolSearch','Test School');await click('Search online',bob);await wait('document.querySelector("[data-student-id=bob] .setup-school-results").textContent.includes("Test School")');
  assert.deepEqual(searches[0],{action:'find-school-sites',query:'Test School'});assert.equal(await js('document.querySelector("[data-student-id=bob] .setup-school-results").textContent.includes("Unsafe")'),false);
  await js(`document.querySelector('${bob} [aria-label="Use Test School"]').click()`);loseReply=true;await click('Add website',bob);await wait('document.querySelector("[data-student-id=bob]>[role=status]").textContent.includes("Reply lost")');assert.equal(count(),3);
  await click('Add website',bob);await wait('document.querySelector("[data-student-id=bob]>[role=status]").textContent.includes("already added")');assert.equal(count(),3);assert.equal(schoolWrites.length,3,'retry sees refreshed snapshot and never resubmits a committed addition');
- await click('Add another school website',bob);failSearch=true;await fill('schoolSearch','Unknown School');await click('Look up online',bob);await wait('document.querySelector("[data-student-id=bob] .setup-school-editor").textContent.includes("Online lookup is unavailable")');
- await click('Paste a website instead',bob);await fill('schoolUrl','writing.example.edu');await fill('schoolTitle','Writing');await click('Add website',bob);await wait('document.querySelector(".setup-school-list").textContent.includes("Writing")');assert.equal(count(),4);
+ await click('Add another school website',bob);failSearch=true;await openLookup();await fill('schoolSearch','Unknown School');await click('Search online',bob);await wait('document.querySelector("[data-student-id=bob] .setup-school-editor").textContent.includes("Online lookup is unavailable")');
+ await click('Cancel',bob);await click('Add another school website',bob);
+ await fill('schoolUrl','bodeebooks.com');await click('Add website',bob);await wait('document.querySelector(".setup-school-list").textContent.includes("bodeebooks.com")');assert.equal(count(),4);
+ assert.equal(schoolWrites.at(-1).url,'https://bodeebooks.com/');
+ assert.equal(schoolWrites.at(-1).title,'bodeebooks.com','display name is optional');
+ assert.equal(searches.length,2,'typing an address never initiates a directory search');
  await js(`document.querySelector('[aria-label="Remove Test School from Bob"]').click()`);await wait('!document.querySelector(".setup-school-list").textContent.includes("Test School")');assert.equal(count(),3);
- await click('Add another school website',bob);await fill('schoolSearch','Unused search');await click('Cancel — add later',bob);assert.equal(count(),3);
+ await click('Add another school website',bob);await openLookup();await fill('schoolSearch','Unused search');await click('Cancel',bob);assert.equal(count(),3);
  // Final screenshots use only fictional names and locally mocked sites.
  assert.equal(await js('document.querySelector(".setup-error").textContent'),'','successful retry clears the previous error');
  await js('document.querySelector(".setup-body").scrollTop=0');
@@ -80,7 +97,7 @@ async function main(){
   assert.ok(await js('{const d=document.querySelector("dialog"),f=d.querySelector("footer").getBoundingClientRect();d.scrollWidth<=d.clientWidth+1&&f.bottom<=innerHeight}'),'dialog fits '+name);
   fs.writeFileSync(path.join(root,'.tmp/school-picker',name+'.png'),(await win.webContents.capturePage()).toPNG());
  }
- await click('Add another school website',bob);await fill('schoolSearch','grammar');await js('document.querySelector("[data-student-id=bob] .setup-school-search").scrollIntoView({block:"start"})');
+ await click('Add another school website',bob);await openLookup();await fill('schoolSearch','grammar');await js('document.querySelector("[data-student-id=bob] .setup-school-search").scrollIntoView({block:"start"})');
  for(const [name,width]of [['search-desktop',1280],['search-phone',390]]){win.setContentSize(width,1000);await new Promise(r=>setTimeout(r,80));assert.ok(await js('document.querySelector("dialog").scrollWidth<=document.querySelector("dialog").clientWidth+1'));fs.writeFileSync(path.join(root,'.tmp/school-picker',name+'.png'),(await win.webContents.capturePage()).toPNG());}
  await click('Continue');await wait('document.querySelector("#parent-start-title").textContent==="Choose their activities"');assert.equal(count(),3,'a query alone neither blocks continue nor grants access');
  snapshot.students.push({id:'archived',name:'Archived child',archived_at:'2026-01-01'});
@@ -92,7 +109,15 @@ async function main(){
  await wait('document.querySelector(".setup-school-family .btn-primary").disabled && document.querySelector(".setup-school-family>[role=status]").textContent.includes("saved for all children")');
  assert.deepEqual(additions().slice(before).map(w=>[w.studentId,w.provider,w.url]),[['betty','abeka','https://academy.abeka.com/'],['billy','abeka','https://academy.abeka.com/']]);
  assert.equal(await js(`document.querySelectorAll('[data-student-id] [aria-label^="Remove Abeka Academy"]').length`),2);
- await click('Choose a website for all',family);await click('Paste a website instead',family);
+ await click('Choose a website for all',family);
+ assert.equal(await js('document.activeElement.name'),'schoolUrl');
+ assert.equal(await js(`document.querySelector('${family} .setup-school-lookup').open`),false);
+ for(const [name,width] of [['desktop',1280],['phone',390],['narrow',320]]){
+  win.setContentSize(width,900);await new Promise(r=>setTimeout(r,60));
+  const rect=await js(`{const card=document.querySelector('${family}');card.scrollIntoView({block:'start'});const r=card.getBoundingClientRect();({x:Math.floor(r.x),y:Math.floor(r.y),width:Math.ceil(r.width),height:Math.ceil(r.height)})}`);
+  assert.ok(rect.x>=0&&rect.x+rect.width<=width&&rect.y>=0&&rect.y+rect.height<=900);
+  fs.writeFileSync(path.join(root,'.tmp/school-picker','address-first-'+name+'.png'),(await win.webContents.capturePage(rect)).toPNG());
+ }
  await fill('schoolTitle','Family science',family);await fill('schoolUrl','science.example.edu/lessons',family);
  await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Add to all children")');
  failChild='betty';
@@ -102,7 +127,7 @@ async function main(){
  assert.deepEqual(science.map(w=>w.studentId),['bob','betty','betty','billy']);
  assert.equal(await js(`[...document.querySelectorAll('[data-student-id] .setup-school-list')].filter(list=>list.textContent.includes('Family science')).length`),3);
  assert.equal(additions().some(write=>write.studentId==='archived'),false);
- await click('Choose a website for all',family);await fill('schoolSearch','IXL',family);
+ await click('Choose a website for all',family);await openLookup(family);await fill('schoolSearch','IXL',family);
  await js(`document.querySelector('.setup-school-family [aria-label="Use IXL"]').click()`);
  await click('Add to all children',family);await wait('document.querySelector(".setup-school-family>[role=status]").textContent.includes("IXL saved")');
  assert.deepEqual(additions().filter(w=>w.title==='IXL').map(w=>w.studentId),['betty','billy'],'Bob keeps his custom Math title for IXL');

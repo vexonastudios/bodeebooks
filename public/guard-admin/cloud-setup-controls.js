@@ -93,7 +93,7 @@ export function inlineChildren({ host, getSnapshot, mutate, onError, onDraftChan
   save.refresh = renderList; save.open = showEntry; save.hasDraft = hasDraft;
   return save;
 }
-export {inlineSchool} from './cloud-school-picker.js?v=20261124-family-schools';
+export {inlineSchool} from './cloud-school-picker.js?v=20261124-address-first';
 // Reuse working dashboard controls in a guide substep; keep the guide and its
 // exact DOM (including drafts and scroll position) mounted for the return.
 export function setupSections({ dialog, body, footer, navigate, onReturn }) {

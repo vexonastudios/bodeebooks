@@ -30,22 +30,24 @@ export function inlineSchool({host,student,students=[student],quickAbeka=false,g
   if(family||quickAbeka)shortcuts.append(preset);
   shortcuts.append(add);heading.append(shortcuts);
   section.append(heading);if(student)section.append(list);section.append(editor,notice);host.append(section);
-  let pending=null,editing=null,dirty=false,generation=0;
-  const query=field('Find a school or curriculum','schoolSearch',100);query.input.placeholder='Try Abeka, IXL, math, or grammar';query.input.type='search';
+  let pending=null,editing=null,dirty=false,generation=0,suggestedTitle='';
+  const url=field('School website address','schoolUrl',2048);
+  url.input.placeholder='Type or paste a website';url.input.inputMode='url';url.input.autocapitalize='none';url.input.spellcheck=false;
+  const title=field('Website name (optional)','schoolTitle',120);title.input.placeholder='e.g. Math';
+  const lookup=node('details','','setup-school-lookup'),summary=node('summary','Look up by school name');
+  summary.prepend(icon('search'));
+  const query=field('School or curriculum name','schoolSearch',100);query.input.placeholder='e.g. Abeka Academy';query.input.type='search';
   const results=node('div','','setup-school-results'),lookupStatus=node('p','','setup-note');lookupStatus.setAttribute('role','status');
-  const online=button('Look up online',()=>void search());
+  const online=button('Search online',()=>void search());online.prepend(icon('search'));
   const searchRow=node('div','','setup-school-search');searchRow.append(query.label,online);
-  const manual=button('Paste a website instead',()=>{review.hidden=false;url.input.focus();});
-  const review=node('div','','setup-school-review'),title=field('Name on the child’s dashboard (optional)','schoolTitle',120),url=field('Website to open','schoolUrl',2048);
-  title.input.placeholder='For example, Math or Grammar';url.input.placeholder='https://school.example.com';url.input.inputMode='url';url.input.autocapitalize='none';url.input.spellcheck=false;
   const preview=node('a','Preview website ↗','setup-school-preview');preview.target='_blank';preview.rel='noopener noreferrer';preview.hidden=true;
-  const approval=node('p','Check the student sign-in address before adding it.','setup-note');
   const saveLabel=family?'Add to all children':'Add website';
-  const saveButton=button(saveLabel,()=>void save().catch(report),true),cancel=button('Cancel — add later',()=>{reset();add.focus();});
+  const saveButton=button(saveLabel,()=>void save().catch(report),true),cancel=button('Cancel',()=>{reset();add.focus();});
+  saveButton.prepend(icon('plus'));
   const actions=node('div','','setup-school-actions');actions.append(saveButton,cancel);
-  review.append(title.label,url.label,preview,approval);
   const fallback=node('a','Search the web in a new tab ↗','setup-school-web-search');fallback.target='_blank';fallback.rel='noopener noreferrer';fallback.hidden=true;
-  editor.append(searchRow,results,lookupStatus,fallback,manual,review,actions);
+  lookup.append(summary,searchRow,results,lookupStatus,fallback);
+  editor.append(url.label,preview,lookup,title.label,actions);
   function report(error){notice.textContent=error.message;notice.dataset.error='true';onError?.(error);}
   function renderList(){
     const snapshot=getSnapshot();
@@ -70,12 +72,17 @@ export function inlineSchool({host,student,students=[student],quickAbeka=false,g
   }
   function canReplace(){if(pending)return false;if(dirty){report(Error(`Save the website for ${target} first, or choose Cancel.`));return false;}return true;}
   function previewAddress(){try{preview.href=schoolWebsite(url.input.value);preview.hidden=false;}catch{preview.removeAttribute('href');preview.hidden=true;}}
-  function reset(){generation++;editing=null;dirty=false;query.input.value=title.input.value=url.input.value='';editor.hidden=true;shortcuts.hidden=false;review.hidden=true;lookupStatus.textContent='';fallback.hidden=true;online.disabled=false;onChange();}
+  function reset(){
+    generation++;editing=null;dirty=false;suggestedTitle='';query.input.value=title.input.value=url.input.value='';
+    editor.hidden=true;shortcuts.hidden=false;lookup.open=false;lookupStatus.textContent='';results.replaceChildren();
+    fallback.hidden=true;online.disabled=false;url.input.removeAttribute('aria-invalid');
+    notice.textContent='';delete notice.dataset.error;previewAddress();onChange();
+  }
   function open(site=null){
-    if(!canReplace())return;reset();editing=site;editor.hidden=false;shortcuts.hidden=true;notice.textContent='';delete notice.dataset.error;
-    saveButton.textContent=site?'Save website':saveLabel;searchRow.hidden=manual.hidden=!!site;
-    if(site){review.hidden=false;title.input.value=site.title;url.input.value=site.url;results.replaceChildren();previewAddress();url.input.focus();}
-    else{renderResults(commonSchoolMatches().slice(0,4));query.input.focus();}
+    if(!canReplace())return;reset();editing=site;editor.hidden=false;shortcuts.hidden=true;
+    saveButton.lastChild.textContent=site?'Save website':saveLabel;
+    if(site){title.input.value=site.title;url.input.value=site.url;previewAddress();}
+    url.input.focus();
   }
   function renderResults(rows){
     results.replaceChildren();
@@ -83,17 +90,27 @@ export function inlineSchool({host,student,students=[student],quickAbeka=false,g
       let address;try{address=schoolWebsite(row.url);}catch{continue;}
       const item=node('div','','setup-school-result'),info=node('div');info.append(node('strong',row.title),node('span',address,'setup-school-address'),node('small',row.source==='Wikidata'?'Online directory · '+(row.description||'Check the address'):'Common school site'));
       const choose=button('Use this site',()=>{
-        if(dirty&&!editing){report(Error('Add this website or cancel the draft before choosing another.'));return;}
-        title.input.value=row.title;url.input.value=address;dirty=true;review.hidden=false;previewAddress();lookupStatus.textContent='Review the address below, then choose '+saveLabel+'.';review.scrollIntoView({block:'nearest'});saveButton.focus();
+        if(!title.input.value.trim()||title.input.value===suggestedTitle)title.input.value=row.title;
+        suggestedTitle=row.title;url.input.value=address;lookup.open=false;generation++;
+        updateDraft();url.input.focus();
       });choose.setAttribute('aria-label','Use '+row.title);item.append(info,choose);results.append(item);
     }
   }
-  function localResults(){generation++;online.disabled=false;lookupStatus.textContent='';fallback.hidden=true;renderResults(commonSchoolMatches(query.input.value));}
+  function localResults(){generation++;online.disabled=false;lookupStatus.textContent='';fallback.hidden=true;renderResults(query.input.value.trim()?commonSchoolMatches(query.input.value):[]);}
+  lookup.ontoggle=()=>{
+    if(lookup.open){
+      if(document.activeElement===summary)query.input.focus();
+    }else localResults();
+  };
   query.input.oninput=localResults;
   query.input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();void search();}};
-  for(const input of [title.input,url.input])input.oninput=()=>{dirty=true;notice.textContent='';delete notice.dataset.error;onChange();previewAddress();};
+  function updateDraft(){
+    dirty=url.input.value!==(editing?.url||'')||title.input.value!==(editing?.title||'');
+    url.input.removeAttribute('aria-invalid');notice.textContent='';delete notice.dataset.error;onChange();previewAddress();
+  }
+  for(const input of [title.input,url.input])input.oninput=updateDraft;
   async function search(){
-    const name=query.input.value.trim();if(name.length<2){lookupStatus.textContent='Enter at least two letters, or choose a common site.';return;}
+    const name=query.input.value.trim();if(name.length<2){lookupStatus.textContent='Enter at least two letters to search.';return;}
     const ticket=++generation;online.disabled=true;lookupStatus.textContent='Looking for website addresses…';
     fallback.href='https://www.google.com/search?q='+encodeURIComponent(name+' official school website');fallback.hidden=false;
     try{
@@ -101,7 +118,7 @@ export function inlineSchool({host,student,students=[student],quickAbeka=false,g
       const response=await searchSites({query:name});if(ticket!==generation||!section.isConnected)return;
       const local=commonSchoolMatches(name),seen=new Set(local.map(row=>row.url));
       const found=(response.results||[]).filter(row=>!seen.has(row.url));renderResults([...local,...found]);
-      lookupStatus.textContent=found.length?'Online matches are suggestions. Check the website before adding it.':'No additional websites found in the directory. Try a fuller name, search the web, or paste the student sign-in link.';
+      lookupStatus.textContent=results.childElementCount?'Choose a result to fill in the website address.':'No matches. Try another name or enter the website address above.';
     }catch(error){if(ticket===generation&&section.isConnected)lookupStatus.textContent=error.message;}
     finally{if(ticket===generation)online.disabled=false;}
   }
@@ -122,7 +139,13 @@ export function inlineSchool({host,student,students=[student],quickAbeka=false,g
   }
   function save(presetSelected=false){
     if(pending)return pending;
-    let address;try{address=schoolWebsite(url.input.value);}catch(error){return Promise.reject(error);}
+    let address;
+    try{address=schoolWebsite(url.input.value);}catch(error){
+      url.input.setAttribute('aria-invalid','true');url.input.focus();
+      const value=url.input.value.trim();
+      if(!value.includes('.')&&!value.includes(':'))return Promise.reject(Error('Enter an address like school.org, or choose “Look up by school name”.'));
+      return Promise.reject(error);
+    }
     const label=title.input.value.trim()||new URL(address).hostname.replace(/^www\./,'');
     function assigned(child){
       return sitesFor(getSnapshot(),child.id).some(site=>matchesAddress(site,address)&&(family||presetSelected||site.title===label));
