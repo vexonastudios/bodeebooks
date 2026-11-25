@@ -39,23 +39,26 @@ async function main(){
  const wait=async source=>{const end=Date.now()+8000;while(Date.now()<end){if(await js(source))return;await new Promise(resolve=>setTimeout(resolve,25));}throw Error('Timed out: '+source);};
  let popups=0;win.webContents.setWindowOpenHandler(()=>{popups++;return{action:'deny'};});
  assert.equal(sandbox.includes('allow-popups'),false);
- for(const width of [1280,390]){
+ for(const width of [1280,390,320]){
   win.setContentSize(width,900);
   await win.loadURL(origin+'/?setup=connect');await wait(`!!document.querySelector('iframe')?.contentDocument?.querySelector('dialog[open]')`);
-  assert.equal(await inside(`return document.querySelector('.setup-next-action button')?.textContent||'';`),'','no empty scroll-only action when there is no computer to assign');
-  assert.equal(await inside(`return document.querySelectorAll('.setup-next-action a').length;`),2);
+  assert.deepEqual(await inside(`return [...document.querySelectorAll('.setup-device-steps li>strong')].map(el=>el.textContent);`),['On your phone','On your child’s Windows computer','Back on your phone']);
+  assert.ok(await inside(`const pc=document.querySelectorAll('.setup-device-steps li')[1];return pc.textContent.includes('guard.bodeebooks.com/install') && pc.textContent.includes('download code from your phone') && pc.textContent.includes('pairing code') && !pc.querySelector('a');`));
+  assert.equal(await inside(`return document.querySelectorAll('.setup-body a').length;`),2,'one parent action per code across the entire step');
+  await inside(`document.querySelector('.setup-connection-guide').open=false;document.querySelector('.setup-next-action button').click();`);
+  assert.ok(await inside(`return document.querySelector('.setup-connection-guide').open && document.activeElement===document.querySelector('.setup-connection-guide summary');`));
   assert.ok(await inside(`const d=document.querySelector('dialog');return d.scrollWidth<=d.clientWidth+1;`));
   fs.mkdirSync(path.join(site,'.tmp','setup-links'),{recursive:true});
   await new Promise(resolve=>setTimeout(resolve,150));
   fs.writeFileSync(path.join(site,'.tmp','setup-links',width+'.png'),(await win.webContents.capturePage()).toPNG());
   // Click the actual anchor with a browser user gesture. Attributes alone would
   // not catch sandbox-blocked navigation or PWA nesting.
-  await inside(`document.querySelector('.setup-next-action a').click();`);
+  await inside(`document.querySelector('.setup-device-steps li:first-child a').click();`);
   await wait(`document.querySelector('h1')?.textContent==='Windows installer'`);
   assert.equal(new URL(win.webContents.getURL()).search,'?setup=connect');
-  assert.equal(new URL(win.webContents.getURL()).hash,'#child-setup-heading');
+  assert.equal(new URL(win.webContents.getURL()).hash,'#parent-download-code');
   await js(`document.querySelector('a').click()`);await wait(`!!document.querySelector('iframe')?.contentDocument?.querySelector('dialog[open]')`);
-  await inside(`document.querySelectorAll('.setup-next-action a')[1].click();`);
+  await inside(`document.querySelector('.setup-device-steps li:last-child a').click();`);
   await wait(`document.querySelector('h1')?.textContent==='Enter pairing code'`);
   assert.equal(new URL(win.webContents.getURL()).search,'?setup=1');
  }

@@ -96,6 +96,11 @@ test('the real entry form accepts four characters, preserves older pasted codes 
  const savedFetch=globalThis.fetch,calls=[];
  globalThis.fetch=async(url,options)=>{calls.push({url,options});return Response.json({url:'https://download.example.test/installer.exe',version:'1.2.339',expiresAt:null});};
  try{
+  for(const pairing of ['abcd-efgh','abcdefgh']){
+   render();input().props.onChange({target:{value:pairing}});render();
+   await tree.props.onSubmit({preventDefault(){}});
+   assert.match(render(),/pairing code.*on your phone/);assert.equal(calls.length,0);
+  }
   for(const code of ['mkr7','abcde-fghjk']){
    assert.match(render(),/3 letters and 1 number/);
    assert.ok(input().props.minLength<=code.length&&input().props.maxLength>=code.length,'browser length constraints must permit both formats');
@@ -125,7 +130,7 @@ test('parent download handoff offers approval before issuance, after download an
   :name.endsWith('.module.css')?{__esModule:true,default:{}}:native(name);
  component._compile('const {setTimeout,clearTimeout}=require("__clock");'+ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,filename);
  const render=()=>{cursor=0;tree=component.exports.default();while(effects.length)effects.shift()();return renderToStaticMarkup(tree);};
- const check=()=>{const html=render();assert.match(html,/href="\/guard\/activate\/"[^>]*>Approve child computer/);assert.match(html,/different pairing code|pairing code/);assert.match(html,/download code does not approve a computer/);return html;};
+ const check=()=>{const html=render();assert.match(html,/id="parent-download-code"/);assert.match(html,/href="\/guard\/activate\/"[^>]*>Approve child computer/);assert.match(html,/child app shows a <strong>pairing code<\/strong>, enter that code here on your phone/);return html;};
  const previous=globalThis.fetch;
  globalThis.fetch=async()=>Response.json({code:'MKR7',version:'1.2.345',expiresAt:new Date(Date.now()+1800000).toISOString()});
  try{
@@ -133,6 +138,6 @@ test('parent download handoff offers approval before issuance, after download an
   await tree.props.children.find(child=>child?.type==='button').props.onClick();
   assert.match(check(),/MKR7/);
   expire();assert.doesNotMatch(check(),/MKR7/);
-  assert.match(render(),/That code expired/);
+  assert.match(render(),/That download code expired/);
  }finally{globalThis.fetch=previous;}
 });

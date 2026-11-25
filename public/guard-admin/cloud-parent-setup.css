@@ -73,6 +73,13 @@
 .setup-activity-audience>.btn{margin-top:10px}
 .setup-activity-overview .setup-audience-note{margin:0 0 10px;color:#8de3bd;font-weight:600;overflow-wrap:anywhere}
 .setup-activity-overview .setup-audience-note:empty{display:none}
+.setup-device-steps{padding-left:1.8rem;margin:4px 0 14px}
+.setup-device-steps li{padding:10px 0 12px 4px;border-bottom:1px solid #ffffff19}
+.setup-device-steps li::marker{color:#c4b5fd;font-weight:700}
+.setup-device-steps li>strong{display:inline-flex;align-items:center;gap:7px}
+.setup-device-steps li>strong .setup-icon{width:18px;height:18px;color:#c4b5fd}
+.setup-device-steps p{margin:6px 0;color:#ccc4df;line-height:1.45;overflow-wrap:anywhere}
+.setup-device-steps a{margin-top:5px;max-width:100%;min-height:44px}
 .setup-activity-children{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px;margin:0 0 14px}
 .setup-activity-children .btn{min-width:0;min-height:44px;text-align:left;justify-content:flex-start;overflow-wrap:anywhere;white-space:normal}
 .setup-audience-children{display:flex;flex-wrap:wrap;gap:6px;min-width:0;padding:0;margin:12px 0 0;border:0}

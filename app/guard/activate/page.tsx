@@ -17,7 +17,7 @@ export default async function ActivatePage({ searchParams }: { searchParams: Pro
         <Link className={styles.backLink} href="/guard/account"><ArrowLeft size={15} /> Parent account</Link>
         <section className={styles.activationCard}>
           <div className={styles.largeIcon}><ShieldCheck size={29} /></div>
-          <span className={styles.kicker}>Secure device approval</span>
+          <span className={styles.kicker}>On your phone or parent computer</span>
           <h1>Approve your child’s computer.</h1>
           <p>On <strong>the child’s computer you’re setting up</strong>, open BodeeGuard. Type the <strong>pairing code shown on its setup screen</strong> below.</p>
           <p className={styles.approvalNote}>Keep BodeeGuard open on the child’s computer. Approving here connects that computer to your family.</p>

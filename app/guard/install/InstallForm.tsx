@@ -20,6 +20,10 @@ export default function InstallForm() {
   }, [link]);
   async function submit(event: React.FormEvent) {
     event.preventDefault(); if (busy) return;
+    if (/^[2-9A-HJ-NP-Z]{4}-?[2-9A-HJ-NP-Z]{4}$/.test(code.trim())) {
+      setError("That looks like a pairing code. Enter it on your phone to approve this computer. To download the installer here, use the download code from your parent account.");
+      return;
+    }
     setBusy(true);setError("");setLink(null);
     try {
       const response = await fetch("/guard/install/redeem/",{method:"POST",credentials:"omit",headers:{"Content-Type":"application/json"},body:JSON.stringify({code}),cache:"no-store",redirect:"error",signal:AbortSignal.timeout(15000)});

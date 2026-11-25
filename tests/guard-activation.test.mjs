@@ -7,7 +7,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
 
-function load(relative, overrides = {}) {
+function load(relative, overrides = {}, exportName = 'default') {
   const filename = path.resolve(relative), require = createRequire(filename), component = new Module(filename);
   component.filename = filename;
   component.require = name => {
@@ -19,8 +19,24 @@ function load(relative, overrides = {}) {
   component._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true, target: ts.ScriptTarget.ES2022 },
   }).outputText, filename);
-  return component.exports.default;
+  return component.exports[exportName];
 }
+test('parents who submit a download code get the child PC instructions before any approval lookup',async()=>{
+  const auth=async()=>({isAuthenticated:true,getToken:async()=>'fixture'});
+  const approve=load('app/guard/actions.ts',{'@clerk/nextjs/server':{auth},'next/navigation':{},'next/headers':{},'../../shared/guard-trial-context':{}},'approveComputer');
+  const previousFetch=globalThis.fetch,previousUrl=process.env.BODEEGUARD_COMMERCIAL_API_URL,paths=[];
+  process.env.BODEEGUARD_COMMERCIAL_API_URL='https://example.test';
+  globalThis.fetch=async url=>{paths.push(new URL(url).pathname);return Response.json({});};
+  try{
+    const submit=code=>{const form=new FormData();form.set('userCode',code);return approve({status:'idle',message:''},form);};
+    for(const code of ['mkr7','abcde-fghjk']){
+      const result=await submit(code);assert.equal(result.status,'error');assert.match(result.message,/download code.*guard\.bodeebooks\.com\/install.*child’s computer/);
+    }
+    assert.equal(paths.length,0);
+    for(const code of ['abcd-efgh','abcdefgh'])assert.equal((await submit(code)).status,'success');
+    assert.deepEqual(paths,Array(2).fill('/v1/account/device-activations/ABCD-EFGH/approve'));
+  }finally{globalThis.fetch=previousFetch;if(previousUrl===undefined)delete process.env.BODEEGUARD_COMMERCIAL_API_URL;else process.env.BODEEGUARD_COMMERCIAL_API_URL=previousUrl;}
+});
 test('approval page identifies the child computer, with current setup steps and authentication', async () => {
   let protectedRoute = 0;
   const Page = load('app/guard/activate/page.tsx', {
@@ -51,6 +67,6 @@ test('successful approval explains the next step and offers the family dashboard
   });
   const html = renderToStaticMarkup(React.createElement(Form));
   assert.match(html, /Child computer approved/); assert.match(html, /href="\/guard\/dashboard\/\?setup=connect"/);
-  assert.match(html, /Assign child &amp; check readiness/);
+  assert.match(html, /Choose which child uses this computer/);
   assert.match(html, /type="submit" disabled=""/);
 });

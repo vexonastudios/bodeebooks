@@ -133,11 +133,15 @@ export async function approveComputer(_state: ActivationState, formData: FormDat
   if (!session.isAuthenticated) return { status: "error", message: "Please sign in before approving a computer." };
 
   const userCode = String(formData.get("userCode") || "").trim().toUpperCase();
+  if (/^(?:[A-HJ-NP-Z]{3}[2-9]|[2-9A-HJ-NP-Z]{5}-?[2-9A-HJ-NP-Z]{5})$/.test(userCode)) {
+    return { status: "error", message: "That looks like a download code. Use it at guard.bodeebooks.com/install on the child’s computer. Open BodeeGuard on that computer for the pairing code, then type it here." };
+  }
   if (!/^[A-Z0-9][A-Z0-9-]{3,19}$/.test(userCode)) {
     return { status: "error", message: "Enter the pairing code exactly as BodeeGuard displays it." };
   }
 
-  const result = await callAccountApi(`/v1/account/device-activations/${encodeURIComponent(userCode)}/approve`, {
+  const pairingCode = userCode.replace(/^([2-9A-HJ-NP-Z]{4})([2-9A-HJ-NP-Z]{4})$/, "$1-$2");
+  const result = await callAccountApi(`/v1/account/device-activations/${encodeURIComponent(pairingCode)}/approve`, {
     method: "POST",
     body: "{}",
   });

@@ -54,7 +54,7 @@ else {
   const wait=async source=>{const end=Date.now()+8000;while(Date.now()<end){if(await js(source))return;await new Promise(resolve=>setTimeout(resolve,30));}throw Error('Timed out: '+source+'\n'+await js('document.body.innerText'));};
   const click=async text=>js(`[...document.querySelectorAll('dialog[open] button')].find(b=>b.textContent===${JSON.stringify(text)}&&!b.disabled).click()`);
   await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
-  assert.equal(await js('document.querySelector("#parent-start-title").textContent'),'Connect & check readiness','pairing goes directly to readiness even before school choices');
+  assert.equal(await js('document.querySelector("#parent-start-title").textContent'),'Connect your child’s computer','pairing goes directly to readiness even before school choices');
   assert.equal(await js('document.querySelector(".parent-start-more").open'),false,'paired computers prioritize assignment over install instructions');
   assert.equal(writes,0);assert.equal(await js('document.querySelector(".setup-computer-assignment h3").textContent'),'Study laptop');
   await js(`{const input=document.querySelector('.setup-computer-assignment select');input.value='${studentId}';input.dispatchEvent(new Event('change'));}`);
@@ -129,7 +129,7 @@ else {
   snapshot.parentPassword={configured:false,revision:0};
   await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');
   assert.equal(await js('document.querySelector("#parent-start-title").textContent'),'Parent password & children');
-  assert.equal(await js('[...document.querySelectorAll("dialog[open] a")].some(a=>a.textContent==="Get Windows installer")'),false);
+  assert.equal(await js('!!document.querySelector("dialog[open] .setup-connection-guide")'),false);
   await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Save your parent password")');
   const passwordFields=()=>js(`Array.from(document.querySelectorAll('.setup-password-fields input'), input => [input.type, input.autocomplete, input.labels[0].textContent])`);
   assert.deepEqual(await passwordFields(),[['password','new-password','Parent password'],['password','new-password','Confirm parent password']]);

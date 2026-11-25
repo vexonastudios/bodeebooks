@@ -468,7 +468,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>2</span>
-                <div><strong>Approve from your device</strong><p>On your own computer or phone, enter the code shown by the child app.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter code</Link></div>
+                <div><strong>Approve from your device</strong><p>On your own computer or phone, enter the pairing code shown by the child app.</p><Link className={styles.stepAction} href="/guard/activate/"><KeyRound size={15} /> Enter pairing code</Link></div>
               </li>
               <li className={styles.setupStep}>
                 <span className={styles.stepNumber}>3</span>
