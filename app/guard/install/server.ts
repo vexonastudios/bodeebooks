@@ -29,7 +29,7 @@ export async function installerApi(path: string, body: object, token?: string) {
   const result = await response.json();
   if (!response.ok) {
     const status = [400,401,403,429].includes(response.status) ? response.status : 503;
-    const error = status === 400 ? "That download code is incorrect or expired. Check it on the parent’s phone, or create a new code."
+    const error = status === 400 ? "That download code is incorrect or expired. Check it in the parent dashboard, or create a new code."
       : status === 429 ? "Too many attempts. Please wait a minute before trying again."
       : status === 401 ? "Sign in to your parent account to create a download code."
       : status === 403 ? "An active parent account is needed to create a download code."

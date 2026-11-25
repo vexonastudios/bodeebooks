@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { trialContextHeaders } from "../../shared/guard-trial-context";
 
-export type ActivationState = { status: "idle" | "error" | "success"; message: string };
+export type ActivationState = { status: "idle" | "error" | "success"; message: string; computerName?: string };
 
-type ApiErrorPayload = { error?: string };
+type ApiErrorPayload = { error?: string; computerName?: string };
 type AccountApiResult = { error: string } | { payload: ApiErrorPayload & { started?: boolean; trialEndsAt?: string; url?: string } };
 
 async function callAccountApi(path: string, init: RequestInit = {}): Promise<AccountApiResult> {
@@ -146,5 +146,5 @@ export async function approveComputer(_state: ActivationState, formData: FormDat
     body: "{}",
   });
   if ("error" in result) return { status: "error", message: result.error };
-  return { status: "success", message: "Child computer approved. The child app checks automatically. Next, assign a child in your family dashboard and save the computer’s offline recovery code." };
+  return { status: "success", computerName: result.payload.computerName, message: "Child computer approved. The child app checks automatically. Next, assign a child in your family dashboard and save the computer’s offline recovery code." };
 }

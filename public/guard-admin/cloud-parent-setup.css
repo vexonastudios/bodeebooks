@@ -92,3 +92,17 @@
 .setup-child-entry-actions .btn{max-width:100%;min-height:44px;white-space:normal}
 .setup-child-entry-actions .btn span,.setup-manual-children .setup-child{min-width:0;overflow-wrap:anywhere}
 @media(max-width:700px){.setup-school-results{grid-template-columns:1fr}.setup-school-site{align-items:flex-start;flex-direction:column}.setup-school-actions .btn{min-height:44px}.setup-school-form{padding:14px}.setup-school-search>.btn{width:100%}.setup-school-result{flex-wrap:wrap}}
+
+.setup-pairing-dialog{box-sizing:border-box;width:min(27rem,calc(100% - 2rem));max-height:90dvh;overflow:auto;margin:auto;padding:clamp(18px,4vw,28px);border:1px solid #71668a;border-radius:16px;background:#191828;color:#f5f3ff;color-scheme:dark}
+.setup-pairing-dialog::backdrop{background:rgb(5 5 14 / 72%)}
+.setup-pairing-dialog form{display:grid;gap:12px}
+.setup-pairing-dialog h2,.setup-pairing-dialog p,.setup-approval-status p{margin:0}
+.setup-pairing-dialog h2{font-size:1.35rem}
+.setup-pairing-dialog label{margin-top:6px}
+.setup-pairing-dialog input{box-sizing:border-box;width:100%;min-width:0;padding:10px 12px;font:inherit;font-size:1.15rem;letter-spacing:.08em;text-transform:uppercase;border-radius:8px;background:#232236;color:inherit;border:1px solid #847899}
+.setup-pairing-dialog :focus-visible,.setup-approval-status:focus-visible{outline:2px solid #b9aaff;outline-offset:2px}
+.setup-pairing-feedback{color:#ffc5bd}
+.setup-pairing-feedback:empty{display:none}
+.setup-pairing-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.setup-pairing-actions .btn{min-height:44px}
+.setup-approval-status{display:grid;gap:8px;justify-items:start;background:#1b302d;border:1px solid #4d8978;border-radius:12px;padding:14px;margin-bottom:12px}

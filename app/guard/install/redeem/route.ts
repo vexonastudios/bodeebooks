@@ -10,7 +10,7 @@ export async function POST(request: Request) {
         const {value,done} = await reader.read();
         if (done) break;
         size += value.byteLength;
-        if (size > 1024) { await reader.cancel(); return Response.json({error:"Enter the short download code shown on the parent’s phone."},{status:400,headers:privateHeaders}); }
+        if (size > 1024) { await reader.cancel(); return Response.json({error:"Enter the short download code shown in the parent dashboard."},{status:400,headers:privateHeaders}); }
         text += decoder.decode(value,{stream:true});
       }
       text += decoder.decode();

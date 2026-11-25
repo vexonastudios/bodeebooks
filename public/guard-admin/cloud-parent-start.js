@@ -6,7 +6,7 @@ import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } fr
 import { setupPassword } from './cloud-setup-password.js?v=20261124-password-fields';
 import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261109-microphone';
 import { loadFamilyActivities, familyActivityUpdate } from './cloud-family-activities.js?v=20261125-family-activities';
-import { computerHandoff } from './cloud-computer-handoff.js?v=20261125-computer-handoff';
+import { computerHandoff } from './cloud-computer-handoff.js?v=20261125-pairing-dialog';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
@@ -16,9 +16,13 @@ const steps = [
 const node = (tag,text='',cls='') => { const el=document.createElement(tag);el.textContent=text;el.className=cls;return el; };
 const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${primary?'btn-primary':'btn-secondary'}`);el.type='button';el.onclick=()=>void fn();return el; };
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
-  const connection=computerHandoff({node,button});
+  let approval=null;
+  const connection=computerHandoff({node,button,onApproved:async computerName=>{
+    approval={computerName,known:new Set((getSnapshot().devices||[]).map(device=>device.id))};
+    await refreshApproval(approval);
+  }});
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261125-computer-handoff';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261125-pairing-dialog';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -241,6 +245,33 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       showPlanPreview(dailyPlanCards(captured,details,child.id),child.name,dialog);
     }catch(failure){error.textContent=failure.message;}finally{busy=false;}
   }
+  function approvedDevice(devices) {
+    if(!approval)return null;
+    const added=devices.filter(device=>!approval.known.has(device.id)&&(!approval.computerName||device.computer_name===approval.computerName));
+    return added.length===1?added[0]:null;
+  }
+  async function refreshApproval(current) {
+    if(!current||busy||!dialog.open||index!==3)return;
+    busy=true;
+    const selections=new Map(Array.from(body.querySelectorAll('.setup-computer-assignment select'),el=>[el.dataset.deviceId,el.value]));
+    const retry=body.querySelector('.setup-check-approval');
+    if(retry)retry.disabled=true;
+    let failure='';
+    try{await refresh();}
+    catch{failure='Could not check the computer’s connection. Try Check again.';}
+    finally{busy=false;}
+    if(current!==approval||!dialog.open||index!==3)return;
+    render();
+    const target=approvedDevice((getSnapshot().devices||[]).filter(device=>!device.revoked_at));
+    let nextFocus=body.querySelector('.setup-approval-status');
+    for(const select of body.querySelectorAll('.setup-computer-assignment select')){
+      const saved=selections.get(select.dataset.deviceId);
+      if(saved){select.value=saved;select.onchange();}
+      if(target&&target.id===select.dataset.deviceId)nextFocus=select;
+    }
+    if(failure)error.textContent=failure;
+    nextFocus?.focus();
+  }
   function readiness() {
     if(!getSnapshot().parentPassword?.configured){
       body.append(node('p','Set your parent password before connecting or assigning a computer. Already paired computers can stay open while you finish this step.','setup-copy'),button('Set parent password',()=>{index=0;render();},true));
@@ -262,6 +293,18 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const hasPrimaryTask=!devices.length||unassigned.length>0;
     const checklist=node(hasPrimaryTask?'details':'div','','setup-connection-status');
     if(hasPrimaryTask)checklist.append(node('summary','Connection status & setup details'));
+    if(approval){
+      const confirmed=approvedDevice(devices);
+      const note=node('section','','setup-approval-status');
+      note.tabIndex=-1;note.setAttribute('role','status');
+      note.append(node('strong',approval.computerName?approval.computerName+' approved':'Computer approved'));
+      if(!confirmed){
+        note.append(node('p','Keep BodeeGuard open on the child’s computer. When it connects, choose who uses it below.'));
+        const check=button('Check again',()=>refreshApproval(approval));
+        check.classList.add('setup-check-approval');note.append(check);
+      }
+      body.append(note);
+    }
     if(!devices.length)body.append(connections);
     const checkAgain=button('Check again',async()=>{
       if(busy)return;
@@ -284,7 +327,8 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     checkAgain.classList.add('setup-refresh-connection');checklist.append(summary,checkAgain);
     for(const device of unassigned){
       const row=node('section','','setup-child setup-computer-assignment'),field=node('label','','setup-field'),select=node('select');
-      row.append(node('h3',device.computer_name || 'Child computer'),node('p','Computer approved. On your phone, choose the child and tap Save student.'));
+      select.dataset.deviceId=device.id;
+      row.append(node('h3',device.computer_name || 'Child computer'),node('p','Choose the child who uses this computer, then select Save student.'));
       field.append(node('span','Who uses this computer?'));
       const prompt=node('option','Choose a child');prompt.value='';select.append(prompt);
       for(const child of children()){const option=node('option',child.name);option.value=child.id;select.append(option);}
@@ -414,7 +458,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.scrollTop=0;decorateSetup(dialog);
   }
   dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy&&!promptBusy)dialog.close();});
-  dialog.addEventListener('close',()=>{connection.clear();draft=null;passwordControl?.clear();familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
+  dialog.addEventListener('close',()=>{approval=null;connection.clear();draft=null;passwordControl?.clear();familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
   return {open,update(){
     updateWelcome();
     if(started||!getSnapshot())return;started=true;

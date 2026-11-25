@@ -99,7 +99,7 @@ test('the real entry form accepts four characters, preserves older pasted codes 
   for(const pairing of ['abcd-efgh','abcdefgh']){
    render();input().props.onChange({target:{value:pairing}});render();
    await tree.props.onSubmit({preventDefault(){}});
-   assert.match(render(),/pairing code.*on your phone/);assert.equal(calls.length,0);
+   assert.match(render(),/pairing code.*in the parent dashboard/);assert.equal(calls.length,0);
   }
   for(const code of ['mkr7','abcde-fghjk']){
    assert.match(render(),/3 letters and 1 number/);
@@ -130,7 +130,7 @@ test('parent download handoff offers approval before issuance, after download an
   :name.endsWith('.module.css')?{__esModule:true,default:{}}:native(name);
  component._compile('const {setTimeout,clearTimeout}=require("__clock");'+ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,filename);
  const render=()=>{cursor=0;tree=component.exports.default();while(effects.length)effects.shift()();return renderToStaticMarkup(tree);};
- const check=()=>{const html=render();assert.match(html,/id="parent-download-code"/);assert.match(html,/href="\/guard\/activate\/"[^>]*>Approve child computer/);assert.match(html,/child app shows a <strong>pairing code<\/strong>, enter that code here on your phone/);return html;};
+ const check=()=>{const html=render();assert.match(html,/id="parent-download-code"/);assert.match(html,/href="\/guard\/activate\/"[^>]*>Approve child computer/);assert.match(html,/child app shows a <strong>pairing code<\/strong>, leave it open and use that code to approve the computer/);return html;};
  const previous=globalThis.fetch;
  globalThis.fetch=async()=>Response.json({code:'MKR7',version:'1.2.345',expiresAt:new Date(Date.now()+1800000).toISOString()});
  try{

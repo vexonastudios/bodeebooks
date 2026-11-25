@@ -73,3 +73,31 @@ test('successful approval explains the next step and offers the family dashboard
   assert.match(html, /Choose which child uses this computer/);
   assert.match(html, /type="submit" disabled=""/);
 });
+
+test('in-dashboard approval uses the signed-in parent and the same code checks as the standalone page',async()=>{
+  let signedIn=false;
+  const auth=async()=>({isAuthenticated:signedIn,getToken:async()=>'synthetic'});
+  const approveComputer=load('app/guard/actions.ts',{'@clerk/nextjs/server':{auth},'next/navigation':{},'next/headers':{},'../../shared/guard-trial-context':{}},'approveComputer');
+  const origin='https://parent.example',oldFetch=globalThis.fetch,oldApi=process.env.BODEEGUARD_COMMERCIAL_API_URL;
+  const imports={'../../../shared/guard-cloud-release':{},'../../../shared/guard-installer-download':{},'../../../shared/guard-customer-candidate':{}};
+  const sameOrigin=load('app/guard/install/server.ts',imports,'sameOrigin');
+  const privateHeaders=load('app/guard/install/server.ts',imports,'privateHeaders');
+  const post=load('app/guard/activate/approve/route.ts',{'../../actions':{approveComputer},'../../install/server':{sameOrigin,privateHeaders}},'POST');
+  const send=(body,from=origin)=>post(new Request(origin+'/guard/activate/approve/',{method:'POST',headers:{origin:from},body}));
+  const requests=[];
+  process.env.BODEEGUARD_COMMERCIAL_API_URL='https://api.example';
+  globalThis.fetch=async(url,init)=>{requests.push({url,init});return Response.json({status:'approved',computerName:'Study laptop'});};
+  try{
+    assert.equal((await send('abcdefgh','https://elsewhere.example')).status,403);
+    assert.match((await (await send('abcdefgh')).json()).message,/sign in/i);
+    signedIn=true;
+    assert.equal((await send('a'.repeat(81))).status,400);
+    assert.match((await (await send('MKR7')).json()).message,/download code/);
+    assert.equal(requests.length,0);
+    const approved=await send('abcdefgh');
+    assert.equal(approved.status,200);assert.match(approved.headers.get('cache-control'),/no-store/);
+    assert.equal((await approved.json()).computerName,'Study laptop');
+    assert.equal(requests.length,1);assert.equal(requests[0].url,'https://api.example/v1/account/device-activations/ABCD-EFGH/approve');
+    assert.equal(requests[0].init.headers.Authorization,'Bearer synthetic');
+  }finally{globalThis.fetch=oldFetch;if(oldApi===undefined)delete process.env.BODEEGUARD_COMMERCIAL_API_URL;else process.env.BODEEGUARD_COMMERCIAL_API_URL=oldApi;}
+});

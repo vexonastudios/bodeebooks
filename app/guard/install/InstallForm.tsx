@@ -21,7 +21,7 @@ export default function InstallForm() {
   async function submit(event: React.FormEvent) {
     event.preventDefault(); if (busy) return;
     if (/^[2-9A-HJ-NP-Z]{4}-?[2-9A-HJ-NP-Z]{4}$/.test(code.trim())) {
-      setError("That looks like a pairing code. Enter it on your phone to approve this computer. To download the installer here, use the download code from your parent account.");
+      setError("That looks like a pairing code. Enter it in the parent dashboard to approve this computer. To download the installer here, use the download code from your parent account.");
       return;
     }
     setBusy(true);setError("");setLink(null);
@@ -34,7 +34,7 @@ export default function InstallForm() {
     finally {setBusy(false);}
   }
   return <form className={styles.activationForm} onSubmit={submit}>
-    <label htmlFor="download-code">Download code from the parent’s phone</label>
+    <label htmlFor="download-code">Download code from the parent dashboard</label>
     <input id="download-code" value={code} onChange={event=>{setCode(event.target.value.toUpperCase());setLink(null);setError("");}} placeholder="MKR7" required minLength={4} maxLength={24} autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-describedby="download-help download-error" disabled={busy} />
     <p id="download-help" className={styles.pairingHelp}>3 letters and 1 number, like MKR7. Capital or lowercase letters both work.</p>
     <button className={styles.portalButton} type="submit" disabled={busy}>{busy ? <LoaderCircle size={18} className={styles.spin} /> : <KeyRound size={18} />}{busy?"Checking code…":"Get download"}</button>
