@@ -1,10 +1,13 @@
-import { AlertTriangle } from "lucide-react";
+import { Info } from "lucide-react";
 import Link from "next/link";
 import styles from "./windows-installer-notice.module.css";
 
 export default function WindowsInstallerNotice() {
   return <aside className={styles.notice} role="note" aria-label="Windows installer notice">
-    <AlertTriangle size={20} aria-hidden="true" />
-    <div><strong>Early-access Windows download</strong><p>This release does not yet have a verified Windows publisher. Windows may show “Unknown publisher”, warn, or prevent installation. Download only from this official BodeeGuard site. If setup is blocked, <Link href="/feedback">get help</Link> and include the message Windows shows.</p><p>Windows-wide app restrictions and control of secure-attention shortcuts are not yet complete. The workspace helps limit distractions, but does not block every way to reach other parts of Windows.</p></div>
+    <Info size={18} aria-hidden="true" />
+    <div>
+      <p>If Windows says “Windows protected your PC” when you open the installer from this site, choose <strong>More info</strong>, then <strong>Run anyway</strong> if offered. <Link href="/feedback">Get installation help</Link></p>
+      <details><summary>Why does Windows show a warning?</summary><p>This installer does not yet have a verified Windows publisher. Use the download from BodeeGuard’s official site.</p></details>
+    </div>
   </aside>;
 }

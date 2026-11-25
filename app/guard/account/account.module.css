@@ -11,6 +11,17 @@
 .accessBadge::before { content:""; width:6px; height:6px; border-radius:50%; background:#27815b; }
 .attentionBadge { color:#845613; background:#fff3d5; border-color:#e9d2a3; }
 .attentionBadge::before { background:#a5711f; }
+.trialOffer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 24px; padding:20px; border:1px solid #9bc8ae; border-radius:16px; background:#e8f5ec; scroll-margin-top:90px; }
+.trialOffer > div { flex:1 1 17rem; }
+.trialOffer h2 { color:#163e2b; font:750 1.25rem/1.3 var(--font-sans); }
+.trialOffer p { margin-top:5px; color:#365b46; font-size:.94rem; line-height:1.5; }
+.trialOffer time { white-space:nowrap; }
+.startTrialButton { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:11px 20px; border:0; border-radius:10px; background:#13633e; color:#fff; font:700 1rem/1.3 var(--font-sans); cursor:pointer; }
+.startTrialButton:hover { background:#0c4e30; }
+.startTrialButton:disabled { opacity:.75; cursor:wait; }
+.trialOffer + .quickActions { display:flex; margin:8px 0; }
+.trialOffer + .quickActions .setupAction { min-height:44px; padding:8px 0; background:transparent; border:0; }
+.trialOffer + .quickActions small { display:none; }
 .quickActions { display:grid; grid-template-columns:1.15fr 1fr; gap:12px; margin-top:18px; }
 .dashboardAction,.setupAction { display:flex; align-items:center; gap:13px; min-height:90px; min-width:0; padding:18px 20px; border-radius:16px; border:1px solid transparent; }
 .dashboardAction { background:#21684c; color:#fff; box-shadow:0 6px 16px #1f61491a; }
@@ -75,6 +86,9 @@
 .trialNotice { display:flex; gap:8px; align-items:center; padding:12px; color:#6b5929; background:#fff6dc; border:1px solid #eadcaf; border-radius:12px; font-size:.85rem; }
 .page :where(a,button,summary,input,select):focus-visible { outline:3px solid #268255; outline-offset:3px; }
 @media (max-width:600px) {
+  .trialOffer { padding:16px; }
+  .trialOffer form,.startTrialButton { width:100%; }
+  .trialOffer + .quickActions .setupAction { flex-wrap:nowrap; }
   .page.page { padding:12px 0 32px; }
   .shell { width:calc(100% - 28px); }
   .backLink { margin-bottom:7px; font-size:.8rem; }

@@ -1,5 +1,8 @@
-.notice { display:flex; align-items:flex-start; gap:12px; margin:18px 0; padding:16px; border:1px solid #86632b; border-radius:14px; background:#241f17; color:#f5e5c5; font-size:14px; line-height:1.55; }
-.notice > svg { flex:none; margin-top:2px; color:#fbbf24; }
-.notice p { margin:6px 0 0; }
+.notice { display:flex; align-items:flex-start; gap:10px; margin:12px 0; padding:12px 14px; border:1px solid #cbded4; border-radius:10px; background:#f3f8f5; color:#324f42; font-size:.875rem; line-height:1.5; }
+.notice > svg { flex:none; margin-top:2px; color:#35785a; }
+.notice.notice p { margin:0; color:inherit; font-size:inherit; }
+.notice details { margin-top:4px; }
+.notice summary { cursor:pointer; font-weight:600; }
+.notice details p { padding-top:4px; }
 .notice a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
-.notice a:focus-visible { outline:2px solid #fbbf24; outline-offset:3px; }
+.notice :is(a,summary):focus-visible { outline:2px solid #176545; outline-offset:3px; }

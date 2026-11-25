@@ -221,7 +221,8 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
   const canRequestTrial = canStartTrial || canRetryTrial;
   const canSubscribe = account.enrollment?.canSubscribe === true && account.trialEligible !== null && Boolean(release);
   const extendedTrialEnd = account.trialOffer?.extendedForLaunch ? readableDate(account.trialOffer.endsAt) : null;
-  const trialButton = canRetryTrial ? "Retry free trial — no card" : extendedTrialEnd ? "Start extended free trial — no card" : "Start 30-day trial — no card";
+  const showTrialOffer = canRequestTrial && !canConnectComputers && !paidSubscription;
+  const trialButton = canRetryTrial ? "Retry free trial" : extendedTrialEnd ? "Start extended free trial" : "Start 30-day trial";
   const channelLabel = account.releaseChannel === "beta" ? (isComplimentary ? "Family Beta" : "Beta") : "Stable";
   const statusLabel = isComplimentary ? "Complimentary Family Beta"
     : account?.entitlementStatus === "trial" ? "Free trial active"
@@ -238,7 +239,100 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
 
   const computerLimit = account.deviceLimits?.child || 10;
   const planSummary = isComplimentary ? "Complimentary" : isTrial ? "Free trial" : isSubscribed ? "Family plan" : "Not active";
-  const billingNeedsAttention = !isComplimentary && (account.entitlementStatus === "inactive" || account.entitlementStatus === "grace" || cancellationScheduled || (account.hasBillingAccount && billing?.available === false) || Boolean(params.billingError || params.checkout || params.subscription || params.trial));
+  const billingNeedsAttention = !isComplimentary && (account.entitlementStatus === "grace" || cancellationScheduled
+    || (account.entitlementStatus === "inactive" && !showTrialOffer && canSubscribe)
+    || (account.hasBillingAccount && billing?.available === false) || Boolean(params.billingError || params.checkout || params.subscription));
+  const hasBillableInvoice = invoices.some(invoice => invoice.amountPaid > 0 || invoice.amountDue > 0);
+  const showBillingDetails = billingNeedsAttention || Boolean(paymentMethod) || hasBillableInvoice ||
+    (!showTrialOffer && (!isTrial || (remainingTrialDays !== null && remainingTrialDays <= 15)));
+
+  const billingFirst = billingNeedsAttention && !showTrialOffer;
+  const billingSection = (
+    <details id="account-billing" className={accountStyles.section} open={billingNeedsAttention}>
+      <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><CreditCard size={20} /></span><span className={accountStyles.sectionLabel}><strong>Plan & billing</strong><small>{isComplimentary ? "Full access · No subscription charge" : statusLabel}</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
+      <div className={accountStyles.panelBody}>
+        {isComplimentary ? <p className={styles.complimentaryNote}><ShieldCheck size={16} /> Full family access. No subscription charge.</p> : <>
+          <h2>BodeeGuard Family</h2>
+          {isTrial ? <p>Your trial is active{remainingTrialDays === null ? "" : ` · ${remainingTrialDays} days left`}. It ends without a charge.</p>
+            : isSubscribed ? <p><strong>Your family subscription is active.</strong> {cancellationScheduled ? "Renewal is canceled; access continues through the date below." : account.entitlementStatus === "grace" ? "Please review your payment." : "Manage payments or renewal below."}</p>
+            : showTrialOffer ? <p>After your free trial, you can choose the family plan for {readableMoney(billing?.plan?.amount ?? 1999, billing?.plan?.currency || "usd")} per {billing?.plan?.interval || "month"}.</p>
+            : account.trialEligible === null ? <p>We could not confirm trial eligibility. Refresh this page to check again.</p>
+            : (customerLaunchOpen || canStartTrial || canSubscribe || account.hasBillingAccount) ? <p>{trialEligible ? extendedTrialEnd ? `Early-access trial through ${extendedTrialEnd}. Every family gets at least 30 days. No card required.` : "Try 30 days free. No card required." : "$19.99 per month. Subscribe to continue."}</p>
+            : <p>{account.enrollment?.reason || "Family enrollment is being prepared."}</p>}
+          {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : isTrial ? "Trial ends" : "Current period ends"} {statusDate}</p>}
+          {isTrial || showTrialOffer ? null
+            : (isSubscribed || paidSubscription) ? <form action={openBodeeGuardBilling}><SubmitButton className={styles.portalButton}>Manage billing <ArrowRight size={16} /></SubmitButton></form>
+            : canSubscribe ? <form action={subscribeToBodeeGuard}><SubmitButton className={styles.portalButton} pendingLabel="Opening secure checkout…">Subscribe for $19.99/month <ArrowRight size={16} /></SubmitButton></form>
+            : <p className={styles.launchHold}><ShieldCheck size={16} /> No payment is needed yet.</p>}
+          {!isComplimentary && account?.hasBillingAccount && billing?.available === false && (
+            <div className={styles.billingWarning}><AlertTriangle size={18} /><span><strong>Live billing details are temporarily unavailable.</strong> {canConnectComputers ? "Your existing family access is unchanged. Refresh this page to check billing again." : "Family access is not active yet. Use Retry free trial or refresh this page. A failed attempt does not use up your trial."}</span></div>
+          )}
+
+          {showBillingDetails && <div className={`${styles.billingSummaryGrid} ${accountStyles.billingMetrics}`}>
+            <div className={styles.billingMetric}>
+              <span>Plan</span>
+              <strong>{isComplimentary ? "BodeeGuard Family Beta" : billing?.plan?.name || "BodeeGuard Family"}</strong>
+              <small>{isComplimentary ? "$0 · Complimentary" : `${readableMoney(billing?.plan?.amount ?? 1999, billing?.plan?.currency || "usd")} / ${billing?.plan?.interval || "month"}`}</small>
+            </div>
+            <div className={styles.billingMetric}>
+              <span>Status</span>
+              <strong>{isComplimentary ? "Full access" : paidSubscription ? readableBillingStatus(paidSubscription.status) : isSubscribed ? statusLabel : "Not subscribed"}</strong>
+              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : isTrial ? remainingTrialDays === null ? "Trial active · no card or automatic renewal" : `${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} remaining · no card or automatic renewal` : account.entitlementStatus === "grace" ? "Review payment before the grace period ends" : isSubscribed ? "Renews automatically unless canceled" : account.trialEligible === null ? "Billing history temporarily unavailable" : canStartTrial ? extendedTrialEnd ? `One extended card-free trial is available through ${extendedTrialEnd}` : "One 30-day card-free trial is available" : canSubscribe ? "Choose a paid subscription to continue" : account.enrollment?.reason || "Enrollment is being prepared"}</small>
+            </div>
+            <div className={styles.billingMetric}>
+              <span>{cancellationScheduled ? "Access through" : isTrial ? "Trial access ends" : !isSubscribed && billingPeriodEnd ? "Previous access ended" : "Next billing date"}</span>
+              <strong>{isComplimentary ? "No billing date" : readableDate(isTrial ? trialEnd : billingPeriodEnd) || "Not scheduled"}</strong>
+              <small>{isComplimentary ? "This account is never charged" : isTrial ? "Nothing is charged on this date" : cancellationScheduled ? "No additional renewal charge" : "Billing is processed securely by Stripe"}</small>
+            </div>
+            <div className={styles.billingMetric}>
+              <span>Payment method</span>
+              <strong>{isComplimentary || isTrial ? "None required" : paymentMethod ? `${readableCardBrand(paymentMethod.brand)} •••• ${paymentMethod.last4}` : account?.hasBillingAccount ? "Not available" : "Not collected"}</strong>
+              <small>{paymentMethod?.expMonth && paymentMethod?.expYear ? `Expires ${String(paymentMethod.expMonth).padStart(2, "0")}/${paymentMethod.expYear}` : isComplimentary ? "No Stripe customer exists" : isTrial ? "No card is stored for this trial" : "Add or update securely through Stripe"}</small>
+            </div>
+          </div>}
+
+          {!isComplimentary && cancellationScheduled && (
+            <div className={styles.cancellationBanner}>
+              <CalendarClock size={20} />
+              <div><strong>Your subscription is set to end{billingPeriodEnd ? ` on ${readableDate(billingPeriodEnd)}` : " after the current paid period"}.</strong><p>Your family keeps full access until then. You can keep BodeeGuard by resuming before that date.</p></div>
+              <form action={resumeBodeeGuardSubscription}><SubmitButton className={styles.resumeButton}><RotateCcw size={15} /> Keep my subscription</SubmitButton></form>
+            </div>
+          )}
+
+          {!isComplimentary && isSubscribed && !isTrial && !cancellationScheduled && (
+            <details className={styles.cancelPanel}>
+              <summary>Need to cancel BodeeGuard?</summary>
+              <div><p>Cancellation stops the next renewal. Your children keep full access through {readableDate(billingPeriodEnd) || "the end of the current billing period"}; BodeeGuard will not shut off immediately. Your local family records are preserved after access ends.</p><form action={scheduleBodeeGuardCancellation}><SubmitButton className={styles.cancelButton} pendingLabel="Scheduling cancellation…">Cancel at the end of my billing period</SubmitButton></form></div>
+            </details>
+          )}
+
+          {(hasBillableInvoice || (!isTrial && !showTrialOffer && account.hasBillingAccount)) && <div className={styles.paymentHistory}>
+            <div className={styles.paymentHeading}><div><FileText size={18} /><span><strong>Payment history</strong><small>Stripe receipts and downloadable invoices</small></span></div>{!isComplimentary && !isTrial && account?.hasBillingAccount && <form action={openBodeeGuardBilling}><SubmitButton>View all in Stripe <ExternalLink size={13} /></SubmitButton></form>}</div>
+            {isComplimentary ? (
+              <div className={styles.emptyPayments}><ShieldCheck size={18} /><span>No payments will appear here because this is a permanently complimentary Family Beta account.</span></div>
+            ) : invoices.length ? (
+              <div className={styles.invoiceList}>
+                {invoices.map((invoice, index) => (
+                  <article className={styles.invoiceRow} key={`${invoice.number || "invoice"}-${invoice.createdAt || index}`}>
+                    <div><strong>{invoice.number || "BodeeGuard invoice"}</strong><span>{readableDate(invoice.createdAt)} · {invoice.status.replaceAll("_", " ")}</span></div>
+                    <strong>{readableMoney(invoice.amountPaid || invoice.amountDue, invoice.currency)}</strong>
+                    <div className={styles.invoiceActions}>
+                      {invoice.hostedInvoiceUrl && <a href={invoice.hostedInvoiceUrl} target="_blank" rel="noreferrer">Receipt <ExternalLink size={12} /></a>}
+                      {invoice.invoicePdfUrl && <a href={invoice.invoicePdfUrl} target="_blank" rel="noreferrer">PDF <Download size={12} /></a>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyPayments}><CheckCircle2 size={18} /><span>{isTrial ? "No payment is due. The trial ends without a charge; subscribe afterward only if you choose to continue." : "No completed BodeeGuard payments are on this account yet."}</span></div>
+            )}
+          </div>}
+
+          <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Payment details stay with Stripe. For help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
+        </>}
+      </div>
+    </details>
+  );
 
   return (
     <div className={`${styles.portalPage} ${accountStyles.page}`}>
@@ -250,11 +344,10 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           <div><h1>Parent account</h1><p>Welcome, {name}.</p></div>
           <span className={`${accountStyles.accessBadge} ${account.entitlementStatus === "grace" ? accountStyles.attentionBadge : ""}`}>{isComplimentary ? "Family Beta" : isTrial ? "Free trial" : isSubscribed ? "Active" : "Account ready"}</span>
         </header>
-        {(params.billingError || params.checkout || params.channel || params.computerRemoved === "1" || params.computerRenamed === "1" || params.subscription || params.trial === "started") && (
+        {(params.billingError || params.checkout || params.channel || params.computerRemoved === "1" || params.computerRenamed === "1" || params.subscription) && (
           <aside className={params.billingError ? styles.errorNotice : styles.successNotice} role="status">
             {params.billingError
-              || (params.trial === "started" ? `Your free trial has started.${readableDate(trialEnd) ? ` Access ends ${readableDate(trialEnd)}.` : ""} No card or automatic charge.`
-                : params.checkout === "success" ? "Returned from checkout. Check Plan & billing for your confirmed status."
+              || (params.checkout === "success" ? "Returned from checkout. Check Plan & billing for your confirmed status."
                 : params.checkout === "canceled" ? "Checkout canceled. No new subscription was confirmed."
                 : params.channel === "beta" ? "Beta updates selected. Your connected computers will switch when they next check in."
                 : params.channel === "stable" ? "Stable updates selected. Computers already running a newer Beta will keep it until Stable catches up; they will not be downgraded."
@@ -278,102 +371,27 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           <a className={styles.portalButton} href="/guard/download/customer-candidate/">Download customer installer for Windows</a>
           <p>Family access and pairing are not enabled on this account yet.</p>
         </aside>}
-        {!isComplimentary && release && <WindowsInstallerNotice />}
-        {!isComplimentary && account.entitlementStatus === "grace" && <aside className={styles.errorNotice} role="status"><strong>Payment needs attention.</strong> Review Plan & billing{statusDate ? ` before ${statusDate}` : ""} to keep family access.</aside>}
-        {!isComplimentary && isTrial && <p className={accountStyles.trialNotice}><CalendarClock size={16} /> Trial ends {readableDate(trialEnd) || "date temporarily unavailable"} · No automatic charge</p>}
+        {showTrialOffer && <section className={accountStyles.trialOffer} id="start-trial" aria-labelledby="trial-heading">
+          <div>
+            <h2 id="trial-heading">{canRetryTrial ? "Your trial still needs to be started" : "Your parent account is ready"}</h2>
+            <p>{canRetryTrial ? "Try again to activate access for your family." : "Start your trial to add your children and connect their computers."}
+              {extendedTrialEnd && <> Free through <time dateTime={account.trialOffer?.endsAt}>{extendedTrialEnd}</time>.</>}</p>
+          </div>
+          <form action={startBodeeGuardTrial}><SubmitButton className={accountStyles.startTrialButton} pendingLabel="Starting your trial…">{trialButton} <ArrowRight size={18} aria-hidden="true" /></SubmitButton></form>
+        </section>}
+        {!isComplimentary && account.entitlementStatus === "grace" && <aside className={styles.errorNotice} role="status"><strong>Payment needs attention.</strong> Review <a href="#account-billing">Plan &amp; billing</a>{statusDate ? ` before ${statusDate}` : ""} to keep family access.</aside>}
+        {!isComplimentary && isTrial && <p className={accountStyles.trialNotice} role="status"><CalendarClock size={16} aria-hidden="true" /><span>{params.trial === "started" && "Your free trial has started. "}Trial ends {readableDate(trialEnd) || "date temporarily unavailable"} · No automatic charge</span></p>}
         <nav className={accountStyles.quickActions} aria-label="Account shortcuts">
-          <Link className={accountStyles.dashboardAction} href="/guard/dashboard/" aria-label="Open family dashboard"><Monitor size={23} /><span><strong>Open dashboard</strong><small>Manage your family</small></span><ArrowRight size={18} /></Link>
-          <Link className={accountStyles.setupAction} href={canConnectComputers ? "/guard/account/?setup=connect#child-setup" : "#account-billing"}><Laptop size={23} /><span><strong>{canConnectComputers ? "Add a computer" : "Set up your family"}</strong><small>{canConnectComputers ? "Install & approve its code" : "Activate access first, then add children"}</small></span><ArrowRight size={18} /></Link>
+          <Link className={showTrialOffer ? accountStyles.setupAction : accountStyles.dashboardAction} href="/guard/dashboard/" aria-label="Open family dashboard"><Monitor size={23} /><span><strong>Open dashboard</strong><small>Manage your family</small></span><ArrowRight size={18} /></Link>
+          {!showTrialOffer && <Link className={accountStyles.setupAction} href={canConnectComputers ? "/guard/account/?setup=connect#child-setup" : "#account-billing"}><Laptop size={23} /><span><strong>{canConnectComputers ? "Add a computer" : "Set up your family"}</strong><small>{canConnectComputers ? "Install & approve its code" : "Activate access first, then add children"}</small></span><ArrowRight size={18} /></Link>}
         </nav>
-        <dl className={accountStyles.snapshot} aria-label="Family account summary">
+        {!showTrialOffer && <dl className={accountStyles.snapshot} aria-label="Family account summary">
           <div><dt><CreditCard size={15} /> Plan</dt><dd>{planSummary}</dd></div>
           <div><dt><Laptop size={15} /> Computers</dt><dd>{childDevices.length} <span>/ {computerLimit}</span></dd></div>
           <div><dt><Download size={15} /> Child app</dt><dd>{installerAvailable && release ? <a className={accountStyles.versionDownload} href="/guard/download/windows" target="_blank" rel="noopener noreferrer" aria-label={`Download latest child app for Windows, version ${release.version}`}>{release.version}<Download size={15} aria-hidden="true" /></a> : release ? release.version : "Coming soon"}</dd></div>
-        </dl>
+        </dl>}
         <div className={accountStyles.sections}>
-          <details id="account-billing" className={accountStyles.section} open={billingNeedsAttention}>
-            <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><CreditCard size={20} /></span><span className={accountStyles.sectionLabel}><strong>Plan & billing</strong><small>{isComplimentary ? "Full access · No subscription charge" : statusLabel}</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
-            <div className={accountStyles.panelBody}>
-              {isComplimentary ? <p className={styles.complimentaryNote}><ShieldCheck size={16} /> Full family access. No subscription charge.</p> : <>
-                <h2>BodeeGuard Family</h2>
-                {isTrial ? <p>Your trial is active{remainingTrialDays === null ? "" : ` · ${remainingTrialDays} days left`}. It ends without a charge.</p>
-                  : isSubscribed ? <p><strong>Your family subscription is active.</strong> {cancellationScheduled ? "Renewal is canceled; access continues through the date below." : account.entitlementStatus === "grace" ? "Please review your payment." : "Manage payments or renewal below."}</p>
-                  : account.trialEligible === null ? <p>We could not confirm trial eligibility. {canRetryTrial ? "Retry the free trial check below." : "Refresh this page to check again."} Family setup opens after access is confirmed.</p>
-                  : (customerLaunchOpen || canStartTrial || canSubscribe || account.hasBillingAccount) ? <p>{trialEligible ? extendedTrialEnd ? `Early-access trial through ${extendedTrialEnd}. Every family gets at least 30 days. No card required.` : "Try 30 days free. No card required." : "$19.99 per month. Subscribe to continue."}</p>
-                  : <p>{account.enrollment?.reason || "Family enrollment is being prepared."}</p>}
-                {!isComplimentary && statusDate && <p className={styles.statusDate}><CalendarClock size={15} /> {cancellationScheduled ? "Access ends" : isTrial ? "Trial ends" : "Current period ends"} {statusDate}</p>}
-                {isTrial ? <p className={styles.complimentaryNote}><ShieldCheck size={16} /> No automatic charge · No card required</p>
-                  : (isSubscribed || paidSubscription) ? <form action={openBodeeGuardBilling}><SubmitButton className={styles.portalButton}>Manage billing <ArrowRight size={16} /></SubmitButton></form>
-                  : (canRequestTrial || canSubscribe) ? <form action={canRequestTrial ? startBodeeGuardTrial : subscribeToBodeeGuard}><SubmitButton className={styles.portalButton} pendingLabel={canRequestTrial ? "Checking and starting your trial…" : "Opening secure checkout…"}>{canRequestTrial ? trialButton : "Subscribe for $19.99/month"} <ArrowRight size={16} /></SubmitButton></form>
-                  : <p className={styles.launchHold}><ShieldCheck size={16} /> No payment is needed yet.</p>}
-          {!isComplimentary && account?.hasBillingAccount && billing?.available === false && (
-            <div className={styles.billingWarning}><AlertTriangle size={18} /><span><strong>Live billing details are temporarily unavailable.</strong> {canConnectComputers ? "Your existing family access is unchanged. Refresh this page to check billing again." : "Family access is not active yet. Use Retry free trial or refresh this page. A failed attempt does not use up your trial."}</span></div>
-          )}
-
-          <div className={`${styles.billingSummaryGrid} ${accountStyles.billingMetrics}`}>
-            <div className={styles.billingMetric}>
-              <span>Plan</span>
-              <strong>{isComplimentary ? "BodeeGuard Family Beta" : billing?.plan?.name || "BodeeGuard Family"}</strong>
-              <small>{isComplimentary ? "$0 · Complimentary" : `${readableMoney(billing?.plan?.amount ?? 1999, billing?.plan?.currency || "usd")} / ${billing?.plan?.interval || "month"}`}</small>
-            </div>
-            <div className={styles.billingMetric}>
-              <span>Status</span>
-              <strong>{isComplimentary ? "Full access" : paidSubscription ? readableBillingStatus(paidSubscription.status) : isSubscribed ? statusLabel : "Not subscribed"}</strong>
-              <small>{cancellationScheduled ? "Cancellation scheduled" : isComplimentary ? "No expiration or renewal charge" : isTrial ? remainingTrialDays === null ? "Trial active · no card or automatic renewal" : `${remainingTrialDays} ${remainingTrialDays === 1 ? "day" : "days"} remaining · no card or automatic renewal` : account.entitlementStatus === "grace" ? "Review payment before the grace period ends" : isSubscribed ? "Renews automatically unless canceled" : account.trialEligible === null ? "Billing history temporarily unavailable" : canStartTrial ? extendedTrialEnd ? `One extended card-free trial is available through ${extendedTrialEnd}` : "One 30-day card-free trial is available" : canSubscribe ? "Choose a paid subscription to continue" : account.enrollment?.reason || "Enrollment is being prepared"}</small>
-            </div>
-            <div className={styles.billingMetric}>
-              <span>{cancellationScheduled ? "Access through" : isTrial ? "Trial access ends" : !isSubscribed && billingPeriodEnd ? "Previous access ended" : "Next billing date"}</span>
-              <strong>{isComplimentary ? "No billing date" : readableDate(isTrial ? trialEnd : billingPeriodEnd) || "Not scheduled"}</strong>
-              <small>{isComplimentary ? "This account is never charged" : isTrial ? "Nothing is charged on this date" : cancellationScheduled ? "No additional renewal charge" : "Billing is processed securely by Stripe"}</small>
-            </div>
-            <div className={styles.billingMetric}>
-              <span>Payment method</span>
-              <strong>{isComplimentary || isTrial ? "None required" : paymentMethod ? `${readableCardBrand(paymentMethod.brand)} •••• ${paymentMethod.last4}` : account?.hasBillingAccount ? "Not available" : "Not collected"}</strong>
-              <small>{paymentMethod?.expMonth && paymentMethod?.expYear ? `Expires ${String(paymentMethod.expMonth).padStart(2, "0")}/${paymentMethod.expYear}` : isComplimentary ? "No Stripe customer exists" : isTrial ? "No card is stored for this trial" : "Add or update securely through Stripe"}</small>
-            </div>
-          </div>
-
-          {!isComplimentary && cancellationScheduled && (
-            <div className={styles.cancellationBanner}>
-              <CalendarClock size={20} />
-              <div><strong>Your subscription is set to end{billingPeriodEnd ? ` on ${readableDate(billingPeriodEnd)}` : " after the current paid period"}.</strong><p>Your family keeps full access until then. You can keep BodeeGuard by resuming before that date.</p></div>
-              <form action={resumeBodeeGuardSubscription}><SubmitButton className={styles.resumeButton}><RotateCcw size={15} /> Keep my subscription</SubmitButton></form>
-            </div>
-          )}
-
-          {!isComplimentary && isSubscribed && !isTrial && !cancellationScheduled && (
-            <details className={styles.cancelPanel}>
-              <summary>Need to cancel BodeeGuard?</summary>
-              <div><p>Cancellation stops the next renewal. Your children keep full access through {readableDate(billingPeriodEnd) || "the end of the current billing period"}; BodeeGuard will not shut off immediately. Your local family records are preserved after access ends.</p><form action={scheduleBodeeGuardCancellation}><SubmitButton className={styles.cancelButton} pendingLabel="Scheduling cancellation…">Cancel at the end of my billing period</SubmitButton></form></div>
-            </details>
-          )}
-
-          <div className={styles.paymentHistory}>
-            <div className={styles.paymentHeading}><div><FileText size={18} /><span><strong>Payment history</strong><small>Stripe receipts and downloadable invoices</small></span></div>{!isComplimentary && !isTrial && account?.hasBillingAccount && <form action={openBodeeGuardBilling}><SubmitButton>View all in Stripe <ExternalLink size={13} /></SubmitButton></form>}</div>
-            {isComplimentary ? (
-              <div className={styles.emptyPayments}><ShieldCheck size={18} /><span>No payments will appear here because this is a permanently complimentary Family Beta account.</span></div>
-            ) : invoices.length ? (
-              <div className={styles.invoiceList}>
-                {invoices.map((invoice, index) => (
-                  <article className={styles.invoiceRow} key={`${invoice.number || "invoice"}-${invoice.createdAt || index}`}>
-                    <div><strong>{invoice.number || "BodeeGuard invoice"}</strong><span>{readableDate(invoice.createdAt)} · {invoice.status.replaceAll("_", " ")}</span></div>
-                    <strong>{readableMoney(invoice.amountPaid || invoice.amountDue, invoice.currency)}</strong>
-                    <div className={styles.invoiceActions}>
-                      {invoice.hostedInvoiceUrl && <a href={invoice.hostedInvoiceUrl} target="_blank" rel="noreferrer">Receipt <ExternalLink size={12} /></a>}
-                      {invoice.invoicePdfUrl && <a href={invoice.invoicePdfUrl} target="_blank" rel="noreferrer">PDF <Download size={12} /></a>}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.emptyPayments}><CheckCircle2 size={18} /><span>{isTrial ? "No payment is due. The trial ends without a charge; subscribe afterward only if you choose to continue." : "No completed BodeeGuard payments are on this account yet."}</span></div>
-            )}
-          </div>
-
-          <div className={styles.billingHelp}><CircleHelp size={18} /><span><strong>Billing question?</strong> Payment details stay with Stripe. For help, <Link href="/feedback">contact us through Feedback</Link>.</span></div>
-              </>}
-            </div>
-          </details>
+          {billingFirst && billingSection}
           <details id="account-computers" className={accountStyles.section} open={params.computerRemoved === "1" || params.computerRenamed === "1"}>
             <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><Laptop size={20} /></span><span className={accountStyles.sectionLabel}><strong>Child computers</strong><small>{childDevices.length} connected · Names & device access</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
             <div className={accountStyles.panelBody}>
@@ -413,7 +431,10 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
             {installerAvailable && <InstallerShareLink />}
             <div className={styles.setupDownload}>
               {installerAvailable ? (
-                <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} />
+                <>
+                  <InstallerDownload href="/guard/download/windows" label="Download child app for Windows" version={release?.version} />
+                  {!isComplimentary && <WindowsInstallerNotice />}
+                </>
               ) : (
                 <span className={styles.portalButtonUnavailable} aria-disabled="true"><CalendarClock size={17} /> Cloud installer not released yet</span>
               )}
@@ -433,9 +454,10 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
                 <div><strong>Check readiness</strong><p>Assign this computer to the child’s existing profile, check its connection and complete the Parent password setup if prompted.</p><Link className={styles.stepAction} href="/guard/dashboard/?setup=connect">Continue setup <ArrowRight size={15} /></Link></div>
               </li>
             </ol>
-          </> : <p className={styles.channelExplanation}>{canRequestTrial ? "Start or retry your free trial in Plan & billing above. Once confirmed, you can add children and connect their computers." : canSubscribe ? "Subscribe below to restore your family access. Your current installations and saved work do not need to be replaced." : "Setup will be available here when family enrollment opens."}</p>}
+          </> : <p className={styles.channelExplanation}>{showTrialOffer ? <>First, <a href="#start-trial">activate your free trial</a>. Then you can add children and connect their computers.</> : canSubscribe ? <>Open <a href="#account-billing">Plan &amp; billing</a> to restore your family access. Your current installations and saved work are kept.</> : account.enrollment?.reason || "Setup will be available here when family enrollment opens."}</p>}
         </ChildSetup>
 
+          {!billingFirst && billingSection}
           <details id="account-updates" className={accountStyles.section} open={Boolean(params.channel)}>
             <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><Download size={20} /></span><span className={accountStyles.sectionLabel}><strong>Software updates</strong><small>{channelLabel}{release ? ` · Version ${release.version}` : " · Installer not released yet"}</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
             <div className={accountStyles.panelBody}>
@@ -473,6 +495,7 @@ export default async function GuardAccountPage({ searchParams }: { searchParams:
           <details className={accountStyles.section}>
             <summary className={accountStyles.sectionSummary}><span className={accountStyles.sectionIcon}><CircleHelp size={20} /></span><span className={accountStyles.sectionLabel}><strong>Help & account security</strong><small>Setup questions, sign-in & support</small></span><ChevronDown className={accountStyles.chevron} size={18} /></summary>
             <div className={`${accountStyles.panelBody} ${accountStyles.helpBody}`}>
+              <div><strong>What does BodeeGuard protect on Windows?</strong><p>Inside BodeeGuard, children use the sites and activities you approve. Other Windows apps and the Ctrl+Alt+Delete screen can still be available.</p></div>
               <div><strong>Do parents need an app?</strong><p>Use your dashboard in this browser. There is nothing for parents to install.</p></div>
               <div><strong>Can I close the dashboard?</strong><p>Yes. Your children’s school day keeps running on their computers.</p></div>
               <div><strong>Is my sign-in shared with my children?</strong><p>No. Your password stays with Clerk and is never stored on a child’s computer.</p></div>

@@ -51,7 +51,7 @@ async function render(account, options = {}) {
   };
   try {
     component._compile(compiled, filename);
-    return renderToStaticMarkup(await component.exports.default({ searchParams: Promise.resolve({}) }));
+    return renderToStaticMarkup(await component.exports.default({ searchParams: Promise.resolve(options.params || {}) }));
   } finally {
     globalThis.fetch = previousFetch;
     if (previousApi === undefined) delete process.env.BODEEGUARD_COMMERCIAL_API_URL;
@@ -100,20 +100,26 @@ test('closed enrollment does not offer a ticking trial or an unusable download',
   const html = await render(fixture());
   assert.match(html, /Welcome, Jamie Test/);
   assert.match(html, /Family enrollment has not opened yet/);
-  assert.doesNotMatch(html, /Start 30-day trial — no card|Download child app for Windows|Invite a family to Beta/);
+  assert.doesNotMatch(html, /Start 30-day trial|Download child app for Windows|Invite a family to Beta/);
 });
 
 test('public customer setup offers a deliberate trial, then a cloud download without private Beta instructions', async () => {
   const ready = await render(fixture({ release: cloudReleaseFixture(),
     enrollment: { customerLaunchOpen: true, canStartTrial: true, canSubscribe: true } }));
   assert.match(ready, /Start 30-day trial/);
-  assert.match(ready, /does not yet have a verified Windows publisher/);
-  assert.match(ready, /Windows-wide app restrictions and control of secure-attention shortcuts are not yet complete/);
+  assert.match(ready, /Your parent account is ready/);
+  assert.equal((ready.match(/<button[^>]*>Start 30-day trial/g) || []).length, 1);
+  assert.ok(ready.indexOf('id="start-trial"') < ready.indexOf('aria-label="Open family dashboard"'));
+  assert.match(ready, /href="#start-trial"/);
+  assert.doesNotMatch(ready, /Windows installer notice|Payment history|class="billingMetric"|id="account-billing"[^>]* open/);
   assert.doesNotMatch(ready, /Download child app for Windows|PRIVATE.VALIDATION/);
   const active = await render(fixture({ entitlementStatus: 'trial', trialEndsAt: '2030-10-01T00:00:00Z', release: cloudReleaseFixture(),
     trialEligible: false, enrollment: { customerLaunchOpen: true, canStartTrial: false, canSubscribe: false } }));
   assert.match(active, /href="\/guard\/download\/windows"/);
   assert.match(active, /No automatic charge/);
+  assert.match(active, /Windows protected your PC.*More info.*Run anyway/);
+  assert.match(active, /does not yet have a verified Windows publisher/);
+  assert.match(active, /Other Windows apps and the Ctrl\+Alt\+Delete screen can still be available/);
   assert.doesNotMatch(active, /Start 30-day trial|PRIVATE.VALIDATION|Invite a family to Beta/);
 });
 
@@ -191,7 +197,7 @@ test('an old installer neither enables cloud downloads nor appears as a cloud up
 test('legacy release eligibility cannot start a trial from the cloud page', async () => {
   const html = await render(fixture({ release: legacyReleaseFixture,
     enrollment: { customerLaunchOpen: true, canStartTrial: true, canSubscribe: true } }));
-  assert.doesNotMatch(html, /Start 30-day trial — no card|Subscribe for \$19\.99\/month/);
+  assert.doesNotMatch(html, /Start 30-day trial|Subscribe for \$19\.99\/month/);
 });
 
 test('the verified account catalog must select a cloud artifact before enabling download', async () => {
@@ -228,7 +234,7 @@ test('paid scheduled cancellation still offers resumption after cloud-only onboa
 test('early access displays the API launch offer while active access uses its confirmed end', async () => {
   const offer={minimumDays:30,endsAt:'2027-01-01T06:00:00.000Z',extendedForLaunch:true,paidLaunchAt:'2027-01-01T06:00:00.000Z',timeZone:'America/Chicago'};
   const ready=await render(fixture({trialOffer:offer,release:cloudReleaseFixture(),enrollment:{customerLaunchOpen:true,canStartTrial:true,canSubscribe:true}}));
-  assert.match(ready,/Start extended free trial/);assert.match(ready,/Early-access trial through January 1, 2027/);assert.match(ready,/at least 30 days/);
+  assert.match(ready,/<button[^>]*>Start extended free trial </);assert.match(ready,/Free through <time[^>]*>January 1, 2027/);
   assert.doesNotMatch(ready,/Start 30-day trial/);
   const active=await render(fixture({trialOffer:offer,entitlementStatus:'trial',trialEndsAt:'2027-01-19T12:00:00.000Z',trialEligible:false,release:cloudReleaseFixture()}));
   assert.match(active,/January 19, 2027/);assert.match(active,/No automatic charge/);assert.doesNotMatch(active,/Start extended free trial|Trial ends January 1, 2027/);
@@ -246,13 +252,32 @@ test('billing failure keeps a free retry and directs setup to activation instead
   const html = await render(fixture({ release: cloudReleaseFixture(), hasBillingAccount:true, trialEligible:null,
     billing:{available:false,invoices:[],plan:null,paymentMethod:null,subscription:null},
     enrollment:{customerLaunchOpen:true,canStartTrial:false,canRetryTrial:true,canSubscribe:true} }));
-  assert.match(html, /Retry free trial — no card/);
-  assert.match(html, /href="#account-billing"/);
-  assert.match(html, /Activate access first, then add children/);
+  assert.match(html, /<button[^>]*>Retry free trial </);
+  assert.match(html, /href="#start-trial"/);
   assert.match(html, /Family access is not active yet/);
   assert.doesNotMatch(html, /Subscribe for \$19.99|Setup will be available here when family enrollment opens|access and family computers are unaffected/);
 });
 
+test('first trial visit prioritizes computers and setup; billing details return in the final 15 days or for an invoice', async () => {
+  const trial = { entitlementStatus:'trial', trialEligible:false, hasBillingAccount:true, release:cloudReleaseFixture() };
+  const endIn = days => new Date(Date.now() + days * 86400000).toISOString();
+  const zero = { number:'TRIAL', status:'paid', amountPaid:0, amountDue:0, currency:'usd', createdAt:null };
+  const html = await render(fixture({ ...trial, trialEndsAt:endIn(35), billing:{available:true,invoices:[zero]} }), {params:{trial:'started'}});
+  assert.match(html,/Your free trial has started/);
+  for (const id of ['account-computers','child-setup']) {
+    assert.ok(html.includes('id="'+id+'"') && html.indexOf('id="'+id+'"') < html.indexOf('id="account-billing"'));
+  }
+  assert.doesNotMatch(html,/id="account-billing"[^>]* open|Payment history|class="billingMetric"|Not collected|Start extended free trial/);
+  const later = await render(fixture({ ...trial, trialEndsAt:endIn(15) }));
+  assert.match(later,/class="billingMetric"/);
+  assert.doesNotMatch(later,/Payment history|id="account-billing"[^>]* open/);
+  const receipt = await render(fixture({ ...trial, trialEndsAt:endIn(35), billing:{available:true,invoices:[{...zero,number:'PAID-1',amountPaid:1999,hostedInvoiceUrl:'https://invoice.example.test/receipt'}]} }));
+  assert.match(receipt,/Payment history/);
+  assert.match(receipt,/https:\/\/invoice\.example\.test\/receipt/);
+  const grace = await render(fixture({ entitlementStatus:'grace', hasBillingAccount:true }));
+  assert.match(grace,/id="account-billing"[^>]* open/);
+  assert.ok(grace.indexOf('id="account-billing"') < grace.indexOf('id="child-setup"'));
+});
 
 test('account freshness follows the authorized channel and the rendered release version', async () => {
   for (const channel of ['stable','beta']) {

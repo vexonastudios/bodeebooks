@@ -88,6 +88,7 @@ test('the real entry form accepts four characters, preserves older pasted codes 
  component.require=name=>name==='react'?{...React,useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],value=>{slots[i]=value;}];},useRef(initial){const i=cursor++;return slots[i]??(slots[i]={current:initial});},useEffect(effect,deps){const i=cursor++;if(!slots[i]||deps.some((value,index)=>!Object.is(value,slots[i][index]))){slots[i]=deps;effects.push(effect);}}}
    :name==='__browser'?{matchMedia:()=>({matches:true})}
    :name==='../InstallerDownload'?{__esModule:true,default:()=>null}
+   :name==='../WindowsInstallerNotice'?{__esModule:true,default:()=>React.createElement('aside',null,'Windows installer notice')}
    :name.endsWith('.module.css')?{__esModule:true,default:{}}:native(name);
  component._compile('const window=require("__browser");'+ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,filename);
  const render=()=>{cursor=0;tree=component.exports.default();const ready=tree.props.children.find(child=>child?.props?.ref);if(ready)ready.props.ref.current={querySelector:()=>button};while(effects.length)effects.shift()();return renderToStaticMarkup(tree);};
@@ -98,12 +99,13 @@ test('the real entry form accepts four characters, preserves older pasted codes 
   for(const code of ['mkr7','abcde-fghjk']){
    assert.match(render(),/3 letters and 1 number/);
    assert.ok(input().props.minLength<=code.length&&input().props.maxLength>=code.length,'browser length constraints must permit both formats');
-   input().props.onChange({target:{value:code}});render();
+   input().props.onChange({target:{value:code}});assert.doesNotMatch(render(),/Windows installer notice/);
    assert.equal(input().props.value,code.toUpperCase());
    await tree.props.onSubmit({preventDefault(){}});
    const call=calls.at(-1);assert.equal(call.url,'/guard/install/redeem/');assert.equal(call.options.credentials,'omit');
    assert.deepEqual(JSON.parse(call.options.body),{code:code.toUpperCase()});
    assert.match(render(),/Your Windows download is ready/);
+   assert.match(render(),/Windows installer notice/);
    assert.deepEqual(focusCalls.at(-1),{preventScroll:true});
    assert.deepEqual(scrollCalls.at(-1),{block:'center',behavior:'instant'});
    assert.equal(focusCalls.length,calls.length,'each successful code brings the download into focus once');

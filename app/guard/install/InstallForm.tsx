@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { CircleCheck, KeyRound, LoaderCircle } from "lucide-react";
 import styles from "../portal.module.css";
 import InstallerDownload from "../InstallerDownload";
+import WindowsInstallerNotice from "../WindowsInstallerNotice";
 type DownloadLink = {url:string;version:string;expiresAt:string|null};
 export default function InstallForm() {
   const [code,setCode] = useState("");
@@ -39,6 +40,7 @@ export default function InstallForm() {
       <p>Next, choose <strong>Download BodeeGuard</strong> below to save the installer.</p>
       <p>Version {link.version} · Windows 64-bit</p>
       <InstallerDownload key={link.url} href={link.url} label="Download BodeeGuard" version={link.version} expiresAt={link.expiresAt} />
+      <WindowsInstallerNotice />
       <p>Open the downloaded installer, then follow its setup steps. {link.expiresAt && "Start the download within 5 minutes."}</p>
     </div>}
   </form>;
