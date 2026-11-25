@@ -1,7 +1,8 @@
-import { inlineChildren, inlineSchool, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261124-calendar';
+import { inlineChildren, inlineSchool, setupField, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261125-first-day';
+import { editSchedule } from './cloud-workspace-model.js';
 import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards, planCardKey, saveDailyPlan } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
-import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } from './cloud-parent-readiness.js?v=20261104-daily-controls1';
+import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer, hasActivityPlan } from './cloud-parent-readiness.js?v=20261125-first-day';
 import { setupPassword } from './cloud-setup-password.js?v=20261124-password-fields';
 import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261109-microphone';
 import { activityAccent } from './cloud-activity-colors.js';
@@ -21,7 +22,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
   const later=button('Save and close',()=>save(true)),back=button('Back',()=>move(-1)),next=button('Continue',()=>move(1),true);
   const nextLabel=next.firstChild;
-  const dismiss=button('Close',()=>{if(!busy&&!promptBusy)dialog.close();});dismiss.classList.add('setup-dismiss');
+  const dismiss=button('Close',()=>{if(!busy&&!promptBusy){sections.close();dialog.close();}});dismiss.classList.add('setup-dismiss');
   dismiss.setAttribute('aria-label','Close setup without saving');dismiss.title='Saved changes are kept. Unsaved edits will be discarded.';
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{resetActivityStep();render();}});
@@ -56,12 +57,12 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const nextStep=nextSetupStep(snapshot,state);
     welcome.hidden=!nextStep;
     if(!nextStep)return;
-    const ready=canFinish();
+    const ready=nextStep.step===3&&canFinish();
     welcome.replaceChildren(node('h2',!children().length?'Start with the essentials':ready?'Your family setup is ready to finish':'A few setup steps remain'),
       node('p',!children().length?'Set your parent password, add your children, choose their school and activities, then connect their Windows computer.':ready
         ?'Finish setup for the computers you have connected. You can connect the remaining children later from Family setup.'
         :'Next: '+nextStep.label+'. Review the remaining steps below; your saved choices are kept.'),
-      button(!children().length?'Set up my family':ready?'Review & finish setup':'Review remaining steps',()=>open(nextStep.step),true));
+      button(!children().length?'Set up my family':ready?'Review & finish setup':'Review remaining steps',()=>open(),true));
   }
   function status() {
     progress.textContent=`Step ${index+1} of ${steps.length}`;back.disabled=index===0;
@@ -81,7 +82,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     try {
       state=await request('get-setup');
       choreChoice=state.chores?.chosen?state.chores.enabled:null;choreRequest=null;
-      index=Number.isInteger(startAt)?startAt:state.completed?(nextSetupStep(getSnapshot(),state)?.step??0):Math.max(0,steps.findIndex(step=>step.id>=state.step));
+      index=Number.isInteger(startAt)?startAt:(nextSetupStep(getSnapshot(),state)?.step??0);
       // Pairing returns directly to the computer checklist. Missing activity plan
       // choices remain visible there and never become complete just by opening it.
       if(startAt===3)index=children().length?3:0;
@@ -251,7 +252,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       }
       draft.audience=value;draft.cards=cards;
       if(fromOverview){draft.fromOverview=true;draft.childOnly=!!child;}
-      draft.firstChildPlan=!!child&&!draft.captured.rules.subjects.some(subject=>subject.assignments?.some(a=>a.studentId===value&&a.dailyPlan));
+      draft.firstChildPlan=!!child&&!hasActivityPlan(draft.captured.rules,value);
       draft.dirty=draft.firstChildPlan||draft.choices.size>0||value==='all'||value==='selected'||value==='default'&&draft.fresh;
   }
   async function changeAudience(value,fromOverview=false) {
@@ -499,6 +500,35 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     body.append(node('p','After saving a student, keep BodeeGuard open on that computer. Tap Check again to see when it confirms the assignment and parent controls.','setup-copy'));
     body.append(button('Review Daily Plan',()=>section('daily-plan')));
   }
+  function schoolStartDate(){
+    const panel=node('div','','setup-child setup-school-start');
+    let savedStart=getSnapshot().rules.schedule?.termStart||'';
+    const {label,input}=setupField('First day of school (optional)','setupTermStart',savedStart,'date');
+    const today=button('Use today',()=>{
+      const zone=getSnapshot().rules.schedule?.timeZone||window.BODEE_CLOUD_SCHEDULE.DEFAULT_CLOUD_SCHOOL_SCHEDULE.timeZone;
+      input.value=window.BODEE_CLOUD_SCHEDULE.cloudSchoolDateParts(zone,Date.now()).localDate;
+      input.focus();
+    });
+    const row=node('div','','school-hours-first-date');row.append(label,today);
+    const calendar=button('More calendar settings',()=>section('calendar'));
+    const icon=node('i','','setup-icon');icon.dataset.lucide='calendar-days';icon.setAttribute('aria-hidden','true');calendar.prepend(icon);
+    panel.append(row,calendar);body.append(panel);
+    pending.push(async()=>{
+      if(input.validity.badInput)throw Error('Enter a complete first school day or leave it blank.');
+      if(input.value===savedStart)return;
+      const snapshot=getSnapshot(),current=snapshot.rules.schedule;
+      if((current?.termStart||'')!==savedStart && (current?.termStart||'')!==input.value){
+        savedStart=current?.termStart||'';input.value=savedStart;
+        throw Error('The first school day changed elsewhere. Check the updated date before continuing.');
+      }
+      if((current?.termStart||'')!==input.value){
+        const calendar=window.BODEE_CLOUD_SCHEDULE;
+        const schedule=calendar.planCloudSchoolSchedule({...calendar.DEFAULT_CLOUD_SCHOOL_SCHEDULE,...current,termStart:input.value||null});
+        await mutate('save-subjects',editSchedule(snapshot,schedule));
+      }
+      savedStart=input.value;
+    });
+  }
   function choreOptions(){
     const section=node('fieldset','','setup-chores');section.append(node('legend','Chores & Routines for the whole family'),node('p','Turn this on to assign chores to individual children.'));
     for(const [value,label]of [[true,'Use Chores & Routines'],[false,'Skip for now']]){
@@ -522,6 +552,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       pending.push(manualEditor);
     }
     else if(index===1){
+      schoolStartDate();
       const roster=children(),pickers=[];
       const options={host:body,getSnapshot,mutate,refresh,searchSites:input=>request('find-school-sites',input),
         onChange:()=>{error.textContent='';},onError:failure=>{error.textContent=failure.message;},
@@ -534,9 +565,6 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       if(roster.length>1)pickers.push(inlineSchool({...options,students:roster}));
       for(const student of roster)pickers.push(inlineSchool({...options,student,quickAbeka:roster.length===1}));
       pending.push(...pickers);
-      const calendar=button('Set school calendar',()=>section('calendar'));
-      const icon=node('i','','setup-icon');icon.dataset.lucide='calendar-days';icon.setAttribute('aria-hidden','true');calendar.prepend(icon);
-      body.append(calendar);
     }else if(index===2){
       if(activityView==='overview')activityOverview();
       else if(activityView==='review')reviewPlan();

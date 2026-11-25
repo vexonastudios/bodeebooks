@@ -13,7 +13,7 @@ import { createControlQueue, isIndependentControl, applyControlResult } from './
 import { setupWeeklyActivity } from './cloud-weekly-activity.js';
 import { createConnectionRefresh } from './cloud-connection-refresh.js?v=20261119-visible1';
 import { setupDailyPlan } from './cloud-daily-plan.js';
-import { setupParentStart } from './cloud-parent-start.js?v=20261125-back';
+import { setupParentStart } from './cloud-parent-start.js?v=20261125-first-day';
 import { setupMainSchool } from './cloud-school-setup.js';
 import { setupApprovedApps } from './cloud-approved-apps.js';
 import { setupCloudChores } from './cloud-chores.js?v=20261104-more-icons1';
@@ -26,7 +26,7 @@ import { connectionState, applyConnectionStatus, deliveryState, editSchedule } f
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
 import { setupCloudMobile } from './cloud-mobile.js?v=20261109-white-noise1';
-import { setupCloudCalendar } from './cloud-calendar.js?v=20261125-term';
+import { setupCloudCalendar } from './cloud-calendar.js?v=20261125-first-day';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20261030-document-complete1';

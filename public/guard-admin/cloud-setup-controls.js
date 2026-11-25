@@ -100,7 +100,7 @@ export function setupSections({ dialog, body, footer, navigate, onReturn }) {
   let restore = null;
   dialog.addEventListener('cancel', event => { if (restore) { event.preventDefault(); event.stopImmediatePropagation(); restore(); } }, true);
   dialog.addEventListener('close', () => { if (!dialog.open) restore?.(); });
-  return { active: () => !!restore, open(tab, callback) {
+  return { active: () => !!restore, close: () => restore?.(), open(tab, callback) {
     if (restore) return;
     const panel=document.getElementById(`tab-${tab}`); if(!panel)throw Error('This setup section is unavailable.');
     const previousTab=document.querySelector('.nav-item[aria-current="page"]')?.dataset.tab || 'overview';

@@ -5,6 +5,11 @@ function controlsConfirmed(device) {
     && Number.isInteger(device.revision) && device.acknowledged_revision >= device.revision;
 }
 
+export function hasActivityPlan(rules,studentId) {
+  return rules.subjects.some(subject => !subject.isSchoolPortal &&
+    subject.assignments?.some(a => a.studentId === studentId && a.dailyPlan));
+}
+
 // Daily dashboard layout is separate from the setup checklist. One working
 // computer is enough to start, even if other children will join later.
 export function hasWorkingComputer(snapshot, setup) {
@@ -34,7 +39,7 @@ export function familyReadiness(snapshot, setup) {
       + Number(passwordConfirmed(device)) * 2 + Number(initialConfirmation(device));
     const device = [...devices].sort((a,b) => score(b)-score(a))[0];
     const connected = !!device && connectionState(device, now) === 'Connected';
-    const hasPlan = snapshot.rules.subjects.some(subject => subject.assignments?.some(a => a.studentId === child.id && a.dailyPlan));
+    const hasPlan = hasActivityPlan(snapshot.rules,child.id);
     const checks = [
       {id:'family-password',label:'Family parent password saved',done:snapshot.parentPassword?.configured===true,step:0,action:'Set parent password',detail:'In Family setup, save your parent password first. You use it to exit BodeeGuard on your children’s computers.'},
       {id:'activities',label:'Activity choices saved',done:hasPlan || setup?.completed === true,step:2,action:'Choose activities',detail:'Review the daily plan and save this child’s activity choices.'},
@@ -60,7 +65,15 @@ export function nextSetupStep(snapshot, setup) {
   const rows = familyReadiness(snapshot, setup);
   if(snapshot.parentPassword?.configured!==true)return {step:0,label:'Set your parent password'};
   if (!rows.length) return {step:0,label:'Add your children'};
-  const unfinished = rows.find(row => row.next && !row.connectLater)
+  // The persisted guide uses 0, 1, 4 and 7 for the four screens. A school
+  // website also creates an assignment, but does not advance the guide.
+  if (!setup?.completed && Number.isInteger(setup?.step) && setup.step <= 4) {
+    if (setup.step === 0) return {step:0,label:'Review your children'};
+    if (setup.step === 1) return {step:1,label:'Review school websites and the first school day'};
+    return {step:2,label:'Review activity choices'};
+  }
+  const unfinished = rows.find(row => row.next?.id === 'activities')
+    || rows.find(row => row.next && !row.connectLater)
     || (setup?.completed && rows.some(row=>row.ready) ? null : rows.find(row=>row.next));
   if (unfinished) return {step:unfinished.next.step,label:unfinished.child.name + ': ' + unfinished.next.action.toLowerCase()};
   return setup?.completed ? null : {step:3,label:'Finish setup and hide this reminder'};

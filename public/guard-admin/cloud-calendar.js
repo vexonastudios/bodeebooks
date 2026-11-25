@@ -1,5 +1,5 @@
 import { setupCloudAttendance } from './cloud-attendance.js?v=20261124-calendar';
-import { setupCalendarSettings } from './cloud-calendar-settings.js?v=20261125-term';
+import { setupCalendarSettings } from './cloud-calendar-settings.js?v=20261125-first-day';
 // The preview uses the same calendar decisions as the API and child app.
 const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts } = globalThis.BODEE_CLOUD_SCHEDULE;
 const byId = id => document.getElementById(id);

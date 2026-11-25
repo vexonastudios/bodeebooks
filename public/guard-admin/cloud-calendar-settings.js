@@ -32,9 +32,11 @@ export function setupCalendarSettings({ getSnapshot, saveSchedule }) {
       if (schedule.schoolDayCount) term = `${schedule.schoolDayCount} school days · Projected last day ${date(schedule.termEnd)}`;
     }
     document.getElementById('cloud-school-term-summary').textContent = term;
-    title.textContent = schedule?.enabled ? 'School dates & hours' : 'When does school start?';
+    title.textContent = schedule.enabled || schedule.termStart ? 'School dates & hours' : 'When does school start?';
     if (schedule.enabled) {
       note.textContent = `${term} · ${schedule.start}–${schedule.end} (${schedule.timeZone.replaceAll('_', ' ')}). Attendance coins are ${schedule.attendance?.enabled ? 'on' : 'off'}.`;
+    } else if (schedule.termStart) {
+      note.textContent = `${term}. Set school days and hours when you’re ready.`;
     } else {
       note.textContent = 'Choose your first school day and daily hours. You can also set an on-time reward or a late coin deduction.';
     }

@@ -71,6 +71,20 @@ test('no children is never complete',()=>{
   const s=family();s.students=[];assert.equal(nextSetupStep(s,{completed:true}).step,0);
 });
 
+test('resume honors the saved school and activities screens and distinguishes a website from a reviewed activity plan',()=>{
+  const s=family();
+  s.rules.subjects[0].isSchoolPortal=true;
+  assert.equal(nextSetupStep(s,{step:1}).step,1);
+  assert.equal(nextSetupStep(s,{step:4}).step,2);
+  assert.equal(nextSetupStep(s,{step:7}).step,2);
+  assert.equal(canFinishSetup(s,{step:7}),false);
+  s.rules.subjects.push({assignments:[{studentId:'child',active:false,dailyPlan:{enabled:false}}]});
+  assert.equal(nextSetupStep(s,{step:4}).step,2,'resume at activities until the parent continues');
+  assert.equal(nextSetupStep(s,{step:7}).step,3,'reviewing and disabling an activity counts');
+  s.devices=[];s.students.push({id:'younger',name:'Younger child'});
+  assert.equal(nextSetupStep(s,{step:7}).step,2,'an unfinished sibling takes priority over connecting another computer');
+});
+
 test('a prepared profile without a computer can be connected later',()=>{
  const s=family();s.students.push({id:'later',name:'Later Child',main_school:{provider:'none'}});
  s.rules.subjects[0].assignments.push({studentId:'later',dailyPlan:{placement:'school'}});
