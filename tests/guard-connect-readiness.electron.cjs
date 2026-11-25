@@ -81,9 +81,9 @@ else {
   assert.equal(setup.completed,false,'returning to daily controls does not certify missing checks');
   assert.equal(await js('document.querySelector("#tab-overview").dataset.familyDashboardActive'),'true');
   await js('guide.open(3)');await wait('document.querySelector("dialog[open]")');
-  await js('document.querySelectorAll(".setup-chores input")[1].click()');
+  assert.equal(await js('!!document.querySelector(".setup-chores")'),false,'computer setup does not ask about chores again');
   await click('Done for now');await wait('!document.querySelector("dialog[open]")');assert.equal(setup.completed,false);
-  assert.equal(choreWrites.length,1);assert.equal(choreWrites[0].enabled,false,'skip persists as off');
+  assert.equal(choreWrites.length,0);
   assert.equal(await js('document.querySelector(".parent-start-welcome").hidden'),false,'missing activity plan remains actionable');
   snapshot.students[0].main_school={provider:'abeka'};
   snapshot.rules.subjects=[{id:'school',assignments:[{studentId,dailyPlan:{placement:'school'}},{studentId:'later-child',dailyPlan:{placement:'school'}}]}];
@@ -120,11 +120,11 @@ else {
   snapshot.schoolActivities=[];
   await win.loadURL(origin);await wait('!!window.guide');
   await js('guide.open(2)');await wait('!!document.querySelector(".setup-chores")');
-  assert.equal(await js('document.querySelectorAll(".setup-chores input")[1].checked'),true,'saved skip is retained in the activities flow');
+  assert.equal(await js('document.querySelector(".setup-chores input").checked'),false,'chores start off');
   await js('document.querySelectorAll(".setup-chores input")[0].click()');
-  assert.equal(choreWrites.length,1,'selecting is still a draft');
+  assert.equal(choreWrites.length,0,'selecting is still a draft');
   await click('Save and close');await wait('!document.querySelector("dialog[open]")');
-  assert.equal(choreWrites.length,2);assert.equal(choreWrites[1].enabled,true,'parent can opt in from the active activities flow');
+  assert.equal(choreWrites.length,1);assert.equal(choreWrites[0].enabled,true,'parent can opt in from the active activities flow');
   // New and already-paired families resolve the password before connection.
   snapshot.parentPassword={configured:false,revision:0};
   await win.loadURL(origin+'/?setup=connect');await wait('document.querySelector("dialog[open]")');

@@ -66,13 +66,16 @@
 .setup-school-lookup>.setup-note:not(:empty){margin:8px 0}
 .setup-school-preview,.setup-school-web-search{color:#c4b5fd;font-size:.86rem;overflow-wrap:anywhere}
 .setup-school-form>[data-error=true]{color:#fda4af}
-.setup-activity-audience{padding:16px;margin-bottom:18px;border:1px solid #76659c;border-radius:12px;background:#a78bfa0a;overflow-wrap:anywhere}
-.setup-activity-audience>label,.setup-activity-audience>h3{display:block;margin:0 0 8px;font-size:1.05rem;font-weight:650}
-.setup-activity-audience>select{display:block;width:100%;min-height:44px;padding:8px 12px;box-sizing:border-box;border:1px solid #827695;border-radius:8px;background:#202034;color:#f1edff;color-scheme:dark;font:inherit}
-.setup-activity-audience>p{margin:8px 0 0;color:#ccc4df;line-height:1.45}
-.setup-activity-audience>.btn{margin-top:10px}
-.setup-activity-overview .setup-audience-note{margin:0 0 10px;color:#8de3bd;font-weight:600;overflow-wrap:anywhere}
-.setup-activity-overview .setup-audience-note:empty{display:none}
+.setup-family-activities>.setup-copy{margin:0 0 15px}
+.setup-activity-group{min-width:0;padding:0;border:0;margin:0 0 16px}
+.setup-activity-group legend{font-weight:650;margin:0 0 6px;color:#e8e1fa}
+.setup-activity-group .parent-start-activities{grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:6px;margin:0}
+.setup-activity-group .parent-start-activity{min-width:0;min-height:44px;box-sizing:border-box;padding:6px 9px;gap:7px;font-size:.89rem;line-height:1.18;overflow-wrap:anywhere}
+.setup-activity-group small[hidden]{display:none}
+.setup-chores{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px;border-top:1px solid #ffffff25;padding:14px 0 4px;cursor:pointer}
+.setup-chores small{display:block;margin-top:3px;color:#c3bbd7}
+.setup-chores input{width:22px;height:22px;flex-shrink:0;accent-color:#74d8af}
+@media(max-width:480px){.setup-activity-group .parent-start-activities{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .setup-device-steps{padding-left:1.8rem;margin:4px 0 14px}
 .setup-device-steps li{padding:10px 0 12px 4px;border-bottom:1px solid #ffffff19}
 .setup-device-steps li::marker{color:#c4b5fd;font-weight:700}
@@ -80,10 +83,6 @@
 .setup-device-steps li>strong .setup-icon{width:18px;height:18px;color:#c4b5fd}
 .setup-device-steps p{margin:6px 0;color:#ccc4df;line-height:1.45;overflow-wrap:anywhere}
 .setup-device-steps a{margin-top:5px;max-width:100%;min-height:44px}
-.setup-activity-children{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px;margin:0 0 14px}
-.setup-activity-children .btn{min-width:0;min-height:44px;text-align:left;justify-content:flex-start;overflow-wrap:anywhere;white-space:normal}
-.setup-audience-children{display:flex;flex-wrap:wrap;gap:6px;min-width:0;padding:0;margin:12px 0 0;border:0}
-.setup-audience-children legend{margin-bottom:6px}.setup-audience-children .setup-choice{align-items:center;margin:0;min-height:44px;padding:6px 12px}
 .setup-child-entry-actions{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .setup-child-entry-actions .btn{max-width:100%;min-height:44px;white-space:normal}
 .setup-child-entry-actions .btn span,.setup-manual-children .setup-child{min-width:0;overflow-wrap:anywhere}

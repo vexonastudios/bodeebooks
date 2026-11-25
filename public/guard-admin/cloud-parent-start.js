@@ -1,22 +1,23 @@
 import { inlineChildren, inlineSchool, setupField, setupSections, lockControls, decorateSetup } from './cloud-setup-controls.js?v=20261125-first-day';
 import { editSchedule } from './cloud-workspace-model.js';
-import { familyPlanCards, templateFromCards, applyFamilyPlan, dailyPlanCards, planCardKey, saveDailyPlan } from './cloud-daily-plan-model.js';
+import { dailyPlanCards } from './cloud-daily-plan-model.js';
 import { showPlanPreview } from './cloud-daily-plan.js';
-import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer, hasActivityPlan } from './cloud-parent-readiness.js?v=20261125-first-day';
+import { familyReadiness, nextSetupStep, canFinishSetup, hasWorkingComputer } from './cloud-parent-readiness.js?v=20261125-first-day';
 import { setupPassword } from './cloud-setup-password.js?v=20261124-password-fields';
 import { createFamilyPrompt } from './cloud-family-prompt.js?v=20261109-microphone';
+import { loadFamilyActivities, familyActivityUpdate } from './cloud-family-activities.js?v=20261125-family-activities';
 import { activityAccent } from './cloud-activity-colors.js';
 
 const steps = [
   {id:0,title:'Parent password & children'}, {id:1,title:'Add school websites (optional)'},
-  {id:4,title:'Choose their activities'}, {id:7,title:'Connect your child’s computer'}
+  {id:4,title:'Activities for all children'}, {id:7,title:'Connect your child’s computer'}
 ];
 const node = (tag,text='',cls='') => { const el=document.createElement(tag);el.textContent=text;el.className=cls;return el; };
 const button = (text,fn,primary=false) => { const el=node('button',text,`btn ${primary?'btn-primary':'btn-secondary'}`);el.type='button';el.onclick=()=>void fn();return el; };
 const link = (text,href) => {const el=node('a',text,'btn btn-secondary');el.href=href;return el;};
 export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navigate,refresh=async()=>{}}) {
   const mutate=(action,data)=>mutateRequest(action,data,{notify:false});
-  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261124-connect-devices';document.head.append(style);
+  const style=node('link');style.rel='stylesheet';style.href='/guard-admin/cloud-parent-setup.css?v=20261125-family-activities';document.head.append(style);
   const dialog=node('dialog','','parent-setup-dialog parent-start-dialog');dialog.setAttribute('aria-labelledby','parent-start-title');
   const frame=node('div','','setup-frame'),header=node('header'),title=node('h2'),progress=node('p','','setup-progress');title.id='parent-start-title';
   const body=node('div','','setup-body'),error=node('p','','setup-error'),footer=node('footer');error.setAttribute('role','alert');
@@ -25,9 +26,9 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   const dismiss=button('Close',()=>{if(!busy&&!promptBusy){sections.close();dialog.close();}});dismiss.classList.add('setup-dismiss');
   dismiss.setAttribute('aria-label','Close setup without saving');dismiss.title='Saved changes are kept. Unsaved edits will be discarded.';
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
-  const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{resetActivityStep();render();}});
+  const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{draft=null;render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null;
-  let activityView='picker',activityNotice='',returningActivities=null;
+  let returningActivities=null;
   let choreChoice=null,choreRequest=null,promptBusy=false,unlockPrompt=null,manualChildren=null,passwordControl=null,unlockPassword=null;
   let manualEditor=null;
   const familyPrompt=createFamilyPrompt({getSnapshot,
@@ -71,23 +72,22 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
         : hasWorkingComputer(getSnapshot(), state) ? 'Done for now' : 'Save & finish later';
     } else if (index === 0 && manualEditor?.hasDraft()) {
       nextLabel.textContent = 'Save child & continue';
-    } else if(index===2&&activityView==='overview')nextLabel.textContent='Continue to computer setup';
-    else if(index===2&&activityView==='review')nextLabel.textContent=planSaveLabel();
-    else if(index===2)nextLabel.textContent=draft?.childOnly&&!draft.dirty?'Done':'Review choices';
+    } else if(index===2)nextLabel.textContent='Save & continue';
     else nextLabel.textContent='Continue';
+    next.disabled=later.disabled=index===2&&!draft?.model;
   }
   async function open(startAt) {
     if(busy||promptBusy||dialog.open||!getSnapshot())return;
     busy=true;launch.disabled=settingsLaunch.disabled=true;previousFocus=document.activeElement;
     try {
       state=await request('get-setup');
-      choreChoice=state.chores?.chosen?state.chores.enabled:null;choreRequest=null;
+      choreChoice=state.chores?.enabled ?? false;choreRequest=null;
       index=Number.isInteger(startAt)?startAt:(nextSetupStep(getSnapshot(),state)?.step??0);
       // Pairing returns directly to the computer checklist. Missing activity plan
       // choices remain visible there and never become complete just by opening it.
       if(startAt===3)index=children().length?3:0;
       if(!getSnapshot().parentPassword?.configured)index=0;
-      returningActivities=null;resetActivityStep();render();dialog.showModal();updateWelcome();
+      returningActivities=null;draft=null;render();dialog.showModal();updateWelcome();
     }catch(failure){state=null;title.textContent='Family setup';progress.textContent='';body.replaceChildren(button('Try again',()=>{dialog.close();void open(startAt);}),button('Close',()=>dialog.close()));error.textContent=failure.message;footer.hidden=true;dialog.showModal();}
     finally{busy=false;launch.disabled=settingsLaunch.disabled=false;}
   }
@@ -105,47 +105,27 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       updateWelcome();
     }finally{unlock();}
   }
-  function choresChanged(){return choreChoice!==null&&(!state.chores?.chosen||choreChoice!==state.chores.enabled);}
+  function choresChanged(){return choreChoice!==null&&choreChoice!==(state.chores?.enabled ?? false);}
   async function save(close=false) {
     if(busy||promptBusy||!state)return false;
-    if(draft?.dirty){error.textContent='Review and save your activity choices first, or cancel your edits.';return false;}
     busy=true;const unlock=lockControls(footer);error.textContent='';
-    try{await persist();if(close)dialog.close();return true;}
-    catch(failure){error.textContent=failure.message;return false;}
-    finally{busy=false;unlock();status();}
+    body.inert=true;
+    try{if(index===2)await savePlan();await persist();if(close)dialog.close();return true;}
+    catch(failure){await navigationError(failure);return false;}
+    finally{busy=false;body.inert=false;unlock();status();}
   }
   async function move(direction) {
     if(busy||promptBusy)return;
-    if(index===2&&direction<0&&activityView==='review'){
-      if(draft.saved)showActivityOverview();else{activityView='picker';render();}
-      return;
-    }
     if(index===2&&direction<0){
-      // Keep only the parent's selections. Calendar and school edits can change
-      // the rules while away, so rebuild the review from the current snapshot.
-      returningActivities=draft&&{audience:draft.audience,selected:draft.selected,choices:draft.choices,fromOverview:draft.fromOverview};
-      index=1;resetActivityStep();render();title.tabIndex=-1;title.focus({preventScroll:true});return;
+      returningActivities=new Map(draft?.model?.choices || returningActivities);
+      index=1;draft=null;render();title.tabIndex=-1;title.focus({preventScroll:true});return;
     }
     busy=true;const unlock=lockControls(footer);body.inert=true;error.textContent='';
     try {
       for(const commit of pending)await commit();
       if(direction>0&&!getSnapshot().parentPassword?.configured)throw Error('Save your parent password above before continuing. You can also save and close.');
       if(direction>0&&index===0&&!children().length)throw Error('Add at least one child to continue. You can also save and close.');
-      if(index===2&&direction>0&&activityView!=='overview'){
-        if(activityView==='picker'){
-          if(draft.childOnly&&!draft.dirty){showActivityOverview();return;}
-          checkAudience();activityView='review';render();return;
-        }
-        await savePlan();
-        if(state.step!==steps[index].id||(!draft.childOnly&&choresChanged()))await persist(index);
-        const audience=draft.audience;
-        if(draft.saved){
-          if(audience==='default')activityNotice='Family default saved.';
-          else if(audience==='all')activityNotice='Shared activities applied to all children.';
-          else activityNotice='Activities saved for '+recipients().map(child=>child.name).join(', ')+'.';
-        }
-        showActivityOverview();return;
-      }
+      if(index===2&&direction>0)await savePlan();
       if (index === 3 && direction > 0) {
         const finishing = canFinish();
         if (finishing) {
@@ -161,230 +141,93 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
         return;
       }
       const target=Math.max(0,Math.min(3,index+direction));await persist(target);
-      if(target===2&&returningActivities){
-        const previous=returningActivities;
-        ensureDraft();
-        const singleChild=!['all','selected','default'].includes(previous.audience);
-        if(singleChild&&!draft.roster.some(child=>child.id===previous.audience)){
-          index=target;resetActivityStep();render();
-          error.textContent='That child is no longer in family setup. Choose whose activities to edit.';
-        }else{
-          draft.choices=new Map(previous.choices);
-          draft.selected=new Set(draft.roster.filter(child=>previous.selected.has(child.id)).map(child=>child.id));
-          try{await loadAudience(previous.audience,previous.fromOverview);}catch(failure){draft=null;throw failure;}
-          index=target;activityView='picker';render();
-        }
-        returningActivities=null;
-      }else{index=target;resetActivityStep();render();}
-    }catch(failure){error.textContent=failure.message;}
+      index=target;draft=null;render();title.tabIndex=-1;title.focus({preventScroll:true});
+    }catch(failure){await navigationError(failure);}
     finally{busy=false;body.inert=false;unlock();status();}
   }
   async function section(tab){if(!await save())return;try{sections.open(tab);}catch(failure){error.textContent=failure.message;}}
-  function resetActivityStep() {
-    draft=null;activityNotice='';activityView='picker';
-    if(index!==2)return;
-    const {rules}=getSnapshot();
-    if(rules.dailyPlanTemplate||rules.subjects.some(s=>!s.isSchoolPortal&&s.assignments?.some(a=>a.dailyPlan)))activityView='overview';
-  }
-  function showActivityOverview() {
-    draft=null;activityView='overview';render();title.tabIndex=-1;title.focus({preventScroll:true});
-  }
-  function ensureDraft() {
-    if(draft)return;
-    const captured=structuredClone(getSnapshot()),cards=familyPlanCards(captured);
-    // New families choose extras deliberately; opening this screen does not save anything.
-    const fresh=!captured.rules.dailyPlanTemplate&&!captured.rules.subjects.some(s=>!s.isSchoolPortal);
-    for(const card of cards.filter(c=>!c.portal)){
-      if(fresh||card.enabled!==true&&state.features[card.module]===false){card.previousPlacement=card.placement==='blocked'?card.previousPlacement||'anytime':card.placement;card.placement='blocked';}
+  async function navigationError(failure) {
+    if(index===2&&draft?.model){
+      // Either write may have succeeded even when its reply did not arrive.
+      returningActivities=new Map(draft.model.choices);
+      try{
+        await refresh();
+        const latest=await request('get-setup');
+        if(choreRequest&&latest.chores?.revision!==choreRequest.revision)choreRequest=null;
+        state=latest;
+      }catch{/* Keep the original error and allow another retry. */}
+      draft=null;render();draft.notice=failure.message;
     }
-    draft={captured,familyCards:cards,cards:structuredClone(cards),fresh,dirty:fresh,
-      audience:fresh?'all':'default',selected:new Set(),choices:new Map(),roster:children().map(({id,name})=>({id,name}))};
-  }
-  function recipients() {
-    return draft.roster.filter(child=>draft.audience==='all'||draft.audience===child.id||
-      (draft.audience==='selected'&&draft.selected.has(child.id)));
-  }
-  function planSaveLabel() {
-    if(draft.saved)return 'Continue';
-    if(draft.audience==='all')return 'Apply to all children';
-    if(draft.audience==='default')return draft.dirty?'Save family default':'Continue';
-    const targets=recipients();
-    return targets.length===1?'Save for '+targets[0].name:'Apply to '+targets.length+' children';
-  }
-  function checkAudience() {
-    if(draft.audience!=='default'&&!recipients().length)throw Error('Choose at least one child to receive these activities.');
-    const currentIds=new Set(children().map(child=>child.id));
-    if(draft.roster.length!==currentIds.size||draft.roster.some(child=>!currentIds.has(child.id))||
-      draft.captured.rules.revision!==getSnapshot().rules.revision)
-      throw Error('Your family or plan changed. Cancel your edits and reopen the activities to see the latest choices.');
-  }
-  function setAllowed(card,allowed) {
-    if(card.placement!=='blocked')card.previousPlacement=card.placement;
-    card.placement=allowed?card.previousPlacement||'anytime':'blocked';
-    card.accessChanged=true;
-  }
-  function setChoice(card,allowed) {
-    setAllowed(card,allowed);
-    const key=planCardKey(card);
-    if(draft.childOnly&&allowed===card.initiallyAllowed){
-      draft.choices.delete(key);card.accessChanged=false;
-    }else draft.choices.set(key,allowed);
-    draft.dirty=!draft.childOnly||draft.firstChildPlan||draft.choices.size>0;status();
-  }
-  async function loadAudience(value,fromOverview) {
-      const child=draft.roster.find(child=>child.id===value);
-      let cards;
-      if(child){
-        const details=await request('daily-plan',{studentId:child.id});
-        if(details.rulesRevision!==draft.captured.rules.revision)throw Error('The plan changed. Discard activity changes to load the latest plan.');
-        // A built-in with a planOnly override for a sibling still uses this child's
-        // regular feature and time settings until they receive an assignment.
-        const {rules,schoolActivities=[]}=draft.captured;
-        const subjects=rules.subjects.filter(subject=>!subject.planOnly||
-          !schoolActivities.some(activity=>activity.url===subject.url)||
-          !Array.isArray(subject.assignments)||subject.assignments.some(item=>item.studentId===child.id));
-        cards=dailyPlanCards({...draft.captured,rules:{...rules,subjects}},details,child.id);
-      }else cards=structuredClone(draft.familyCards);
-      for(const card of cards.filter(card=>!card.portal)){
-        if(fromOverview&&child)card.initiallyAllowed=card.placement!=='blocked';
-        const key=planCardKey(card);
-        if(draft.choices.has(key))setAllowed(card,draft.choices.get(key));
-      }
-      draft.audience=value;draft.cards=cards;
-      if(fromOverview){draft.fromOverview=true;draft.childOnly=!!child;}
-      draft.firstChildPlan=!!child&&!hasActivityPlan(draft.captured.rules,value);
-      draft.dirty=draft.firstChildPlan||draft.choices.size>0||value==='all'||value==='selected'||value==='default'&&draft.fresh;
-  }
-  async function changeAudience(value,fromOverview=false) {
-    if(busy)return;
-    ensureDraft();
-    busy=true;const unlock=lockControls(footer);body.inert=true;error.textContent='';
-    try{
-      const child=draft.roster.find(child=>child.id===value);
-      if(child)body.querySelector('.setup-audience-note').textContent='Loading activities for '+child.name+'…';
-      await loadAudience(value,fromOverview);
-      activityView='picker';
-      render();
-    }catch(failure){
-      if(fromOverview)showActivityOverview();else render();
-      error.textContent=failure.message;
-    }
-    finally{
-      busy=false;body.inert=false;unlock();
-      const focusTarget=body.querySelector('#setup-activity-audience, .setup-child-activities-title');
-      (focusTarget||[...body.querySelectorAll('[data-activity-child]')].find(item=>item.dataset.activityChild===value))?.focus();
-    }
-  }
-  function audienceNote() {
-    const names=recipients().map(child=>child.name).join(', ');
-    if(draft.audience==='all')return (names?names+'. ':'')+'These choices also become your family default.';
-    if(draft.audience==='default')return 'Save a reusable plan. Each child keeps their current activities.';
-    if(draft.audience==='selected')return names?'These children will receive the same plan: '+names+'.':'Choose the children who will receive the same plan.';
-    return 'You’re editing '+names+'’s activities only.';
-  }
-  function audiencePicker() {
-    const group=node('div','','setup-activity-audience'),label=node('label','Who gets these activities?'),select=node('select');
-    select.id='setup-activity-audience';label.htmlFor=select.id;
-    select.add(new Option('All children','all'));
-    for(const child of draft.roster)select.add(new Option(child.name+' only',child.id));
-    if(draft.roster.length>2)select.add(new Option('Choose several children…','selected'));
-    select.add(new Option('Family default only','default'));
-    select.value=draft.audience;select.onchange=()=>void changeAudience(select.value);
-    const note=node('p',audienceNote(),'setup-audience-note');note.id='setup-audience-note';note.setAttribute('aria-live','polite');
-    select.setAttribute('aria-describedby',note.id);group.append(label,select);
-    if(draft.audience==='selected'){
-      const choices=node('fieldset','','setup-audience-children');choices.append(node('legend','Choose children'));
-      for(const child of draft.roster){
-        const row=node('label','','setup-choice'),input=node('input');input.type='checkbox';input.checked=draft.selected.has(child.id);
-        input.onchange=()=>{if(input.checked)draft.selected.add(child.id);else draft.selected.delete(child.id);note.textContent=audienceNote();error.textContent='';};
-        row.append(input,node('span',child.name));choices.append(row);
-      }
-      group.append(choices);
-    }
-    group.append(note);body.append(group);
+    error.textContent=failure.message;
   }
   async function savePlan() {
-    if(draft.saved||!draft.dirty)return;
-    checkAudience();
-    const {audience,captured,cards}=draft;
-    const targets=recipients().map(child=>child.id);
-    if(draft.roster.some(child=>child.id===audience)){
-      const changes=cards.filter(card=>!card.portal&&(draft.firstChildPlan||card.accessChanged))
-        .map(card=>({...card,accessChanged:true}));
-      if(changes.length)await mutate('save-subjects',saveDailyPlan(captured,audience,changes));
-    }else{
-      const template=templateFromCards(cards.map(card=>({...card,accessChanged:true})));
-      const activities={...template,activities:template.activities.filter(entry=>entry.key!=='school')};
-      const payload=targets.length&&activities.activities.length?applyFamilyPlan(captured,activities,targets):{revision:captured.rules.revision,subjects:captured.rules.subjects};
-      if(audience!=='selected')payload.dailyPlanTemplate=template;
-      await mutate('save-subjects',payload);
-    }
-    draft.saved=true;draft.dirty=false;
-  }
-  function discardDraft(){
-    if(draft.fromOverview||draft.saved){showActivityOverview();return;}
-    draft=null;activityView='picker';ensureDraft();draft.dirty=false;draft.audience='default';render();
-  }
-  function activityOverview() {
-    title.textContent='Activities by child';
-    const panel=node('section','','setup-activity-overview');
-    const notice=node('p',activityNotice,'setup-audience-note');notice.setAttribute('role','status');
-    panel.append(notice,node('p','Choose a child to adjust their activities, or continue to computer setup.','setup-copy'));
-    const list=node('div','','setup-activity-children');
-    for(const child of children()){
-      const edit=button('Edit '+child.name+'’s activities',()=>changeAudience(child.id,true));
-      edit.dataset.activityChild=child.id;list.append(edit);
-    }
-    panel.append(list,button('Edit activities for everyone',()=>changeAudience('all',true)));
-    const games=getSnapshot().rules.subjects.filter(s=>s.url==='app://games'&&s.active!==false);
-    if(games.some(s=>!s.assignments||s.assignments.some(a=>a.active!==false&&children().some(child=>child.id===a.studentId))))
-      panel.append(button('Choose games for each child',()=>section('family-games')));
-    body.append(panel);
+    if(!draft?.model)throw Error('Wait for the activity choices to load.');
+    if(draft.saved)return;
+    const payload=familyActivityUpdate(draft.model,getSnapshot());
+    if(payload)await mutate('save-subjects',payload);
+    draft.saved=true;
   }
   function activityPicker() {
-    ensureDraft();
-    if(draft.childOnly){
-      const childTitle=node('h3',recipients()[0].name+'’s activities','setup-child-activities-title');
-      childTitle.tabIndex=-1;body.append(childTitle);
-    }else audiencePicker();
-    const setMinimal=()=>{for(const card of draft.cards.filter(c=>!c.portal))setChoice(card,false);render();};
-    body.append(button('Start with school only',setMinimal));
-    const common=new Set(['typing','spelling','vocabulary','poems','logic']);
-    const grid=node('div','','parent-start-activities'),extras=node('details','','parent-start-more');extras.append(node('summary','More learning, media & creative activities'));
-    const extraGrid=node('div','','parent-start-activities');extras.append(extraGrid);
-    for(const card of draft.cards.filter(c=>!c.portal)){
-      const row=node('label','','parent-start-activity'),input=node('input'),words=node('span');input.type='checkbox';input.checked=card.placement!=='blocked';
-      row.style.setProperty('--activity-accent',activityAccent(card));words.append(node('strong',card.title));
-      if(card.preset==='quizlet')words.append(node('small','Optional · sign in on the child’s computer'));
-      input.onchange=()=>setChoice(card,input.checked);
-      row.append(input,words);(common.has(card.module)?grid:extraGrid).append(row);
+    if(!draft){
+      const pendingDraft={};
+      draft=pendingDraft;
+      loadFamilyActivities(structuredClone(getSnapshot()),state,id=>request('daily-plan',{studentId:id})).then(model=>{
+        if(draft!==pendingDraft)return;
+        for(const [module,enabled] of returningActivities||[]){
+          if(model.values.has(module)&&model.values.get(module)!==enabled)model.choices.set(module,enabled);
+        }
+        returningActivities=null;draft.model=model;render();
+      }).catch(failure=>{
+        if(draft!==pendingDraft)return;
+        draft.failure=failure.message;render();
+      });
     }
-    body.append(grid,extras);
-    const advanced=node('details');advanced.append(node('summary','Goals, hours & individual plans'),button('Open Daily Plan',()=>section('daily-plan')),node('p','School means required work. Open after school means earned activities. Not allowed hides an activity.','setup-copy'));body.append(advanced);
-    body.append(button(draft.fromOverview?'Cancel edits':'Discard activity changes',discardDraft));
-  }
-  function reviewPlan() {
-    ensureDraft();title.textContent='Review activity choices';
-    const targets=recipients();
-    const audience=draft.audience==='default'?'Family default only':targets.map(child=>child.name).join(', ');
-    const scope=node('section','','setup-activity-audience');scope.append(node('h3',audience));
-    if(draft.audience==='all')scope.append(node('p','This replaces each child’s activity choices and sets your family default. You can customize a child next, before computer setup.'));
-    else if(draft.audience==='default')scope.append(node('p','Each child keeps their current activities.'));
-    else if(draft.audience==='selected')scope.append(node('p','These children will receive the same activity plan.'));
-    else scope.append(node('p','Only this child’s activity choices will be saved.'));
-    scope.append(button(draft.childOnly?'Edit activities':'Change who gets these activities',()=>move(-1)));body.append(scope);
-    const summary=node('div','','parent-start-plan-summary');
-    if(draft.childOnly&&!draft.firstChildPlan){
-      for(const allowed of [true,false]){
-        const changed=draft.cards.filter(card=>draft.choices.get(planCardKey(card))===allowed);
-        if(!changed.length)continue;
-        const row=node('div');row.append(node('strong',allowed?'Turn on':'Turn off'),node('p',changed.map(card=>card.title).join(', ')));summary.append(row);
+    if(!draft.model){
+      if(draft.failure){
+        error.textContent=draft.failure;
+        body.append(button('Reload activity choices',()=>{draft=null;render();}));
+      }else{
+        const loading=node('p','Loading your family’s activities…','setup-copy');
+        loading.setAttribute('role','status');body.append(loading);
       }
-    }else for(const [placement,label]of [['school','Must finish'],['after_school','After school'],['anytime','No school requirement'],['scheduled','At chosen times'],['blocked','Not allowed']]){
-      const cards=draft.cards.filter(c=>c.placement===placement);if(!cards.length)continue;
-      const row=node(placement==='blocked'?'details':'div');row.append(node(placement==='blocked'?'summary':'strong',`${label} · ${cards.length}`),node('p',cards.map(c=>c.title).join(', ')));summary.append(row);
+      return;
     }
-    body.append(summary,button('Preview these activities',()=>showPlanPreview(draft.cards,audience,dialog)),button(draft.fromOverview?'Cancel edits':'Discard activity changes',discardDraft));
+    const model=draft.model;
+    const intro=node('p',model.fresh?'Activities start on for every child. Uncheck any your family wants to turn off.':'Changes here apply to every child. You can adjust one child later in Daily Plan.','setup-copy');
+    const panel=node('div','','setup-family-activities');panel.append(intro);
+    const creative=['notebook','art-studio','coloring-studio','piano'];
+    const media=['games','music','audiobooks','videos','learning-videos'];
+    const groups=[
+      ['Learning & practice',model.defaults.filter(card=>!creative.includes(card.module)&&!media.includes(card.module))],
+      ['Writing & creativity',model.defaults.filter(card=>creative.includes(card.module))],
+      ['Games & media',model.defaults.filter(card=>media.includes(card.module))]
+    ];
+    for(const [heading,cards] of groups){
+      if(!cards.length)continue;
+      const group=node('fieldset','','setup-activity-group'),grid=node('div','','parent-start-activities');
+      group.append(node('legend',heading),grid);
+      for(const card of cards){
+        const row=node('label','','parent-start-activity'),input=node('input'),words=node('span');
+        const initial=model.values.get(card.module);
+        input.type='checkbox';input.name=card.module;
+        input.checked=model.choices.get(card.module) ?? initial===true;
+        input.indeterminate=initial===null&&!model.choices.has(card.module);
+        row.style.setProperty('--activity-accent',activityAccent(card));
+        words.append(node('strong',card.title));
+        if(card.module==='spelling')words.append(node('small','Grade-level practice or your own lists'));
+        const mixed=node('small','On for some children');mixed.hidden=!input.indeterminate;
+        if(initial===null)words.append(mixed);
+        input.onchange=()=>{
+          error.textContent='';draft.notice='';
+          if(input.checked===initial)model.choices.delete(card.module);
+          else model.choices.set(card.module,input.checked);
+          mixed.hidden=true;
+        };
+        row.append(input,words);grid.append(row);
+      }
+      panel.append(group);
+    }
+    body.append(panel);choreOptions();if(draft.notice)error.textContent=draft.notice;
   }
   async function previewChild(child) {
     if(busy)return;busy=true;error.textContent='';
@@ -475,10 +318,10 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       const details=node('details','','setup-check-details');details.open=!row.ready&&!later;details.append(node('summary',row.ready?'View completed checks':later?'View setup steps':'Required setup checks'));
       const checks=node('ul');for(const check of row.checks){const item=node('li',check.label);item.dataset.done=String(check.done);item.dataset.check=check.id;const icon=node('i');icon.dataset.lucide=check.done?'circle-check':'circle';icon.setAttribute('aria-hidden','true');item.prepend(icon);checks.append(item);}details.append(checks);card.append(details);
       if(later)card.append(node('p','No computer is assigned to this child yet. This does not stop you finishing setup for the rest of your family.','setup-copy'));
-      const editChildActivities=async()=>{if(busy)return;await move(-1);if(index===2)await changeAudience(row.child.id,true);};
+      const editFamilyActivities=()=>move(-1);
       if(row.next){
         const action=node('div','','setup-next-action');action.append(node('strong',(later?'When you’re ready: ':'Next: ')+row.next.action),node('p',row.next.detail));
-        if(row.next.id==='activities')action.append(button(row.next.action,editChildActivities));
+        if(row.next.id==='activities')action.append(button('Choose family activities',editFamilyActivities));
         else if(row.next.step<3)action.append(button(row.next.action,()=>{index=row.next.step;render();}));
         else if(row.next.id==='computer'){
           if(unassigned.length)action.append(button('Assign a connected computer',()=>{const target=body.querySelector('.setup-computer-assignment');target.scrollIntoView({block:'start',behavior:'smooth'});target.querySelector('select')?.focus();}));
@@ -494,7 +337,6 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
         const schoolCheck=node('details','','setup-first-lesson');schoolCheck.append(node('summary','Before the first lesson'),node('p','On this child’s computer, open their school, sign in, and check that a lesson opens. Website sign-in cannot be checked here and does not keep the setup reminder visible.','setup-copy'));card.append(schoolCheck);
       }
       card.append(button('Preview child activities',()=>previewChild(row.child)));
-      if(row.next?.id!=='activities')card.append(button('Edit activity choices',editChildActivities));
       body.append(card);
     }
     body.append(node('p','After saving a student, keep BodeeGuard open on that computer. Tap Check again to see when it confirms the assignment and parent controls.','setup-copy'));
@@ -530,12 +372,11 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     });
   }
   function choreOptions(){
-    const section=node('fieldset','','setup-chores');section.append(node('legend','Chores & Routines for the whole family'),node('p','Turn this on to assign chores to individual children.'));
-    for(const [value,label]of [[true,'Use Chores & Routines'],[false,'Skip for now']]){
-      const row=node('label','','setup-choice'),input=node('input');input.type='radio';input.name='family-start-chores';input.checked=choreChoice===value;
-      input.onchange=()=>{choreChoice=value;choreRequest=null;};row.append(input,node('span',label));section.append(row);
-    }
-    body.append(section);
+    const row=node('label','','setup-chores'),words=node('span');
+    const input=node('input');input.type='checkbox';input.name='family-start-chores';input.checked=choreChoice===true;
+    input.onchange=()=>{choreChoice=input.checked;choreRequest=null;};
+    words.append(node('strong','Chores & routines'),node('small','Assign jobs and reminders to individual children.'));
+    row.append(words,input);body.append(row);
   }
   function render() {
     passwordControl?.clear();passwordControl=null;familyPrompt.unmount();manualChildren=null;manualEditor=null;footer.hidden=false;pending=[];body.replaceChildren();error.textContent='';title.textContent=steps[index].title;status();
@@ -566,16 +407,13 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       for(const student of roster)pickers.push(inlineSchool({...options,student,quickAbeka:roster.length===1}));
       pending.push(...pickers);
     }else if(index===2){
-      if(activityView==='overview')activityOverview();
-      else if(activityView==='review')reviewPlan();
-      else activityPicker();
+      activityPicker();
     }
     else { readiness(); body.append(node('p','If you enabled Family Games, choose Access & game time next to a child, or Settings for all children, then review individual games. Games are allowed until you turn them off.','setup-note'),button('Choose games for each child',()=>section('family-games'))); }
-    if(index===2&&!draft?.childOnly||index===3&&!state.chores?.chosen&&!state.completed)choreOptions();
     body.scrollTop=0;decorateSetup(dialog);
   }
   dialog.addEventListener('cancel',event=>{event.preventDefault();if(!busy&&!promptBusy)dialog.close();});
-  dialog.addEventListener('close',()=>{passwordControl?.clear();familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
+  dialog.addEventListener('close',()=>{draft=null;passwordControl?.clear();familyPrompt.unmount();updateWelcome();if(previousFocus?.isConnected)previousFocus.focus();});
   return {open,update(){
     updateWelcome();
     if(started||!getSnapshot())return;started=true;
