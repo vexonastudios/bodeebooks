@@ -26,7 +26,7 @@ import { connectionState, applyConnectionStatus, deliveryState, editSchedule } f
 import { setupCloudMessages } from './cloud-messages.js?v=20261028-document-alert1';
 import { setupSongRequests } from './cloud-song-requests.js?v=20261101-collections1';
 import { setupCloudMobile } from './cloud-mobile.js?v=20261109-white-noise1';
-import { setupCloudCalendar } from './cloud-calendar.js?v=20261124-calendar';
+import { setupCloudCalendar } from './cloud-calendar.js?v=20261125-term';
 import { setupCloudRecords } from './cloud-records.js';
 import { setupCloudFiles } from './cloud-files.js?v=20261028-document-alert1';
 import { setupCloudDocuments } from './cloud-documents.js?v=20261030-document-complete1';
@@ -330,11 +330,9 @@ function scheduleValue(value) {
     breaks: [...(value?.breaks || [])], exceptions: [...(value?.exceptions || [])] };
 }
 function renderSchoolCalendar() {
-  const term = byId('cloud-school-term-summary');
   const items = byId('cloud-school-calendar-items');
-  if (!term || !items) return;
+  if (!items) return;
   const schedule = scheduleValue(snapshot.rules.schedule);
-  term.textContent = schedule.termStart ? `${schedule.termStart} through ${schedule.termEnd}` : 'School-year dates are not limited yet.';
   items.replaceChildren();
   const addRow = (title, detail, edit, remove) => {
     const row = node('div', 'cloud-calendar-row');

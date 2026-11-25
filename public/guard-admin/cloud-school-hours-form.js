@@ -14,12 +14,23 @@ export function schoolHoursForm(schedule, { startSetup = false, now = () => Date
   const form = node('div', '', 'school-hours-form'); form.onsubmit = event => event.preventDefault();
   const toggle = (name, title, checked) => { const label=node('label','','school-hours-toggle'),input=node('input'); input.type='checkbox'; input.name=name; input.checked=checked; label.append(input,node('span',title)); return {label,input}; };
   const first = setupField('First day of school', 'termStart', current.termStart || '', 'date');
-  const last = setupField('Last day of school', 'termEnd', current.termEnd || '', 'date');
+  const last = setupField('End date', 'termEnd', current.termEnd || '', 'date');
+  const modeLabel = node('label', '', 'setup-field'), mode = node('select');
+  mode.name = 'termEndMode';
+  for (const [value, label] of [['open','Decide later'], ['count','Count school days'], ['date','Choose a date']]) {
+    mode.add(new Option(label, value));
+  }
+  mode.value = current.schoolDayCount ? 'count' : current.termEnd ? 'date' : 'open';
+  modeLabel.append(node('span', 'Last day of school'), mode);
+  const count = setupField('Number of school days', 'schoolDayCount', current.schoolDayCount ?? '', 'number');
+  count.input.min = '1'; count.input.step = '1';
+  const countHint = node('p', 'For one Abeka lesson per school day, enter the lessons left as of your first day. Vacations and changes to school days update the estimate.', 'school-hours-note');
+  const projected = node('p', '', 'school-hours-projection'); projected.setAttribute('role', 'status');
   const dates = node('fieldset', '', 'school-hours-dates');
   const today = node('button', 'Use today', 'btn btn-secondary'); today.type = 'button';
-  dates.append(node('legend', 'School year'), node('p', 'Joining midyear? Use today as your first day and choose your last day. Leave both dates blank for year-round school.', 'school-hours-note'));
+  dates.append(node('legend', 'School year'));
   const firstRow = node('div', '', 'school-hours-first-date'); firstRow.append(first.label, today);
-  dates.append(firstRow, last.label); form.append(dates);
+  dates.append(firstRow, modeLabel, last.label, count.label, countHint, projected); form.append(dates);
   const enabled=toggle('enabled','Use these school days and hours',current.enabled || startSetup); form.append(enabled.label);
   const zoneLabel=node('label','','setup-field'),zone=node('select'); zone.name='timeZone';
   for(const value of new Set([current.timeZone,Intl.DateTimeFormat().resolvedOptions().timeZone,'America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'])) { const option=node('option',value.replaceAll('_',' '));option.value=value;zone.append(option); }
@@ -27,7 +38,7 @@ export function schoolHoursForm(schedule, { startSetup = false, now = () => Date
   today.onclick = () => {
     first.input.value = window.BODEE_CLOUD_SCHEDULE.cloudSchoolDateParts(zone.value, now()).localDate;
     first.input.dispatchEvent(new Event('input', { bubbles: true }));
-    last.input.focus();
+    mode.focus();
   };
   const days=node('fieldset','','school-hours-days');days.append(node('legend','School days'));
   ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((name,index)=>days.append(toggle(`day-${index}`,name,current.days.includes(index)).label));form.append(days);
@@ -44,11 +55,27 @@ export function schoolHoursForm(schedule, { startSetup = false, now = () => Date
   const preview=node('p','','school-hours-preview');preview.setAttribute('role','status');coins.append(preview);
   const effective=node('p','Coin changes start tomorrow. You can excuse a late start and return its coins.','school-hours-note');
   coins.append(options,effective);form.append(coins);
+  function schoolDays() {
+    return [0,1,2,3,4,5,6].filter(day => form.querySelector(`[name="day-${day}"]`).checked);
+  }
   function update() {
-    last.input.required=Boolean(first.input.value); first.input.required=Boolean(last.input.value);
-    last.input.setCustomValidity(first.input.value && !last.input.value ? 'Choose the last school day, or clear the first day to use a year-round schedule.' : '');
-    first.input.setCustomValidity(last.input.value && !first.input.value ? 'Choose the first school day, or clear the last day to use a year-round schedule.' : '');
+    const counting = mode.value === 'count', fixed = mode.value === 'date';
+    first.input.required = counting || fixed;
+    last.label.hidden = last.input.disabled = !fixed;
+    last.input.required = fixed;
+    count.label.hidden = count.input.disabled = countHint.hidden = !counting;
+    count.input.required = counting;
     last.input.min=first.input.value;
+    projected.textContent = '';
+    if (counting && first.input.value && count.input.value) {
+      try {
+        const plan = window.BODEE_CLOUD_SCHEDULE.planCloudSchoolSchedule({...current, termStart:first.input.value,
+          schoolDayCount:count.input.valueAsNumber, days:schoolDays()});
+        const finish = new Date(plan.termEnd + 'T12:00:00Z').toLocaleDateString(undefined, {dateStyle:'long', timeZone:'UTC'});
+        projected.textContent = 'Projected last day · ' + finish;
+      } catch (error) { projected.textContent = error.message; }
+    }
+    projected.hidden = !projected.textContent;
     late.input.disabled=!enabled.input.checked;
     const active=enabled.input.checked&&late.input.checked;
     options.hidden=!active; effective.hidden=!active; preview.hidden=!active;
@@ -62,10 +89,11 @@ export function schoolHoursForm(schedule, { startSetup = false, now = () => Date
     const controls=[...form.querySelectorAll('input,select')];
     if(controls.some(input=>!input.reportValidity()))throw Error('Check the highlighted school settings.');
     const values=new FormData();for(const input of controls)if(!input.disabled&&(input.type!=='checkbox'||input.checked))values.append(input.name,input.value);
-    const result={...current,enabled:enabled.input.checked,timeZone:zone.value,days:[0,1,2,3,4,5,6].filter(day=>values.has(`day-${day}`)),start:values.get('start'),end:values.get('end'),termStart:values.get('termStart')||null,termEnd:values.get('termEnd')||null,
+    const result={...current,enabled:enabled.input.checked,timeZone:zone.value,days:schoolDays(),start:values.get('start'),end:values.get('end'),termStart:values.get('termStart')||null,termEnd:values.get('termEnd')||null,
+      schoolDayCount:mode.value==='count'?count.input.valueAsNumber:null,
       attendance:{...attendance,enabled:enabled.input.checked&&late.input.checked}};
     for(const name of ['graceMinutes','requiredActiveSeconds','coinsPerLateMinute','maxPenaltyCoins','onTimeBonusCoins'])if(values.has(name))result.attendance[name]=Number(values.get(name));
-    return window.BODEE_CLOUD_SCHEDULE.normalizeCloudSchoolSchedule(result);
+    return window.BODEE_CLOUD_SCHEDULE.planCloudSchoolSchedule(result);
   }};
 }
 

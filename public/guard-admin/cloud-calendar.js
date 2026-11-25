@@ -1,5 +1,5 @@
 import { setupCloudAttendance } from './cloud-attendance.js?v=20261124-calendar';
-import { setupCalendarSettings } from './cloud-calendar-settings.js?v=20261124-calendar';
+import { setupCalendarSettings } from './cloud-calendar-settings.js?v=20261125-term';
 // The preview uses the same calendar decisions as the API and child app.
 const { normalizeCloudSchoolSchedule, cloudSchoolDayState, cloudSchoolDateParts } = globalThis.BODEE_CLOUD_SCHEDULE;
 const byId = id => document.getElementById(id);
@@ -28,7 +28,7 @@ export function setupCloudCalendar({ getSnapshot, editException, editBreak, setC
     await saveSchedule(captured, schedule);
     if (schedule.enabled && schedule.termStart && schedule.termStart !== captured.rules.schedule?.termStart) {
       const currentDate = today();
-      selectedDate = currentDate < schedule.termStart || currentDate > schedule.termEnd ? schedule.termStart : currentDate;
+      selectedDate = currentDate < schedule.termStart || (schedule.termEnd && currentDate > schedule.termEnd) ? schedule.termStart : currentDate;
       month = selectedDate.slice(0, 7);
       render(true);
     }

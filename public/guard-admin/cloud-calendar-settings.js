@@ -1,4 +1,4 @@
-import { schoolHoursForm } from './cloud-school-hours-form.js?v=20261124-calendar';
+import { schoolHoursForm } from './cloud-school-hours-form.js?v=20261125-term';
 
 // Keep the editor mounted during background refreshes. Only Save writes the
 // draft, using the rules revision from the moment the parent started editing.
@@ -25,10 +25,15 @@ export function setupCalendarSettings({ getSnapshot, saveSchedule }) {
 
   function render() {
     const schedule = window.BODEE_CLOUD_SCHEDULE.normalizeCloudSchoolSchedule(getSnapshot()?.rules.schedule);
+    const date = value => new Intl.DateTimeFormat(undefined, {dateStyle:'medium', timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z'));
+    let term = 'Year-round';
+    if (schedule.termStart) {
+      term = schedule.termEnd ? `${date(schedule.termStart)} – ${date(schedule.termEnd)}` : `Starts ${date(schedule.termStart)} · End date open`;
+      if (schedule.schoolDayCount) term = `${schedule.schoolDayCount} school days · Projected last day ${date(schedule.termEnd)}`;
+    }
+    document.getElementById('cloud-school-term-summary').textContent = term;
     title.textContent = schedule?.enabled ? 'School dates & hours' : 'When does school start?';
     if (schedule.enabled) {
-      const date = value => new Intl.DateTimeFormat(undefined, {dateStyle:'medium', timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z'));
-      const term = schedule.termStart ? `${date(schedule.termStart)} – ${date(schedule.termEnd)}` : 'Year-round';
       note.textContent = `${term} · ${schedule.start}–${schedule.end} (${schedule.timeZone.replaceAll('_', ' ')}). Attendance coins are ${schedule.attendance?.enabled ? 'on' : 'off'}.`;
     } else {
       note.textContent = 'Choose your first school day and daily hours. You can also set an on-time reward or a late coin deduction.';
