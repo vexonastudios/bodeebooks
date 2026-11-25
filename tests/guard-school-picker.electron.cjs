@@ -34,6 +34,10 @@ const server=http.createServer(async(req,res)=>{
  if(url.pathname==='/bridge'){
   const chunks=[];for await(const chunk of req)chunks.push(chunk);const input=JSON.parse(Buffer.concat(chunks));res.setHeader('Content-Type','application/json');
   if(input.action==='get-setup')return res.end(JSON.stringify(state));
+  if(input.action==='chores'){
+   state.chores={enabled:input.enabled,chosen:true,revision:(state.chores?.revision||0)+1};
+   return res.end(JSON.stringify(state.chores));
+  }
   if(input.action==='save-setup'){
    if(failProgress){failProgress=false;res.statusCode=503;return res.end(JSON.stringify({error:'Could not save setup progress.'}));}
    state={...state,...input,revision:state.revision+1};return res.end(JSON.stringify(state));
@@ -226,9 +230,28 @@ async function main(){
  const activity=(name,operation)=>js(`[...document.querySelectorAll('.parent-start-activity')].find(row=>row.querySelector('strong').textContent===${JSON.stringify(name)}).querySelector('input').${operation}`);
  assert.equal(await scopeValue(),'all');assert.match(await scopeNote(),/Bob, Betty, Billy/);
  assert.doesNotMatch(await scopeNote(),/Archived/);assert.equal(await activity('Typing School','checked'),false);
+ const backToSchool=async()=>{
+  await click('Back');await wait('!!document.querySelector("dialog[open] .setup-school-family")');
+  assert.equal(await js('document.querySelector(".setup-progress").textContent'),'Step 2 of 4');
+  assert.equal(await js('document.querySelector(".setup-error").textContent'),'');
+ };
+ const returnToActivities=async()=>{await click('Continue');await wait('!!document.querySelector("#setup-activity-audience") && !document.querySelector(".setup-body").inert');};
+ // A new, untouched plan and an incomplete audience both allow a calendar detour.
+ await backToSchool();await returnToActivities();
  await activity('Typing School','click()');
  await activity('Games','click()');
  await choose('selected');await click('Review choices');await wait('document.querySelector(".setup-error").textContent.includes("at least one child")');
+ await js('document.querySelector("[name=family-start-chores]").click()');
+ await backToSchool();await click('Set school calendar');await wait('document.querySelector("dialog").dataset.setupSection==="calendar"');
+ await click('Edit dates, hours & coins');await fill('termStart','2027-01-07','.school-hours-form');
+ await click('Save calendar');await wait('document.querySelector(".cloud-calendar-save-status").textContent==="Calendar saved."');
+ await click('Back to setup');await wait('!!document.querySelector(".setup-school-family")');await returnToActivities();
+ assert.equal(await scopeValue(),'selected');assert.equal(await activity('Games','checked'),true);
+ assert.equal(await js('document.querySelector("[name=family-start-chores]").checked'),true);
+ assert.equal(rulesWrites.length,1,'only the calendar was saved during the detour');
+ assert.equal(state.chores,undefined,'leaving step three did not apply its chores choice');
+ assert.equal(rulesWrites[0].schedule.termStart,'2027-01-07');rulesWrites.length=0;
+ await click('Review choices');await wait('document.querySelector(".setup-error").textContent.includes("at least one child")');
  await choose('all');assert.equal(await activity('Typing School','checked'),true);
  const portals=structuredClone(snapshot.rules.subjects);
  await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
@@ -262,7 +285,11 @@ async function main(){
  await editChild('Betty');assert.equal(await activity('Typing School','checked'),true);
  const others=()=>typing().assignments.filter(a=>a.studentId!=='betty');
  const oldOthers=structuredClone(others());
- await activity('Typing School','click()');await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
+ await activity('Typing School','click()');await backToSchool();
+ failPlanRead=true;await click('Continue');await wait('document.querySelector(".setup-error").textContent.includes("Could not load activities")');
+ await click('Continue');await wait('document.querySelector(".setup-child-activities-title")?.textContent==="Betty’s activities"');
+ assert.equal(await activity('Typing School','checked'),false);
+ await click('Review choices');await wait('!!document.querySelector(".parent-start-plan-summary")');
  assert.equal(await js('document.querySelector(".setup-activity-audience h3").textContent'),'Betty');assert.equal(rulesWrites.length,1);
  assert.match(await js('document.querySelector(".parent-start-plan-summary").textContent'),/Turn off.*Typing School/);
  failPlanSave=true;await click('Save for Betty');await wait('document.querySelector(".setup-error").textContent.includes("Could not save activities")');

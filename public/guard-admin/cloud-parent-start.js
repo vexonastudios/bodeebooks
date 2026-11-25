@@ -26,7 +26,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
   header.append(progress,title,dismiss);footer.append(later,back,next);frame.append(header,body,error,footer);dialog.append(frame);document.body.append(dialog);
   const sections=setupSections({dialog,body,footer,navigate,onReturn:()=>{resetActivityStep();render();}});
   let state=null,index=0,busy=false,started=false,previousFocus=null,pending=[],draft=null;
-  let activityView='picker',activityNotice='';
+  let activityView='picker',activityNotice='',returningActivities=null;
   let choreChoice=null,choreRequest=null,promptBusy=false,unlockPrompt=null,manualChildren=null,passwordControl=null,unlockPassword=null;
   let manualEditor=null;
   const familyPrompt=createFamilyPrompt({getSnapshot,
@@ -86,7 +86,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       // choices remain visible there and never become complete just by opening it.
       if(startAt===3)index=children().length?3:0;
       if(!getSnapshot().parentPassword?.configured)index=0;
-      resetActivityStep();render();dialog.showModal();updateWelcome();
+      returningActivities=null;resetActivityStep();render();dialog.showModal();updateWelcome();
     }catch(failure){state=null;title.textContent='Family setup';progress.textContent='';body.replaceChildren(button('Try again',()=>{dialog.close();void open(startAt);}),button('Close',()=>dialog.close()));error.textContent=failure.message;footer.hidden=true;dialog.showModal();}
     finally{busy=false;launch.disabled=settingsLaunch.disabled=false;}
   }
@@ -94,7 +94,7 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     const unlock=lockControls(body);
     try {
       for(const commit of pending)await commit();
-      if(choresChanged()){
+      if(index>=2&&choresChanged()){
         choreRequest ||= {operation:'settings',requestId:crypto.randomUUID(),revision:state.chores?.revision||0,enabled:choreChoice};
         const saved=await request('chores',choreRequest);state.chores={enabled:saved.enabled,revision:saved.revision,chosen:true};choreRequest=null;
         window.dispatchEvent(new Event('cloud-chores-setting-saved'));
@@ -119,8 +119,12 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       if(draft.saved)showActivityOverview();else{activityView='picker';render();}
       return;
     }
-    if(index===2&&direction<0&&draft?.dirty){error.textContent='Review and save your activity choices first, or discard them.';return;}
-    if(index===2&&direction<0&&draft?.fromOverview){showActivityOverview();return;}
+    if(index===2&&direction<0){
+      // Keep only the parent's selections. Calendar and school edits can change
+      // the rules while away, so rebuild the review from the current snapshot.
+      returningActivities=draft&&{audience:draft.audience,selected:draft.selected,choices:draft.choices,fromOverview:draft.fromOverview};
+      index=1;resetActivityStep();render();title.tabIndex=-1;title.focus({preventScroll:true});return;
+    }
     busy=true;const unlock=lockControls(footer);body.inert=true;error.textContent='';
     try {
       for(const commit of pending)await commit();
@@ -156,7 +160,21 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
         return;
       }
       const target=Math.max(0,Math.min(3,index+direction));await persist(target);
-      index=target;resetActivityStep();render();
+      if(target===2&&returningActivities){
+        const previous=returningActivities;
+        ensureDraft();
+        const singleChild=!['all','selected','default'].includes(previous.audience);
+        if(singleChild&&!draft.roster.some(child=>child.id===previous.audience)){
+          index=target;resetActivityStep();render();
+          error.textContent='That child is no longer in family setup. Choose whose activities to edit.';
+        }else{
+          draft.choices=new Map(previous.choices);
+          draft.selected=new Set(draft.roster.filter(child=>previous.selected.has(child.id)).map(child=>child.id));
+          try{await loadAudience(previous.audience,previous.fromOverview);}catch(failure){draft=null;throw failure;}
+          index=target;activityView='picker';render();
+        }
+        returningActivities=null;
+      }else{index=target;resetActivityStep();render();}
     }catch(failure){error.textContent=failure.message;}
     finally{busy=false;body.inert=false;unlock();status();}
   }
@@ -212,15 +230,10 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
     }else draft.choices.set(key,allowed);
     draft.dirty=!draft.childOnly||draft.firstChildPlan||draft.choices.size>0;status();
   }
-  async function changeAudience(value,fromOverview=false) {
-    if(busy)return;
-    ensureDraft();
-    busy=true;const unlock=lockControls(footer);body.inert=true;error.textContent='';
-    try {
+  async function loadAudience(value,fromOverview) {
       const child=draft.roster.find(child=>child.id===value);
       let cards;
       if(child){
-        body.querySelector('.setup-audience-note').textContent='Loading activities for '+child.name+'…';
         const details=await request('daily-plan',{studentId:child.id});
         if(details.rulesRevision!==draft.captured.rules.revision)throw Error('The plan changed. Discard activity changes to load the latest plan.');
         // A built-in with a planOnly override for a sibling still uses this child's
@@ -238,9 +251,18 @@ export function setupParentStart({endpoint,getSnapshot,mutate:mutateRequest,navi
       }
       draft.audience=value;draft.cards=cards;
       if(fromOverview){draft.fromOverview=true;draft.childOnly=!!child;}
-      activityView='picker';
       draft.firstChildPlan=!!child&&!draft.captured.rules.subjects.some(subject=>subject.assignments?.some(a=>a.studentId===value&&a.dailyPlan));
       draft.dirty=draft.firstChildPlan||draft.choices.size>0||value==='all'||value==='selected'||value==='default'&&draft.fresh;
+  }
+  async function changeAudience(value,fromOverview=false) {
+    if(busy)return;
+    ensureDraft();
+    busy=true;const unlock=lockControls(footer);body.inert=true;error.textContent='';
+    try{
+      const child=draft.roster.find(child=>child.id===value);
+      if(child)body.querySelector('.setup-audience-note').textContent='Loading activities for '+child.name+'…';
+      await loadAudience(value,fromOverview);
+      activityView='picker';
       render();
     }catch(failure){
       if(fromOverview)showActivityOverview();else render();
