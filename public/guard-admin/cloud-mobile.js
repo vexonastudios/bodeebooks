@@ -68,6 +68,11 @@ export function setupCloudMobile({ navigate, refresh }) {
   const reportNotice=make('a','cloud-student-report-banner');reportNotice.href='/guard/report/#student-reports';reportNotice.target='_top';reportNotice.hidden=true;main.prepend(reportNotice);
   const reportNoticeText=make('span','cloud-student-report-copy');
   reportNotice.append(icon('triangle-alert'),reportNoticeText,icon('chevron-right'));
+  const supportNotice=make('a','cloud-support-report-banner');
+  const supportText=make('span','cloud-student-report-copy');
+  supportNotice.target='_top';supportNotice.hidden=true;
+  supportNotice.append(icon('message-square'),supportText,icon('chevron-right'));
+  reportNotice.after(supportNotice);
   let reportCountBusy=false, reportRefreshQueued=false;
   async function refreshStudentReports(){
     if(document.hidden)return;
@@ -78,14 +83,21 @@ export function setupCloudMobile({ navigate, refresh }) {
       if(!response.ok)return;
       const data=await response.json();
       const pending=Number(data.count)||0, resolved=Number(data.resolvedCount)||0;
-      const notices=[];
-      if(pending) notices.push(pending===1?'Your child reported a problem · Review report':pending+' student problem reports · Review');
-      if(resolved) notices.push(resolved===1?'Support resolved a bug report · View update':'Support resolved '+resolved+' bug reports · View updates');
-      reportNotice.hidden=!notices.length;
-      reportNotice.href=resolved?'/guard/report/#your-reports':'/guard/report/#student-reports';
-      reportNoticeText.textContent=notices.join(' · ');
-      reportDetail.textContent=notices.join(' · ')||'Send or follow a report.';
-      desktopReport.setAttribute('aria-label',notices.length?'Report a bug · '+notices.join(' · '):'Report a bug');
+      const childText=pending===1?'Your child reported a problem · Review report':pending+' student problem reports · Review';
+      reportNotice.hidden=!pending;
+      reportNoticeText.textContent=pending?childText:'';
+      const update=data.supportUpdate;
+      supportNotice.hidden=!update&&!resolved;
+      if(update){
+        supportText.textContent=update.kind==='reply'?'BodeeGuard replied to your report · Read reply':'Support resolved a bug report · View update';
+        supportNotice.href='/guard/report/#support-update/'+encodeURIComponent(update.reportId)+'/'+encodeURIComponent(update.eventId);
+      }else if(resolved){
+        supportText.textContent='Support resolved a bug report · View updates';
+        supportNotice.href='/guard/report/#your-reports';
+      }
+      const notices=[pending?pending+' student '+(pending===1?'report needs':'reports need')+' your review.':'',supportNotice.hidden?'':supportText.textContent].filter(Boolean).join(' ');
+      reportDetail.textContent=notices||'Send or follow a report.';
+      desktopReport.setAttribute('aria-label',notices?'Report a bug · '+notices:'Report a bug');
     } catch { /* The report page remains available after a failed refresh. */ }
     finally {
       reportCountBusy=false;

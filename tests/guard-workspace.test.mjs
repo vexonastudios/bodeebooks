@@ -31,7 +31,7 @@ test('served parent workspace includes White Noise, its maintained assets and bo
   assert.equal((html.match(/data-tab="white-noise"/g) || []).length, 1);
   assert.equal((html.match(/id="cloud-white-noise"/g) || []).length, 1);
   assert.match(html, /cloud-white-noise\.css\?v=20261109-white-noise1/);
-  assert.match(html, /cloud-workspace\.js\?v=20261125-report-inbox/);
+  assert.match(html, /cloud-workspace\.js\?v=20261125-support-reply/);
   const connect = result.headers.get('content-security-policy').split(';').find(part => part.trim().startsWith('connect-src')).trim().split(/\s+/);
   assert.ok(connect.includes('https://bodeeguard-cloud-assets.james-7f8.workers.dev'));
   assert.ok(!connect.includes('*') && !connect.includes('https:'));
@@ -420,7 +420,7 @@ test('workspace escapes identity, inherits real navigation, restricts scripts an
   assert.equal(result.headers.get('x-frame-options'), 'SAMEORIGIN');
   const html = await result.text();
   assert.match(html, /&lt;script&gt;attack&lt;\/script&gt;/);
-  assert.match(html, /cloud-workspace\.js\?v=20261125-report-inbox/, 'current controls replace an already-versioned generated bundle');
+  assert.match(html, /cloud-workspace\.js\?v=20261125-support-reply/, 'current controls replace an already-versioned generated bundle');
   assert.doesNotMatch(html, /<script>attack|admin123|admin-password|kioskAPI/);
   for (const label of ['Live Monitoring', 'Student Management', 'Activity library', 'Learning Videos', 'Calendar / Schedule', 'Family Games', 'Account &amp; billing']) assert.ok(html.includes(label), label);
 });

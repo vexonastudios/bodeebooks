@@ -22,7 +22,7 @@ export async function POST(request:Request){
     else if(input.action==='student-list')path+='?origin=child&reviewState='+(input.reviewState==='dismissed'?'dismissed':'pending')+'&offset='+encodeURIComponent(String(input.offset||0));
     else if(input.action==='set-forwarding'){
       path+='/forwarding';body={enabled:input.enabled,revision:input.revision};
-    }else if(input.action==='read-resolution'){
+    }else if(input.action==='read-update'||input.action==='read-resolution'){
       if(typeof input.id!=='string'||!/^[a-f0-9-]{36}$/i.test(input.id))return reply({error:'Choose a report.'},400);
       path+='/'+input.id+'/read';body={eventId:input.eventId};
     }

@@ -68,4 +68,6 @@ test('parent report settings and resolution acknowledgments discard supplied fam
  await f.POST(req({action:'read-resolution',id,eventId:id,householdId:'other'}));
  assert.deepEqual(f.calls[1],{p:'/bug-reports/'+id+'/read',body:{eventId:id}});
  assert.equal((await f.POST(req({action:'read-resolution',id:'../other'}))).status,400);
+ await f.POST(req({action:'read-update',id,eventId:id,householdId:'other'}));
+ assert.deepEqual(f.calls[2],{p:'/bug-reports/'+id+'/read',body:{eventId:id}});
 });

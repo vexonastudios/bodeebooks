@@ -24,6 +24,7 @@ export default function ReportForm({release}:{release:string}){
   const [draft,setDraft]=useState<Draft>(blank),[setup,setSetup]=useState<Setup|null>(null),[voiceAvailable,setVoiceAvailable]=useState(false);
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
   const [reports,setReports]=useState<BugReport[]>([]),[hasMore,setHasMore]=useState(false),[detail,setDetail]=useState<ReportDetail|null>(null),[reply,setReply]=useState('');
+  const [focusTarget,setFocusTarget]=useState('');
   const [pending,setPending]=useState<Record<string,unknown>|null>(null),[recording,setRecording]=useState(false),[seconds,setSeconds]=useState(0),[clip,setClip]=useState<Blob|null>(null),[clipUrl,setClipUrl]=useState('');
   const recorder=useRef<MediaRecorder|null>(null),stream=useRef<MediaStream|null>(null),timer=useRef<ReturnType<typeof setInterval>|null>(null),alive=useRef(true),restored=useRef('');
   const [replyFrozen,setReplyFrozen]=useState(false);
@@ -61,7 +62,36 @@ export default function ReportForm({release}:{release:string}){
     setLoading(false);
   },[]);
   useEffect(()=>{const task=setTimeout(()=>void load(),0);return()=>clearTimeout(task);},[load]);
-  async function work(task:()=>Promise<void>){if(sending.current)return;sending.current=true;setBusy(true);setError('');try{await task();}catch(e){if(alive.current)setError(e instanceof Error?e.message:'Please retry.');}finally{sending.current=false;if(alive.current)setBusy(false);}}
+  const work=useCallback(async(task:()=>Promise<void>)=>{if(sending.current)return;sending.current=true;setBusy(true);setError('');try{await task();}catch(e){if(alive.current)setError(e instanceof Error?e.message:'Please retry.');}finally{sending.current=false;if(alive.current)setBusy(false);}},[]);
+  const openReport=useCallback((id:string,linkedEvent?:string)=>work(async()=>{
+    const opened=await request<ReportDetail>({action:'detail',id});
+    if(!alive.current)return;
+    const unread=opened.report.unreadReplyId||opened.report.unreadResolutionId;
+    const eventId=linkedEvent||unread;
+    const hasNote=opened.events.some(event=>event.id===eventId&&event.role==='staff'&&event.note.trim());
+    setDetail(opened);
+    setFocusTarget(hasNote?'report-event-'+eventId:'report-heading');
+    replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);
+    if(unread&&unread===eventId){
+      await request({action:'read-update',id,eventId:unread});
+      if(alive.current)setReports(rows=>rows.map(row=>
+        row.id===id&&(row.unreadReplyId===unread||row.unreadResolutionId===unread)
+          ?{...row,unreadReplyId:null,unreadResolutionId:null}:row));
+    }
+  }),[work]);
+  useEffect(()=>{
+    const openLinkedReply=()=>{
+      const match=/^#support-update\/([0-9a-f-]{36})\/([0-9a-f-]{36})$/i.exec(window.location.hash);
+      if(match)void openReport(match[1],match[2]);
+    };
+    const timer=setTimeout(openLinkedReply,0);
+    window.addEventListener('hashchange',openLinkedReply);
+    return()=>{clearTimeout(timer);window.removeEventListener('hashchange',openLinkedReply);};
+  },[openReport]);
+  useEffect(()=>{
+    const target=focusTarget&&document.getElementById(focusTarget);
+    if(target){target.focus({preventScroll:true});target.scrollIntoView({block:'center'});}
+  },[focusTarget,detail?.report.id]);
   async function record(){
     await work(async()=>{
       if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw Error('Recording is unavailable in this browser. Please type your report.');
@@ -131,15 +161,11 @@ export default function ReportForm({release}:{release:string}){
       </form>
     </section>
     <aside className={styles.history}><StudentReports onForwarded={()=>void load()}/><div id="your-reports" className={styles.sectionTitle}><h2>Your reports</h2><button aria-label="Refresh reports" disabled={busy||loading} onClick={()=>void load()}><RefreshCw size={18}/></button></div>
-      {!detail&&(loading&&!reports.length?<p>Loading reports…</p>:!reports.length?<div className={styles.empty}><Bug size={25}/><p>No reports sent yet.</p></div>:reports.map(r=><button className={styles.reportRow} key={r.id} disabled={busy||photoBusy} onClick={()=>void work(async()=>{const opened=await request<ReportDetail>({action:'detail',id:r.id});setDetail(opened);replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);
-        if(opened.report.unreadResolutionId){
-          await request({action:'read-resolution',id:r.id,eventId:opened.report.unreadResolutionId});
-          setReports(rows=>rows.map(row=>row.id===r.id&&row.unreadResolutionId===opened.report.unreadResolutionId?{...row,unreadResolutionId:null}:row));
-        }})}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{r.unreadResolutionId?'New · Resolved':statuses[r.status]}</span>{r.origin==='child'&&<small>{r.autoForwarded?'Automatically sent from ':'From '}{r.context.students.find(s=>s.id===r.studentId)?.name||'your child'}</small>}</span><ChevronRight size={18}/></button>))}
+      {!detail&&(loading&&!reports.length?<p>Loading reports…</p>:!reports.length?<div className={styles.empty}><Bug size={25}/><p>No reports sent yet.</p></div>:reports.map(r=><button className={styles.reportRow} key={r.id} disabled={busy||photoBusy} onClick={()=>void openReport(r.id)}><span><strong>{r.description.slice(0,95)}</strong><small>{r.reference} · Sent {new Date(r.createdAt).toLocaleString()}</small><span className={styles.badge} data-status={r.status}>{r.unreadReplyId?'New reply':r.unreadResolutionId?'New · Resolved':statuses[r.status]}</span>{r.origin==='child'&&<small>{r.autoForwarded?'Automatically sent from ':'From '}{r.context.students.find(s=>s.id===r.studentId)?.name||'your child'}</small>}</span><ChevronRight size={18}/></button>))}
       {!detail&&hasMore&&<button disabled={busy} onClick={()=>void work(async()=>{const page=await request<{reports:BugReport[];hasMore:boolean}>({action:'list',offset:reports.length});setReports(value=>[...value,...page.reports]);setHasMore(page.hasMore);})}>Load earlier reports</button>}
-      {detail&&<section className={styles.detail}><button type="button" disabled={busy||photoBusy||replyFrozen} onClick={()=>{setDetail(null);void load();}}>Back to reports</button><h3>{detail.report.reference}</h3><p className={styles.description}>{detail.report.description}</p><span className={styles.badge}>{detail.report.status==='resolved'?'Resolved by BodeeGuard support':statuses[detail.report.status]}</span>
+      {detail&&<section className={styles.detail}><button type="button" disabled={busy||photoBusy||replyFrozen} onClick={()=>{setDetail(null);setFocusTarget('');if(location.hash.startsWith('#support-update/'))history.replaceState(history.state,'',location.pathname+location.search+'#your-reports');void load();}}>Back to reports</button><h3 id="report-heading" tabIndex={-1}>{detail.report.reference}</h3><p className={styles.description}>{detail.report.description}</p><span className={styles.badge}>{detail.report.status==='resolved'?'Resolved by BodeeGuard support':statuses[detail.report.status]}</span>
         <SavedReportPhotos photos={detail.photos?.filter(p=>!p.eventId)}/>
-        {detail.events.filter(e=>e.note||detail.photos?.some(p=>p.eventId===e.id)).map(e=><article key={e.id}><small>{e.role==='staff'?'BodeeGuard support':'Your family'} · {new Date(e.createdAt).toLocaleString()}</small><p className={styles.description}>{e.note}</p><SavedReportPhotos photos={detail.photos?.filter(p=>p.eventId===e.id)}/></article>)}
+        {detail.events.filter(e=>e.note||detail.photos?.some(p=>p.eventId===e.id)).map(e=><article key={e.id} id={'report-event-'+e.id} tabIndex={-1}><small>{e.role==='staff'?'BodeeGuard support':'Your family'} · {new Date(e.createdAt).toLocaleString()}</small><p className={styles.description}>{e.note}</p><SavedReportPhotos photos={detail.photos?.filter(p=>p.eventId===e.id)}/></article>)}
         <label className={styles.field}>Add more details<textarea rows={3} maxLength={3000} disabled={busy||replyFrozen} value={reply} onChange={e=>setReply(e.target.value)}/></label>
         <PhotoPicker photos={replyPhotos} onChange={setReplyPhotos} disabled={busy||photoBusy||replyFrozen} onBusy={setPhotoBusy} followup/>
         <button disabled={busy||photoBusy||!reply.trim()&&!replyPhotos.length} onClick={()=>void work(async()=>{const body=replyAttempt.current||{action:'reply',id:detail.report.id,revision:detail.report.revision,eventId:crypto.randomUUID(),note:reply,photos:replyPhotos};replyAttempt.current=body;setReplyFrozen(true);try{await request(body);}catch(e){if(e instanceof RequestError&&e.status===409){replyAttempt.current=null;setReplyFrozen(false);setDetail(await request<ReportDetail>({action:'detail',id:detail.report.id}));}else if(e instanceof RequestError&&e.status>=400&&e.status<500&&![401,408,429].includes(e.status)){replyAttempt.current=null;setReplyFrozen(false);}throw e;}replyAttempt.current=null;setReplyFrozen(false);setReply('');setReplyPhotos([]);setDetail(await request<ReportDetail>({action:'detail',id:detail.report.id}));void load();})}><Send size={16}/> Add details</button>
